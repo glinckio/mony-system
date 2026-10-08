@@ -1,0 +1,59 @@
+# Dependências
+node_modules/
+.pnpm-store/
+
+# Saídas de build e cache
+dist/
+build/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Variáveis de ambiente e segredos (só .env.example vai para o Git)
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+*.p12
+*.key
+*.jks
+*.keystore
+*.mobileprovision
+credentials.json
+.sentryclirc
+
+# Expo / React Native (pastas nativas do app são geradas pelo prebuild; ver ADR-001)
+.expo/
+web-build/
+expo-env.d.ts
+apps/mobile/ios/
+apps/mobile/android/
+
+# Módulos nativos: as pastas ios/ e android/ de modules/* SÃO versionadas; só o build sai
+modules/*/android/build/
+modules/*/android/.gradle/
+modules/*/ios/build/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+.terraform.lock.hcl.bak
+
+# Sistema e editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json

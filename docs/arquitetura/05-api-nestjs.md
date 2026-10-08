@@ -1,0 +1,159 @@
+# 05 — API (NestJS)
+
+## Estrutura
+
+```
+apps/api/
+├─ src/
+│  ├─ main.ts                    # Entrypoint HTTP
+│  ├─ worker.ts                  # Entrypoint dos consumidores BullMQ e rotinas
+│  ├─ app.module.ts
+│  ├─ core/                      # Infra transversal (sem regra de negócio)
+│  │  ├─ prisma/                 # PrismaService, extensão de soft delete
+│  │  ├─ auth/                   # JwtGuard, @UsuarioAtual(), @Publico(), AdminGuard + 2FA
+│  │  ├─ planos/                 # @RecursoLimitado('lancamento'), PlanoGuard
+│  │  ├─ idempotencia/           # Interceptor de Idempotency-Key (Redis)
+│  │  ├─ erros/                  # Filtro global, catálogo de códigos de erro
+│  │  ├─ eventos/                # Barramento interno de eventos de domínio
+│  │  ├─ filas/                  # Definição de filas BullMQ
+│  │  ├─ arquivos/               # S3, URL assinada
+│  │  ├─ cripto/                 # Criptografia de campo (KMS envelope)
+│  │  ├─ auditoria/
+│  │  └─ config/
+│  ├─ modulos/                   # Um módulo por domínio
+│  │  ├─ autenticacao/  usuarios/  assinaturas/  planos/
+│  │  ├─ categorias/  contas/  transacoes/  recorrencias/
+│  │  ├─ cartoes/  faturas/  parcelamentos/
+│  │  ├─ orcamentos/  metas/  relatorios/  dashboard/
+│  │  ├─ listas-compras/  compartilhamentos/
+│  │  ├─ lembretes/  agenda/
+│  │  ├─ notificacoes/  alertas/          # motor de alertas
+│  │  ├─ apps-monitorados/
+│  │  ├─ open-finance/  nfce/
+│  │  ├─ mony/                            # agente de IA
+│  │  ├─ novidades/  admin/
+│  │  └─ lgpd/                            # exportar e excluir conta
+│  └─ integracoes/               # Adaptadores de fornecedores (um por pasta)
+│     ├─ ia/            (LlmProvider, TranscricaoProvider)
+│     ├─ open-finance/  (OpenFinanceProvider → pluggy | belvo | klavi)
+│     ├─ pagamentos/    (BillingProvider → stripe)
+│     ├─ push/          (PushProvider → expo-push | fcm+apns)
+│     ├─ agenda/        (CalendarProvider → google | microsoft)
+│     ├─ nfce/          (NfceProvider → api-terceiro | sefaz-scraper)
+│     ├─ telefonia/     (VozProvider → twilio)
+│     └─ email/         (EmailProvider → brevo)
+├─ prisma/
+│  ├─ schema.prisma
+│  ├─ migrations/
+│  └─ seed.ts                    # Categorias padrão, limites do gratuito, planos
+└─ test/
+```
+
+## Camadas dentro de um módulo
+
+```
+modulos/cartoes/
+├─ cartoes.controller.ts     # HTTP: rota, DTO, status code. Nada de regra
+├─ cartoes.service.ts        # Casos de uso. ÚNICO ponto de entrada da regra
+├─ cartoes.repository.ts     # Acesso ao Prisma, sempre filtrando usuarioId
+├─ dominio/
+│  ├─ calcular-fatura.ts     # Funções puras (datas de fechamento, limite)
+│  └─ calcular-fatura.spec.ts
+├─ dto/                      # Reexporta schemas Zod de @mony/shared
+├─ eventos.ts                # Eventos emitidos (ex.: CompraNoCartaoRegistrada)
+└─ cartoes.module.ts
+```
+
+Regras:
+- **Controller → Service → Repository.** Controller nunca chama Prisma.
+- **Cálculos são funções puras** em `dominio/`, testadas sem banco (datas de fatura, Price, projeção, faixas).
+- **A Mony chama Services**, nunca Controllers nem Prisma (regra de arquitetura do PDF). Todo Service recebe um `Contexto` com `usuarioId`, `origem` (`app`, `mony`, `open_finance`, `admin`, `sistema`) e `idempotencyKey`.
+- Comunicação entre módulos: chamada direta ao Service exportado quando é síncrona e transacional (criar transação + atualizar fatura). Efeitos colaterais (alertas, preferências aprendidas, analítica) por **evento de domínio** → fila BullMQ, para não deixar a resposta lenta.
+- Operações financeiras com várias escritas usam `prisma.$transaction` com isolamento adequado; atualização de saldo de fatura usa `SELECT … FOR UPDATE` na fatura.
+
+## Isolamento por usuário
+
+- Toda tabela de dados do usuário tem `usuario_id`.
+- Repositories recebem `usuarioId` obrigatório no construtor do método; não existe método "buscar por id" sem usuário.
+- Teste automatizado em cada rota: usuário A não lê, edita nem apaga recurso de B (retorno 404, não 403, para não revelar existência).
+- Compartilhamentos (listas, lembretes) passam por `CompartilhamentosService.verificarAcesso(usuarioId, recurso, recursoId, permissao)`.
+
+## Contrato HTTP
+
+- Prefixo `/v1`. Quebra de contrato gera `/v2` só da rota afetada.
+- JSON `camelCase`, dinheiro em centavos inteiros (`valorCentavos`), datas ISO 8601.
+- Paginação por cursor: `?cursor=&limite=50` → `{ itens, proximoCursor }`.
+- Filtros por query string validados por Zod.
+- Erros sempre no formato:
+
+```json
+{ "erro": { "codigo": "LIMITE_PLANO_ATINGIDO", "mensagem": "Você atingiu 3 lançamentos hoje.", "detalhes": { "recurso": "lancamento", "renovaEm": "2026-10-09T03:00:00Z" } } }
+```
+
+  Códigos estáveis em `@mony/shared/erros` (o app traduz e decide a UI, por exemplo mostrar [Ver planos]). Mensagens internas e stack só no log (PDF, Segurança).
+- `Idempotency-Key` obrigatório em `POST` que cria transação, parcelamento, pagamento de fatura, aporte e checkout. Resposta guardada no Redis por 24 h.
+- Mutações financeiras devolvem `impacto` junto com o recurso criado (ex.: `{ cartao: { percentualUsado: 62 }, orcamento: { percentualUsado: 81 } }`), que o app e a Mony usam para a mensagem "Nubank: 62% do limite usado".
+- OpenAPI em `/v1/docs` (só fora de produção ou atrás de autenticação).
+
+## Rotas
+
+Base do PDF, com os complementos marcados **(proposta)**.
+
+| Grupo | Rotas |
+|---|---|
+| Autenticação | `POST /auth/cadastro` · `POST /auth/login` · `POST /auth/social` · `POST /auth/renovar` · `POST /auth/sair` · `POST /auth/sair-todos` **(proposta)** · `POST /auth/senha/codigo` · `POST /auth/senha/redefinir` |
+| Usuário | `GET /me` · `PATCH /me` · `POST /me/dispositivos` · `GET /me/onboarding` · `PATCH /me/onboarding` **(proposta)** · `GET /me/exportar` · `DELETE /me` |
+| App | `GET /config-app` **(proposta)**: versão mínima, flags, sugestões do chat |
+| Planos e assinatura | `GET /planos` · `GET /assinatura` · `GET /assinatura/uso` · `POST /assinatura/checkout` · `POST /assinatura/portal` · `POST /webhooks/stripe` |
+| Categorias | `GET /categorias` · `POST /categorias` · `PATCH /categorias/:id` · `DELETE /categorias/:id?mover_para=` |
+| Contas | `GET /contas` · `POST /contas` · `PATCH /contas/:id` · `DELETE /contas/:id` **(proposta; tabela existe no PDF, rotas não)** |
+| Transações | `GET /transacoes` · `GET /transacoes/totais` · `POST /transacoes` · `PATCH /transacoes/:id` · `DELETE /transacoes/:id` · `POST /transacoes/lote` · `POST /transacoes/:id/unir` **(proposta, conflito Open Finance)** |
+| Recorrências | `GET /recorrencias` · `POST /recorrencias` · `PATCH /recorrencias/:id` · `DELETE /recorrencias/:id` |
+| Cartões e faturas | `GET /cartoes` · `POST /cartoes` · `PATCH /cartoes/:id` · `DELETE /cartoes/:id` · `GET /cartoes/:id/faturas` · `GET /faturas/:id` · `POST /faturas/:id/pagar` |
+| Parcelamentos | `GET /parcelamentos` · `POST /parcelamentos` · `PATCH /parcelamentos/:id` · `DELETE /parcelamentos/:id` · `POST /parcelas/:id/pagar` · `POST /parcelas/:id/desfazer` · `POST /parcelamentos/simular` |
+| Orçamentos e metas | `GET /orcamentos?competencia=` · `PUT /orcamentos` · `GET /metas` · `POST /metas` · `PATCH /metas/:id` · `POST /metas/:id/aportes` |
+| Dashboard e relatórios | `GET /dashboard?periodo=` · `GET /relatorios/:tipo?inicio=&fim=` · `POST /relatorios/exportar` |
+| Listas de compras | `GET /listas` · `POST /listas` · `PATCH /listas/:id` · `DELETE /listas/:id` · `POST /listas/:id/itens` · `PATCH /itens/:id` · `DELETE /itens/:id` **(proposta)** · `POST /listas/:id/finalizar` |
+| Compartilhamento | `POST /compartilhamentos` · `POST /compartilhamentos/:id/aceitar` · `DELETE /compartilhamentos/:id` |
+| Lembretes e agenda | `GET /lembretes` · `POST /lembretes` · `PATCH /lembretes/:id` · `POST /lembretes/:id/concluir` · `POST /lembretes/:id/adiar` · `GET /agenda?inicio=&fim=` · `POST /agendas/conectar` · `GET /agendas/oauth/callback` **(proposta)** · `POST /compromissos` · `PATCH /compromissos/:id` **(proposta)** |
+| Notificações | `GET /notificacoes` · `POST /notificacoes/:id/lida` · `GET /preferencias-alerta` · `PUT /preferencias-alerta` |
+| Apps de compra | `GET /apps-monitorados` · `PUT /apps-monitorados` · `POST /eventos/app-compra-aberto` |
+| Open Finance | `POST /open-finance/token-conexao` · `GET /open-finance/conexoes` · `POST /open-finance/conexoes/:id/sincronizar` · `DELETE /open-finance/conexoes/:id` · `POST /webhooks/open-finance` |
+| Mony | `POST /mony/mensagens` (SSE) · `POST /mony/acoes` · `GET /mony/conversa` · `POST /mony/nfce` |
+| Arquivos | `POST /arquivos` (retorna URL assinada de upload) · `GET /arquivos/:id` (retorna URL assinada de leitura) |
+| Novidades | `GET /novidades` · `POST /novidades/:id/lida` |
+| Admin | `GET /admin/usuarios` · `PATCH /admin/usuarios/:id` · `GET /admin/assinaturas` · `GET /admin/metricas` · CRUD `/admin/novidades` · `GET/PUT /admin/mony/config` · `GET /admin/logs-ia` · `GET/PUT /admin/planos` · `GET/PUT /admin/limites` · CRUD `/admin/cupons` · `GET /admin/auditoria` **(proposta)** |
+| Tempo real | WebSocket `/v1/ws` (Socket.IO), salas `lista:<id>` para listas compartilhadas |
+
+## Guardas e decoradores
+
+| Decorador | Função |
+|---|---|
+| `@Publico()` | Rota sem token (cadastro, login, webhooks) |
+| `@UsuarioAtual()` | Injeta `{ usuarioId, dispositivoId, papel }` do JWT |
+| `@RecursoLimitado('lancamento')` | Confere e consome cota do plano gratuito de forma atômica antes do handler (RN-122) |
+| `@ExigePlano('pago')` | Bloqueia Open Finance, detecção de apps e ligação no gratuito (RN-121) |
+| `@Admin()` | Papel admin + sessão de admin com 2FA |
+| `@Webhook('stripe')`, `@Webhook('open-finance')` | Valida assinatura do corpo bruto, registra evento e deduplica |
+
+## Webhooks
+
+1. Validar assinatura com o corpo bruto.
+2. Gravar em `webhook_eventos` (proposta, ver [06](06-modelo-de-dados.md#tabelas-propostas)) com `id_externo` único. Se já existe, responder 200 e parar.
+3. Responder 200 rápido e processar numa fila (`webhooks`), com retry e backoff.
+
+## Filas BullMQ
+
+| Fila | Uso |
+|---|---|
+| `eventos-dominio` | Reações a eventos (alertas pós-lançamento, preferências aprendidas) |
+| `notificacoes` | Envio de push, gravação na central, mensagem da Mony |
+| `mony-midia` | Transcrição de áudio, leitura de foto/PDF, NFC-e |
+| `open-finance` | Sincronizações por webhook e periódicas |
+| `webhooks` | Processamento de eventos Stripe e Open Finance |
+| `relatorios` | Exportação PDF/XLSX e exportação LGPD |
+| `lembretes` | Disparo por minuto e ligações |
+| `agenda` | Sincronização Google/Microsoft |
+| `rotinas` | Rotinas diárias, semanais e mensais (ver [09](09-notificacoes-e-rotinas.md#rotinas-agendadas)) |
+
+Jobs são idempotentes (chave de job determinística, ex.: `fechar-fatura:<faturaId>`), com retry exponencial e fila de falhas monitorada.
