@@ -14,7 +14,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "prisma": "prisma",
-    "seed": "prisma db seed"
+    "seed": "prisma db seed",
+    "openapi:exportar": "pnpm run generate && pnpm run build && node dist/exportar-openapi.js"
   },
   "dependencies": {
     "@fastify/static": "^10.1.5",

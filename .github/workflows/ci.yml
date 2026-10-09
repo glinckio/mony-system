@@ -53,6 +53,18 @@ jobs:
       - name: Build, lint, typecheck e testes
         run: pnpm turbo run build lint typecheck test
 
+      - name: Cliente da API em dia com o contrato
+        # Exporta o OpenAPI da API e gera o @mony/api-client de novo; qualquer diferença quer dizer
+        # que o contrato mudou e o cliente commitado ficou para trás (doc 02, T-009).
+        run: |
+          pnpm --filter @mony/api-client generate
+          mudancas=$(git status --porcelain -- packages/api-client)
+          if [ -n "$mudancas" ]; then
+            arquivos=$(echo "$mudancas" | awk '{print $2}' | paste -sd ' ')
+            echo "::error title=Cliente da API desatualizado::Rode pnpm --filter @mony/api-client generate e commite. Arquivos: $arquivos"
+            exit 1
+          fi
+
   # Migrações do Prisma e testes de integração com Postgres e Redis de verdade (doc 12 e 14).
   # O check "Banco" também é obrigatório para mergear na main.
   banco:
