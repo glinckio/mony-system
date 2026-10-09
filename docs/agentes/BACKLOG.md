@@ -31,7 +31,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
 - [x] **T-005** Ambiente local com Docker Compose (PR #4)
   - dep: T-001 · docs: 12
   - Aceite: `docker compose up -d` sobe Postgres, Redis, S3 local (SeaweedFS, no lugar do MinIO; ver DECISOES) e Mailpit; instruções no README.
-- [ ] **T-006** Esqueleto da API NestJS (Fastify, config Zod, pino, health check, filtro de erros, OpenAPI)
+- [x] **T-006** Esqueleto da API NestJS (Fastify, config Zod, pino, health check, filtro de erros, OpenAPI) (PR #6)
   - dep: T-003, T-005 · docs: 05
   - Aceite: `GET /v1/health` responde; erro segue o formato `{ erro: { codigo, mensagem } }`; `/v1/docs` fora de produção; entrypoints `main.ts` e `worker.ts`.
 - [ ] **T-007** Prisma: schema inicial completo e seed
@@ -51,6 +51,9 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
   - Aceite: tokens em um arquivo único, NativeWind configurado, componentes de `src/ui` com testes. Quando o design do cliente chegar, uma tarefa nova troca os tokens.
 - [ ] **T-012** Esqueleto do painel admin (Vite, TanStack Router/Query, shadcn/ui, cliente gerado)
   - dep: T-009 · docs: 13
+- [ ] **T-014** Migrar a API para NestJS 12 (ESM) quando o `nestjs-zod` suportar
+  - dep: T-006 · docs: 02, 05
+  - Aceite: `@nestjs/*` 12, `nestjs-zod` com suporte oficial ao Nest 12, API em ESM, testes e CI verdes. Ver DECISOES (2026-10-09, T-006).
 - [ ] **T-013** Terraform de staging (VPC, ECS api e worker, RDS, ElastiCache, S3, Secrets Manager, ALB) e deploy de staging no merge
   - dep: T-006, T-004 · docs: 12
   - 👤 Conta AWS e credenciais do CI. O agente escreve o Terraform e o workflow; o humano aplica.
