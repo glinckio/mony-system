@@ -22,6 +22,7 @@ jobs:
     env:
       HUSKY: '0'
       TURBO_TELEMETRY_DISABLED: '1'
+      EXPO_NO_TELEMETRY: '1'
     steps:
       - name: Baixar o código
         uses: actions/checkout@v7
@@ -51,6 +52,7 @@ jobs:
         run: pnpm format:check
 
       - name: Build, lint, typecheck e testes
+        # O build do app (`apps/mobile`) empacota o JS de iOS e Android com o Metro, como o EAS faz.
         run: pnpm turbo run build lint typecheck test
 
       - name: Arquivos gerados commitados
@@ -64,6 +66,10 @@ jobs:
             echo "::error title=Arquivo gerado desatualizado::Rode pnpm build e commite. Arquivos: $arquivos"
             exit 1
           fi
+
+      - name: App com as versões do SDK do Expo
+        # Pacote nativo fora da versão do SDK quebra o build do EAS (doc 02, T-010).
+        run: pnpm --filter mobile exec expo install --check
 
       - name: Cliente da API em dia com o contrato
         # Exporta o OpenAPI da API e gera o @mony/api-client de novo; qualquer diferença quer dizer
