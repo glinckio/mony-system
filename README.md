@@ -89,6 +89,37 @@ pnpm --filter @mony/api-client generate   # exporta packages/api-client/openapi.
 
 Commite o `openapi.json` e o `src/gerado/` junto com a mudança da API; o CI falha se o cliente estiver desatualizado. No app e no admin, configure uma vez com `configurarCliente({ urlBase, obterToken })` e use os hooks (`useVerificarSaude()` etc.). Erros chegam como `ErroApi`, com o `codigo` do catálogo de `@mony/shared/erros`.
 
+## App mobile (`apps/mobile`)
+
+Expo SDK 57 (React Native 0.86) com Expo Router, em **development build** (`expo-dev-client`): o Expo Go não serve, porque o app terá módulos nativos próprios. Android 7+ e iOS 16.4+.
+
+```bash
+cp apps/mobile/.env.example apps/mobile/.env   # uma vez; ajuste EXPO_PUBLIC_API_URL
+pnpm --filter mobile start      # Metro para o dev client instalado no aparelho ou emulador
+pnpm --filter mobile android    # gera o projeto nativo e instala no emulador (precisa do Android Studio)
+pnpm --filter mobile ios        # idem no simulador (só no macOS, com Xcode)
+pnpm --filter mobile build      # empacota o JS de iOS e Android em apps/mobile/dist (o CI roda)
+```
+
+- **URL da API:** `http://localhost:3000` serve no simulador iOS. No emulador Android use `http://10.0.2.2:3000`; em aparelho, o IP do computador na rede (`http://192.168.x.x:3000`).
+- **Ambientes:** `APP_ENV` = `development`, `preview` ou `production` (perfis do [`eas.json`](apps/mobile/eas.json)). Cada um tem nome, identificador e esquema de link próprios (`mony-dev://`, `mony-preview://`, `mony://`), então os três convivem no mesmo aparelho. Tudo em [`app.config.ts`](apps/mobile/app.config.ts).
+- **Rotas** ficam em `app/` (finas: só importam a tela de `src/features/<feature>/screens`); textos em `src/features/<feature>/<feature>.strings.ts`, via i18next (`t('cartoes.titulo')`, chave conferida pelo TypeScript). Detalhes em [`docs/arquitetura/04`](docs/arquitetura/04-app-mobile.md).
+- **Sem login ainda** (T-030): em desenvolvimento, a tela de login tem o atalho "Ver o app sem entrar", que não existe em preview e produção.
+- **Pastas `ios/` e `android/`** são geradas pelo `expo prebuild` e ficam fora do Git: nada nativo é editado à mão.
+
+### EAS (builds e updates)
+
+Precisa da conta Expo do cliente. Uma vez, na pasta `apps/mobile`:
+
+```bash
+npm install -g eas-cli
+eas login
+eas init                        # cria o projeto; copie o projectId para PROJETO_EAS no app.config.ts
+eas build --profile development --platform android   # dev client para instalar no aparelho
+```
+
+Antes do primeiro build de `preview` ou `production`: defina `EXPO_PUBLIC_API_URL` (e `EXPO_PUBLIC_SENTRY_DSN`, se houver) nas variáveis do ambiente correspondente no EAS, e `SENTRY_AUTH_TOKEN` como segredo para o envio de source maps (ou `SENTRY_DISABLE_AUTO_UPLOAD=true`).
+
 ## Painel admin (`apps/admin`)
 
 React 19 + Vite 8, TanStack Router (rotas por arquivo) e TanStack Query, com shadcn/ui sobre Tailwind 4. Usa o mesmo `@mony/api-client` do app.
@@ -110,7 +141,7 @@ pnpm install          # instala as dependências de todos os pacotes
 pnpm lint             # turbo run lint
 pnpm typecheck        # turbo run typecheck
 pnpm test             # turbo run test
-pnpm build            # turbo run build
+pnpm build            # turbo run build (inclui empacotar o JS do app)
 pnpm dev              # turbo run dev (api, worker e admin, quando existirem)
 pnpm format           # Prettier em todo o repositório (pnpm format:check só confere)
 ```
