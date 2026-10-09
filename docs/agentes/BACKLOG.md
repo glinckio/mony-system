@@ -28,9 +28,9 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
 - [x] **T-004** CI no GitHub Actions (PR #3)
   - dep: T-002 · docs: 12, 14
   - Aceite: workflow em PR roda install, lint, typecheck, test com cache do Turborepo; status obrigatório configurado como check. 👤 Proteção da branch `main` (exigir PR e CI verde) é configurada pelo humano se o agente não tiver permissão de admin.
-- [ ] **T-005** Ambiente local com Docker Compose
+- [x] **T-005** Ambiente local com Docker Compose (PR #4)
   - dep: T-001 · docs: 12
-  - Aceite: `docker compose up -d` sobe Postgres, Redis, MinIO e Mailpit; instruções no README.
+  - Aceite: `docker compose up -d` sobe Postgres, Redis, S3 local (SeaweedFS, no lugar do MinIO; ver DECISOES) e Mailpit; instruções no README.
 - [ ] **T-006** Esqueleto da API NestJS (Fastify, config Zod, pino, health check, filtro de erros, OpenAPI)
   - dep: T-003, T-005 · docs: 05
   - Aceite: `GET /v1/health` responde; erro segue o formato `{ erro: { codigo, mensagem } }`; `/v1/docs` fora de produção; entrypoints `main.ts` e `worker.ts`.

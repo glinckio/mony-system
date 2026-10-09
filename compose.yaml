@@ -1,0 +1,67 @@
+# Serviços do ambiente local (docs/arquitetura/12). Só para desenvolvimento: senhas falsas.
+# Subir: docker compose up -d --wait   ·   Parar: docker compose down   ·   Apagar dados: docker compose down -v
+# Portas podem ser trocadas por variável de ambiente (ex.: POSTGRES_PORTA=5433) ou num arquivo .env na raiz.
+name: mony
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: mony
+      POSTGRES_PASSWORD: mony-local
+      POSTGRES_DB: mony
+    ports:
+      - '${POSTGRES_PORTA:-5432}:5432'
+    volumes:
+      # No Postgres 18 o volume é /var/lib/postgresql (não mais /var/lib/postgresql/data).
+      - postgres-dados:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U mony -d mony']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:8-alpine
+    # AOF e noeviction: o BullMQ não pode perder nem ter jobs despejados (doc 12).
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+    ports:
+      - '${REDIS_PORTA:-6379}:6379'
+    volumes:
+      - redis-dados:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # S3 local. Substitui o MinIO, cujas imagens saíram do Docker Hub (ver DECISOES).
+  s3:
+    image: chrislusf/seaweedfs:4.48
+    command: ['mini', '-master.telemetry=false']
+    environment:
+      AWS_ACCESS_KEY_ID: mony-local
+      AWS_SECRET_ACCESS_KEY: mony-local-segredo
+      S3_BUCKET: mony-local
+    ports:
+      - '${S3_PORTA:-8333}:8333'
+      - '${S3_PAINEL_PORTA:-23646}:23646'
+    volumes:
+      - s3-dados:/data
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:8333/healthz']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # Captura os e-mails enviados pela API (EmailProvider em dev). Painel em http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.31
+    ports:
+      - '${SMTP_PORTA:-1025}:1025'
+      - '${MAILPIT_PAINEL_PORTA:-8025}:8025'
+
+volumes:
+  postgres-dados:
+  redis-dados:
+  s3-dados:

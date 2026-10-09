@@ -31,7 +31,25 @@ As pastas de `apps/`, `packages/` e `modules/` são criadas pelas tarefas do [BA
 - **Node.js 24** (LTS). A versão está em [`.nvmrc`](.nvmrc): com nvm, `nvm use`; no Windows com nvm-windows, `nvm install 24 && nvm use 24`.
 - **pnpm 12**. Instale uma vez com `npm install -g pnpm`; o pnpm troca sozinho para a versão fixada no campo `packageManager` do `package.json`.
 - **Git** e **GitHub CLI** (`gh`), autenticado com `gh auth login`. O protocolo de trabalho usa o `gh` para PRs.
-- **Docker** (a partir da tarefa T-005, para Postgres, Redis, MinIO e Mailpit).
+- **Docker** com Docker Compose, para os serviços do ambiente local.
+
+## Ambiente local
+
+```bash
+docker compose up -d --wait   # sobe os serviços e espera ficarem saudáveis
+docker compose ps             # estado dos serviços
+docker compose down           # para (os dados ficam nos volumes)
+docker compose down -v        # para e apaga os dados
+```
+
+| Serviço | Endereço | Acesso (só desenvolvimento) |
+|---|---|---|
+| Postgres 18 | `localhost:5432` | usuário `mony`, senha `mony-local`, banco `mony` |
+| Redis 8 | `localhost:6379` | sem senha |
+| S3 local (SeaweedFS) | `http://localhost:8333` | chave `mony-local`, segredo `mony-local-segredo`, bucket `mony-local`; painel em `http://localhost:23646` |
+| Mailpit | SMTP em `localhost:1025` | e-mails capturados em `http://localhost:8025` |
+
+Porta ocupada na sua máquina? Defina `POSTGRES_PORTA`, `REDIS_PORTA`, `S3_PORTA`, `S3_PAINEL_PORTA`, `SMTP_PORTA` ou `MAILPIT_PAINEL_PORTA` no ambiente ou num arquivo `.env` na raiz (ex.: `POSTGRES_PORTA=5433`).
 
 ## Comandos
 
