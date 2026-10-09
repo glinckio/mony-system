@@ -146,8 +146,11 @@ jobs:
 
       - name: Imagem da API sobe
         # Sem banco e sem Redis de verdade a API sobe e responde o health check (conexões são preguiçosas).
+        # Em produção a chave dos tokens é obrigatória: o CI gera uma descartável.
         run: |
-          docker run -d --name api -p 3000:3000 \
+          JWT_CHAVE_PRIVADA="$(openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256)"
+          export JWT_CHAVE_PRIVADA
+          docker run -d --name api -p 3000:3000 -e JWT_CHAVE_PRIVADA \
             -e DATABASE_URL=postgresql://x:y@127.0.0.1:5432/z -e REDIS_URL=redis://127.0.0.1:6379 mony-api:ci
           for tentativa in $(seq 1 30); do
             if curl -fsS http://localhost:3000/v1/health; then
