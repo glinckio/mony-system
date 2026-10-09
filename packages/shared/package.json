@@ -25,6 +25,10 @@
     "./erros": {
       "types": "./dist/erros.d.ts",
       "default": "./dist/erros.js"
+    },
+    "./nfce": {
+      "types": "./dist/nfce.d.ts",
+      "default": "./dist/nfce.js"
     }
   },
   "scripts": {
