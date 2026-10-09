@@ -1,0 +1,116 @@
+# Deploy da API e do worker em staging a cada merge na main (docs/arquitetura/12):
+# imagem → ECR, migrações e seed numa tarefa avulsa, depois deploy dos serviços api e worker.
+# Só roda depois que a infra existir e as variáveis STAGING_* estiverem no repositório
+# (infra/README.md). Sem elas, o job é pulado.
+name: Deploy de staging
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/api/**
+      - packages/shared/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - turbo.json
+      - .dockerignore
+      - .github/workflows/deploy-staging.yml
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: API em staging
+    if: vars.STAGING_AWS_PAPEL_DEPLOY != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    # O papel da AWS só aceita jobs deste ambiente (infra/modulos/ambiente/deploy.tf).
+    environment: staging
+    env:
+      CLUSTER: ${{ vars.STAGING_ECS_CLUSTER }}
+      REPOSITORIO: ${{ vars.STAGING_ECR_REPOSITORIO }}
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+
+      - name: Entrar na AWS (OIDC, sem chave guardada)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.STAGING_AWS_PAPEL_DEPLOY }}
+          aws-region: ${{ vars.STAGING_AWS_REGIAO }}
+
+      - name: Entrar no ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Preparar o Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Publicar a imagem (tag do commit e tag staging)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.REPOSITORIO }}:${{ github.sha }}
+            ${{ env.REPOSITORIO }}:staging
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
+
+      - name: Migrações e seed
+        # Tarefa avulsa com a imagem nova, antes dos serviços: migração é sempre compatível com a
+        # versão anterior (expandir → migrar → contrair), então a API velha segue no ar enquanto isso.
+        env:
+          TAREFA: ${{ vars.STAGING_TAREFA_API }}
+          SUBREDES: ${{ vars.STAGING_SUBREDES }}
+          GRUPO: ${{ vars.STAGING_GRUPO_API }}
+          LOG: ${{ vars.STAGING_LOG_API }}
+        run: |
+          rede="awsvpcConfiguration={subnets=[$SUBREDES],securityGroups=[$GRUPO],assignPublicIp=DISABLED}"
+          comando='{"containerOverrides":[{"name":"api","command":["sh","-c","prisma migrate deploy && prisma db seed"]}]}'
+          tarefa=$(aws ecs run-task --cluster "$CLUSTER" --launch-type FARGATE \
+            --task-definition "$TAREFA" --network-configuration "$rede" --overrides "$comando" \
+            --started-by "deploy-${GITHUB_SHA::7}" --query 'tasks[0].taskArn' --output text)
+          echo "Tarefa: $tarefa"
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$tarefa"
+          aws logs get-log-events --log-group-name "$LOG" --log-stream-name "api/api/${tarefa##*/}" \
+            --start-from-head --query 'events[].message' --output text | tr '\t' '\n' || true
+          codigo=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$tarefa" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          if [ "$codigo" != "0" ]; then
+            motivo=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$tarefa" \
+              --query 'tasks[0].stoppedReason' --output text)
+            echo "::error title=Migração falhou::Código de saída $codigo. $motivo"
+            exit 1
+          fi
+
+      - name: Atualizar api e worker
+        # Os serviços usam a tag staging; um deploy novo pega a imagem que acabou de ser publicada.
+        # Se a versão nova não ficar saudável, o ECS volta sozinho para a anterior (circuit
+        # breaker); por isso, além de esperar estabilizar, o passo confere que o deploy novo venceu.
+        run: |
+          declare -A deploys
+          for servico in api worker; do
+            deploys[$servico]=$(aws ecs update-service --cluster "$CLUSTER" --service "$servico" \
+              --force-new-deployment --query "service.deployments[?status=='PRIMARY'].id | [0]" --output text)
+            echo "$servico: deploy ${deploys[$servico]}"
+          done
+          aws ecs wait services-stable --cluster "$CLUSTER" --services api worker
+          for servico in api worker; do
+            estado=$(aws ecs describe-services --cluster "$CLUSTER" --services "$servico" \
+              --query "services[0].deployments[?id=='${deploys[$servico]}'].rolloutState | [0]" --output text)
+            if [ "$estado" != "COMPLETED" ]; then
+              echo "::error title=Deploy de $servico não concluiu::Estado: $estado. O ECS manteve a versão anterior; veja os logs em /mony/staging/$servico."
+              exit 1
+            fi
+          done
+          echo "::notice title=Staging atualizado::Imagem ${GITHUB_SHA::7} no ar (api e worker)."
