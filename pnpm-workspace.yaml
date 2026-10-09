@@ -3,5 +3,8 @@ packages:
   - packages/*
   - modules/*
 allowBuilds:
+  '@prisma/engines': false
   '@scarf/scarf': false
   '@swc/core': true
+  esbuild: true
+  prisma: false

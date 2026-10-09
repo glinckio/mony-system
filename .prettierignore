@@ -9,3 +9,5 @@ coverage/
 apps/mobile/ios/
 apps/mobile/android/
 packages/config/test/fixtures/
+apps/api/src/generated/
+apps/api/prisma/migrations/

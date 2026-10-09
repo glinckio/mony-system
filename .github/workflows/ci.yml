@@ -52,3 +52,105 @@ jobs:
 
       - name: Build, lint, typecheck e testes
         run: pnpm turbo run build lint typecheck test
+
+  # Migrações do Prisma num Postgres de verdade (doc 12: checagem de migração no PR).
+  # O check "Banco" também é obrigatório para mergear na main.
+  banco:
+    name: Banco
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: mony
+          POSTGRES_PASSWORD: mony-ci
+          POSTGRES_DB: mony
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mony -d mony"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      HUSKY: '0'
+      DATABASE_URL: postgresql://mony:mony-ci@localhost:5432/mony
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+
+      - name: Instalar pnpm (versão do packageManager) com cache do store
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - name: Instalar Node (versão do .nvmrc)
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Schema válido
+        run: pnpm --filter api exec prisma validate
+
+      - name: Migrações aplicam em banco limpo
+        run: pnpm --filter api exec prisma migrate deploy
+
+      - name: Schema e migrações batem
+        id: diferenca
+        run: |
+          set +e
+          pnpm --filter api exec prisma migrate diff --from-config-datasource \
+            --to-schema prisma/schema.prisma --script --exit-code > "$RUNNER_TEMP/faltando.sql"
+          codigo=$?
+          set -e
+          if [ "$codigo" = "2" ]; then
+            echo "::error title=Migração faltando::O schema.prisma tem mudanças sem migração. Rode: pnpm --filter api prisma migrate dev --name <nome>"
+            echo "faltando=sim" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          exit "$codigo"
+
+      - name: Comentar no PR o SQL da migração que falta
+        if: failure() && steps.diferenca.outputs.faltando == 'sim' && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 - <<'PY'
+          import os, subprocess
+          ruido = ('Loaded Prisma config', 'Prisma schema loaded', 'Datasource')
+          linhas = [l for l in open(os.path.join(os.environ['RUNNER_TEMP'], 'faltando.sql'))
+                    if not l.startswith(ruido)]
+          partes, atual = [], ''
+          for linha in linhas:
+              if len(atual) + len(linha) > 60000:
+                  partes.append(atual)
+                  atual = ''
+              atual += linha
+          if atual:
+              partes.append(atual)
+          for i, sql in enumerate(partes, 1):
+              corpo = (
+                  f"<!-- migracao-sugerida sha={os.environ['SHA']} parte={i}/{len(partes)} -->\n"
+                  f"**Migração faltando** (parte {i} de {len(partes)}). O `schema.prisma` mudou e "
+                  "nenhuma migração cobre a mudança. O normal é rodar "
+                  "`pnpm --filter api prisma migrate dev --name <nome>` com o banco local; "
+                  "o SQL abaixo é o que o Prisma gera a partir das migrações existentes.\n\n"
+                  f"```sql\n{sql}```\n"
+              )
+              subprocess.run(['gh', 'pr', 'comment', os.environ['PR'], '--body-file', '-'],
+                             input=corpo.encode(), check=True)
+          PY
+
+      - name: Seed (duas vezes, para provar que pode repetir)
+        run: |
+          pnpm --filter api seed
+          pnpm --filter api seed
