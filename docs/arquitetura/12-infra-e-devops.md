@@ -89,7 +89,7 @@ Migrações: sempre compatíveis com a versão anterior (expandir → migrar →
 ## Ambiente local
 
 ```
-docker compose up -d     # postgres, redis, minio (S3), mailpit
+docker compose up -d --wait   # postgres, redis, seaweedfs (S3), mailpit
 pnpm i
 pnpm --filter api prisma migrate dev && pnpm --filter api seed
 pnpm dev                 # api + worker + admin
