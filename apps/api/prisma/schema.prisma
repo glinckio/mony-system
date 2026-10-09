@@ -1,0 +1,1511 @@
+// Modelo de dados do Mony (docs/arquitetura/06): 41 tabelas do PDF + 9 propostas = 50 tabelas.
+//
+// Convenções (doc 03 e 06):
+// - Modelos em PascalCase singular, tabelas em snake_case plural (@@map); colunas em snake_case (@map).
+// - PK `id` uuid v7 gerado na aplicação; `criado_em` e `atualizado_em` (timestamptz) em todas as tabelas.
+// - Dinheiro em centavos, BigInt. Juros em numeric(9,6). Competência e datas de calendário em `date`.
+// - Exclusão lógica (`excluido_em`) em transacoes, cartoes, parcelamentos e categorias.
+// - Toda tabela com dados do usuário tem `usuario_id` com índice.
+// - Valores de enum iguais aos de @mony/shared/enums (um teste confere).
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────────────────────────
+
+enum PapelUsuario {
+  usuario
+  admin
+
+  @@map("papel_usuario")
+}
+
+enum StatusUsuario {
+  ativo
+  bloqueado
+  excluido
+
+  @@map("status_usuario")
+}
+
+enum ProvedorLoginSocial {
+  google
+  apple
+
+  @@map("provedor_login_social")
+}
+
+enum PlataformaDispositivo {
+  ios
+  android
+
+  @@map("plataforma_dispositivo")
+}
+
+enum Plano {
+  teste
+  gratuito
+  mensal
+  anual
+
+  @@map("plano")
+}
+
+enum PlanoPago {
+  mensal
+  anual
+
+  @@map("plano_pago")
+}
+
+enum StatusAssinatura {
+  ativa
+  inadimplente
+  cancelada
+
+  @@map("status_assinatura")
+}
+
+enum RecursoPlano {
+  lancamento
+  mensagem_mony
+  leitura_documento
+  cartao
+  lista_compras
+  lembrete_ativo
+  relatorio
+
+  @@map("recurso_plano")
+}
+
+enum TipoCategoria {
+  receita
+  despesa
+
+  @@map("tipo_categoria")
+}
+
+enum TipoTransacao {
+  receita
+  despesa
+
+  @@map("tipo_transacao")
+}
+
+enum TipoConta {
+  corrente
+  poupanca
+  carteira
+
+  @@map("tipo_conta")
+}
+
+enum OrigemConta {
+  manual
+  open_finance
+
+  @@map("origem_conta")
+}
+
+enum StatusFatura {
+  aberta
+  fechada
+  paga
+  parcial
+  atrasada
+
+  @@map("status_fatura")
+}
+
+enum StatusTransacao {
+  pago
+  pendente
+
+  @@map("status_transacao")
+}
+
+enum FormaPagamento {
+  cartao_credito
+  pix
+  debito
+  dinheiro
+  boleto
+
+  @@map("forma_pagamento")
+}
+
+enum OrigemTransacao {
+  manual
+  mony
+  open_finance
+  foto
+
+  @@map("origem_transacao")
+}
+
+enum NaturezaTransacao {
+  normal
+  pagamento_fatura
+  transferencia
+
+  @@map("natureza_transacao")
+}
+
+enum FrequenciaRecorrencia {
+  semanal
+  mensal
+  anual
+
+  @@map("frequencia_recorrencia")
+}
+
+enum TipoParcelamento {
+  compra_cartao
+  divida
+
+  @@map("tipo_parcelamento")
+}
+
+enum StatusParcelamento {
+  ativa
+  quitada
+  atrasada
+  cancelada
+
+  @@map("status_parcelamento")
+}
+
+enum StatusParcela {
+  pendente
+  pago
+  atrasado
+
+  @@map("status_parcela")
+}
+
+enum TipoAnexo {
+  foto
+  pdf
+  comprovante
+
+  @@map("tipo_anexo")
+}
+
+enum CategoriaLista {
+  mercado
+  casa
+  carro
+  farmacia
+  outra
+
+  @@map("categoria_lista")
+}
+
+enum RecursoCompartilhavel {
+  lista
+  lembrete
+
+  @@map("recurso_compartilhavel")
+}
+
+enum PermissaoCompartilhamento {
+  ver
+  editar
+
+  @@map("permissao_compartilhamento")
+}
+
+enum StatusConvite {
+  pendente
+  aceito
+  recusado
+
+  @@map("status_convite")
+}
+
+enum CanalLembrete {
+  push
+  alarme
+  ligacao
+
+  @@map("canal_lembrete")
+}
+
+enum StatusLembrete {
+  ativo
+  concluido
+  cancelado
+
+  @@map("status_lembrete")
+}
+
+enum ProvedorAgenda {
+  google
+  outlook
+  aparelho
+
+  @@map("provedor_agenda")
+}
+
+enum OrigemCompromisso {
+  app
+  mony
+  externo
+
+  @@map("origem_compromisso")
+}
+
+enum TipoAlerta {
+  limite_cartao
+  fatura_fechada
+  fatura_vencimento
+  fatura_atrasada
+  orcamento
+  gasto_fora_padrao
+  projecao_mes
+  vencimento_pendente
+  app_compra
+  lembrete
+  compromisso
+  resumo_periodo
+  open_finance
+  assinatura
+  novidade
+
+  @@map("tipo_alerta")
+}
+
+enum StatusConexaoOpenFinance {
+  ativa
+  atualizando
+  erro_login
+  consentimento_expirado
+  desconectada
+
+  @@map("status_conexao_open_finance")
+}
+
+enum AutorMensagem {
+  usuario
+  mony
+
+  @@map("autor_mensagem")
+}
+
+enum TipoMensagem {
+  texto
+  audio
+  imagem
+  pdf
+  botao
+
+  @@map("tipo_mensagem")
+}
+
+enum TipoImportacao {
+  foto
+  pdf
+
+  @@map("tipo_importacao")
+}
+
+enum StatusImportacao {
+  processando
+  aguardando_confirmacao
+  confirmada
+  descartada
+  erro
+
+  @@map("status_importacao")
+}
+
+enum StatusNovidade {
+  rascunho
+  publicada
+  arquivada
+
+  @@map("status_novidade")
+}
+
+enum ProvedorWebhook {
+  stripe
+  open_finance
+
+  @@map("provedor_webhook")
+}
+
+enum DocumentoAceite {
+  termos
+  privacidade
+
+  @@map("documento_aceite")
+}
+
+enum FinalidadeConsentimento {
+  open_finance
+  agenda
+  apps_compra
+  ligacao
+
+  @@map("finalidade_consentimento")
+}
+
+enum TipoControleTeste {
+  email
+  google
+  apple
+  aparelho
+
+  @@map("tipo_controle_teste")
+}
+
+// ─── Conta e assinatura (9) ─────────────────────────────────────────────────────────────────────
+
+model Usuario {
+  id                   String        @id @default(uuid(7)) @db.Uuid
+  nome                 String
+  /// Único e sempre em minúsculas (RN-001); a normalização é feita na aplicação.
+  email                String        @unique
+  telefone             String?
+  /// Nulo para quem só entra por login social.
+  senhaHash            String?       @map("senha_hash")
+  fotoUrl              String?       @map("foto_url")
+  papel                PapelUsuario  @default(usuario)
+  status               StatusUsuario @default(ativo)
+  onboardingConcluido  Boolean       @default(false) @map("onboarding_concluido")
+  ultimoAcesso         DateTime?     @map("ultimo_acesso") @db.Timestamptz(6)
+  /// ADR-008: dia, mês, silêncio e rotinas no fuso do usuário.
+  fusoHorario          String        @default("America/Sao_Paulo") @map("fuso_horario")
+  /// Ligação de voz só para número verificado (RN-078).
+  telefoneVerificadoEm DateTime?     @map("telefone_verificado_em") @db.Timestamptz(6)
+  criadoEm             DateTime      @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm         DateTime      @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  loginsSociais          LoginSocial[]
+  dispositivos           Dispositivo[]
+  sessoes                Sessao[]
+  codigosRecuperacao     CodigoRecuperacao[]
+  assinatura             Assinatura?
+  precosAlterados        PlanoPreco[]
+  usoRecursos            UsoRecurso[]
+  categorias             Categoria[]
+  contas                 Conta[]
+  cartoes                Cartao[]
+  faturas                Fatura[]
+  transacoes             Transacao[]
+  recorrencias           Recorrencia[]
+  parcelamentos          Parcelamento[]
+  parcelas               Parcela[]
+  anexos                 Anexo[]
+  nfceNotas              NfceNota[]
+  nfceItens              NfceItem[]
+  orcamentos             Orcamento[]
+  metas                  Meta[]
+  metasAportes           MetaAporte[]
+  listasCompras          ListaCompras[]
+  itensLista             ItemLista[]
+  compartilhamentos      Compartilhamento[]     @relation("CompartilhamentoDono")
+  convitesRecebidos      Compartilhamento[]     @relation("CompartilhamentoConvidado")
+  lembretes              Lembrete[]
+  agendasConectadas      AgendaConectada[]
+  compromissos           Compromisso[]
+  notificacoes           Notificacao[]
+  preferenciasAlerta     PreferenciaAlerta[]
+  appsMonitorados        AppMonitorado[]
+  conexoesOpenFinance    ConexaoOpenFinance[]
+  conversas              Conversa[]
+  mensagens              Mensagem[]
+  rascunhos              RascunhoLancamento[]
+  preferenciasAprendidas PreferenciaAprendida[]
+  logsIa                 LogIa[]
+  novidadesAutoradas     Novidade[]
+  novidadesLidas         NovidadeLeitura[]
+  registrosAuditoria     RegistroAuditoria[]
+  aceitesTermos          AceiteTermos[]
+  consentimentos         Consentimento[]
+  cuponsCriados          Cupom[]
+  monyConfigsCriadas     MonyConfig[]
+  ligacoes               Ligacao[]
+  dicasVistas            DicaVista[]
+  importacoesDocumento   ImportacaoDocumento[]
+
+  @@map("usuarios")
+}
+
+model LoginSocial {
+  id           String              @id @default(uuid(7)) @db.Uuid
+  usuarioId    String              @map("usuario_id") @db.Uuid
+  provedor     ProvedorLoginSocial
+  idExterno    String              @map("id_externo")
+  criadoEm     DateTime            @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime            @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([provedor, idExterno])
+  @@index([usuarioId])
+  @@map("logins_sociais")
+}
+
+model Dispositivo {
+  id                    String                @id @default(uuid(7)) @db.Uuid
+  usuarioId             String                @map("usuario_id") @db.Uuid
+  plataforma            PlataformaDispositivo
+  tokenPush             String?               @map("token_push")
+  identificadorAparelho String                @map("identificador_aparelho")
+  modelo                String?
+  ultimoUso             DateTime?             @map("ultimo_uso") @db.Timestamptz(6)
+  /// Token inválido nos recibos do push desativa o dispositivo (doc 09).
+  ativo                 Boolean               @default(true)
+  criadoEm              DateTime              @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm          DateTime              @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  sessoes Sessao[]
+
+  @@unique([usuarioId, identificadorAparelho])
+  @@index([usuarioId])
+  @@map("dispositivos")
+}
+
+model Sessao {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  usuarioId        String    @map("usuario_id") @db.Uuid
+  dispositivoId    String?   @map("dispositivo_id") @db.Uuid
+  refreshTokenHash String    @unique @map("refresh_token_hash")
+  expiraEm         DateTime  @map("expira_em") @db.Timestamptz(6)
+  revogadaEm       DateTime? @map("revogada_em") @db.Timestamptz(6)
+  criadoEm         DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm     DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  dispositivo Dispositivo? @relation(fields: [dispositivoId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([dispositivoId])
+  @@map("sessoes")
+}
+
+model CodigoRecuperacao {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  usuarioId    String   @map("usuario_id") @db.Uuid
+  codigoHash   String   @map("codigo_hash")
+  expiraEm     DateTime @map("expira_em") @db.Timestamptz(6)
+  usado        Boolean  @default(false)
+  /// Máximo de 5 tentativas por código (RN-003).
+  tentativas   Int      @default(0)
+  ip           String?
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("codigos_recuperacao")
+}
+
+/// Uma assinatura por usuário; o plano atual e o estado da cobrança.
+model Assinatura {
+  id                   String           @id @default(uuid(7)) @db.Uuid
+  usuarioId            String           @unique @map("usuario_id") @db.Uuid
+  plano                Plano
+  status               StatusAssinatura @default(ativa)
+  planoPrecoId         String?          @map("plano_preco_id") @db.Uuid
+  testeInicio          DateTime?        @map("teste_inicio") @db.Timestamptz(6)
+  testeFim             DateTime?        @map("teste_fim") @db.Timestamptz(6)
+  stripeCustomerId     String?          @unique @map("stripe_customer_id")
+  stripeSubscriptionId String?          @unique @map("stripe_subscription_id")
+  inicio               DateTime?        @db.Timestamptz(6)
+  proximaCobranca      DateTime?        @map("proxima_cobranca") @db.Timestamptz(6)
+  cancelamentoAgendado Boolean          @default(false) @map("cancelamento_agendado")
+  canceladaEm          DateTime?        @map("cancelada_em") @db.Timestamptz(6)
+  criadoEm             DateTime         @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm         DateTime         @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario    Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  planoPreco PlanoPreco? @relation(fields: [planoPrecoId], references: [id], onDelete: SetNull)
+
+  @@index([planoPrecoId])
+  @@map("assinaturas")
+}
+
+/// Histórico de preços (RN-129): novo preço cria nova linha e um novo Price na Stripe.
+model PlanoPreco {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  plano         PlanoPago
+  valor         BigInt
+  stripePriceId String    @unique @map("stripe_price_id")
+  vigente       Boolean   @default(false)
+  vigenteDesde  DateTime  @map("vigente_desde") @db.Timestamptz(6)
+  alteradoPorId String?   @map("alterado_por") @db.Uuid
+  criadoEm      DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm  DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  alteradoPor Usuario?     @relation(fields: [alteradoPorId], references: [id], onDelete: SetNull)
+  assinaturas Assinatura[]
+
+  @@index([plano, vigente])
+  @@index([alteradoPorId])
+  @@map("planos_precos")
+}
+
+/// Limites do plano gratuito (RN-120), editáveis no admin.
+model LimitePlano {
+  id               String       @id @default(uuid(7)) @db.Uuid
+  recurso          RecursoPlano @unique
+  limiteDia        Int?         @map("limite_dia")
+  limiteMes        Int?         @map("limite_mes")
+  /// Limites de quantidade (cartão, lista, lembrete ativo) contam itens existentes (RN-120).
+  limiteQuantidade Int?         @map("limite_quantidade")
+  criadoEm         DateTime     @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm     DateTime     @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@map("limites_plano")
+}
+
+/// Contagem de uso por dia no fuso do usuário (RN-122).
+model UsoRecurso {
+  id           String       @id @default(uuid(7)) @db.Uuid
+  usuarioId    String       @map("usuario_id") @db.Uuid
+  recurso      RecursoPlano
+  data         DateTime     @db.Date
+  quantidade   Int          @default(0)
+  criadoEm     DateTime     @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime     @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, recurso, data])
+  @@map("uso_recursos")
+}
+
+// ─── Finanças (11) ──────────────────────────────────────────────────────────────────────────────
+
+model Categoria {
+  id           String        @id @default(uuid(7)) @db.Uuid
+  usuarioId    String        @map("usuario_id") @db.Uuid
+  nome         String
+  tipo         TipoCategoria
+  cor          String
+  icone        String
+  /// Criada no cadastro a partir da lista padrão (RN-065).
+  padrao       Boolean       @default(false)
+  excluidoEm   DateTime?     @map("excluido_em") @db.Timestamptz(6)
+  criadoEm     DateTime      @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime      @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario                Usuario                @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  transacoes             Transacao[]
+  recorrencias           Recorrencia[]
+  parcelamentos          Parcelamento[]
+  orcamentos             Orcamento[]
+  preferenciasAprendidas PreferenciaAprendida[]
+
+  @@index([usuarioId, tipo])
+  @@map("categorias")
+}
+
+model Conta {
+  id                   String      @id @default(uuid(7)) @db.Uuid
+  usuarioId            String      @map("usuario_id") @db.Uuid
+  nome                 String
+  tipo                 TipoConta
+  saldoInicial         BigInt      @default(0) @map("saldo_inicial")
+  origem               OrigemConta @default(manual)
+  idExterno            String?     @map("id_externo")
+  conexaoOpenFinanceId String?     @map("conexao_open_finance_id") @db.Uuid
+  criadoEm             DateTime    @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm         DateTime    @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario            Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  conexaoOpenFinance ConexaoOpenFinance? @relation(fields: [conexaoOpenFinanceId], references: [id], onDelete: SetNull)
+  transacoes         Transacao[]
+  recorrencias       Recorrencia[]
+  cartoesPagos       Cartao[]            @relation("CartaoContaPagamento")
+
+  @@unique([usuarioId, idExterno])
+  @@index([conexaoOpenFinanceId])
+  @@map("contas")
+}
+
+model Cartao {
+  id                   String      @id @default(uuid(7)) @db.Uuid
+  usuarioId            String      @map("usuario_id") @db.Uuid
+  nome                 String
+  bandeira             String?
+  /// Últimos 4 dígitos (opcional, RN-030).
+  final                String?     @db.VarChar(4)
+  limiteTotal          BigInt      @map("limite_total")
+  /// 1 a 31; dia maior que o mês usa o último dia (RN-032).
+  diaFechamento        Int         @map("dia_fechamento") @db.SmallInt
+  diaVencimento        Int         @map("dia_vencimento") @db.SmallInt
+  cor                  String
+  /// Faixas de alerta de limite em % (RN-038).
+  faixasAlerta         Int[]       @default([50, 80, 100]) @map("faixas_alerta")
+  origem               OrigemConta @default(manual)
+  idExterno            String?     @map("id_externo")
+  conexaoOpenFinanceId String?     @map("conexao_open_finance_id") @db.Uuid
+  /// Conta padrão de onde sai o pagamento da fatura.
+  contaPagamentoId     String?     @map("conta_pagamento_id") @db.Uuid
+  excluidoEm           DateTime?   @map("excluido_em") @db.Timestamptz(6)
+  criadoEm             DateTime    @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm         DateTime    @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario                Usuario                @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  conexaoOpenFinance     ConexaoOpenFinance?    @relation(fields: [conexaoOpenFinanceId], references: [id], onDelete: SetNull)
+  contaPagamento         Conta?                 @relation("CartaoContaPagamento", fields: [contaPagamentoId], references: [id], onDelete: SetNull)
+  faturas                Fatura[]
+  transacoes             Transacao[]
+  recorrencias           Recorrencia[]
+  parcelamentos          Parcelamento[]
+  preferenciasAprendidas PreferenciaAprendida[]
+
+  @@unique([usuarioId, idExterno])
+  @@index([conexaoOpenFinanceId])
+  @@index([contaPagamentoId])
+  @@map("cartoes")
+}
+
+model Fatura {
+  id             String       @id @default(uuid(7)) @db.Uuid
+  usuarioId      String       @map("usuario_id") @db.Uuid
+  cartaoId       String       @map("cartao_id") @db.Uuid
+  /// Mês do vencimento, `YYYY-MM-01` (RN-031).
+  competencia    DateTime     @db.Date
+  dataFechamento DateTime     @map("data_fechamento") @db.Date
+  dataVencimento DateTime     @map("data_vencimento") @db.Date
+  valorTotal     BigInt       @default(0) @map("valor_total")
+  valorPago      BigInt       @default(0) @map("valor_pago")
+  status         StatusFatura @default(aberta)
+  criadoEm       DateTime     @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm   DateTime     @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario    Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  cartao     Cartao      @relation(fields: [cartaoId], references: [id], onDelete: Cascade)
+  transacoes Transacao[]
+  parcelas   Parcela[]
+
+  @@unique([cartaoId, competencia])
+  @@index([usuarioId])
+  @@index([dataVencimento, status])
+  @@map("faturas")
+}
+
+model Transacao {
+  id                 String            @id @default(uuid(7)) @db.Uuid
+  usuarioId          String            @map("usuario_id") @db.Uuid
+  tipo               TipoTransacao
+  descricao          String
+  valor              BigInt
+  data               DateTime          @db.Date
+  status             StatusTransacao
+  formaPagamento     FormaPagamento?   @map("forma_pagamento")
+  origem             OrigemTransacao   @default(manual)
+  /// `pagamento_fatura` não entra em totais de despesa (RN-037).
+  natureza           NaturezaTransacao @default(normal)
+  observacao         String?
+  categoriaId        String            @map("categoria_id") @db.Uuid
+  contaId            String?           @map("conta_id") @db.Uuid
+  cartaoId           String?           @map("cartao_id") @db.Uuid
+  faturaId           String?           @map("fatura_id") @db.Uuid
+  recorrenciaId      String?           @map("recorrencia_id") @db.Uuid
+  parcelamentoId     String?           @map("parcelamento_id") @db.Uuid
+  parcelaId          String?           @unique @map("parcela_id") @db.Uuid
+  nfceNotaId         String?           @unique @map("nfce_nota_id") @db.Uuid
+  /// Identificador no agregador de Open Finance; reimportação nunca duplica (RN-140).
+  idExterno          String?           @map("id_externo")
+  /// União manual × Open Finance (RN-142).
+  transacaoUnidaId   String?           @map("transacao_unida_id") @db.Uuid
+  /// Estabelecimento normalizado: base das preferências aprendidas e do "fora do padrão".
+  estabelecimento    String?
+  /// Recorrência não sobrescreve ocorrência editada à mão (RN-043).
+  editadaManualmente Boolean           @default(false) @map("editada_manualmente")
+  excluidoEm         DateTime?         @map("excluido_em") @db.Timestamptz(6)
+  criadoEm           DateTime          @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm       DateTime          @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario        Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  categoria      Categoria     @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  conta          Conta?        @relation(fields: [contaId], references: [id], onDelete: SetNull)
+  cartao         Cartao?       @relation(fields: [cartaoId], references: [id], onDelete: Restrict)
+  fatura         Fatura?       @relation(fields: [faturaId], references: [id], onDelete: Restrict)
+  recorrencia    Recorrencia?  @relation(fields: [recorrenciaId], references: [id], onDelete: SetNull)
+  parcelamento   Parcelamento? @relation(fields: [parcelamentoId], references: [id], onDelete: Restrict)
+  parcela        Parcela?      @relation("TransacaoParcela", fields: [parcelaId], references: [id], onDelete: SetNull)
+  nfceNota       NfceNota?     @relation("TransacaoNfceNota", fields: [nfceNotaId], references: [id], onDelete: SetNull)
+  transacaoUnida Transacao?    @relation("TransacaoUnida", fields: [transacaoUnidaId], references: [id], onDelete: SetNull)
+  unidaPor       Transacao[]   @relation("TransacaoUnida")
+  anexos         Anexo[]
+  parcelaOrigem  Parcela?      @relation("ParcelaTransacao")
+  nfceOrigem     NfceNota?     @relation("NfceNotaTransacao")
+  itensLista     ItemLista[]
+
+  @@unique([usuarioId, idExterno])
+  @@index([usuarioId, data(sort: Desc)])
+  @@index([usuarioId, categoriaId, data])
+  @@index([faturaId])
+  @@index([categoriaId])
+  @@index([contaId])
+  @@index([cartaoId])
+  @@index([recorrenciaId])
+  @@index([parcelamentoId])
+  @@index([transacaoUnidaId])
+  @@map("transacoes")
+}
+
+/// Modelo da recorrência; a rotina diária materializa as ocorrências dos próximos 35 dias (RN-043).
+model Recorrencia {
+  id             String                @id @default(uuid(7)) @db.Uuid
+  usuarioId      String                @map("usuario_id") @db.Uuid
+  categoriaId    String                @map("categoria_id") @db.Uuid
+  tipo           TipoTransacao
+  descricao      String
+  valor          BigInt
+  formaPagamento FormaPagamento?       @map("forma_pagamento")
+  contaId        String?               @map("conta_id") @db.Uuid
+  cartaoId       String?               @map("cartao_id") @db.Uuid
+  frequencia     FrequenciaRecorrencia
+  /// Dia do mês (mensal/anual) ou da semana (semanal); 29 a 31 em mês curto vira o último dia.
+  dia            Int?                  @db.SmallInt
+  dataInicio     DateTime              @map("data_inicio") @db.Date
+  /// Nulo = indeterminada.
+  dataFim        DateTime?             @map("data_fim") @db.Date
+  proximaGeracao DateTime              @map("proxima_geracao") @db.Date
+  ativa          Boolean               @default(true)
+  criadoEm       DateTime              @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm   DateTime              @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario    Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  categoria  Categoria   @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  conta      Conta?      @relation(fields: [contaId], references: [id], onDelete: SetNull)
+  cartao     Cartao?     @relation(fields: [cartaoId], references: [id], onDelete: SetNull)
+  transacoes Transacao[]
+
+  @@index([usuarioId])
+  @@index([proximaGeracao, ativa])
+  @@index([categoriaId])
+  @@index([contaId])
+  @@index([cartaoId])
+  @@map("recorrencias")
+}
+
+model Parcelamento {
+  id              String             @id @default(uuid(7)) @db.Uuid
+  usuarioId       String             @map("usuario_id") @db.Uuid
+  nome            String
+  tipo            TipoParcelamento
+  /// Com juros, é a soma das parcelas; o valor financiado fica em `valor_financiado` (RN-052).
+  valorTotal      BigInt             @map("valor_total")
+  valorFinanciado BigInt?            @map("valor_financiado")
+  totalParcelas   Int                @map("total_parcelas") @db.SmallInt
+  /// Fração mensal: 0.029900 = 2,99% a.m.
+  taxaJuros       Decimal?           @map("taxa_juros") @db.Decimal(9, 6)
+  dataInicio      DateTime           @map("data_inicio") @db.Date
+  status          StatusParcelamento @default(ativa)
+  observacao      String?
+  categoriaId     String             @map("categoria_id") @db.Uuid
+  cartaoId        String?            @map("cartao_id") @db.Uuid
+  excluidoEm      DateTime?          @map("excluido_em") @db.Timestamptz(6)
+  criadoEm        DateTime           @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm    DateTime           @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario    Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  categoria  Categoria   @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  cartao     Cartao?     @relation(fields: [cartaoId], references: [id], onDelete: Restrict)
+  parcelas   Parcela[]
+  transacoes Transacao[]
+
+  @@index([usuarioId])
+  @@index([categoriaId])
+  @@index([cartaoId])
+  @@map("parcelamentos")
+}
+
+model Parcela {
+  id             String        @id @default(uuid(7)) @db.Uuid
+  usuarioId      String        @map("usuario_id") @db.Uuid
+  parcelamentoId String        @map("parcelamento_id") @db.Uuid
+  numero         Int           @db.SmallInt
+  valor          BigInt
+  vencimento     DateTime      @db.Date
+  status         StatusParcela @default(pendente)
+  pagoEm         DateTime?     @map("pago_em") @db.Timestamptz(6)
+  /// Despesa pendente ligada à parcela (RN-051).
+  transacaoId    String?       @unique @map("transacao_id") @db.Uuid
+  /// Compra no cartão: fatura em que a parcela cai.
+  faturaId       String?       @map("fatura_id") @db.Uuid
+  criadoEm       DateTime      @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm   DateTime      @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario         Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  parcelamento    Parcelamento @relation(fields: [parcelamentoId], references: [id], onDelete: Cascade)
+  transacao       Transacao?   @relation("ParcelaTransacao", fields: [transacaoId], references: [id], onDelete: SetNull)
+  fatura          Fatura?      @relation(fields: [faturaId], references: [id], onDelete: SetNull)
+  transacaoDireta Transacao?   @relation("TransacaoParcela")
+
+  @@unique([parcelamentoId, numero])
+  @@index([usuarioId])
+  @@index([vencimento, status])
+  @@index([faturaId])
+  @@map("parcelas")
+}
+
+model Anexo {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  usuarioId    String    @map("usuario_id") @db.Uuid
+  tipo         TipoAnexo
+  /// Chave do objeto no S3 (inclui o usuarioId; leitura só por URL assinada).
+  arquivoUrl   String    @map("arquivo_url")
+  /// Tamanho em bytes.
+  tamanho      Int
+  transacaoId  String?   @map("transacao_id") @db.Uuid
+  criadoEm     DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario     Usuario               @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  transacao   Transacao?            @relation(fields: [transacaoId], references: [id], onDelete: SetNull)
+  mensagem    Mensagem?
+  importacoes ImportacaoDocumento[]
+
+  @@index([usuarioId])
+  @@index([transacaoId])
+  @@map("anexos")
+}
+
+model NfceNota {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  usuarioId    String   @map("usuario_id") @db.Uuid
+  chaveAcesso  String   @map("chave_acesso") @db.VarChar(44)
+  emitente     String
+  cnpj         String   @db.VarChar(14)
+  /// Data e hora de emissão.
+  data         DateTime @db.Timestamptz(6)
+  total        BigInt
+  uf           String   @db.Char(2)
+  transacaoId  String?  @unique @map("transacao_id") @db.Uuid
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario         Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  transacao       Transacao? @relation("NfceNotaTransacao", fields: [transacaoId], references: [id], onDelete: SetNull)
+  transacaoDireta Transacao? @relation("TransacaoNfceNota")
+  itens           NfceItem[]
+
+  @@unique([usuarioId, chaveAcesso])
+  @@map("nfce_notas")
+}
+
+model NfceItem {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  usuarioId     String   @map("usuario_id") @db.Uuid
+  notaId        String   @map("nota_id") @db.Uuid
+  descricao     String
+  quantidade    Decimal  @db.Decimal(12, 4)
+  unidade       String
+  valorUnitario BigInt   @map("valor_unitario")
+  valorTotal    BigInt   @map("valor_total")
+  criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm  DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  nota    NfceNota @relation(fields: [notaId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([notaId])
+  @@map("nfce_itens")
+}
+
+// ─── Planejamento (6) ───────────────────────────────────────────────────────────────────────────
+
+model Orcamento {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  usuarioId     String   @map("usuario_id") @db.Uuid
+  categoriaId   String   @map("categoria_id") @db.Uuid
+  competencia   DateTime @db.Date
+  valorLimite   BigInt   @map("valor_limite")
+  repetirMensal Boolean  @default(false) @map("repetir_mensal")
+  criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm  DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  categoria Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, categoriaId, competencia])
+  @@index([categoriaId])
+  @@map("orcamentos")
+}
+
+model Meta {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  usuarioId    String    @map("usuario_id") @db.Uuid
+  titulo       String
+  valorAlvo    BigInt    @map("valor_alvo")
+  /// Soma dos aportes (RN-063).
+  valorAtual   BigInt    @default(0) @map("valor_atual")
+  prazo        DateTime? @db.Date
+  concluida    Boolean   @default(false)
+  criadoEm     DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  aportes MetaAporte[]
+
+  @@index([usuarioId])
+  @@map("metas")
+}
+
+model MetaAporte {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  usuarioId    String   @map("usuario_id") @db.Uuid
+  metaId       String   @map("meta_id") @db.Uuid
+  valor        BigInt
+  data         DateTime @db.Date
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  meta    Meta    @relation(fields: [metaId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([metaId])
+  @@map("metas_aportes")
+}
+
+model ListaCompras {
+  id             String         @id @default(uuid(7)) @db.Uuid
+  usuarioId      String         @map("usuario_id") @db.Uuid
+  nome           String
+  categoriaLista CategoriaLista @map("categoria_lista")
+  finalizadaEm   DateTime?      @map("finalizada_em") @db.Timestamptz(6)
+  criadoEm       DateTime       @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm   DateTime       @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  itens   ItemLista[]
+
+  @@index([usuarioId])
+  @@map("listas_compras")
+}
+
+model ItemLista {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  /// Dono da lista (o item pode ter sido adicionado por um convidado).
+  usuarioId     String    @map("usuario_id") @db.Uuid
+  listaId       String    @map("lista_id") @db.Uuid
+  nome          String
+  quantidade    Decimal   @default(1) @db.Decimal(12, 3)
+  unidade       String?
+  precoEstimado BigInt?   @map("preco_estimado")
+  comprado      Boolean   @default(false)
+  compradoEm    DateTime? @map("comprado_em") @db.Timestamptz(6)
+  /// Despesa gerada ao finalizar a lista (RN-072).
+  transacaoId   String?   @map("transacao_id") @db.Uuid
+  criadoEm      DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm  DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario   Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  lista     ListaCompras @relation(fields: [listaId], references: [id], onDelete: Cascade)
+  transacao Transacao?   @relation(fields: [transacaoId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId])
+  @@index([listaId])
+  @@index([transacaoId])
+  @@map("itens_lista")
+}
+
+/// Convite para lista ou lembrete (RN-074).
+model Compartilhamento {
+  id           String                    @id @default(uuid(7)) @db.Uuid
+  /// Dono do recurso compartilhado.
+  usuarioId    String                    @map("usuario_id") @db.Uuid
+  recurso      RecursoCompartilhavel
+  recursoId    String                    @map("recurso_id") @db.Uuid
+  convidadoId  String                    @map("convidado_id") @db.Uuid
+  permissao    PermissaoCompartilhamento
+  status       StatusConvite             @default(pendente)
+  criadoEm     DateTime                  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime                  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario   Usuario @relation("CompartilhamentoDono", fields: [usuarioId], references: [id], onDelete: Cascade)
+  convidado Usuario @relation("CompartilhamentoConvidado", fields: [convidadoId], references: [id], onDelete: Cascade)
+
+  @@unique([recurso, recursoId, convidadoId])
+  @@index([usuarioId])
+  @@index([convidadoId])
+  @@map("compartilhamentos")
+}
+
+// ─── Lembretes, agenda e alertas (6) ────────────────────────────────────────────────────────────
+
+model Lembrete {
+  id              String          @id @default(uuid(7)) @db.Uuid
+  usuarioId       String          @map("usuario_id") @db.Uuid
+  titulo          String
+  dataHora        DateTime        @map("data_hora") @db.Timestamptz(6)
+  /// Regra RRULE; nulo = lembrete único (RN-075).
+  recorrencia     String?
+  canais          CanalLembrete[]
+  status          StatusLembrete  @default(ativo)
+  adiadoAte       DateTime?       @map("adiado_ate") @db.Timestamptz(6)
+  /// Controle do limite mensal de ligações (RN-078).
+  ultimaLigacaoEm DateTime?       @map("ultima_ligacao_em") @db.Timestamptz(6)
+  criadoEm        DateTime        @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm    DateTime        @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario  Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  ligacoes Ligacao[]
+
+  @@index([usuarioId])
+  @@index([status, dataHora])
+  @@map("lembretes")
+}
+
+model AgendaConectada {
+  id             String         @id @default(uuid(7)) @db.Uuid
+  usuarioId      String         @map("usuario_id") @db.Uuid
+  provedor       ProvedorAgenda
+  /// Tokens OAuth cifrados na aplicação (criptografia de envelope, doc 11).
+  tokensCifrados String?        @map("tokens_cifrados")
+  /// Agenda onde o app cria compromissos (RN-079).
+  agendaPadrao   String?        @map("agenda_padrao")
+  criadoEm       DateTime       @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm   DateTime       @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario      Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  compromissos Compromisso[]
+
+  @@index([usuarioId])
+  @@map("agendas_conectadas")
+}
+
+model Compromisso {
+  id           String            @id @default(uuid(7)) @db.Uuid
+  usuarioId    String            @map("usuario_id") @db.Uuid
+  agendaId     String?           @map("agenda_id") @db.Uuid
+  titulo       String
+  inicio       DateTime          @db.Timestamptz(6)
+  fim          DateTime?         @db.Timestamptz(6)
+  local        String?
+  idExterno    String?           @map("id_externo")
+  origem       OrigemCompromisso
+  criadoEm     DateTime          @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime          @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  agenda  AgendaConectada? @relation(fields: [agendaId], references: [id], onDelete: Cascade)
+
+  @@unique([agendaId, idExterno])
+  @@index([usuarioId, inicio])
+  @@map("compromissos")
+}
+
+/// Central de notificações; `chave_unica` impede alerta repetido (RN-102).
+model Notificacao {
+  id           String     @id @default(uuid(7)) @db.Uuid
+  usuarioId    String     @map("usuario_id") @db.Uuid
+  tipo         TipoAlerta
+  titulo       String
+  corpo        String
+  /// Toda notificação abre a tela relacionada (RN-105).
+  linkInterno  String     @map("link_interno")
+  enviadaEm    DateTime?  @map("enviada_em") @db.Timestamptz(6)
+  lidaEm       DateTime?  @map("lida_em") @db.Timestamptz(6)
+  chaveUnica   String     @map("chave_unica")
+  criadoEm     DateTime   @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime   @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, chaveUnica])
+  @@index([usuarioId, criadoEm(sort: Desc)])
+  @@map("notificacoes")
+}
+
+model PreferenciaAlerta {
+  id               String     @id @default(uuid(7)) @db.Uuid
+  usuarioId        String     @map("usuario_id") @db.Uuid
+  tipoAlerta       TipoAlerta @map("tipo_alerta")
+  ativo            Boolean    @default(true)
+  antecedenciaDias Int?       @map("antecedencia_dias") @db.SmallInt
+  /// Horário local `HH:MM` (RN-101).
+  silencioInicio   String?    @map("silencio_inicio") @db.VarChar(5)
+  silencioFim      String?    @map("silencio_fim") @db.VarChar(5)
+  criadoEm         DateTime   @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm     DateTime   @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, tipoAlerta])
+  @@map("preferencias_alerta")
+}
+
+model AppMonitorado {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  usuarioId        String    @map("usuario_id") @db.Uuid
+  /// Pacote no Android (ex.: `com.shopee.br`); no iOS o app escolhe pelo Screen Time.
+  identificadorApp String    @map("identificador_app")
+  nome             String
+  ativo            Boolean   @default(true)
+  ultimoAlerta     DateTime? @map("ultimo_alerta") @db.Timestamptz(6)
+  criadoEm         DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm     DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, identificadorApp])
+  @@map("apps_monitorados")
+}
+
+// ─── Open Finance (1) ───────────────────────────────────────────────────────────────────────────
+
+model ConexaoOpenFinance {
+  id                    String                   @id @default(uuid(7)) @db.Uuid
+  usuarioId             String                   @map("usuario_id") @db.Uuid
+  agregador             String
+  itemIdExterno         String                   @map("item_id_externo")
+  instituicao           String
+  status                StatusConexaoOpenFinance
+  /// Consentimento dura até 12 meses (RN-144).
+  consentimentoExpiraEm DateTime?                @map("consentimento_expira_em") @db.Timestamptz(6)
+  ultimaSincronizacao   DateTime?                @map("ultima_sincronizacao") @db.Timestamptz(6)
+  criadoEm              DateTime                 @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm          DateTime                 @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  contas  Conta[]
+  cartoes Cartao[]
+
+  @@unique([agregador, itemIdExterno])
+  @@index([usuarioId])
+  @@map("conexoes_open_finance")
+}
+
+// ─── Mony (5) ───────────────────────────────────────────────────────────────────────────────────
+
+model Conversa {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  usuarioId        String    @map("usuario_id") @db.Uuid
+  iniciadaEm       DateTime  @default(now()) @map("iniciada_em") @db.Timestamptz(6)
+  ultimaMensagemEm DateTime? @map("ultima_mensagem_em") @db.Timestamptz(6)
+  criadoEm         DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm     DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario   Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  mensagens Mensagem[]
+  rascunho  RascunhoLancamento?
+
+  @@index([usuarioId])
+  @@map("conversas")
+}
+
+model Mensagem {
+  id             String        @id @default(uuid(7)) @db.Uuid
+  usuarioId      String        @map("usuario_id") @db.Uuid
+  conversaId     String        @map("conversa_id") @db.Uuid
+  autor          AutorMensagem
+  tipo           TipoMensagem
+  conteudo       String?
+  /// Botões, cartões de resumo e outros componentes da interface do chat.
+  componentes    Json?
+  anexoId        String?       @unique @map("anexo_id") @db.Uuid
+  /// Rascunho que a mensagem completa.
+  rascunhoId     String?       @map("rascunho_id") @db.Uuid
+  /// Evita duplicar mensagem em reenvio.
+  idempotencyKey String?       @map("idempotency_key")
+  criadoEm       DateTime      @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm   DateTime      @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario  Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  conversa Conversa            @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  anexo    Anexo?              @relation(fields: [anexoId], references: [id], onDelete: SetNull)
+  rascunho RascunhoLancamento? @relation(fields: [rascunhoId], references: [id], onDelete: SetNull)
+  logsIa   LogIa[]
+
+  @@unique([conversaId, idempotencyKey])
+  @@index([usuarioId])
+  @@index([conversaId, criadoEm(sort: Desc)])
+  @@index([rascunhoId])
+  @@map("mensagens")
+}
+
+/// Lançamento em montagem no chat, válido por 24 h; um por conversa (RN-088).
+model RascunhoLancamento {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  usuarioId     String   @map("usuario_id") @db.Uuid
+  conversaId    String   @unique @map("conversa_id") @db.Uuid
+  dados         Json
+  campoPendente String?  @map("campo_pendente")
+  expiraEm      DateTime @map("expira_em") @db.Timestamptz(6)
+  criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm  DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario   Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  conversa  Conversa   @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  mensagens Mensagem[]
+
+  @@index([usuarioId])
+  @@map("rascunhos_lancamento")
+}
+
+/// Estabelecimento → categoria, cartão e forma de pagamento mais usados (RN-090).
+model PreferenciaAprendida {
+  id             String          @id @default(uuid(7)) @db.Uuid
+  usuarioId      String          @map("usuario_id") @db.Uuid
+  chave          String
+  categoriaId    String?         @map("categoria_id") @db.Uuid
+  cartaoId       String?         @map("cartao_id") @db.Uuid
+  formaPagamento FormaPagamento? @map("forma_pagamento")
+  contagem       Int             @default(0)
+  criadoEm       DateTime        @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm   DateTime        @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario   Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  categoria Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  cartao    Cartao?    @relation(fields: [cartaoId], references: [id], onDelete: SetNull)
+
+  @@unique([usuarioId, chave])
+  @@index([categoriaId])
+  @@index([cartaoId])
+  @@map("preferencias_aprendidas")
+}
+
+model LogIa {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  usuarioId     String   @map("usuario_id") @db.Uuid
+  mensagemId    String?  @map("mensagem_id") @db.Uuid
+  modelo        String
+  tokensEntrada Int      @map("tokens_entrada")
+  tokensSaida   Int      @map("tokens_saida")
+  ferramenta    String?
+  duracaoMs     Int      @map("duracao_ms")
+  erro          String?
+  criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm  DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario  Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  mensagem Mensagem? @relation(fields: [mensagemId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId, criadoEm])
+  @@index([mensagemId])
+  @@map("logs_ia")
+}
+
+// ─── Administração (3) ──────────────────────────────────────────────────────────────────────────
+
+model Novidade {
+  id           String         @id @default(uuid(7)) @db.Uuid
+  autorId      String?        @map("autor_id") @db.Uuid
+  titulo       String
+  descricao    String
+  videoUrl     String?        @map("video_url")
+  publicadaEm  DateTime?      @map("publicada_em") @db.Timestamptz(6)
+  validade     DateTime?      @db.Timestamptz(6)
+  status       StatusNovidade @default(rascunho)
+  criadoEm     DateTime       @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime       @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  autor    Usuario?          @relation(fields: [autorId], references: [id], onDelete: SetNull)
+  leituras NovidadeLeitura[]
+
+  @@index([status, publicadaEm])
+  @@index([autorId])
+  @@map("novidades")
+}
+
+model NovidadeLeitura {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  usuarioId    String   @map("usuario_id") @db.Uuid
+  novidadeId   String   @map("novidade_id") @db.Uuid
+  lidaEm       DateTime @default(now()) @map("lida_em") @db.Timestamptz(6)
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario  Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  novidade Novidade @relation(fields: [novidadeId], references: [id], onDelete: Cascade)
+
+  @@unique([novidadeId, usuarioId])
+  @@index([usuarioId])
+  @@map("novidades_leituras")
+}
+
+model RegistroAuditoria {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  /// Quem fez a ação (admin ou o próprio usuário).
+  usuarioId    String?  @map("usuario_id") @db.Uuid
+  acao         String
+  entidade     String
+  entidadeId   String?  @map("entidade_id")
+  antes        Json?
+  depois       Json?
+  ip           String?
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId])
+  @@index([entidade, entidadeId])
+  @@map("auditoria")
+}
+
+// ─── Tabelas propostas (9), doc 06 ──────────────────────────────────────────────────────────────
+
+/// Idempotência e reprocessamento de webhooks Stripe e Open Finance.
+model WebhookEvento {
+  id           String          @id @default(uuid(7)) @db.Uuid
+  provedor     ProvedorWebhook
+  idExterno    String          @map("id_externo")
+  tipo         String
+  payload      Json
+  processadoEm DateTime?       @map("processado_em") @db.Timestamptz(6)
+  erro         String?
+  criadoEm     DateTime        @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime        @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@unique([provedor, idExterno])
+  @@map("webhook_eventos")
+}
+
+/// LGPD: versão e data do aceite dos termos (RN-007).
+model AceiteTermos {
+  id           String          @id @default(uuid(7)) @db.Uuid
+  usuarioId    String          @map("usuario_id") @db.Uuid
+  documento    DocumentoAceite
+  versao       String
+  aceitoEm     DateTime        @default(now()) @map("aceito_em") @db.Timestamptz(6)
+  ip           String?
+  criadoEm     DateTime        @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime        @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, documento])
+  @@map("aceites_termos")
+}
+
+/// LGPD: consentimento separado e revogável por finalidade.
+model Consentimento {
+  id           String                  @id @default(uuid(7)) @db.Uuid
+  usuarioId    String                  @map("usuario_id") @db.Uuid
+  finalidade   FinalidadeConsentimento
+  concedidoEm  DateTime                @default(now()) @map("concedido_em") @db.Timestamptz(6)
+  revogadoEm   DateTime?               @map("revogado_em") @db.Timestamptz(6)
+  criadoEm     DateTime                @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime                @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, finalidade])
+  @@map("consentimentos")
+}
+
+/// Um teste grátis por pessoa (RN-125). Sem usuario_id: sobrevive à exclusão da conta.
+model ControleTeste {
+  id           String            @id @default(uuid(7)) @db.Uuid
+  tipo         TipoControleTeste
+  valorHash    String            @map("valor_hash")
+  usadoEm      DateTime          @default(now()) @map("usado_em") @db.Timestamptz(6)
+  criadoEm     DateTime          @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime          @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@unique([tipo, valorHash])
+  @@map("controle_teste")
+}
+
+/// Cupons do admin espelhando a Stripe (RN-130).
+model Cupom {
+  id             String    @id @default(uuid(7)) @db.Uuid
+  codigo         String    @unique
+  stripeCouponId String    @unique @map("stripe_coupon_id")
+  percentual     Int       @db.SmallInt
+  validade       DateTime? @db.Timestamptz(6)
+  ativo          Boolean   @default(true)
+  criadoPorId    String?   @map("criado_por") @db.Uuid
+  criadoEm       DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm   DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  criadoPor Usuario? @relation(fields: [criadoPorId], references: [id], onDelete: SetNull)
+
+  @@index([criadoPorId])
+  @@map("cupons")
+}
+
+/// Prompt versionado da Mony, editável sem nova versão do app (doc 08).
+model MonyConfig {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  versao        Int      @unique
+  promptSistema String   @map("prompt_sistema")
+  ferramentas   Json
+  modelo        String
+  ativo         Boolean  @default(false)
+  criadoPorId   String?  @map("criado_por") @db.Uuid
+  criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm  DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  criadoPor Usuario? @relation(fields: [criadoPorId], references: [id], onDelete: SetNull)
+
+  @@index([criadoPorId])
+  @@map("mony_config")
+}
+
+/// Custo e limite mensal de lembretes por ligação (RN-078).
+model Ligacao {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  usuarioId     String   @map("usuario_id") @db.Uuid
+  lembreteId    String?  @map("lembrete_id") @db.Uuid
+  /// Status devolvido pelo provedor de voz.
+  status        String
+  provedorId    String?  @unique @map("provedor_id")
+  custoCentavos BigInt?  @map("custo_centavos")
+  iniciadaEm    DateTime @map("iniciada_em") @db.Timestamptz(6)
+  criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm  DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario  Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  lembrete Lembrete? @relation(fields: [lembreteId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId, iniciadaEm])
+  @@index([lembreteId])
+  @@map("ligacoes")
+}
+
+/// Dicas contextuais e checklist de onboarding já vistos.
+model DicaVista {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  usuarioId    String   @map("usuario_id") @db.Uuid
+  chave        String
+  vistaEm      DateTime @default(now()) @map("vista_em") @db.Timestamptz(6)
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, chave])
+  @@map("dicas_vistas")
+}
+
+/// Fatura em PDF ou foto com vários lançamentos aguardando confirmação (RN-083).
+model ImportacaoDocumento {
+  id           String           @id @default(uuid(7)) @db.Uuid
+  usuarioId    String           @map("usuario_id") @db.Uuid
+  arquivoId    String           @map("arquivo_id") @db.Uuid
+  tipo         TipoImportacao
+  status       StatusImportacao @default(processando)
+  resultado    Json?
+  criadoEm     DateTime         @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime         @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  arquivo Anexo   @relation(fields: [arquivoId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([arquivoId])
+  @@map("importacoes_documento")
+}

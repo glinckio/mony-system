@@ -3,9 +3,9 @@
  * acento (doc 03). Cada enum é uma lista `as const` e um tipo derivado dela, para servir tanto à
  * validação em tempo de execução (Zod, Prisma) quanto aos tipos.
  *
- * Os enums cujos valores os docs ainda não definem (status de assinatura, de lembrete, de convite,
- * de conexão Open Finance, de novidade, plataforma de dispositivo, tipos de alerta e de
- * notificação) entram nas tarefas que os implementam.
+ * Os mesmos valores existem como enums do Postgres no schema do Prisma (`apps/api`); um teste da
+ * API confere que as duas listas são iguais. Valores marcados "decisão técnica" não estão nos docs
+ * de arquitetura e foram definidos na T-007 (ver docs/agentes/DECISOES.md).
  */
 
 // Conta e assinatura
@@ -19,12 +19,23 @@ export type StatusUsuario = (typeof STATUS_USUARIO)[number];
 export const PROVEDORES_LOGIN_SOCIAL = ['google', 'apple'] as const;
 export type ProvedorLoginSocial = (typeof PROVEDORES_LOGIN_SOCIAL)[number];
 
+/** Decisão técnica. */
+export const PLATAFORMAS_DISPOSITIVO = ['ios', 'android'] as const;
+export type PlataformaDispositivo = (typeof PLATAFORMAS_DISPOSITIVO)[number];
+
 export const PLANOS = ['teste', 'gratuito', 'mensal', 'anual'] as const;
 export type Plano = (typeof PLANOS)[number];
 
 /** Planos com preço (`planos_precos.plano`). */
 export const PLANOS_PAGOS = ['mensal', 'anual'] as const;
 export type PlanoPago = (typeof PLANOS_PAGOS)[number];
+
+/**
+ * Situação da cobrança; o plano (teste, gratuito, mensal, anual) fica em `Plano`. Decisão técnica,
+ * a partir dos grupos do painel admin (doc 13): ativas, inadimplentes, canceladas.
+ */
+export const STATUS_ASSINATURA = ['ativa', 'inadimplente', 'cancelada'] as const;
+export type StatusAssinatura = (typeof STATUS_ASSINATURA)[number];
 
 /** Recursos com limite no plano gratuito (RN-120). */
 export const RECURSOS_PLANO = [
@@ -102,14 +113,60 @@ export type RecursoCompartilhavel = (typeof RECURSOS_COMPARTILHAVEIS)[number];
 export const PERMISSOES_COMPARTILHAMENTO = ['ver', 'editar'] as const;
 export type PermissaoCompartilhamento = (typeof PERMISSOES_COMPARTILHAMENTO)[number];
 
+/** Decisão técnica. */
+export const STATUS_CONVITE = ['pendente', 'aceito', 'recusado'] as const;
+export type StatusConvite = (typeof STATUS_CONVITE)[number];
+
 // Lembretes e agenda
 
 /** RN-075 */
 export const CANAIS_LEMBRETE = ['push', 'alarme', 'ligacao'] as const;
 export type CanalLembrete = (typeof CANAIS_LEMBRETE)[number];
 
+/** Decisão técnica; o índice de lembretes do doc 06 usa `status = 'ativo'`. */
+export const STATUS_LEMBRETE = ['ativo', 'concluido', 'cancelado'] as const;
+export type StatusLembrete = (typeof STATUS_LEMBRETE)[number];
+
 export const PROVEDORES_AGENDA = ['google', 'outlook', 'aparelho'] as const;
 export type ProvedorAgenda = (typeof PROVEDORES_AGENDA)[number];
+
+/** Compromisso criado no app ou pela Mony (editável) ou vindo da agenda externa (só leitura, RN-079). Decisão técnica. */
+export const ORIGENS_COMPROMISSO = ['app', 'mony', 'externo'] as const;
+export type OrigemCompromisso = (typeof ORIGENS_COMPROMISSO)[number];
+
+// Alertas e notificações
+
+/** Tipos de alerta e de notificação (doc 09). */
+export const TIPOS_ALERTA = [
+  'limite_cartao',
+  'fatura_fechada',
+  'fatura_vencimento',
+  'fatura_atrasada',
+  'orcamento',
+  'gasto_fora_padrao',
+  'projecao_mes',
+  'vencimento_pendente',
+  'app_compra',
+  'lembrete',
+  'compromisso',
+  'resumo_periodo',
+  'open_finance',
+  'assinatura',
+  'novidade',
+] as const;
+export type TipoAlerta = (typeof TIPOS_ALERTA)[number];
+
+// Open Finance
+
+/** Doc 10. */
+export const STATUS_CONEXAO_OPEN_FINANCE = [
+  'ativa',
+  'atualizando',
+  'erro_login',
+  'consentimento_expirado',
+  'desconectada',
+] as const;
+export type StatusConexaoOpenFinance = (typeof STATUS_CONEXAO_OPEN_FINANCE)[number];
 
 // Mony
 
@@ -118,6 +175,30 @@ export type AutorMensagem = (typeof AUTORES_MENSAGEM)[number];
 
 export const TIPOS_MENSAGEM = ['texto', 'audio', 'imagem', 'pdf', 'botao'] as const;
 export type TipoMensagem = (typeof TIPOS_MENSAGEM)[number];
+
+/** Documento lido pela Mony com vários lançamentos aguardando confirmação (RN-083). Decisão técnica. */
+export const TIPOS_IMPORTACAO = ['foto', 'pdf'] as const;
+export type TipoImportacao = (typeof TIPOS_IMPORTACAO)[number];
+
+/** Decisão técnica. */
+export const STATUS_IMPORTACAO = [
+  'processando',
+  'aguardando_confirmacao',
+  'confirmada',
+  'descartada',
+  'erro',
+] as const;
+export type StatusImportacao = (typeof STATUS_IMPORTACAO)[number];
+
+// Administração e integrações
+
+/** Decisão técnica. */
+export const STATUS_NOVIDADE = ['rascunho', 'publicada', 'arquivada'] as const;
+export type StatusNovidade = (typeof STATUS_NOVIDADE)[number];
+
+/** Origem dos webhooks registrados em `webhook_eventos` (doc 05). */
+export const PROVEDORES_WEBHOOK = ['stripe', 'open_finance'] as const;
+export type ProvedorWebhook = (typeof PROVEDORES_WEBHOOK)[number];
 
 // LGPD e controle do teste (tabelas propostas no doc 06)
 

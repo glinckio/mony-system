@@ -102,7 +102,7 @@ Leia a seção **"Estado para o próximo agente"** do PR. Ela diz o que já foi 
 ```bash
 pnpm install --frozen-lockfile
 pnpm turbo run lint typecheck test
-pnpm --filter api prisma migrate diff --exit-code   # se mexeu no schema: migração commitada?
+pnpm --filter api prisma migrate deploy && pnpm --filter api prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code   # se mexeu no schema: migração commitada? (com o banco do docker compose; o job Banco do CI confere o mesmo)
 pnpm --filter @mony/api-client generate && git diff --exit-code   # se mexeu em contrato da API
 ```
 

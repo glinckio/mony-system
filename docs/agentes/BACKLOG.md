@@ -34,7 +34,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
 - [x] **T-006** Esqueleto da API NestJS (Fastify, config Zod, pino, health check, filtro de erros, OpenAPI) (PR #6)
   - dep: T-003, T-005 · docs: 05
   - Aceite: `GET /v1/health` responde; erro segue o formato `{ erro: { codigo, mensagem } }`; `/v1/docs` fora de produção; entrypoints `main.ts` e `worker.ts`.
-- [ ] **T-007** Prisma: schema inicial completo e seed
+- [x] **T-007** Prisma: schema inicial completo e seed (PR #7)
   - dep: T-006 · docs: 06
   - Aceite: as 41 tabelas do PDF + colunas e tabelas propostas em 06, enums, índices essenciais, extensão de soft delete, seed (categorias padrão, limites do gratuito, apps sugeridos). Migração aplicando em banco limpo.
 - [ ] **T-008** Núcleo da API: `Clock` injetável, `Contexto` (usuarioId, origem, idempotencyKey), interceptor de idempotência, barramento de eventos, filas BullMQ registradas

@@ -20,6 +20,10 @@ export class Configuracao {
     return this.config.get('PORT', { infer: true });
   }
 
+  get urlBanco(): string {
+    return this.config.get('DATABASE_URL', { infer: true });
+  }
+
   get nivelLog(): Ambiente['LOG_LEVEL'] {
     return this.config.get('LOG_LEVEL', { infer: true });
   }
