@@ -54,9 +54,13 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
 - [ ] **T-014** Migrar a API para NestJS 12 (ESM) quando o `nestjs-zod` suportar
   - dep: T-006 · docs: 02, 05
   - Aceite: `@nestjs/*` 12, `nestjs-zod` com suporte oficial ao Nest 12, API em ESM, testes e CI verdes. Ver DECISOES (2026-10-09, T-006).
-- [ ] **T-013** Terraform de staging (VPC, ECS api e worker, RDS, ElastiCache, S3, Secrets Manager, ALB) e deploy de staging no merge
+- [x] **T-013** Terraform de staging (VPC, ECS api e worker, RDS, ElastiCache, S3, Secrets Manager, ALB) e deploy de staging no merge (PR #12)
   - dep: T-006, T-004 · docs: 12
   - 👤 Conta AWS e credenciais do CI. O agente escreve o Terraform e o workflow; o humano aplica.
+- [ ] **T-015** 👤 Domínio e HTTPS de staging: Route 53, certificado do ACM no ALB (`certificado_arn`), admin em S3 + CloudFront
+  - dep: T-013, T-012 · docs: 12, 13 · requer o domínio do cliente (doc 15, pergunta 16)
+- [ ] **T-016** 👤 EAS Update no canal `staging` a cada merge na `main`
+  - dep: T-010, T-013 · docs: 12 · requer o projeto no EAS e o `EXPO_TOKEN` no GitHub
 
 ### Provas de conceito (PoC)
 
