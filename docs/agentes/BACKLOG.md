@@ -74,7 +74,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-008, T-010 · docs: 10 (Stripe)
 - [ ] **T-025** 👤 PoC Open Finance: widget do agregador no Expo, ida ao app do banco e volta
   - dep: T-010 · docs: 10 (Open Finance) · requer sandbox do agregador
-- [ ] **T-026** PoC NFC-e: avaliar API de terceiros nas UFs prioritárias
+- [x] **T-026** PoC NFC-e: avaliar API de terceiros nas UFs prioritárias (PR #13)
   - dep: T-006 · docs: 10 (NFC-e)
 
 ---

@@ -78,11 +78,15 @@ Recurso exclusivo de plano pago (RN-121) e com consentimento LGPD separado.
 
 ## NFC-e
 
-- QR Code do cupom contém a URL de consulta na Sefaz do estado. O app lê com `expo-camera` e envia a URL.
-- Servidor valida que o domínio é de uma Sefaz conhecida (lista de domínios por UF) antes de acessar **(segurança: evita SSRF)**.
-- Extrai emitente, CNPJ, data, itens (descrição, quantidade, unidade, valor unitário), total e forma de pagamento. Grava em `nfce_notas`/`nfce_itens`, chave de acesso única por usuário.
-- O formato varia por UF: **preferir API de terceiros** que padronize; leitor próprio só para as UFs que o cliente priorizar.
-- Falhou → a Mony pede/usa a foto do cupom (leitura por visão).
+Avaliação completa na PoC [T-026](../agentes/poc/T-026.md).
+
+- QR Code do cupom: URL da Sefaz do estado com a chave de acesso no parâmetro `p` (versão 3 desde set/2025; 1 e 2 em cupons antigos). O app lê com `expo-camera`.
+- `lerQrNfce` (`@mony/shared/nfce`) extrai e confere a chave sem rede: formato (inclusive CNPJ alfanumérico, desde jul/2026), dígito verificador, UF e modelo 65. O app usa para avisar na hora; a API valida de novo.
+- O servidor manda **só a chave** ao `NfceProvider` e nunca acessa a URL do QR Code, então não há risco de SSRF. Um leitor próprio por UF, se um dia existir, valida o domínio contra a lista de cada Sefaz.
+- Primeira implementação recomendada: **Infosimples** ("SEFAZ / NFC-e Unificada", 26 UFs; conferir o DF), cobrança por consulta **(confirmar preço e testar com cupons reais)**.
+- A consulta roda na fila `mony-midia`, com novas tentativas espaçadas para notas em contingência, que demoram a aparecer na Sefaz. Cupom de homologação (teste do estabelecimento) é recusado.
+- Extrai emitente, CNPJ, data, itens (descrição, quantidade, unidade, valor unitário), total e forma de pagamento. Grava em `nfce_notas`/`nfce_itens`, chave de acesso única por usuário (a mesma chave nunca é consultada duas vezes).
+- Falhou ou UF sem cobertura → a Mony pede ou usa a foto do cupom (leitura por visão).
 
 ## Ligação de voz
 

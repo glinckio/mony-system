@@ -15,7 +15,7 @@ Ordem pensada para entregar valor cedo e atacar primeiro o que pode inviabilizar
 | Alarme | Alarme local toca com app fechado e sem internet em Android 8–15 e iOS (AlarmKit 26+ e notificação abaixo)? | Reduzir a "notificação de alta prioridade" em versões antigas |
 | Stripe Pix recorrente | Pix funciona em assinatura recorrente na conta BR? | Alternativas de [10](10-integracoes.md#stripe) |
 | Open Finance | Widget do agregador abre, vai ao app do banco e volta no Expo? | WebView com deep link de retorno |
-| NFC-e | API de terceiros cobre as UFs prioritárias? | Leitor próprio por UF + fallback por foto |
+| NFC-e | API de terceiros cobre as UFs prioritárias? **Avaliado na [T-026](../agentes/poc/T-026.md): Infosimples cobre 26 UFs (DF a confirmar); falta teste com cupons reais** | Leitor próprio por UF + fallback por foto |
 | Mony | Fluxo "gastei 10" com botões, streaming SSE no `expo/fetch`, custo por mensagem medido | Ajustar modelo/estratégia de contexto |
 
 **Pedidos que levam tempo (iniciar já):** entitlement Family Controls da Apple, verificação do app no Google (escopo de agenda), contas de desenvolvedor Apple/Google no nome do cliente, conta Stripe BR, contrato com o agregador.
