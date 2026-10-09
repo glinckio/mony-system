@@ -10,7 +10,8 @@ apps/api/
 │  ├─ app.module.ts
 │  ├─ core/                      # Infra transversal (sem regra de negócio)
 │  │  ├─ prisma/                 # PrismaService, extensão de soft delete
-│  │  ├─ auth/                   # JwtGuard, @UsuarioAtual(), @Publico(), AdminGuard + 2FA
+│  │  ├─ auth/                   # GuardaAutenticacao, TokensAcesso, @UsuarioAtual(), @Publico(), AdminGuard + 2FA
+│  │  ├─ limites/                # Contadores de tentativas no Redis (RN-008)
 │  │  ├─ planos/                 # @RecursoLimitado('lancamento'), PlanoGuard
 │  │  ├─ idempotencia/           # Interceptor de Idempotency-Key (Redis)
 │  │  ├─ erros/                  # Filtro global, catálogo de códigos de erro
@@ -125,12 +126,29 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Admin | `GET /admin/usuarios` · `PATCH /admin/usuarios/:id` · `GET /admin/assinaturas` · `GET /admin/metricas` · CRUD `/admin/novidades` · `GET/PUT /admin/mony/config` · `GET /admin/logs-ia` · `GET/PUT /admin/planos` · `GET/PUT /admin/limites` · CRUD `/admin/cupons` · `GET /admin/auditoria` **(proposta)** |
 | Tempo real | WebSocket `/v1/ws` (Socket.IO), salas `lista:<id>` para listas compartilhadas |
 
+## Autenticação
+
+Implementada na T-030 (RN-001 a RN-008; detalhes de segurança em [11](11-seguranca-e-lgpd.md#autenticação)).
+
+| Rota | Corpo | Resposta |
+|---|---|---|
+| `POST /auth/cadastro` | nome, e-mail, telefone, senha, `aceites` (versões dos termos e da privacidade), `dispositivo` | 201 + sessão |
+| `POST /auth/login` | e-mail, senha, `dispositivo` | 200 + sessão |
+| `POST /auth/renovar` | `renovacao` | 200 + sessão nova (o token anterior deixa de valer) |
+| `POST /auth/sair` | `renovacao` | 204 |
+| `POST /auth/sair-todos` | (token de acesso) | 204 |
+
+- **Sessão** (`@mony/shared/autenticacao`, `esquemaSessao`): `usuario`, `tokens` (`acesso`, `acessoExpiraEm`, `renovacao`, `renovacaoExpiraEm`) e `aceitesPendentes` (documentos com versão nova a aceitar, RN-007).
+- **Guarda global:** toda rota exige `Authorization: Bearer <acesso>`, menos as com `@Publico()`. Sem token ou token inválido → 401 `NAO_AUTENTICADO`; token vencido → 401 `TOKEN_EXPIRADO` (o app renova e repete a chamada).
+- **Erros:** `EMAIL_JA_CADASTRADO` (409), `TERMOS_PENDENTES` (403, cadastro com versão antiga), `CREDENCIAIS_INVALIDAS` (401, a mesma para e-mail inexistente e senha errada), `CONTA_BLOQUEADA` (403), `SESSAO_INVALIDA` (401, renovação recusada), `MUITAS_TENTATIVAS` (429, com `detalhes.tenteNovamenteEm`).
+- **Dispositivo:** o app manda um identificador estável do aparelho, gerado na instalação. Há uma sessão por aparelho: login de novo no mesmo aparelho troca a sessão.
+
 ## Guardas e decoradores
 
 | Decorador | Função |
 |---|---|
 | `@Publico()` | Rota sem token (cadastro, login, webhooks) |
-| `@UsuarioAtual()` | Injeta `{ usuarioId, dispositivoId, papel }` do JWT |
+| `@UsuarioAtual()` | Injeta `{ id, papel, sessaoId, dispositivoId }` do token de acesso |
 | `@RecursoLimitado('lancamento')` | Confere e consome cota do plano gratuito de forma atômica antes do handler (RN-122) |
 | `@ExigePlano('pago')` | Bloqueia Open Finance, detecção de apps e ligação no gratuito (RN-121) |
 | `@Admin()` | Papel admin + sessão de admin com 2FA |

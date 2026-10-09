@@ -81,7 +81,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 
 ## Fase 1 — Núcleo financeiro
 
-- [ ] **T-030** Autenticação: cadastro, login e-mail/senha, Argon2id, JWT 15 min, refresh rotativo por aparelho, sair, sair de todos
+- [x] **T-030** Autenticação: cadastro, login e-mail/senha, Argon2id, JWT 15 min, refresh rotativo por aparelho, sair, sair de todos (PR #14)
   - dep: T-008 · docs: 05, 11 · RN-001, RN-004, RN-007, RN-008
 - [ ] **T-031** Recuperação de senha por código de 6 dígitos + e-mail (EmailProvider com fake e Brevo)
   - dep: T-030 · RN-003
