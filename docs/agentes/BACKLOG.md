@@ -43,7 +43,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
 - [x] **T-009** Geração do cliente `@mony/api-client` com Orval e verificação no CI (PR #9)
   - dep: T-006, T-004 · docs: 02
   - Aceite: `pnpm --filter @mony/api-client generate` gera hooks TanStack Query; CI falha se o gerado estiver desatualizado.
-- [ ] **T-010** Esqueleto do app Expo (dev client, Expo Router, abas, providers, i18n, Sentry, EAS)
+- [x] **T-010** Esqueleto do app Expo (dev client, Expo Router, abas, providers, i18n, Sentry, EAS) (PR #10)
   - dep: T-003 · docs: 02, 04
   - Aceite: SDK estável mais recente travado; grupos `(auth)`, `(onboarding)`, `(tabs)` com cinco abas vazias; `app.config.ts` por ambiente; `eas.json` com perfis development/preview/production. 👤 Conta Expo/EAS do cliente.
 - [ ] **T-011** Design system base no app (tokens provisórios, componentes base, componente `Valor` com modo privacidade)

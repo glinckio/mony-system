@@ -64,7 +64,7 @@ Datas: competência como `YYYY-MM-01`, datas de calendário como `YYYY-MM-DD`, i
 ## Variáveis de ambiente
 
 - `apps/api`: `.env.example` documentado. Em nuvem, segredos vêm do Secrets Manager. Nenhum segredo em repositório.
-- `apps/mobile`: só valores públicos (`EXPO_PUBLIC_API_URL`, DSN do Sentry, chave pública da Stripe). Perfis `development`, `staging`, `production` em `eas.json`.
+- `apps/mobile`: só valores públicos (`EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SENTRY_DSN`, chave pública da Stripe), em `.env` local ou nas variáveis de ambiente do EAS. Perfis `development`, `preview` (aponta para staging) e `production` em `eas.json` ([12](12-infra-e-devops.md#app-eas)).
 
 ## Definição de pronto
 
