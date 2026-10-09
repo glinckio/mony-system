@@ -41,7 +41,7 @@ Versão do Node fixada em `.nvmrc` (LTS ativa) e em `engines`.
 | Componentes React | `PascalCase` em português quando for domínio | `CartaoResumo`, `FaturaLista` |
 | Textos de tela | sempre via i18n (`t('transacoes.vazio')`) | |
 
-Dinheiro: todo campo de valor termina em `Centavos` na API (`valorCentavos`) e é `bigint` no banco. No JSON vai como `number` (inteiro seguro até ~R$ 90 trilhões). Formatação só na borda (app), com `Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })`.
+Dinheiro: todo campo de valor termina em `Centavos` na API (`valorCentavos`) e é `bigint` no banco. No JSON vai como `number` (inteiro seguro até ~R$ 90 trilhões). Formatação só na borda (app), com `formatarCentavos` de `@mony/shared/dinheiro`: mesma saída de `Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })`, mas com aritmética inteira, sem dividir centavos por 100 em ponto flutuante.
 
 Datas: competência como `YYYY-MM-01`, datas de calendário como `YYYY-MM-DD`, instantes em ISO 8601 com fuso.
 
