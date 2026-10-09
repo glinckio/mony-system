@@ -82,6 +82,20 @@ jobs:
     name: Infra
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: public.ecr.aws/docker/library/postgres:18-alpine
+        env:
+          POSTGRES_USER: mony
+          POSTGRES_PASSWORD: mony-ci
+          POSTGRES_DB: mony
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mony -d mony"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
     steps:
       - name: Baixar o código
         uses: actions/checkout@v7
@@ -146,6 +160,18 @@ jobs:
           printf '::error title=Imagem da API não respondeu::%s\n' \
             "$(docker logs api 2>&1 | tail -n 30 | cut -c1-300 | sed 's/%/%25/g' | awk 'BEGIN { ORS = "%0A" } { print }')"
           exit 1
+
+      - name: Migração e seed pela imagem
+        # O mesmo comando que o deploy roda na tarefa avulsa, contra um Postgres vazio.
+        run: |
+          if ! saida=$(docker run --rm --network host \
+            -e DATABASE_URL=postgresql://mony:mony-ci@localhost:5432/mony \
+            mony-api:ci sh -c "prisma migrate deploy && prisma db seed" 2>&1); then
+            printf '::error title=Migração pela imagem falhou::%s\n' \
+              "$(echo "$saida" | tail -n 40 | cut -c1-300 | sed 's/%/%25/g' | awk 'BEGIN { ORS = "%0A" } { print }')"
+            exit 1
+          fi
+          echo "$saida" | tail -n 5
 
   # Migrações do Prisma e testes de integração com Postgres e Redis de verdade (doc 12 e 14).
   # O check "Banco" também é obrigatório para mergear na main.
