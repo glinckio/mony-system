@@ -187,5 +187,11 @@ jobs:
       - name: Testes de integração (Postgres e Redis)
         env:
           TESTES_INTEGRACAO: '1'
-        # O relator github-actions publica cada falha como anotação no PR.
-        run: pnpm --filter api exec vitest run --reporter=default --reporter=github-actions
+        # O relator github-actions publica cada falha como anotação; o resumo sai como aviso
+        # (notice), para conferir pela API que os testes de integração rodaram e não foram pulados.
+        run: |
+          set -o pipefail
+          pnpm --filter api exec vitest run --reporter=default --reporter=github-actions \
+            | tee "$RUNNER_TEMP/vitest.txt"
+          resumo=$(grep -E "^ +(Test Files|Tests) " "$RUNNER_TEMP/vitest.txt" | tr -s ' ' | paste -sd ';')
+          echo "::notice title=Testes da API com Postgres e Redis::$resumo"
