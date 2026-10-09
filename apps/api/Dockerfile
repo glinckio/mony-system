@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # Imagem da API (docs/arquitetura/12). A mesma imagem roda a API (comando padrão), o worker
 # (`node dist/worker.js`) e as migrações (`prisma migrate deploy && prisma db seed`).
 # Contexto do build: a raiz do monorepo.
