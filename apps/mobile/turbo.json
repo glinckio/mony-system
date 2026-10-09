@@ -1,0 +1,12 @@
+{
+  "$schema": "../../node_modules/turbo/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "inputs": ["$TURBO_DEFAULT$", ".env", ".env.local"],
+      "env": ["APP_ENV", "EXPO_PUBLIC_*"],
+      "passThroughEnv": ["EXPO_NO_TELEMETRY", "EXPO_OFFLINE"],
+      "outputs": ["dist/**"]
+    }
+  }
+}
