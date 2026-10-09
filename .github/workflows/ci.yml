@@ -159,8 +159,8 @@ jobs:
                              input=corpo.encode(), check=True)
           PY
 
-      - name: Gerar o Prisma Client
-        run: pnpm --filter api generate
+      - name: Gerar o Prisma Client e compilar a API e suas dependências
+        run: pnpm turbo run build --filter=api
 
       - name: Seed (duas vezes, para provar que pode repetir)
         run: |
