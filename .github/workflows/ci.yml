@@ -104,9 +104,11 @@ jobs:
 
       - name: Schema e migrações batem
         id: diferenca
+        # Chama o binário direto: o `pnpm exec` troca o código 2 ("há diferença") por 1.
+        working-directory: apps/api
         run: |
           set +e
-          pnpm --filter api exec prisma migrate diff --from-config-datasource \
+          ./node_modules/.bin/prisma migrate diff --from-config-datasource \
             --to-schema prisma/schema.prisma --script --exit-code \
             > "$RUNNER_TEMP/faltando.sql" 2> "$RUNNER_TEMP/erro.txt"
           codigo=$?
