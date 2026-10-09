@@ -107,13 +107,20 @@ jobs:
         run: |
           set +e
           pnpm --filter api exec prisma migrate diff --from-config-datasource \
-            --to-schema prisma/schema.prisma --script --exit-code > "$RUNNER_TEMP/faltando.sql"
+            --to-schema prisma/schema.prisma --script --exit-code \
+            > "$RUNNER_TEMP/faltando.sql" 2> "$RUNNER_TEMP/erro.txt"
           codigo=$?
           set -e
           if [ "$codigo" = "2" ]; then
             echo "::error title=Migração faltando::O schema.prisma tem mudanças sem migração. Rode: pnpm --filter api prisma migrate dev --name <nome>"
             echo "faltando=sim" >> "$GITHUB_OUTPUT"
             exit 1
+          fi
+          if [ "$codigo" != "0" ]; then
+            # Publica o erro como anotação, legível pela API sem baixar o log.
+            mensagem=$(cat "$RUNNER_TEMP/erro.txt" "$RUNNER_TEMP/faltando.sql" | head -c 4000 \
+              | sed -e 's/%/%25/g' | sed -e ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=prisma migrate diff falhou::$mensagem"
           fi
           exit "$codigo"
 
