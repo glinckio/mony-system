@@ -12,3 +12,4 @@ packages/config/test/fixtures/
 apps/api/src/generated/
 apps/api/prisma/migrations/
 packages/api-client/openapi.json
+apps/admin/src/rotas.gen.ts

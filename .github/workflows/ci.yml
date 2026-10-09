@@ -53,6 +53,18 @@ jobs:
       - name: Build, lint, typecheck e testes
         run: pnpm turbo run build lint typecheck test
 
+      - name: Arquivos gerados commitados
+        # O build regera arquivos que ficam no Git (ex.: rotas do admin em apps/admin/src/rotas.gen.ts).
+        # Diferença aqui quer dizer que alguém mudou a origem e não commitou o gerado.
+        run: |
+          mudancas=$(git status --porcelain)
+          if [ -n "$mudancas" ]; then
+            echo "$mudancas"
+            arquivos=$(echo "$mudancas" | awk '{print $2}' | paste -sd ' ')
+            echo "::error title=Arquivo gerado desatualizado::Rode pnpm build e commite. Arquivos: $arquivos"
+            exit 1
+          fi
+
       - name: Cliente da API em dia com o contrato
         # Exporta o OpenAPI da API e gera o @mony/api-client de novo; qualquer diferença quer dizer
         # que o contrato mudou e o cliente commitado ficou para trás (doc 02, T-009).

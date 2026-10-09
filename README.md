@@ -86,6 +86,20 @@ pnpm --filter @mony/api-client generate   # exporta packages/api-client/openapi.
 
 Commite o `openapi.json` e o `src/gerado/` junto com a mudança da API; o CI falha se o cliente estiver desatualizado. No app e no admin, configure uma vez com `configurarCliente({ urlBase, obterToken })` e use os hooks (`useVerificarSaude()` etc.). Erros chegam como `ErroApi`, com o `codigo` do catálogo de `@mony/shared/erros`.
 
+## Painel admin (`apps/admin`)
+
+React 19 + Vite 8, TanStack Router (rotas por arquivo) e TanStack Query, com shadcn/ui sobre Tailwind 4. Usa o mesmo `@mony/api-client` do app.
+
+```bash
+pnpm --filter admin dev       # http://localhost:5173 (precisa da API rodando em localhost:3000)
+pnpm --filter admin build     # gera apps/admin/dist (site estático)
+```
+
+- **API:** em desenvolvimento o painel chama `/v1` no próprio endereço e o Vite repassa para `http://localhost:3000` (troque com `API_LOCAL` no `apps/admin/.env`). Em produção, `VITE_API_URL` aponta para a API.
+- **Rotas** em `apps/admin/src/rotas/` (um arquivo por página). O `src/rotas.gen.ts` é gerado pelo plugin do TanStack Router ao rodar `dev` ou `build` e vai para o Git; o CI falha se ele estiver desatualizado.
+- **Componentes do shadcn/ui** ficam em `src/components/ui/`. Para adicionar outro: `pnpm dlx shadcn@latest add <componente>` dentro de `apps/admin`.
+- **Sem login ainda:** o login do admin com 2FA tem tarefa própria no BACKLOG.
+
 ## Comandos
 
 ```bash

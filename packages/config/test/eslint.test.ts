@@ -19,7 +19,9 @@ async function regrasVioladas(arquivo: string) {
   return resultado.messages.map((mensagem) => mensagem.ruleId ?? mensagem.message);
 }
 
-describe('config do ESLint', () => {
+// O primeiro lint monta o programa do TypeScript (regras com tipo) e passa de 5 s com a máquina
+// ocupada pelo resto do `turbo run`.
+describe('config do ESLint', { timeout: 30_000 }, () => {
   it('aceita código no padrão, inclusive any com justificativa', async () => {
     expect(await regrasVioladas('valido.ts')).toEqual([]);
   });

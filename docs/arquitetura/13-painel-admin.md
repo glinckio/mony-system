@@ -2,6 +2,25 @@
 
 Aplicação React (Vite + TanStack Router + TanStack Query + shadcn/ui) em `apps/admin`, consumindo a mesma API (`/v1/admin/*`) pelo cliente gerado. Nenhuma regra de negócio no painel: ele chama os mesmos Services que o app.
 
+## Estrutura
+
+```
+apps/admin/
+├─ src/
+│  ├─ rotas/                 # TanStack Router, um arquivo por página (__root.tsx = menu lateral)
+│  ├─ rotas.gen.ts           # Gerado pelo plugin do router (commitado; o CI confere)
+│  ├─ components/ui/         # Componentes do shadcn/ui (copiados para o projeto, editáveis)
+│  ├─ components/            # Componentes do painel
+│  ├─ i18n/                  # Textos em pt-BR (chaves tipadas)
+│  ├─ lib/                   # Cliente da API, utilitários
+│  ├─ secoes.ts              # Seções do menu
+│  └─ index.css              # Tailwind 4 + tema do shadcn/ui
+├─ components.json           # Configuração do `shadcn add`
+└─ vite.config.ts            # Plugins (router, React, Tailwind), proxy /v1 em desenvolvimento, Vitest
+```
+
+O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa `/v1` para a API local; em produção, `VITE_API_URL` aponta para a API (CORS ou mesmo domínio, definido com a infraestrutura).
+
 ## Acesso
 
 - Login separado do app, 2FA TOTP obrigatório (do PDF).

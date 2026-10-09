@@ -49,7 +49,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
 - [ ] **T-011** Design system base no app (tokens provisórios, componentes base, componente `Valor` com modo privacidade)
   - dep: T-010 · docs: 04 (Design system)
   - Aceite: tokens em um arquivo único, NativeWind configurado, componentes de `src/ui` com testes. Quando o design do cliente chegar, uma tarefa nova troca os tokens.
-- [ ] **T-012** Esqueleto do painel admin (Vite, TanStack Router/Query, shadcn/ui, cliente gerado)
+- [x] **T-012** Esqueleto do painel admin (Vite, TanStack Router/Query, shadcn/ui, cliente gerado) (PR #11)
   - dep: T-009 · docs: 13
 - [ ] **T-014** Migrar a API para NestJS 12 (ESM) quando o `nestjs-zod` suportar
   - dep: T-006 · docs: 02, 05

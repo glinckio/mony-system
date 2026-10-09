@@ -2,9 +2,23 @@ packages:
   - apps/*
   - packages/*
   - modules/*
+# Versões que precisam ser iguais em todo o monorepo. O app usa o React exato do SDK do Expo, e o
+# `@mony/api-client` precisa enxergar o mesmo React e o mesmo TanStack Query que o app (senão o
+# Metro empacota duas cópias e o `QueryClientProvider` do app não vale para os hooks gerados).
+catalog:
+  '@tanstack/react-query': 5.104.1
+  '@types/react': 19.2.18
+  react: 19.2.3
+  react-dom: 19.2.3
+  react-test-renderer: 19.2.3
+# Pacotes que trazem `react-dom` como dependência opcional (ex.: Prisma Studio, react-i18next) usam
+# a mesma versão do React do catálogo.
+overrides:
+  react-dom: 'catalog:'
 allowBuilds:
   '@prisma/engines': false
   '@scarf/scarf': false
+  '@sentry/cli': false
   '@swc/core': true
   esbuild: true
   msgpackr-extract: false
