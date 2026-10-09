@@ -86,9 +86,10 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    # Imagens oficiais pelo espelho da AWS: o Docker Hub recusou pulls do runner em 09/10/2026.
     services:
       postgres:
-        image: postgres:18-alpine
+        image: public.ecr.aws/docker/library/postgres:18-alpine
         env:
           POSTGRES_USER: mony
           POSTGRES_PASSWORD: mony-ci
@@ -101,7 +102,7 @@ jobs:
           --health-timeout 3s
           --health-retries 20
       redis:
-        image: redis:8-alpine
+        image: public.ecr.aws/docker/library/redis:8-alpine
         ports:
           - 6379:6379
         options: >-
