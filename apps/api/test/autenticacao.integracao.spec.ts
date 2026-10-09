@@ -219,7 +219,7 @@ describe.runIf(ativo)('integração: autenticação', () => {
     expect((await renovar(nova.tokens.renovacao)).statusCode).toBe(401);
   });
 
-  it('RN-004 login no mesmo aparelho troca a sessão; outro aparelho segue com a dele', async () => {
+  it('RN-004 login no mesmo aparelho troca a sessão; o reuso do token trocado só derruba aquele aparelho', async () => {
     const { email } = await contaNova();
     const ip = novoIp();
     const celular = aparelho('celular-da-ana-0001');
@@ -227,9 +227,13 @@ describe.runIf(ativo)('integração: autenticação', () => {
     const tablet = (await entrar(email, 'segredo123', ip, aparelho())).json<RespostaSessao>();
     const segunda = (await entrar(email, 'segredo123', ip, celular)).json<RespostaSessao>();
 
+    // O login novo no celular vale; o token da sessão anterior dele, não.
+    const renovada = await renovar(segunda.tokens.renovacao);
+    expect(renovada.statusCode).toBe(200);
     expect((await renovar(primeira.tokens.renovacao)).statusCode).toBe(401);
+    // Usar o token trocado conta como reuso: o celular sai, o tablet segue.
+    expect((await renovar(renovada.json<RespostaSessao>().tokens.renovacao)).statusCode).toBe(401);
     expect((await renovar(tablet.tokens.renovacao)).statusCode).toBe(200);
-    expect((await renovar(segunda.tokens.renovacao)).statusCode).toBe(200);
   });
 
   it('sair encerra a sessão deste aparelho', async () => {
