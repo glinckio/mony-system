@@ -19,7 +19,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
   - dep: — · docs: 03
   - Se `git remote -v` estiver vazio: peça ao humano para criar o repositório (ou rode `gh repo create <org>/mony --private --source . --push` se ele autorizar). Até existir remoto, nada de PR.
   - Aceite: pnpm workspaces + Turborepo, pastas `apps/`, `packages/`, `modules/`, `infra/`, `docs/`; `.nvmrc`, `.editorconfig`, `.gitignore`, `README.md` raiz; `docs/arquitetura/` e `docs/agentes/` versionados; `CLAUDE.md` na raiz. Este primeiro commit pode ir direto na `main` (é o único caso).
-- [ ] **T-002** Pacote `@mony/config`: ESLint, Prettier, tsconfig base, commitlint, Husky + lint-staged
+- [x] **T-002** Pacote `@mony/config`: ESLint, Prettier, tsconfig base, commitlint, Husky + lint-staged (PR #1)
   - dep: T-001 · docs: 03
   - Aceite: `pnpm turbo run lint typecheck` roda na raiz; commit fora do padrão é recusado.
 - [ ] **T-003** Pacote `@mony/shared`: utilitários de dinheiro e datas, enums e catálogo de erros

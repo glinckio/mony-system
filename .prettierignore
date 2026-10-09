@@ -1,0 +1,11 @@
+pnpm-lock.yaml
+# Markdown é escrito à mão (docs, CLAUDE.md); o Prettier realinharia todas as tabelas.
+**/*.md
+dist/
+build/
+coverage/
+.turbo/
+.expo/
+apps/mobile/ios/
+apps/mobile/android/
+packages/config/test/fixtures/
