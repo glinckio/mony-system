@@ -65,7 +65,24 @@ terraform -chdir=infra/ambientes/staging output -raw comandos_github | sh
 
 Isso grava as variáveis `STAGING_*` do repositório (região, papel de deploy, ECR, cluster, sub-redes etc.). Sem elas, o workflow [Deploy de staging](../.github/workflows/deploy-staging.yml) fica parado.
 
-### 4. Primeiro deploy
+### 4. Chaves da aplicação
+
+A API não sobe em produção sem a chave dos tokens de acesso (`JWT_CHAVE_PRIVADA`, ES256), lida do segredo `mony/staging/app`. Gere a chave e grave o segredo, na raiz do repositório:
+
+```bash
+node -e "
+const { generateKeyPairSync } = require('node:crypto');
+const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
+const pem = privateKey.export({ type: 'pkcs8', format: 'pem' });
+process.stdout.write(JSON.stringify({ JWT_CHAVE_PRIVADA: pem }));
+" > segredo-app.json
+aws secretsmanager put-secret-value --secret-id mony/staging/app --secret-string file://segredo-app.json
+rm segredo-app.json
+```
+
+O `put-secret-value` troca o JSON inteiro: quando houver outras chaves (Stripe, provedor de IA), grave todas juntas. Trocar a chave JWT derruba os tokens de acesso em uso; o app renova sozinho.
+
+### 5. Primeiro deploy
 
 ```bash
 gh workflow run deploy-staging.yml
@@ -83,7 +100,7 @@ curl "$(terraform -chdir=infra/ambientes/staging output -raw endereco_api)/v1/he
 ## Dia a dia
 
 - **Logs:** CloudWatch, grupos `/mony/staging/api` e `/mony/staging/worker` (30 dias).
-- **Chaves da aplicação** (JWT, Stripe, provedor de IA): no segredo `mony/staging/app`, em JSON. A tarefa que passar a usar uma chave inclui a leitura dela no `infra/modulos/ambiente/ecs.tf`.
+- **Chaves da aplicação** (JWT, Stripe, provedor de IA): no segredo `mony/staging/app`, em JSON (passo 4). A tarefa que passar a usar uma chave inclui a leitura dela no `infra/modulos/ambiente/ecs.tf`. Depois de mudar o segredo, um novo deploy (`gh workflow run deploy-staging.yml`) faz as tarefas lerem o valor novo.
 - **HTTPS:** até existir o domínio, o ALB atende só HTTP. Com o certificado do ACM, preencha `certificado_arn` em `ambientes/staging/main.tf` (T-015).
 - **Custos:** os itens fixos são o NAT gateway, o ALB, o RDS, o ElastiCache e as tarefas do Fargate, mesmo sem uso. Estime na [calculadora da AWS](https://calculator.aws/) antes de aplicar.
 - **Apagar o ambiente:** mude `banco_protecao_exclusao` para `false`, `terraform apply`, depois `terraform destroy`. O RDS deixa um snapshot final.

@@ -102,6 +102,7 @@ locals {
 
   segredos_container = [
     { name = "DATABASE_URL", valueFrom = "${aws_secretsmanager_secret.infra.arn}:DATABASE_URL::" },
+    { name = "JWT_CHAVE_PRIVADA", valueFrom = "${aws_secretsmanager_secret.app.arn}:JWT_CHAVE_PRIVADA::" },
   ]
 }
 
