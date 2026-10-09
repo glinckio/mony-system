@@ -51,6 +51,18 @@ docker compose down -v        # para e apaga os dados
 
 Porta ocupada na sua máquina? Defina `POSTGRES_PORTA`, `REDIS_PORTA`, `S3_PORTA`, `S3_PAINEL_PORTA`, `SMTP_PORTA` ou `MAILPIT_PAINEL_PORTA` no ambiente ou num arquivo `.env` na raiz (ex.: `POSTGRES_PORTA=5433`).
 
+## API
+
+```bash
+cp apps/api/.env.example apps/api/.env   # uma vez
+pnpm --filter api dev          # API em http://localhost:3000, recarrega ao salvar
+pnpm --filter api dev:worker   # worker (filas e rotinas)
+```
+
+- Saúde: `http://localhost:3000/v1/health`
+- Documentação OpenAPI (fora de produção): `http://localhost:3000/v1/docs`, JSON em `/v1/docs/openapi.json`
+- Erros sempre em `{ "erro": { "codigo", "mensagem", "detalhes" } }`, com os códigos de `@mony/shared/erros`.
+
 ## Comandos
 
 ```bash
