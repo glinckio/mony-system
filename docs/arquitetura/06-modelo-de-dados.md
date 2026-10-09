@@ -130,6 +130,13 @@ erDiagram
 | `cartoes` | `conta_pagamento_id` | Conta padrão de onde sai o pagamento da fatura |
 | `lembretes` | `ultima_ligacao_em` | Controle do limite mensal de ligações |
 | `mensagens` | `rascunho_id`, `idempotency_key` | Rastrear qual rascunho a mensagem completa; evitar duplicata em reenvio |
+| `limites_plano` | `limite_quantidade` | Limites por quantidade de itens (cartão, lista, lembrete ativo) do RN-120 (T-007) |
+| `parcelamentos` | `valor_financiado`, `observacao` | Valor financiado guardado à parte (RN-052) e observações do cadastro (RN-050) (T-007) |
+| `recorrencias` | `tipo`, `descricao`, `valor`, `forma_pagamento`, `conta_id`, `cartao_id`, `data_inicio`, `ativa` | Modelo da ocorrência que a rotina materializa (RN-043) (T-007) |
+| `dispositivos` | `ativo` | Token de push inválido desativa o dispositivo (doc 09) (T-007) |
+| `codigos_recuperacao` | `tentativas` | No máximo 5 tentativas por código (RN-003) (T-007) |
+| `listas_compras` | `finalizada_em` | Finalizar a lista gera a despesa (RN-072) (T-007) |
+| `faturas`, `parcelas`, `anexos`, `nfce_itens`, `metas_aportes`, `itens_lista`, `mensagens` | `usuario_id` | Regra "toda tabela de dados do usuário tem `usuario_id`" também nas tabelas filhas (T-007) |
 
 ## Tabelas propostas
 
@@ -148,6 +155,8 @@ erDiagram
 Com essas, o banco fica com 50 tabelas. Cada adição é **proposta**: pode ser recusada sem afetar o resto do desenho.
 
 ## Índices essenciais
+
+> **Implementação (T-007).** O schema do Prisma não representa índice parcial (`WHERE …`) nem índice por expressão (`to_tsvector`), e o CI compara schema e banco. Por isso a primeira migração tem os índices abaixo sem a cláusula `WHERE` e sem os dois índices GIN de texto; estes entram nas tarefas de busca de transações (T-037) e de histórico de preços (T-066). O índice único de `id_externo` funciona igual sem o `WHERE`, porque o Postgres não compara `NULL` em índice único. Nome de categoria único por usuário e tipo (RN-065) é conferido na aplicação, porque categoria excluída logicamente não pode bloquear o nome.
 
 ```sql
 -- Listagem e filtros de transações

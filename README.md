@@ -63,6 +63,18 @@ pnpm --filter api dev:worker   # worker (filas e rotinas)
 - Documentação OpenAPI (fora de produção): `http://localhost:3000/v1/docs`, JSON em `/v1/docs/openapi.json`
 - Erros sempre em `{ "erro": { "codigo", "mensagem", "detalhes" } }`, com os códigos de `@mony/shared/erros`.
 
+## Banco de dados
+
+Com os serviços do `docker compose` no ar e o `apps/api/.env` criado:
+
+```bash
+pnpm --filter api prisma migrate deploy        # aplica as migrações
+pnpm --filter api seed                         # limites do plano gratuito + usuário demo@mony.local
+pnpm --filter api prisma migrate dev --name x  # depois de mudar o schema.prisma: cria a migração
+```
+
+Schema em [`apps/api/prisma/schema.prisma`](apps/api/prisma/schema.prisma). O cliente do Prisma é gerado em `apps/api/src/generated/` (fora do Git) por `pnpm --filter api generate`, que o Turbo já roda antes de build, lint, typecheck e testes.
+
 ## Comandos
 
 ```bash
