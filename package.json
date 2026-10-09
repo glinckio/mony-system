@@ -9,13 +9,23 @@
     "pnpm": ">=12"
   },
   "scripts": {
+    "prepare": "husky",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "turbo": "^2.11.7"
+    "@commitlint/cli": "^21.2.3",
+    "@mony/config": "workspace:*",
+    "eslint": "^10.12.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.9",
+    "turbo": "^2.11.7",
+    "typescript": "~6.0.3"
   }
 }

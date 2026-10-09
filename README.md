@@ -42,9 +42,21 @@ pnpm typecheck        # turbo run typecheck
 pnpm test             # turbo run test
 pnpm build            # turbo run build
 pnpm dev              # turbo run dev (api, worker e admin, quando existirem)
+pnpm format           # Prettier em todo o repositório (pnpm format:check só confere)
 ```
 
 A verificação completa antes de abrir PR está no [`CLAUDE.md`](CLAUDE.md), seção 5.
+
+## Configurações compartilhadas e hooks de Git
+
+ESLint, Prettier, `tsconfig` base e commitlint ficam em [`packages/config`](packages/config) (`@mony/config`). Cada pacote cria o próprio `eslint.config.js` com `criarConfigEslint({ tsconfigRootDir: import.meta.dirname })` e estende `@mony/config/tsconfig/base.json` (ou `node.json`).
+
+O `pnpm install` instala os hooks do Husky:
+
+- **pre-commit**: ESLint e Prettier só nos arquivos em stage (lint-staged).
+- **commit-msg**: commitlint recusa mensagem fora do padrão `tipo(T-031): assunto em minúsculas`.
+
+No Windows, os hooks rodam pelo shell do Git. Se um cliente gráfico de Git disser que não acha o `pnpm`, faça o commit pelo terminal ou ajuste o `PATH` em `~/.config/husky/init.sh`.
 
 ## Convenções rápidas
 
