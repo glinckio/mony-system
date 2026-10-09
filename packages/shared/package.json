@@ -1,0 +1,43 @@
+{
+  "name": "@mony/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Código compartilhado entre app, API e admin: dinheiro, datas, enums e catálogo de erros",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./dinheiro": {
+      "types": "./dist/dinheiro.d.ts",
+      "default": "./dist/dinheiro.js"
+    },
+    "./datas": {
+      "types": "./dist/datas.d.ts",
+      "default": "./dist/datas.js"
+    },
+    "./enums": {
+      "types": "./dist/enums.d.ts",
+      "default": "./dist/enums.js"
+    },
+    "./erros": {
+      "types": "./dist/erros.d.ts",
+      "default": "./dist/erros.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@mony/config": "workspace:*",
+    "eslint": "^10.12.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.3"
+  }
+}

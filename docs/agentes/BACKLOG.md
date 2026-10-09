@@ -22,7 +22,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
 - [x] **T-002** Pacote `@mony/config`: ESLint, Prettier, tsconfig base, commitlint, Husky + lint-staged (PR #1)
   - dep: T-001 · docs: 03
   - Aceite: `pnpm turbo run lint typecheck` roda na raiz; commit fora do padrão é recusado.
-- [ ] **T-003** Pacote `@mony/shared`: utilitários de dinheiro e datas, enums e catálogo de erros
+- [x] **T-003** Pacote `@mony/shared`: utilitários de dinheiro e datas, enums e catálogo de erros (PR #2)
   - dep: T-002 · docs: 02, 03, 05
   - Aceite: `dinheiro.ts` (centavos ↔ exibição pt-BR, soma e divisão sem perder centavo, distribuição de resto), `datas.ts` (fuso do usuário, competência, último dia do mês), enums do modelo de dados, códigos de erro. Testes com Vitest.
 - [ ] **T-004** CI no GitHub Actions
