@@ -7,6 +7,7 @@ import { z } from 'zod';
 
 import { AppModule } from '../src/app.module';
 import { configurarApp, criarAdaptadorFastify } from '../src/configurar-app';
+import { TokensAcesso } from '../src/core/auth/tokens-acesso';
 import { Clock, ClockFixo } from '../src/core/clock/clock';
 import { type Contexto, ContextoAtual, contextoDoSistema } from '../src/core/contexto/contexto';
 import { AoEvento } from '../src/core/eventos/ao-evento.decorator';
@@ -71,14 +72,21 @@ async function criarApp(): Promise<{ api: NestFastifyApplication; rotas: RotasNu
     .useValue(new ClockFixo('2026-10-09T12:00:00Z'))
     .compile();
   app = modulo.createNestApplication<NestFastifyApplication>(criarAdaptadorFastify());
-  // Simula o guard de autenticação (T-030): o usuário vem de um cabeçalho de teste.
+  // O cabeçalho de teste `x-usuario-teste` vira um token de acesso de verdade para esse usuário.
+  const tokens = modulo.get(TokensAcesso);
   app
     .getHttpAdapter()
     .getInstance()
-    .addHook('preHandler', (requisicao, _resposta, pronto) => {
+    .addHook('onRequest', async (requisicao) => {
       const usuario = requisicao.headers['x-usuario-teste'];
-      if (typeof usuario === 'string') requisicao.usuario = { id: usuario, papel: 'usuario' };
-      pronto();
+      if (typeof usuario !== 'string') return;
+      const { token } = await tokens.emitir({
+        id: usuario,
+        papel: 'usuario',
+        sessaoId: `sessao-${usuario}`,
+        dispositivoId: null,
+      });
+      requisicao.headers.authorization = `Bearer ${token}`;
     });
   configurarApp(app, { documentacao: false });
   await app.init();
@@ -199,11 +207,15 @@ describe('idempotência (Idempotency-Key)', () => {
       api.inject({
         method: 'POST',
         url: '/v1/teste-nucleo/pagamentos',
-        headers: { 'idempotency-key': 'chave-pagamento-0001' },
+        headers: { 'x-usuario-teste': 'u1', 'idempotency-key': 'chave-pagamento-0001' },
       });
     expect((await pagar()).statusCode).toBe(200);
     expect((await pagar()).statusCode).toBe(200);
-    const livre = await api.inject({ method: 'POST', url: '/v1/teste-nucleo/sem-idempotencia' });
+    const livre = await api.inject({
+      method: 'POST',
+      url: '/v1/teste-nucleo/sem-idempotencia',
+      headers: { 'x-usuario-teste': 'u1' },
+    });
     expect(livre.statusCode).toBe(201);
     expect(rotas.execucoes).toBe(2);
   });

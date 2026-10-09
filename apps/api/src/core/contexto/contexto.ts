@@ -1,11 +1,13 @@
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
-import type { OrigemContexto, PapelUsuario } from '@mony/shared/enums';
+import type { OrigemContexto } from '@mony/shared/enums';
 import type { FastifyRequest } from 'fastify';
+
+import type { UsuarioAutenticado } from '../auth/tokens-acesso';
 
 declare module 'fastify' {
   interface FastifyRequest {
-    /** Preenchido pelo guard de autenticação (T-030). */
-    usuario?: { id: string; papel: PapelUsuario };
+    /** Preenchido pela guarda de autenticação a partir do token de acesso. */
+    usuario?: UsuarioAutenticado;
   }
 }
 

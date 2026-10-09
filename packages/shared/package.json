@@ -10,6 +10,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./autenticacao": {
+      "types": "./dist/autenticacao.d.ts",
+      "default": "./dist/autenticacao.js"
+    },
     "./dinheiro": {
       "types": "./dist/dinheiro.d.ts",
       "default": "./dist/dinheiro.js"
@@ -37,6 +41,9 @@
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@mony/config": "workspace:*",

@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.1.0",
   "paths": {
     "/v1/health": {
       "get": {
@@ -19,6 +19,142 @@
         },
         "tags": [
           "saude"
+        ]
+      }
+    },
+    "/v1/auth/cadastro": {
+      "post": {
+        "operationId": "cadastrarAutenticacao",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CadastroDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Conta criada e sessão aberta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "operationId": "entrarAutenticacao",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sessão aberta neste aparelho.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/v1/auth/renovar": {
+      "post": {
+        "operationId": "renovarAutenticacao",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenovacaoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Novo par de tokens; o anterior deixa de valer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/v1/auth/sair": {
+      "post": {
+        "operationId": "sairAutenticacao",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenovacaoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Sessão deste aparelho encerrada."
+          }
+        },
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/v1/auth/sair-todos": {
+      "post": {
+        "operationId": "sairDeTodosAutenticacao",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Todas as sessões do usuário encerradas."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "autenticacao"
         ]
       }
     }
@@ -45,13 +181,226 @@
         "properties": {
           "status": {
             "type": "string",
-            "enum": [
-              "ok"
-            ]
+            "const": "ok"
           }
         },
         "required": [
           "status"
+        ]
+      },
+      "CadastroDto": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "telefone": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "senha": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          },
+          "aceites": {
+            "type": "object",
+            "properties": {
+              "termos": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              },
+              "privacidade": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              }
+            },
+            "required": [
+              "termos",
+              "privacidade"
+            ]
+          },
+          "dispositivo": {
+            "type": "object",
+            "properties": {
+              "identificador": {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 200
+              },
+              "plataforma": {
+                "type": "string",
+                "enum": [
+                  "ios",
+                  "android"
+                ]
+              },
+              "modelo": {
+                "type": "string",
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "identificador",
+              "plataforma"
+            ]
+          }
+        },
+        "required": [
+          "nome",
+          "email",
+          "telefone",
+          "senha",
+          "aceites",
+          "dispositivo"
+        ]
+      },
+      "SessaoDto": {
+        "type": "object",
+        "properties": {
+          "usuario": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "nome": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "telefone": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "onboardingConcluido": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "nome",
+              "email",
+              "telefone",
+              "onboardingConcluido"
+            ]
+          },
+          "tokens": {
+            "type": "object",
+            "properties": {
+              "acesso": {
+                "type": "string"
+              },
+              "acessoExpiraEm": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              "renovacao": {
+                "type": "string"
+              },
+              "renovacaoExpiraEm": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "acesso",
+              "acessoExpiraEm",
+              "renovacao",
+              "renovacaoExpiraEm"
+            ]
+          },
+          "aceitesPendentes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "termos",
+                "privacidade"
+              ]
+            }
+          }
+        },
+        "required": [
+          "usuario",
+          "tokens",
+          "aceitesPendentes"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "senha": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "dispositivo": {
+            "type": "object",
+            "properties": {
+              "identificador": {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 200
+              },
+              "plataforma": {
+                "type": "string",
+                "enum": [
+                  "ios",
+                  "android"
+                ]
+              },
+              "modelo": {
+                "type": "string",
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "identificador",
+              "plataforma"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "senha",
+          "dispositivo"
+        ]
+      },
+      "RenovacaoDto": {
+        "type": "object",
+        "properties": {
+          "renovacao": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "renovacao"
         ]
       }
     }

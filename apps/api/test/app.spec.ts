@@ -7,12 +7,14 @@ import { z } from 'zod';
 
 import { AppModule } from '../src/app.module';
 import { configurarApp, criarAdaptadorFastify } from '../src/configurar-app';
+import { Publico } from '../src/core/auth/publico.decorator';
 import { ErroDominio } from '../src/core/erros/erro-dominio';
 import { semServicosExternos } from './utilitarios';
 
 class EcoDto extends createZodDto(z.object({ valorCentavos: z.number().int().positive() })) {}
 
 /** Rotas só de teste, para exercitar o filtro de erros e a validação. */
+@Publico()
 @Controller('teste')
 class RotasDeTesteController {
   @Get('erro-dominio')
