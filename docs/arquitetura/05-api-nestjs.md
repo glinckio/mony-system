@@ -156,4 +156,4 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | `agenda` | Sincronização Google/Microsoft |
 | `rotinas` | Rotinas diárias, semanais e mensais (ver [09](09-notificacoes-e-rotinas.md#rotinas-agendadas)) |
 
-Jobs são idempotentes (chave de job determinística, ex.: `fechar-fatura:<faturaId>`), com retry exponencial e fila de falhas monitorada.
+Jobs são idempotentes (id de job determinístico, ex.: `fechar-fatura-<faturaId>`, montado com `idDeJob`; o BullMQ recusa id com `:` e id só com dígitos), com retry exponencial e fila de falhas monitorada.

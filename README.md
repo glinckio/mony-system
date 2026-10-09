@@ -71,6 +71,7 @@ Com os serviços do `docker compose` no ar e o `apps/api/.env` criado:
 pnpm --filter api prisma migrate deploy        # aplica as migrações
 pnpm --filter api seed                         # limites do plano gratuito + usuário demo@mony.local
 pnpm --filter api prisma migrate dev --name x  # depois de mudar o schema.prisma: cria a migração
+TESTES_INTEGRACAO=1 pnpm --filter api test     # testes da API também contra Postgres e Redis
 ```
 
 Schema em [`apps/api/prisma/schema.prisma`](apps/api/prisma/schema.prisma). O cliente do Prisma é gerado em `apps/api/src/generated/` (fora do Git) por `pnpm --filter api generate`, que o Turbo já roda antes de build, lint, typecheck e testes.

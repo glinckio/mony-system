@@ -1,12 +1,16 @@
-import { NestFactory } from '@nestjs/core';
+import { Test } from '@nestjs/testing';
 import { describe, expect, it } from 'vitest';
 
 import { validarAmbiente } from '../src/core/config/ambiente';
 import { deveExporDocumentacao } from '../src/core/openapi/openapi';
 import { WorkerModule } from '../src/worker.module';
+import { semServicosExternos } from './utilitarios';
 
 describe('variáveis de ambiente', () => {
-  const banco = { DATABASE_URL: 'postgresql://mony:mony@localhost:5432/mony' };
+  const banco = {
+    DATABASE_URL: 'postgresql://mony:mony@localhost:5432/mony',
+    REDIS_URL: 'redis://localhost:6379',
+  };
 
   it('aplica os padrões e converte a porta para número', () => {
     expect(validarAmbiente(banco)).toEqual({
@@ -24,9 +28,10 @@ describe('variáveis de ambiente', () => {
     expect(() => validarAmbiente({ ...banco, LOG_LEVEL: 'verboso' })).toThrow(/LOG_LEVEL/);
   });
 
-  it('exige a URL do banco', () => {
+  it('exige as URLs do banco e do Redis', () => {
     expect(() => validarAmbiente({})).toThrow(/DATABASE_URL/);
-    expect(() => validarAmbiente({ DATABASE_URL: 'mysql://x' })).toThrow(/DATABASE_URL/);
+    expect(() => validarAmbiente({ ...banco, DATABASE_URL: 'mysql://x' })).toThrow(/DATABASE_URL/);
+    expect(() => validarAmbiente({ ...banco, REDIS_URL: 'localhost:6379' })).toThrow(/REDIS_URL/);
   });
 });
 
@@ -40,8 +45,10 @@ describe('documentação', () => {
 
 describe('worker', () => {
   it('sobe o contexto sem servidor HTTP e encerra', async () => {
-    const contexto = await NestFactory.createApplicationContext(WorkerModule, { logger: false });
-    await contexto.init();
-    await contexto.close();
+    const modulo = await semServicosExternos(
+      Test.createTestingModule({ imports: [WorkerModule] }),
+    ).compile();
+    await modulo.init();
+    await modulo.close();
   });
 });

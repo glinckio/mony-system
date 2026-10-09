@@ -9,8 +9,11 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       LOG_LEVEL: 'silent',
-      // Nenhum teste unitário abre conexão: o Prisma só conecta na primeira consulta.
-      DATABASE_URL: 'postgresql://mony:mony@localhost:5432/mony_teste',
+      // Nos testes unitários nada conecta: o Prisma e o Redis só abrem conexão no primeiro comando,
+      // e as filas são trocadas por falsas. Os testes de integração (TESTES_INTEGRACAO=1) usam as
+      // URLs reais vindas do ambiente.
+      DATABASE_URL: process.env.DATABASE_URL ?? 'postgresql://mony:mony@localhost:5432/mony_teste',
+      REDIS_URL: process.env.REDIS_URL ?? 'redis://localhost:6399',
     },
   },
 });

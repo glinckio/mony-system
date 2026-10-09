@@ -28,6 +28,14 @@ export const CATALOGO_ERROS = {
   ACESSO_NEGADO: { status: 403, mensagem: 'Você não tem permissão para esta ação.' },
   NAO_ENCONTRADO: { status: 404, mensagem: 'Não encontramos o que você procurou.' },
   CONFLITO: { status: 409, mensagem: 'Esta ação conflita com o estado atual dos dados.' },
+  REQUISICAO_EM_ANDAMENTO: {
+    status: 409,
+    mensagem: 'Esta operação ainda está sendo processada. Aguarde e tente de novo.',
+  },
+  CHAVE_IDEMPOTENCIA_REUTILIZADA: {
+    status: 422,
+    mensagem: 'Esta Idempotency-Key já foi usada com outros dados.',
+  },
   VERSAO_APP_DESATUALIZADA: {
     status: 426,
     mensagem: 'Atualize o app para continuar usando o Mony.',

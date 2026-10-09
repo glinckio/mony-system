@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { AppModule } from '../src/app.module';
 import { configurarApp, criarAdaptadorFastify } from '../src/configurar-app';
 import { ErroDominio } from '../src/core/erros/erro-dominio';
+import { semServicosExternos } from './utilitarios';
 
 class EcoDto extends createZodDto(z.object({ valorCentavos: z.number().int().positive() })) {}
 
@@ -36,10 +37,12 @@ class RotasDeTesteController {
 let app: NestFastifyApplication | undefined;
 
 async function criarApp(opcoes = { documentacao: true }): Promise<NestFastifyApplication> {
-  const modulo = await Test.createTestingModule({
-    imports: [AppModule],
-    controllers: [RotasDeTesteController],
-  }).compile();
+  const modulo = await semServicosExternos(
+    Test.createTestingModule({
+      imports: [AppModule],
+      controllers: [RotasDeTesteController],
+    }),
+  ).compile();
   app = modulo.createNestApplication<NestFastifyApplication>(criarAdaptadorFastify());
   configurarApp(app, opcoes);
   await app.init();

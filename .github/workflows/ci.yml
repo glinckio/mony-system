@@ -53,7 +53,7 @@ jobs:
       - name: Build, lint, typecheck e testes
         run: pnpm turbo run build lint typecheck test
 
-  # Migrações do Prisma num Postgres de verdade (doc 12: checagem de migração no PR).
+  # Migrações do Prisma e testes de integração com Postgres e Redis de verdade (doc 12 e 14).
   # O check "Banco" também é obrigatório para mergear na main.
   banco:
     name: Banco
@@ -76,9 +76,19 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
     env:
       HUSKY: '0'
       DATABASE_URL: postgresql://mony:mony-ci@localhost:5432/mony
+      REDIS_URL: redis://localhost:6379
     steps:
       - name: Baixar o código
         uses: actions/checkout@v7
@@ -173,3 +183,9 @@ jobs:
             fi
             grep -E "Limites|demonstração" "$RUNNER_TEMP/seed.txt"
           done
+
+      - name: Testes de integração (Postgres e Redis)
+        env:
+          TESTES_INTEGRACAO: '1'
+        # O relator github-actions publica cada falha como anotação no PR.
+        run: pnpm --filter api exec vitest run --reporter=default --reporter=github-actions

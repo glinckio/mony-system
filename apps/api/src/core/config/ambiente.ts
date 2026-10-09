@@ -11,6 +11,7 @@ export const esquemaAmbiente = z.object({
   DATABASE_URL: z
     .string()
     .regex(/^postgres(ql)?:\/\//, 'deve ser uma URL postgresql://usuario:senha@host:porta/banco'),
+  REDIS_URL: z.string().regex(/^rediss?:\/\//, 'deve ser uma URL redis://host:porta'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 });
 
