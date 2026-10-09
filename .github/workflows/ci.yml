@@ -159,7 +159,17 @@ jobs:
                              input=corpo.encode(), check=True)
           PY
 
+      - name: Gerar o Prisma Client
+        run: pnpm --filter api generate
+
       - name: Seed (duas vezes, para provar que pode repetir)
         run: |
-          pnpm --filter api seed
-          pnpm --filter api seed
+          for vez in 1 2; do
+            if ! pnpm --filter api seed > "$RUNNER_TEMP/seed.txt" 2>&1; then
+              mensagem=$(tail -c 4000 "$RUNNER_TEMP/seed.txt" | sed -e 's/%/%25/g' \
+                | sed -e ':a;N;$!ba;s/\n/%0A/g')
+              echo "::error title=Seed falhou (vez $vez)::$mensagem"
+              exit 1
+            fi
+            grep -E "Limites|demonstração" "$RUNNER_TEMP/seed.txt"
+          done
