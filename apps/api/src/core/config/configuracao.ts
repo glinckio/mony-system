@@ -24,6 +24,10 @@ export class Configuracao {
     return this.config.get('DATABASE_URL', { infer: true });
   }
 
+  get urlRedis(): string {
+    return this.config.get('REDIS_URL', { infer: true });
+  }
+
   get nivelLog(): Ambiente['LOG_LEVEL'] {
     return this.config.get('LOG_LEVEL', { infer: true });
   }

@@ -37,7 +37,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
 - [x] **T-007** Prisma: schema inicial completo e seed (PR #7)
   - dep: T-006 · docs: 06
   - Aceite: as 41 tabelas do PDF + colunas e tabelas propostas em 06, enums, índices essenciais, extensão de soft delete, seed (categorias padrão, limites do gratuito, apps sugeridos). Migração aplicando em banco limpo.
-- [ ] **T-008** Núcleo da API: `Clock` injetável, `Contexto` (usuarioId, origem, idempotencyKey), interceptor de idempotência, barramento de eventos, filas BullMQ registradas
+- [x] **T-008** Núcleo da API: `Clock` injetável, `Contexto` (usuarioId, origem, idempotencyKey), interceptor de idempotência, barramento de eventos, filas BullMQ registradas (PR #8)
   - dep: T-007 · docs: 05
   - Aceite: testes provando que POST repetido com a mesma `Idempotency-Key` devolve a mesma resposta sem duplicar.
 - [ ] **T-009** Geração do cliente `@mony/api-client` com Orval e verificação no CI
