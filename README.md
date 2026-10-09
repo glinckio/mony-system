@@ -62,6 +62,7 @@ pnpm --filter api dev:worker   # worker (filas e rotinas)
 - Saúde: `http://localhost:3000/v1/health`
 - Documentação OpenAPI (fora de produção): `http://localhost:3000/v1/docs`, JSON em `/v1/docs/openapi.json`
 - Erros sempre em `{ "erro": { "codigo", "mensagem", "detalhes" } }`, com os códigos de `@mony/shared/erros`.
+- Autenticação: `POST /v1/auth/cadastro` e `/v1/auth/login` devolvem os tokens; as demais rotas pedem `Authorization: Bearer <acesso>` (detalhes no [doc 05](docs/arquitetura/05-api-nestjs.md#autenticação)). Sem `JWT_CHAVE_PRIVADA` no `.env`, a API gera uma chave temporária a cada subida (os tokens caem ao reiniciar); produção exige a chave.
 
 ## Banco de dados
 

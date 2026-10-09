@@ -74,3 +74,25 @@ Contexto: o doc 13 pede React + Vite + TanStack Router + TanStack Query + shadcn
 
 ## 2026-10-09 — T-026 — NFC-e por API de terceiros, só com a chave
 Contexto: o doc 10 manda preferir API de terceiros para ler cupons de NFC-e, e a PoC devia avaliar a cobertura nas UFs prioritárias, que o cliente ainda não definiu (doc 15, pergunta 13). Decisões: (1) Recomendação para a T-066: `NfceProvider` com a Infosimples ("SEFAZ / NFC-e Unificada"): cobrança por consulta, itens documentados, 26 UFs nas fontes (DF a confirmar). NFE.io não documenta cobertura nem campos; a Tera cobra por campanha. Leitor próprio só se o custo ou a cobertura pedirem, por UF. Relatório em `docs/agentes/poc/T-026.md`. (2) A API manda só a chave de acesso ao provedor e nunca acessa a URL do QR Code, o que elimina o risco de SSRF do doc 10. A lista de domínios por UF fica para um eventual leitor próprio. (3) `lerQrNfce` em `@mony/shared/nfce` lê os QR Codes versões 1, 2 e 3 e a chave digitada, e confere formato, dígito verificador, UF e modelo 65, já com o CNPJ alfanumérico (em produção desde 06/07/2026: letras nas posições 7 a 18, dígito com ASCII − 48). Sem `URLSearchParams`, que não existe em todos os ambientes do pacote. (4) Nota em contingência entra com novas tentativas espaçadas; cupom de homologação é recusado. Pendência humana em BLOQUEIOS: conta de teste e 20 cupons reais antes da T-066. Reversível: sim.
+
+## 2026-10-09 — T-030 — Autenticação
+Contexto: RN-001 a RN-008 e docs 05 e 11. Decisões:
+- **Rotas e guarda.** `/v1/auth/cadastro`, `login`, `renovar`, `sair` (pelo token de renovação, sem exigir o de acesso) e `sair-todos` (com o token de acesso). Guarda global (`APP_GUARD`) com `@Publico()` para as exceções; `request.usuario` vira `{ id, papel, sessaoId, dispositivoId }`.
+- **Token de acesso.** JWT ES256 de 15 minutos com `jose`, `kid`, emissor `mony-api`, audiência `mony` e a hora do `Clock`. `JWT_CHAVE_PRIVADA` (PEM PKCS#8) é obrigatória em produção; fora dela, sem a chave, a API gera uma temporária. A chave pública sai da privada. Rotação com duas chaves fica para quando houver a primeira troca.
+- **Token de renovação.** 256 bits aleatórios, só o SHA-256 no banco. Vale 60 dias sem uso (valor nosso). Cada renovação cria uma sessão nova e revoga a anterior numa transação. Uma sessão por aparelho: login de novo no mesmo aparelho revoga a sessão anterior dele. Reuso de um token que já não vale (girado, ou trocado por um login novo no aparelho) revoga todas as sessões daquele aparelho; os outros aparelhos seguem (RN-004). Duas renovações simultâneas com o mesmo token também contam como reuso: o app faz uma renovação por vez (doc 04). Se a resposta de uma renovação se perder e o app repetir com o token antigo, o aparelho sai e o usuário entra de novo. Uma janela de tolerância fica para depois, se isso aparecer na prática.
+- **Senha.** Argon2id com `@node-rs/argon2`, 64 MB e 3 iterações, sem script de instalação. E-mail inexistente também passa por um `verify`, para o tempo não revelar quem tem conta. Mesma resposta (`CREDENCIAIS_INVALIDAS`) para os dois casos.
+- **RN-008.** Contadores no Redis (`core/limites`, `INCR` + `EXPIRE NX`, janela fixa de 15 minutos). Contam toda tentativa de login: 5 por e-mail (chave com o SHA-256 do e-mail) e 20 por IP. Login com sucesso zera o contador do e-mail. O IP vem do `X-Forwarded-For` só em produção (`trustProxy`), atrás do ALB. Em vez do `@nestjs/throttler`, porque a regra é por e-mail, não só por rota. O limite geral fica para a T-144.
+- **RN-001.**
+  - Telefone obrigatório e normalizado em E.164 brasileiro (`+55…`).
+  - E-mail em minúsculas e sem espaços.
+  - Senha de 8 a 128 caracteres. O login aceita qualquer tamanho até 128, para quem tem conta não ser barrado por regra nova.
+- **RN-006 e RN-007.**
+  - O cadastro cria, numa transação, o usuário, os aceites, a assinatura `teste` de 3 dias (72 h a partir do cadastro) e os padrões (`aplicarPadroesDoUsuario`). Também abre a sessão.
+  - O controle de um teste por pessoa (RN-125) fica para a T-101.
+  - Versões vigentes dos documentos em `@mony/shared/autenticacao` (`VERSOES_DOCUMENTOS`), provisórias até os textos do cliente.
+  - Cadastro com versão antiga → `TERMOS_PENDENTES`.
+  - Login e renovação devolvem `aceitesPendentes`. Bloquear as outras rotas até o novo aceite fica para a T-140 (LGPD).
+- **Contrato.** Os schemas ficam em `@mony/shared/autenticacao`, e o `@mony/shared` passou a depender do `zod`. O documento OpenAPI passou para a versão 3.1: o Zod 4 gera campo anulável como `type: [..., 'null']`, que o Orval recusava em 3.0. O cliente foi regerado.
+- **Infra.** Quando a T-013 entrar, o `ecs.tf` precisa ler `JWT_CHAVE_PRIVADA` do segredo `mony/<ambiente>/app`.
+
+Reversível: sim.

@@ -6,8 +6,10 @@
  * OpenAPI spec version: 1
  */
 
-export type SaudeDtoStatus = (typeof SaudeDtoStatus)[keyof typeof SaudeDtoStatus];
-
-export const SaudeDtoStatus = {
-  ok: 'ok',
-} as const;
+export interface RenovacaoDto {
+  /**
+   * @minLength 20
+   * @maxLength 200
+   */
+  renovacao: string;
+}

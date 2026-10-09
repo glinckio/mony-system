@@ -5,8 +5,8 @@
  * API do app Monitorizze e da assistente Mony.
  * OpenAPI spec version: 1
  */
-import type { SaudeDtoStatus } from './saudeDtoStatus';
 
-export interface SaudeDto {
-  status: SaudeDtoStatus;
-}
+export const SaudeDtoValue = {
+  status: 'ok',
+} as const;
+export type SaudeDto = typeof SaudeDtoValue;

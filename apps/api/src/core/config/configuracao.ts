@@ -31,4 +31,13 @@ export class Configuracao {
   get nivelLog(): Ambiente['LOG_LEVEL'] {
     return this.config.get('LOG_LEVEL', { infer: true });
   }
+
+  /** Chave privada ES256 em PEM; `undefined` fora de produção quando não configurada. */
+  get chavePrivadaJwt(): string | undefined {
+    return this.config.get('JWT_CHAVE_PRIVADA', { infer: true });
+  }
+
+  get idChaveJwt(): string {
+    return this.config.get('JWT_ID_CHAVE', { infer: true });
+  }
 }

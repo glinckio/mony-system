@@ -1,3 +1,4 @@
+export * from './autenticacao.js';
 export * from './datas.js';
 export * from './dinheiro.js';
 export * from './enums.js';

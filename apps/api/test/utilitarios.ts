@@ -2,12 +2,14 @@ import { getQueueToken } from '@nestjs/bullmq';
 import type { TestingModuleBuilder } from '@nestjs/testing';
 import { vi } from 'vitest';
 
+import { Clock } from '../src/core/clock/clock';
 import { ProcessadorEventos } from '../src/core/eventos/processador-eventos';
 import { FILAS } from '../src/core/filas/filas';
 import {
   ArmazenamentoIdempotencia,
   ArmazenamentoIdempotenciaMemoria,
 } from '../src/core/idempotencia/armazenamento';
+import { LimiteTentativas, LimiteTentativasMemoria } from '../src/core/limites/limite-tentativas';
 
 export function criarFilaFalsa() {
   return {
@@ -22,8 +24,9 @@ export function criarFilaFalsa() {
 export type FilaFalsa = ReturnType<typeof criarFilaFalsa>;
 
 /**
- * Troca filas BullMQ, consumidor de eventos e armazenamento de idempotência por versões em
- * memória, para os testes unitários não dependerem de Redis. As filas falsas ficam em `filas`.
+ * Troca filas BullMQ, consumidor de eventos, armazenamento de idempotência e contadores de
+ * tentativas por versões em memória, para os testes unitários não dependerem de Redis. As filas
+ * falsas ficam em `filas`.
  */
 export function semServicosExternos(
   construtor: TestingModuleBuilder,
@@ -33,7 +36,9 @@ export function semServicosExternos(
     .overrideProvider(ArmazenamentoIdempotencia)
     .useValue(new ArmazenamentoIdempotenciaMemoria())
     .overrideProvider(ProcessadorEventos)
-    .useValue({});
+    .useValue({})
+    .overrideProvider(LimiteTentativas)
+    .useFactory({ factory: (clock: Clock) => new LimiteTentativasMemoria(clock), inject: [Clock] });
   for (const nome of Object.values(FILAS)) {
     const fila = criarFilaFalsa();
     filas.set(nome, fila);

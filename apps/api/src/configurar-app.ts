@@ -16,6 +16,9 @@ export function criarAdaptadorFastify(): FastifyAdapter {
   const adaptador = new FastifyAdapter({
     requestIdHeader: CABECALHO_ID_REQUISICAO,
     genReqId: () => randomUUID(),
+    // Em produção a API só recebe tráfego pelo ALB: o IP do cliente vem no X-Forwarded-For, usado
+    // no limite de tentativas por IP (RN-008). Fora dela, o cabeçalho seria falsificável.
+    trustProxy: process.env.NODE_ENV === 'production',
   });
   adaptador.getInstance().addHook('onRequest', (requisicao, resposta, pronto) => {
     void resposta.header(CABECALHO_ID_REQUISICAO, requisicao.id);

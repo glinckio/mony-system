@@ -14,6 +14,7 @@ import { z } from 'zod';
 
 import { AppModule } from '../src/app.module';
 import { configurarApp, criarAdaptadorFastify } from '../src/configurar-app';
+import { Publico } from '../src/core/auth/publico.decorator';
 import { contextoDoSistema } from '../src/core/contexto/contexto';
 import { AoEvento } from '../src/core/eventos/ao-evento.decorator';
 import { BarramentoEventos } from '../src/core/eventos/barramento-eventos';
@@ -58,6 +59,7 @@ describe.runIf(ativo)('integração: idempotência no Redis', () => {
   it('POST repetido com a mesma Idempotency-Key não duplica, com Redis de verdade', async () => {
     class CorpoDto extends createZodDto(z.object({ valorCentavos: z.number().int() })) {}
 
+    @Publico()
     @Controller('teste-integracao')
     class Rotas {
       execucoes = 0;

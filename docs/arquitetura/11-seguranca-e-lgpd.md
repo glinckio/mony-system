@@ -6,12 +6,12 @@ O app guarda dados financeiros e acessa contas bancárias. Segurança e LGPD sã
 
 | Requisito | Implementação |
 |---|---|
-| Senha com hash forte | Argon2id (`argon2`), parâmetros memória 64 MB, iterações 3. Nunca em log |
-| Access token curto | JWT 15 min, assinado com chave assimétrica (ES256) guardada no Secrets Manager; `kid` para rotação |
-| Refresh por aparelho, revogável | Token aleatório de 256 bits; banco guarda só o hash (`sessoes.refresh_token_hash`). Rotação a cada uso; reuso detectado revoga a família (RN-004) |
+| Senha com hash forte | Argon2id (`@node-rs/argon2`), parâmetros memória 64 MB, iterações 3. Nunca em log. E-mail inexistente também passa por uma conferência de hash, para o tempo de resposta não revelar quem tem conta |
+| Access token curto | JWT 15 min, assinado com chave assimétrica (ES256) guardada no Secrets Manager (`JWT_CHAVE_PRIVADA`); `kid` para rotação (`JWT_ID_CHAVE`). A chave pública sai da privada. Fora de produção, sem chave configurada, a API gera uma temporária na subida |
+| Refresh por aparelho, revogável | Token aleatório de 256 bits; banco guarda só o hash SHA-256 (`sessoes.refresh_token_hash`). Vale 60 dias sem uso. Rotação a cada uso; reuso detectado revoga todas as sessões do aparelho (a família, RN-004). Uma sessão por aparelho |
 | Tokens no aparelho | `expo-secure-store` (Keychain com `WHEN_UNLOCKED_THIS_DEVICE_ONLY` / Android Keystore) |
 | Biometria | Só destrava o refresh local (RN-005) |
-| Limite de tentativas | `@nestjs/throttler` + contadores por e-mail e IP no Redis (RN-008) |
+| Limite de tentativas | Contadores por e-mail (resumo SHA-256) e por IP no Redis, janela fixa de 15 minutos (`core/limites`, RN-008). Login com sucesso zera o contador do e-mail. Limite geral por IP (`@nestjs/throttler` ou WAF) fica para o hardening (T-144) |
 | Posse do recurso | Repositories sempre filtram `usuario_id`; testes de acesso cruzado por rota |
 | Login social | Validar `id_token` do Google e da Apple no servidor (assinatura, `aud`, `iss`, `nonce`) |
 | Admin | Login separado, 2FA TOTP obrigatório, sessão curta, IP allowlist opcional |

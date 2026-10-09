@@ -6,5 +6,16 @@
  * OpenAPI spec version: 1
  */
 
+export * from './cadastroDto';
+export * from './cadastroDtoAceites';
+export * from './cadastroDtoDispositivo';
+export * from './cadastroDtoDispositivoPlataforma';
+export * from './loginDto';
+export * from './loginDtoDispositivo';
+export * from './loginDtoDispositivoPlataforma';
+export * from './renovacaoDto';
 export * from './saudeDto';
-export * from './saudeDtoStatus';
+export * from './sessaoDto';
+export * from './sessaoDtoAceitesPendentesItem';
+export * from './sessaoDtoTokens';
+export * from './sessaoDtoUsuario';

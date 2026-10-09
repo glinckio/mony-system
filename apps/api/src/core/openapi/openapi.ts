@@ -26,7 +26,9 @@ export function nomeDaOperacao(controller: string, metodo: string): string {
  * `@mony/api-client` (Orval) e da documentação em `/v1/docs`.
  */
 export function criarDocumentoOpenApi(app: INestApplication): OpenAPIObject {
+  // OpenAPI 3.1: é o formato que o Zod 4 gera (ex.: campo que aceita nulo vira `type: [..., 'null']`).
   const config = new DocumentBuilder()
+    .setOpenAPIVersion('3.1.0')
     .setTitle('API do Mony')
     .setDescription('API do app Monitorizze e da assistente Mony.')
     .setVersion('1')
