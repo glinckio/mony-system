@@ -1,0 +1,59 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/v1/health": {
+      "get": {
+        "operationId": "verificarSaude",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "A API está no ar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaudeDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "saude"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "API do Mony",
+    "description": "API do app Monitorizze e da assistente Mony.",
+    "version": "1",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "SaudeDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      }
+    }
+  }
+}

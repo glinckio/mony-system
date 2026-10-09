@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, type OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 
 import type { Ambiente } from '../config/ambiente';
@@ -13,18 +13,33 @@ export function deveExporDocumentacao(ambiente: Ambiente['NODE_ENV']): boolean {
 }
 
 /**
- * Monta o OpenAPI a partir dos controllers e dos schemas Zod (`nestjs-zod`) e publica a interface
- * em `/v1/docs` e o JSON em `/v1/docs/openapi.json`, que o Orval vai consumir (T-009).
+ * Nome da operação no contrato: método + recurso, sem o sufixo `Controller`. Vira o nome da
+ * função e do hook no `@mony/api-client`: `SaudeController.verificar` → `verificarSaude` /
+ * `useVerificarSaude`.
  */
-export function configurarOpenApi(app: INestApplication): void {
+export function nomeDaOperacao(controller: string, metodo: string): string {
+  return `${metodo}${controller.replace(/Controller$/, '')}`;
+}
+
+/**
+ * Monta o OpenAPI a partir dos controllers e dos schemas Zod (`nestjs-zod`). É a fonte do
+ * `@mony/api-client` (Orval) e da documentação em `/v1/docs`.
+ */
+export function criarDocumentoOpenApi(app: INestApplication): OpenAPIObject {
   const config = new DocumentBuilder()
     .setTitle('API do Mony')
     .setDescription('API do app Monitorizze e da assistente Mony.')
     .setVersion('1')
     .addBearerAuth()
     .build();
-  const documento = cleanupOpenApiDoc(SwaggerModule.createDocument(app, config));
-  SwaggerModule.setup(CAMINHO_DOCUMENTACAO, app, documento, {
+  return cleanupOpenApiDoc(
+    SwaggerModule.createDocument(app, config, { operationIdFactory: nomeDaOperacao }),
+  );
+}
+
+/** Publica a interface em `/v1/docs` e o JSON em `/v1/docs/openapi.json`. */
+export function configurarOpenApi(app: INestApplication): void {
+  SwaggerModule.setup(CAMINHO_DOCUMENTACAO, app, criarDocumentoOpenApi(app), {
     jsonDocumentUrl: CAMINHO_OPENAPI_JSON,
   });
 }

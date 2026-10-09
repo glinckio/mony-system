@@ -76,6 +76,16 @@ TESTES_INTEGRACAO=1 pnpm --filter api test     # testes da API também contra Po
 
 Schema em [`apps/api/prisma/schema.prisma`](apps/api/prisma/schema.prisma). O cliente do Prisma é gerado em `apps/api/src/generated/` (fora do Git) por `pnpm --filter api generate`, que o Turbo já roda antes de build, lint, typecheck e testes.
 
+## Cliente da API (`@mony/api-client`)
+
+Funções e hooks TanStack Query gerados pelo [Orval](https://orval.dev) a partir do contrato OpenAPI da API. Depois de mudar uma rota ou um schema da API:
+
+```bash
+pnpm --filter @mony/api-client generate   # exporta packages/api-client/openapi.json e gera src/gerado/
+```
+
+Commite o `openapi.json` e o `src/gerado/` junto com a mudança da API; o CI falha se o cliente estiver desatualizado. No app e no admin, configure uma vez com `configurarCliente({ urlBase, obterToken })` e use os hooks (`useVerificarSaude()` etc.). Erros chegam como `ErroApi`, com o `codigo` do catálogo de `@mony/shared/erros`.
+
 ## Comandos
 
 ```bash

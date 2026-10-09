@@ -40,7 +40,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
 - [x] **T-008** Núcleo da API: `Clock` injetável, `Contexto` (usuarioId, origem, idempotencyKey), interceptor de idempotência, barramento de eventos, filas BullMQ registradas (PR #8)
   - dep: T-007 · docs: 05
   - Aceite: testes provando que POST repetido com a mesma `Idempotency-Key` devolve a mesma resposta sem duplicar.
-- [ ] **T-009** Geração do cliente `@mony/api-client` com Orval e verificação no CI
+- [x] **T-009** Geração do cliente `@mony/api-client` com Orval e verificação no CI (PR #9)
   - dep: T-006, T-004 · docs: 02
   - Aceite: `pnpm --filter @mony/api-client generate` gera hooks TanStack Query; CI falha se o gerado estiver desatualizado.
 - [ ] **T-010** Esqueleto do app Expo (dev client, Expo Router, abas, providers, i18n, Sentry, EAS)
