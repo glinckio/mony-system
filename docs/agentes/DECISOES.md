@@ -314,3 +314,17 @@ Contexto: RN-060 a RN-063, docs 05, 06 e 09. Decisões:
   - Aporte não gera transação nem mexe em conta: o PDF não pede, e mexer no saldo pediria escolher conta de origem e destino.
 
 Reversível: sim.
+
+## 2026-10-10 — T-044 — Início (dashboard)
+Contexto: RN-020 a RN-024, docs 04 e 05. Decisões:
+- **Escopo.** Só a API (`GET /dashboard`); a tela fica na T-053, pelo mesmo motivo da T-049. O modo privacidade (RN-022) é só do aparelho e não passa pela API.
+- **Uma chamada com tudo** que a tela abre (doc 04): resumo do período, próximos vencimentos, cartões, orçamentos e checklist. Cartões, orçamentos e checklist vêm dos mesmos Services das rotas deles, no mesmo formato, para o app reaproveitar os componentes.
+- **Período (RN-021):** `mes_atual` (padrão), `mes_anterior` ou `personalizado` com `de` e `ate`, de até 366 dias, no dia de hoje do usuário. A regra é pura (`periodoDoDashboard`). Os orçamentos são os do mês em que o período começa.
+- **Resumo (RN-020).** Saldo = receitas pagas − despesas pagas, como o doc 07 decidiu (falta o cliente confirmar). "Total de receitas" virou as receitas do período, recebidas ou não, e vai junto o total das recebidas. As despesas são só as de natureza `normal` (RN-037), e a compra no cartão conta na data da compra, pendente até a fatura ser paga.
+- **Próximos vencimentos (RN-023).**
+  - Entram faturas com saldo (pelo que falta pagar), parcelas de dívida não pagas e contas pendentes (despesas sem cartão e sem parcelamento: boletos, recorrências).
+  - Parcela de cartão fica de fora, porque já está na fatura e contaria duas vezes.
+  - Além dos 30 dias à frente do doc 07, entram os atrasados de até 30 dias, com `atrasado: true`, para uma conta vencida ontem não sumir da tela. Mais antigos que isso ficam para a lista de transações.
+  - Ordenados por data, até 50 itens. Receitas pendentes não entram: são "contas a pagar".
+
+Reversível: sim.

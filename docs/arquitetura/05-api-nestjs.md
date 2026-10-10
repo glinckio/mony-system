@@ -277,6 +277,22 @@ Implementado na T-040 (RN-030 a RN-035, RN-038, RN-046) e na T-041 (pagamento, R
   - Pagamento parcial deixa o restante na mesma fatura, sem juros.
   - Excluir o pagamento (`DELETE /transacoes/:id`) desfaz: refaz o pago da fatura e devolve as compras a pendentes.
 
+## Início (dashboard)
+
+Implementado na T-044 (RN-020 a RN-024). `GET /dashboard?periodo=mes_atual|mes_anterior|personalizado&de=&ate=` abre a tela inicial com uma chamada (doc 04). O período padrão é o mês atual; o personalizado precisa de `de` e `ate`, com até 366 dias.
+
+- **`resumo` (RN-020):**
+  - saldo = receitas pagas − despesas pagas;
+  - receitas (recebidas ou não), receitas pagas, despesas pagas e pendentes;
+  - despesas só de natureza `normal` (RN-037); compra no cartão conta na data da compra.
+- **`proximosVencimentos` (RN-023):**
+  - faturas com saldo (o valor é o que falta pagar), parcelas de dívida não pagas e contas pendentes (despesas sem cartão e sem parcelamento);
+  - de 30 dias atrás (`atrasado: true`) até 30 dias à frente, por data, até 50 itens;
+  - parcela de cartão não aparece sozinha: ela já está na fatura.
+- **`cartoes`:** os mesmos de `GET /cartoes`.
+- **`orcamentos`:** os de `GET /orcamentos` no mês em que o período começa.
+- **`onboarding` (RN-024):** o de `GET /me/onboarding`.
+
 ## Orçamentos e metas
 
 Implementado na T-043 (RN-060 a RN-063).

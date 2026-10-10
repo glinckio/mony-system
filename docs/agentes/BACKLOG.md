@@ -109,7 +109,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-040 · RN-050 a RN-055
 - [x] **T-043** Orçamentos e metas (API + app) e rotina de repetir orçamentos (PR #26; telas na T-052)
   - dep: T-037 · RN-060 a RN-063
-- [ ] **T-044** Dashboard (`GET /dashboard` em uma chamada) e tela Início
+- [x] **T-044** Dashboard (`GET /dashboard` em uma chamada) e tela Início (PR #27; tela na T-053)
   - dep: T-041, T-042, T-043 · RN-020 a RN-024
 - [ ] **T-045** Tela Transações no app (lista por dia, filtros, criação/edição, seleção múltipla)
   - dep: T-037, T-034
@@ -131,6 +131,9 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-052** Telas de orçamentos e metas no app (barras por faixa, projeção, definir orçamento, metas com aportes e sugestão de concluir)
   - dep: T-043, T-011, T-034 · docs: 04 · RN-060 a RN-063
   - Separada da T-043 pelo mesmo motivo da T-049.
+- [ ] **T-053** Tela Início no app (seletor de período, resumo, próximos vencimentos, cartões, orçamentos, checklist e modo privacidade)
+  - dep: T-044, T-011, T-034 · docs: 04 · RN-020 a RN-024
+  - Separada da T-044 pelo mesmo motivo da T-049. O modo privacidade (RN-022) fica só no aparelho.
 
 ## Fase 2 — Mony
 

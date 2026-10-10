@@ -2389,6 +2389,63 @@
           "metas"
         ]
       }
+    },
+    "/v1/dashboard": {
+      "get": {
+        "operationId": "obterDashboard",
+        "parameters": [
+          {
+            "name": "periodo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "mes_atual",
+              "type": "string",
+              "enum": [
+                "mes_atual",
+                "mes_anterior",
+                "personalizado"
+              ]
+            }
+          },
+          {
+            "name": "de",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumo do período, próximos vencimentos, cartões, orçamentos do mês e checklist do onboarding.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "dashboard"
+        ]
+      }
     }
   },
   "info": {
@@ -8398,6 +8455,511 @@
           "meta",
           "aporte",
           "sugerirConclusao"
+        ]
+      },
+      "DashboardDto": {
+        "type": "object",
+        "properties": {
+          "periodo": {
+            "type": "object",
+            "properties": {
+              "tipo": {
+                "type": "string",
+                "enum": [
+                  "mes_atual",
+                  "mes_anterior",
+                  "personalizado"
+                ]
+              },
+              "de": {
+                "type": "string"
+              },
+              "ate": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "tipo",
+              "de",
+              "ate"
+            ]
+          },
+          "resumo": {
+            "type": "object",
+            "properties": {
+              "saldoCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "receitasCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "receitasPagasCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "despesasPagasCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "despesasPendentesCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "saldoCentavos",
+              "receitasCentavos",
+              "receitasPagasCentavos",
+              "despesasPagasCentavos",
+              "despesasPendentesCentavos"
+            ]
+          },
+          "proximosVencimentos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tipo": {
+                  "type": "string",
+                  "enum": [
+                    "fatura",
+                    "parcela",
+                    "conta"
+                  ]
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "descricao": {
+                  "type": "string"
+                },
+                "valorCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "vencimento": {
+                  "type": "string"
+                },
+                "atrasado": {
+                  "type": "boolean"
+                },
+                "cartaoId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "parcelamentoId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "transacaoId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "tipo",
+                "id",
+                "descricao",
+                "valorCentavos",
+                "vencimento",
+                "atrasado",
+                "cartaoId",
+                "parcelamentoId",
+                "transacaoId"
+              ]
+            }
+          },
+          "cartoes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "nome": {
+                  "type": "string"
+                },
+                "bandeira": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "final": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "cor": {
+                  "type": "string"
+                },
+                "diaFechamento": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "diaVencimento": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "faixasAlerta": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "origem": {
+                  "type": "string",
+                  "enum": [
+                    "manual",
+                    "open_finance"
+                  ]
+                },
+                "contaPagamentoId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "limiteTotalCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "limiteUsadoCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "limiteDisponivelCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "percentualUsado": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "faturaAtual": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "cartaoId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "competencia": {
+                      "type": "string"
+                    },
+                    "dataFechamento": {
+                      "type": "string"
+                    },
+                    "dataVencimento": {
+                      "type": "string"
+                    },
+                    "valorTotalCentavos": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "valorPagoCentavos": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "saldoCentavos": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "aberta",
+                        "fechada",
+                        "paga",
+                        "parcial",
+                        "atrasada"
+                      ]
+                    },
+                    "venceNoFimDeSemana": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "cartaoId",
+                    "competencia",
+                    "dataFechamento",
+                    "dataVencimento",
+                    "valorTotalCentavos",
+                    "valorPagoCentavos",
+                    "saldoCentavos",
+                    "status",
+                    "venceNoFimDeSemana"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "nome",
+                "bandeira",
+                "final",
+                "cor",
+                "diaFechamento",
+                "diaVencimento",
+                "faixasAlerta",
+                "origem",
+                "contaPagamentoId",
+                "limiteTotalCentavos",
+                "limiteUsadoCentavos",
+                "limiteDisponivelCentavos",
+                "percentualUsado",
+                "faturaAtual"
+              ]
+            }
+          },
+          "orcamentos": {
+            "type": "object",
+            "properties": {
+              "competencia": {
+                "type": "string"
+              },
+              "itens": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "categoriaId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "competencia": {
+                      "type": "string"
+                    },
+                    "valorLimiteCentavos": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "repetirMensal": {
+                      "type": "boolean"
+                    },
+                    "gastoCentavos": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "restanteCentavos": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "percentualUsado": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "faixa": {
+                      "type": "string",
+                      "enum": [
+                        "normal",
+                        "atencao",
+                        "estourado"
+                      ]
+                    },
+                    "projecaoCentavos": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "categoriaId",
+                    "competencia",
+                    "valorLimiteCentavos",
+                    "repetirMensal",
+                    "gastoCentavos",
+                    "restanteCentavos",
+                    "percentualUsado",
+                    "faixa",
+                    "projecaoCentavos"
+                  ]
+                }
+              },
+              "totais": {
+                "type": "object",
+                "properties": {
+                  "valorLimiteCentavos": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "gastoCentavos": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "restanteCentavos": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "valorLimiteCentavos",
+                  "gastoCentavos",
+                  "restanteCentavos"
+                ]
+              }
+            },
+            "required": [
+              "competencia",
+              "itens",
+              "totais"
+            ]
+          },
+          "onboarding": {
+            "type": "object",
+            "properties": {
+              "concluido": {
+                "type": "boolean"
+              },
+              "etapas": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "primeiro-lancamento",
+                        "cartoes",
+                        "orcamento",
+                        "permissoes",
+                        "tour"
+                      ]
+                    },
+                    "situacao": {
+                      "type": "string",
+                      "enum": [
+                        "pendente",
+                        "concluida",
+                        "dispensada"
+                      ]
+                    },
+                    "em": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "etapa",
+                    "situacao",
+                    "em"
+                  ]
+                }
+              },
+              "checklistVisivel": {
+                "type": "boolean"
+              },
+              "dicasVistas": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "concluido",
+              "etapas",
+              "checklistVisivel",
+              "dicasVistas"
+            ]
+          }
+        },
+        "required": [
+          "periodo",
+          "resumo",
+          "proximosVencimentos",
+          "cartoes",
+          "orcamentos",
+          "onboarding"
         ]
       }
     }
