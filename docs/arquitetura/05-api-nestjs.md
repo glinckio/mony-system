@@ -147,11 +147,29 @@ Implementada na T-030 e na T-031 (RN-001 a RN-008; detalhes de segurança em [11
 - **Dispositivo:** o app manda um identificador estável do aparelho, gerado na instalação. Há uma sessão por aparelho: login de novo no mesmo aparelho troca a sessão.
 - **Recuperação de senha (RN-003):** código de 6 dígitos por e-mail, válido por 15 minutos, com até 5 tentativas erradas; pedir outro faz o anterior vencer. O fluxo do app é e-mail → código (`conferir`) → senha nova (`redefinir`). Erros: `CODIGO_INVALIDO` (400, inclusive para e-mail sem conta) e `CODIGO_EXPIRADO` (400: vencido, usado, substituído ou com as tentativas esgotadas; o app oferece pedir outro).
 
+## Usuário e app
+
+Implementado na T-033.
+
+| Rota | Corpo | Resposta |
+|---|---|---|
+| `GET /me` | — | Perfil: nome, e-mail, telefone (e se está verificado), foto, fuso, `onboardingConcluido`, `temSenha`, `loginsSociais` |
+| `PATCH /me` | `nome`, `telefone`, `fusoHorario` (só os que mudam) | Perfil. Telefone novo perde a verificação (RN-078) |
+| `POST /me/dispositivos` | `tokenPush` (ou `null`), `modelo` | 204. Grava no aparelho da sessão |
+| `GET /me/onboarding` | — | `concluido`, `etapas` (pendente, concluída ou dispensada), `checklistVisivel` (RN-024), `dicasVistas` |
+| `PATCH /me/onboarding` | `concluido`, `etapas`, `dicasVistas` | O progresso atualizado |
+| `GET /config-app` | — (público) | `versaoMinima` por plataforma, `flags`, `sugestoesChat` |
+
+- **Token de push:** o mesmo token sai de qualquer outro aparelho registrado, porque é do app instalado e não da pessoa. Também sai quando a sessão termina: `sair`, `sair-todos` e reuso de token de renovação.
+- **Onboarding:** as marcas ficam em `dicas_vistas` (`onboarding:<etapa>:concluida`, `onboarding:<etapa>:dispensada`, `dica:<chave>`). Concluída vale mais que dispensada, e nenhuma etapa volta a pendente. Outros módulos marcam etapas com `UsuariosService.concluirEtapa` (ex.: o primeiro lançamento).
+- **Versão mínima:** uma guarda global compara `X-App-Version` com a mínima da plataforma (`X-Platform`). Abaixo dela responde 426 `VERSAO_APP_DESATUALIZADA`, com `detalhes.versaoMinima`. Sem os cabeçalhos não bloqueia (admin, ferramentas). `GET /config-app` e o health check respondem a qualquer versão (`@LiberadaParaVersaoAntiga()`). As mínimas vêm de `APP_VERSAO_MINIMA_IOS` e `APP_VERSAO_MINIMA_ANDROID`; a edição pelo painel admin fica para a T-141.
+
 ## Guardas e decoradores
 
 | Decorador | Função |
 |---|---|
 | `@Publico()` | Rota sem token (cadastro, login, webhooks) |
+| `@LiberadaParaVersaoAntiga()` | Rota que responde a app abaixo da versão mínima (`config-app`, health) |
 | `@UsuarioAtual()` | Injeta `{ id, papel, sessaoId, dispositivoId }` do token de acesso |
 | `@RecursoLimitado('lancamento')` | Confere e consome cota do plano gratuito de forma atômica antes do handler (RN-122) |
 | `@ExigePlano('pago')` | Bloqueia Open Finance, detecção de apps e ligação no gratuito (RN-121) |

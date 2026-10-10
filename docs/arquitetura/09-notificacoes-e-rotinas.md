@@ -50,6 +50,7 @@ Regras de envio: RN-100 a RN-108 em [07](07-regras-de-negocio.md#alertas-e-notif
 
 - `PushProvider` com implementação inicial pelo **Expo Push Service** (aceita tokens Expo e entrega via FCM/APNs, com recibos). Alternativa já prevista: envio direto por FCM HTTP v1 e APNs, se o cliente preferir não depender do Expo **(decisão técnica, troca transparente pela interface)**.
 - Tokens inválidos devolvidos nos recibos desativam o `dispositivo`.
+- O app grava o token em `POST /v1/me/dispositivos` (T-033). Um token pertence a um aparelho só: registrar num usuário tira de outro, e sair (do aparelho ou de todos) apaga o token.
 - Payload sempre com `linkInterno` e `categoria` (para os botões de ação).
 - Push silencioso (`content-available`) para o app reagendar alarmes locais quando um lembrete com canal alarme muda.
 
