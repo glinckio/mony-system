@@ -6851,6 +6851,7 @@ packages:
   nodemailer@10.0.16:
     resolution: {integrity: sha512-VL9xKErxN+el77o8eBOuYKUPMyEx7F9hfnDCuiUKJRp9v3wnWMOudYgP/SWbwSHy8rUL4cylobuXtki1LpQS7A==}
     engines: {node: '>=20.0.0'}
+
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
     engines: {node: '>=0.10.0'}
@@ -15759,6 +15760,7 @@ snapshots:
   node-releases@2.0.58: {}
 
   nodemailer@10.0.16: {}
+
   normalize-path@3.0.0: {}
 
   npm-package-arg@11.0.3:
