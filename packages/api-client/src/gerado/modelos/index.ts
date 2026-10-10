@@ -6,19 +6,30 @@
  * OpenAPI spec version: 1
  */
 
+export * from './atualizacaoCategoriaDto';
 export * from './atualizacaoOnboardingDto';
 export * from './atualizacaoPerfilDto';
 export * from './cadastroDto';
 export * from './cadastroDtoAceites';
 export * from './cadastroDtoDispositivo';
 export * from './cadastroDtoDispositivoPlataforma';
+export * from './categoriaDto';
+export * from './categoriaDtoTipo';
 export * from './conferenciaCodigoDto';
 export * from './configAppDto';
 export * from './configAppDtoFlags';
 export * from './configAppDtoVersaoMinima';
+export * from './excluirCategoriasParams';
+export * from './listaCategoriasDto';
+export * from './listaCategoriasDtoItensItem';
+export * from './listaCategoriasDtoItensItemTipo';
+export * from './listarCategoriasParams';
+export * from './listarCategoriasTipo';
 export * from './loginDto';
 export * from './loginDtoDispositivo';
 export * from './loginDtoDispositivoPlataforma';
+export * from './novaCategoriaDto';
+export * from './novaCategoriaDtoTipo';
 export * from './onboardingDto';
 export * from './onboardingDtoEtapasItem';
 export * from './onboardingDtoEtapasItemEtapa';

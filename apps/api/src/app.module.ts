@@ -11,6 +11,7 @@ import { NucleoModule } from './core/nucleo.module';
 import { SaudeController } from './core/saude/saude.controller';
 import { VersaoAppModule } from './core/versao-app/versao-app';
 import { AutenticacaoModule } from './modulos/autenticacao/autenticacao.module';
+import { CategoriasModule } from './modulos/categorias/categorias.module';
 import { ConfigAppModule } from './modulos/config-app/config-app';
 import { UsuariosModule } from './modulos/usuarios/usuarios.module';
 
@@ -26,6 +27,7 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     AutenticacaoModule,
     UsuariosModule,
     ConfigAppModule,
+    CategoriasModule,
   ],
   controllers: [SaudeController],
   providers: [

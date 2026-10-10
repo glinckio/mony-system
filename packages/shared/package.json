@@ -14,6 +14,10 @@
       "types": "./dist/autenticacao.d.ts",
       "default": "./dist/autenticacao.js"
     },
+    "./categorias": {
+      "types": "./dist/categorias.d.ts",
+      "default": "./dist/categorias.js"
+    },
     "./config-app": {
       "types": "./dist/config-app.d.ts",
       "default": "./dist/config-app.js"
