@@ -10,10 +10,13 @@ import { LimitesModule } from './core/limites/limite-tentativas';
 import { NucleoModule } from './core/nucleo.module';
 import { SaudeController } from './core/saude/saude.controller';
 import { VersaoAppModule } from './core/versao-app/versao-app';
+import { ArmazenamentoModule } from './core/arquivos/armazenamento-arquivos';
+import { ArquivosModule } from './modulos/arquivos/arquivos.module';
 import { AutenticacaoModule } from './modulos/autenticacao/autenticacao.module';
 import { CategoriasModule } from './modulos/categorias/categorias.module';
 import { ConfigAppModule } from './modulos/config-app/config-app';
 import { ContasModule } from './modulos/contas/contas.module';
+import { TransacoesModule } from './modulos/transacoes/transacoes.module';
 import { UsuariosModule } from './modulos/usuarios/usuarios.module';
 
 /** Módulo raiz da API HTTP. Os módulos de domínio (`modulos/*`) entram aqui. */
@@ -30,6 +33,9 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     ConfigAppModule,
     CategoriasModule,
     ContasModule,
+    ArmazenamentoModule,
+    ArquivosModule,
+    TransacoesModule,
   ],
   controllers: [SaudeController],
   providers: [

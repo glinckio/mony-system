@@ -156,7 +156,7 @@ Com essas, o banco fica com 50 tabelas. Cada adição é **proposta**: pode ser 
 
 ## Índices essenciais
 
-> **Implementação (T-007).** O schema do Prisma não representa índice parcial (`WHERE …`) nem índice por expressão (`to_tsvector`), e o CI compara schema e banco. Por isso a primeira migração tem os índices abaixo sem a cláusula `WHERE` e sem os dois índices GIN de texto; estes entram nas tarefas de busca de transações (T-037) e de histórico de preços (T-066). O índice único de `id_externo` funciona igual sem o `WHERE`, porque o Postgres não compara `NULL` em índice único. Nome de categoria único por usuário e tipo (RN-065) é conferido na aplicação, porque categoria excluída logicamente não pode bloquear o nome.
+> **Implementação (T-007).** O schema do Prisma não representa índice parcial (`WHERE …`) nem índice por expressão (`to_tsvector`), e o CI compara schema e banco. Por isso a primeira migração tem os índices abaixo sem a cláusula `WHERE` e sem os dois índices GIN de texto; estes entram nas tarefas de busca de transações (T-037) e de histórico de preços (T-066). A T-037 ficou sem o GIN: a busca é `ILIKE` em substring (que o `to_tsvector` não atende) sobre os lançamentos de um usuário só, já filtrados pelo índice de `usuario_id`. Se a busca pesar, a saída é um índice trigram (`pg_trgm`). O índice único de `id_externo` funciona igual sem o `WHERE`, porque o Postgres não compara `NULL` em índice único. Nome de categoria único por usuário e tipo (RN-065) é conferido na aplicação, porque categoria excluída logicamente não pode bloquear o nome.
 
 ```sql
 -- Listagem e filtros de transações

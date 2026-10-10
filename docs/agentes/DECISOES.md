@@ -172,3 +172,26 @@ Contexto: tabela `contas` do doc 06; rotas propostas no doc 05; sem regra de neg
 - **Sem nome único**, porque duas contas no mesmo banco podem ter o mesmo nome.
 
 Reversível: sim.
+
+## 2026-10-10 — T-037 — Transações e anexos
+Contexto: RN-040 a RN-047, docs 05, 06 e 11. Decisões:
+- **Escopo.** Lançamentos sem cartão. Compra no cartão de crédito é recusada até a T-040, que liga a compra à fatura certa (RN-031). Lançamentos de cartão, parcelamento e pagamento de fatura (criados pelas T-040 a T-042) só mudam categoria, descrição, observação e anexos por estas rotas, e não são excluídos por elas, para não deixar fatura e limite errados. Recorrências (T-038) também ficam fora.
+- **Resposta `{ transacao, impacto }`** desde já, como pede o doc 05. `impacto` vem vazio até orçamentos (T-043) e cartões (T-040), sem quebrar o contrato depois.
+- **Totais (RN-047).** Receitas, despesas (só natureza `normal`, RN-037), saldo = receitas − despesas, despesas pagas e pendentes, quantidade. "Pagas" e "pendentes" do PDF foram lidas como despesas pagas e pendentes, como no Início (RN-020).
+- **Paginação** por cursor opaco (data e id da última linha, em base64url). Página de até 100.
+- **Busca** com `ILIKE` em descrição e observação, sem índice GIN: a busca precisa achar pedaços de palavra ("uber" em "Uber centro"), o que o `to_tsvector` não faz. Ela já roda sobre as linhas de um usuário. Se pesar, a saída é `pg_trgm` (doc 06 atualizado).
+- **Idempotência** obrigatória no `POST /transacoes` (doc 05). O lote não cria registro, então não exige chave.
+- **RN-045.** Do Open Finance mudam categoria, descrição, observação e anexos. Qualquer outro campo → `TRANSACAO_OPEN_FINANCE_BLOQUEADA`. Excluir é permitido; reimportar não duplica, por causa do índice único de `id_externo`.
+- **RN-044.** Lote de até 200, tudo ou nada: um id que não existe ou é de outro usuário (404), um lançamento preso a outro fluxo (409) ou tipos misturados com uma categoria (400) cancelam o lote inteiro.
+- **Efeitos.** O primeiro lançamento conclui a etapa `primeiro-lancamento` do onboarding (T-033). Cada gravação publica `transacao.registrada` na fila de eventos, com id único, para os alertas e as preferências aprendidas (T-080, T-063).
+- **Anexos.**
+  - O app pede `POST /arquivos` (tipo, `content-type` e tamanho até 10 MB) e recebe a URL de `PUT` assinada (5 min) e o id. O `content-type` entra na assinatura.
+  - O arquivo vai direto ao S3. Na transação, `anexoIds` liga o anexo: a API confere no S3 que ele chegou e o tamanho real, que fica gravado. Se passou de 10 MB, o arquivo é apagado e o pedido recusado.
+  - A chave é `usuarios/<usuarioId>/anexos/<uuid aleatório>.<extensão>` (doc 11) e não revela o id do anexo. A leitura é por URL de 15 min.
+  - Anexo solto (enviado e nunca ligado, ou tirado da lista) fica para a limpeza de retenção (RN-162, T-140).
+- **S3.** `@aws-sdk/client-s3` e `@aws-sdk/s3-request-presigner` na mesma versão exata (3.1146.0), porque os dois andam juntos.
+  - Configuração: `S3_BUCKET`, `AWS_REGION` e, só no local, `S3_ENDPOINT` (SeaweedFS do `docker compose`, endereço por caminho). Credenciais pela cadeia padrão da AWS: papel da tarefa no ECS, variáveis no local.
+  - Sem `S3_BUCKET`, as rotas de arquivo respondem 503 e o resto da API sobe normalmente.
+  - Nos testes, um armazenamento em memória faz o papel do app enviando o arquivo.
+
+Reversível: sim.

@@ -10,6 +10,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./arquivos": {
+      "types": "./dist/arquivos.d.ts",
+      "default": "./dist/arquivos.js"
+    },
     "./autenticacao": {
       "types": "./dist/autenticacao.d.ts",
       "default": "./dist/autenticacao.js"
@@ -49,6 +53,10 @@
     "./nfce": {
       "types": "./dist/nfce.d.ts",
       "default": "./dist/nfce.js"
+    },
+    "./transacoes": {
+      "types": "./dist/transacoes.d.ts",
+      "default": "./dist/transacoes.js"
     },
     "./usuario": {
       "types": "./dist/usuario.d.ts",

@@ -24,6 +24,7 @@ describe('variáveis de ambiente', () => {
       EMAIL_PROVEDOR: 'fake',
       APP_VERSAO_MINIMA_IOS: '0.0.0',
       APP_VERSAO_MINIMA_ANDROID: '0.0.0',
+      AWS_REGION: 'sa-east-1',
       ...banco,
     });
     expect(validarAmbiente({ ...banco, ...jwt, PORT: '8080', NODE_ENV: 'production' }).PORT).toBe(

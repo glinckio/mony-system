@@ -53,6 +53,14 @@ export const esquemaAmbiente = z
     /** Remetente dos e-mails. Com o Brevo, o domínio precisa estar verificado lá. */
     EMAIL_REMETENTE: z.preprocess(vazioComoAusente, z.email().optional()),
     /**
+     * Arquivos (anexos, áudios, exportações) no S3 privado, só por URL assinada (doc 11). Sem
+     * bucket, o envio de arquivos fica desligado. `S3_ENDPOINT` só para S3 compatível local
+     * (SeaweedFS do `docker compose`); na AWS fica vazio e as credenciais vêm do papel da tarefa.
+     */
+    S3_BUCKET: z.preprocess(vazioComoAusente, z.string().optional()),
+    S3_ENDPOINT: z.preprocess(vazioComoAusente, z.url().optional()),
+    AWS_REGION: z.string().min(1).default('sa-east-1'),
+    /**
      * Versão mínima do app por plataforma (doc 04). Abaixo dela a API responde 426
      * `VERSAO_APP_DESATUALIZADA` e o app mostra a atualização obrigatória.
      */
