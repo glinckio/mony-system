@@ -69,8 +69,8 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 | Rotina | Frequência | O que faz |
 |---|---|---|
 | Gerar transações recorrentes | De hora em hora, no minuto 30 | Materializa ocorrências dos próximos 35 dias (RN-043), no fuso de cada usuário. Implementada na T-038 |
-| Fechar faturas e calcular valores | Diária 00:45 | Faturas cujo fechamento é hoje → `fechada`, alerta `fatura_fechada` |
-| Marcar atrasos | Diária 01:00 | Parcelas, faturas e dívidas vencidas → `atrasada` |
+| Fechar faturas e atrasar (`atualizar-faturas`) | De hora em hora, no minuto 45 | No fuso de cada usuário, a fatura que fechou ganha o status do dia (`fechada`, `parcial`, `paga` ou `atrasada`) e publica `fatura.fechada` se tem valor; a que venceu sem o total pago vira `atrasada` e publica `fatura.atrasada`. Implementada na T-047 |
+| Marcar atrasos (`marcar-atrasos`) | De hora em hora, no minuto 0 | Parcelas pendentes vencidas → `atrasado`; o status guardado dos parcelamentos tocados e dos que estavam atrasados é refeito. Parcela de dívida publica `parcela.atrasada`. Implementada na T-047 |
 | Encerrar testes | Diária 01:15 | Testes vencidos → gratuito; avisos do 2º e do último dia (RN-124, RN-126) |
 | Alertas de vencimento e projeção | Diária 09:00 | `fatura_vencimento`, `vencimento_pendente`, `projecao_mes` |
 | Resumo semanal e mensal | Segunda e dia 1, 09:00 | Mensagem da Mony no chat + push |

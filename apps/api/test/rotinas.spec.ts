@@ -8,7 +8,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { Clock, ClockFixo } from '../src/core/clock/clock';
 import { FILAS } from '../src/core/filas/filas';
 import { ProcessadorRotinas, ROTINA, Rotina } from '../src/core/rotinas/rotinas';
+import { CartoesService } from '../src/modulos/cartoes/cartoes.service';
 import { OrcamentosService } from '../src/modulos/orcamentos/orcamentos.service';
+import { ParcelamentosService } from '../src/modulos/parcelamentos/parcelamentos.service';
 import { RecorrenciasService } from '../src/modulos/recorrencias/recorrencias.service';
 
 const AGORA = new Date('2026-10-10T03:30:00Z');
@@ -57,6 +59,19 @@ describe('rotinas agendadas (doc 09)', () => {
     expect(modulo.get(RotinaDeExemplo).chamadas).toEqual([AGORA]);
     await expect(processador.process({ name: 'outra' } as Job)).resolves.toBeNull();
     await modulo.close();
+  });
+
+  it('faturas e atrasos rodam de hora em hora, para pegar a virada do dia em cada fuso', () => {
+    const faturas = Reflect.get(CartoesService.prototype, 'atualizarStatus') as object;
+    const atrasos = Reflect.get(ParcelamentosService.prototype, 'marcarAtrasos') as object;
+    expect(Reflect.getMetadata(ROTINA, faturas)).toEqual({
+      nome: 'atualizar-faturas',
+      padrao: '45 * * * *',
+    });
+    expect(Reflect.getMetadata(ROTINA, atrasos)).toEqual({
+      nome: 'marcar-atrasos',
+      padrao: '0 * * * *',
+    });
   });
 
   it('a repetição de orçamentos roda no dia 1, às 00:15 (RN-060)', () => {

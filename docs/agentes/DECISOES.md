@@ -328,3 +328,20 @@ Contexto: RN-020 a RN-024, docs 04 e 05. Decisões:
   - Ordenados por data, até 50 itens. Receitas pendentes não entram: são "contas a pagar".
 
 Reversível: sim.
+
+## 2026-10-10 — T-047 — Rotinas de faturas e atrasos
+Contexto: doc 09 (Rotinas). O status de fatura, parcela e parcelamento já é calculado na leitura, no dia do usuário (T-040 a T-042). As rotinas gravam as transições e avisam os alertas. Decisões:
+- **De hora em hora**, e não uma vez às 00:45 e 01:00 como no doc 09.
+  - `atualizar-faturas` roda no minuto 45 e `marcar-atrasos` no minuto 0. É a mesma escolha da T-038: assim cada usuário é visto logo depois da virada do dia no fuso dele.
+  - A consulta pega as candidatas pelo "hoje" mais adiantado do mundo (Kiritimati, UTC+14), e cada uma é decidida pelo fuso do seu usuário.
+  - O doc 09 foi atualizado.
+- **Troca só se o status ainda é o lido** (`UPDATE … WHERE status = antigo`): sem trava. Se um pagamento mudou a fatura no meio, a rotina perde e não avisa nada errado. Rodar de novo não repete troca nem evento.
+- **Eventos para o motor de alertas (T-080):**
+  - `fatura.fechada` quando a fatura fecha com valor;
+  - `fatura.atrasada` quando vence sem o total pago;
+  - `parcela.atrasada` só para dívida, porque a parcela de cartão já está no atraso da fatura.
+  - Cada um tem id único por fatura ou parcela, para não sair duas vezes.
+- **Parcelamento.** O status guardado é refeito para os parcelamentos que ganharam parcela atrasada e para os que estavam atrasados. Assim a parcela de cartão paga pela fatura tira o atraso na rodada seguinte. A fatura que ainda não fechou continua `aberta`; nada mais muda de status só com o tempo.
+- **T-046** ganhou as dependências T-011 e T-034 no BACKLOG: é tarefa do app e parecia livre só por depender da T-044.
+
+Reversível: sim.

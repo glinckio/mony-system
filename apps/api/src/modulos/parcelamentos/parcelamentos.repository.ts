@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { TipoParcelamento } from '@mony/shared/enums';
+import type { StatusParcelamento, TipoParcelamento } from '@mony/shared/enums';
 
 import type { ClientePrisma } from '../../core/prisma/cliente';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -192,6 +192,73 @@ export class ParcelamentosRepository {
       data: { excluidoEm: agora },
     });
     await tx.parcela.deleteMany({ where: { id: { in: parcelas.map(({ id }) => id) } } });
+  }
+
+  /**
+   * Parcelas pendentes que venceram antes de `limite` (rotina de atrasos, RN-054), com o fuso do
+   * usuário, em lotes por id.
+   */
+  parcelasVencidas(limite: Date, depoisDe: string | null, quantidade: number) {
+    return this.prisma.cliente.parcela.findMany({
+      where: {
+        status: 'pendente',
+        vencimento: { lt: limite },
+        parcelamento: { excluidoEm: null },
+        ...(depoisDe === null ? {} : { id: { gt: depoisDe } }),
+      },
+      select: {
+        id: true,
+        vencimento: true,
+        parcelamentoId: true,
+        parcelamento: { select: { tipo: true } },
+        usuario: { select: { fusoHorario: true } },
+      },
+      orderBy: { id: 'asc' },
+      take: quantidade,
+    });
+  }
+
+  /** Marca a parcela como atrasada se ela ainda está pendente; diz se marcou. */
+  async atrasarParcela(id: string): Promise<boolean> {
+    const { count } = await this.prisma.cliente.parcela.updateMany({
+      where: { id, status: 'pendente' },
+      data: { status: 'atrasado' },
+    });
+    return count > 0;
+  }
+
+  /** Parcelamentos guardados como atrasados, para ver se ainda estão (rotina). */
+  async atrasados(): Promise<string[]> {
+    const linhas = await this.prisma.cliente.parcelamento.findMany({
+      where: { status: 'atrasada' },
+      select: { id: true },
+    });
+    return linhas.map(({ id }) => id);
+  }
+
+  /** O parcelamento com as parcelas e o fuso do usuário, para refazer o status guardado. */
+  paraReavaliar(id: string) {
+    return this.prisma.cliente.parcelamento.findFirst({
+      where: { id },
+      select: {
+        status: true,
+        parcelas: { select: { status: true, vencimento: true } },
+        usuario: { select: { fusoHorario: true } },
+      },
+    });
+  }
+
+  /** Troca o status só se ele ainda é `de`; diz se trocou. */
+  async trocarStatus(
+    id: string,
+    de: StatusParcelamento,
+    para: StatusParcelamento,
+  ): Promise<boolean> {
+    const { count } = await this.prisma.cliente.parcelamento.updateMany({
+      where: { id, status: de },
+      data: { status: para },
+    });
+    return count > 0;
   }
 
   /** RN-053: pagar ou desfazer a parcela de dívida mexe na parcela e na despesa dela. */

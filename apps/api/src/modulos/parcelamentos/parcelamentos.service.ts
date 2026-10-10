@@ -23,10 +23,11 @@ import {
 import type { Impacto } from '@mony/shared/transacoes';
 
 import { Clock } from '../../core/clock/clock';
-import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
+import { type Contexto, contextoDoSistema, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { BarramentoEventos } from '../../core/eventos/barramento-eventos';
 import { idDeJob } from '../../core/filas/filas';
+import { Rotina } from '../../core/rotinas/rotinas';
 import { CartoesService } from '../cartoes/cartoes.service';
 import { paraDataDoBanco } from '../transacoes/transacoes.repository';
 import {
@@ -37,6 +38,12 @@ import {
 
 /** Evento publicado depois que um parcelamento é gravado (alertas de limite: T-080). */
 export const EVENTO_PARCELAMENTO_REGISTRADO = 'parcelamento.registrado';
+
+/** A parcela de dívida venceu sem pagamento (alertas: T-080). */
+export const EVENTO_PARCELA_ATRASADA = 'parcela.atrasada';
+
+/** Parcelas por lote na rotina. */
+const LOTE_ROTINA = 500;
 
 type ParcelaDoUsuario = ParcelamentoDoUsuario['parcelas'][number];
 
@@ -308,6 +315,57 @@ export class ParcelamentosService {
     const parcela = parcelamento?.parcelas.find(({ id }) => id === parcelaId);
     if (!parcelamento || !parcela) throw new ErroDominio('NAO_ENCONTRADO');
     return { parcela: paraParcela(parcela, hoje), parcelamento: resumo(parcelamento, hoje) };
+  }
+
+  /**
+   * Rotina (doc 09, RN-054): marca como atrasadas as parcelas que venceram sem pagamento, no fuso
+   * de cada usuário, e refaz o status guardado dos parcelamentos tocados e dos que já estavam
+   * atrasados (uma parcela paga pela fatura tira o atraso). Parcela de dívida atrasada publica o
+   * evento dos alertas; a de cartão já aparece pelo atraso da fatura. Rodar de novo não repete.
+   */
+  @Rotina({ nome: 'marcar-atrasos', padrao: '0 * * * *' })
+  async marcarAtrasos(agora: Date): Promise<number> {
+    const limite = paraDataDoBanco(dataNoFuso(agora, 'Pacific/Kiritimati'));
+    const tocados = new Set(await this.repositorio.atrasados());
+    let atrasadas = 0;
+    let depoisDe: string | null = null;
+    for (;;) {
+      const lote = await this.repositorio.parcelasVencidas(limite, depoisDe, LOTE_ROTINA);
+      if (lote.length === 0) break;
+      for (const parcela of lote) {
+        const hoje = dataNoFuso(agora, parcela.usuario.fusoHorario);
+        if (diaDoBanco(parcela.vencimento) >= hoje) continue;
+        if (!(await this.repositorio.atrasarParcela(parcela.id))) continue;
+        atrasadas += 1;
+        tocados.add(parcela.parcelamentoId);
+        if (parcela.parcelamento.tipo === 'divida') {
+          await this.eventos.publicar(
+            EVENTO_PARCELA_ATRASADA,
+            { parcelaId: parcela.id, parcelamentoId: parcela.parcelamentoId },
+            contextoDoSistema(),
+            { idUnico: idDeJob('parcela-atrasada', parcela.id) },
+          );
+        }
+      }
+      depoisDe = lote.at(-1)?.id ?? null;
+    }
+    for (const id of tocados) {
+      const parcelamento = await this.repositorio.paraReavaliar(id);
+      if (!parcelamento) continue;
+      const hoje = dataNoFuso(agora, parcelamento.usuario.fusoHorario);
+      const novo = statusDoParcelamento(
+        parcelamento.status === 'cancelada',
+        parcelamento.parcelas.map(({ status, vencimento }) => ({
+          status,
+          vencimento: diaDoBanco(vencimento),
+        })),
+        hoje,
+      );
+      if (novo !== parcelamento.status) {
+        await this.repositorio.trocarStatus(id, parcelamento.status, novo);
+      }
+    }
+    return atrasadas;
   }
 
   /** Trava o cartão e devolve as faturas das parcelas da compra. */

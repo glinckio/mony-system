@@ -114,8 +114,9 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-045** Tela Transações no app (lista por dia, filtros, criação/edição, seleção múltipla)
   - dep: T-037, T-034
 - [ ] **T-046** Onboarding no app com checklist e dicas contextuais
-  - dep: T-044 · docs: 04 (Onboarding)
-- [ ] **T-047** Rotinas diárias de faturas e atrasos (fechar faturas, marcar atrasadas)
+  - dep: T-044, T-011, T-034 · docs: 04 (Onboarding)
+  - As dependências do app (T-011, T-034) entraram na T-047: sem elas a tarefa parecia livre, mas não há app onde fazê-la.
+- [x] **T-047** Rotinas diárias de faturas e atrasos (fechar faturas, marcar atrasadas) (PR #28)
   - dep: T-041, T-042 · docs: 09 (Rotinas)
 - [ ] **T-048** Relatórios (API + telas), sem exportação
   - dep: T-044 · RN-150

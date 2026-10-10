@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { CicloFatura } from '@mony/shared/cartoes';
-import type { Competencia } from '@mony/shared/datas';
+import type { Competencia, DataCalendario } from '@mony/shared/datas';
+import type { StatusFatura } from '@mony/shared/enums';
 
 import type { ClientePrisma } from '../../core/prisma/cliente';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -292,6 +293,43 @@ export class CartoesRepository {
         ? { where: { faturaId, status: { not: 'pago' } }, data: { status, pagoEm: agora } }
         : { where: { faturaId, status: 'pago' }, data: { status, pagoEm: null } },
     );
+  }
+
+  /**
+   * Faturas cujo status pode ter mudado só com o passar dos dias: abertas com fechamento até
+   * `limite` e fechadas ou parciais vencidas antes de `limite` (rotina, RN-033). Em lotes por id.
+   */
+  async faturasParaAtualizar(limite: DataCalendario, depoisDe: string | null, quantidade: number) {
+    const linhas = await this.prisma.cliente.fatura.findMany({
+      where: {
+        cartao: { excluidoEm: null },
+        OR: [
+          { status: 'aberta', dataFechamento: { lte: paraDataDoBanco(limite) } },
+          {
+            status: { in: ['fechada', 'parcial'] },
+            dataVencimento: { lt: paraDataDoBanco(limite) },
+          },
+        ],
+        ...(depoisDe === null ? {} : { id: { gt: depoisDe } }),
+      },
+      select: { ...CAMPOS_FATURA, status: true, usuario: { select: { fusoHorario: true } } },
+      orderBy: { id: 'asc' },
+      take: quantidade,
+    });
+    return linhas.map((linha) => ({
+      ...paraFaturaGravada(linha),
+      status: linha.status,
+      fuso: linha.usuario.fusoHorario,
+    }));
+  }
+
+  /** Troca o status só se ele ainda é `de` (uma escrita ao mesmo tempo ganha); diz se trocou. */
+  async trocarStatus(id: string, de: StatusFatura, para: StatusFatura): Promise<boolean> {
+    const { count } = await this.prisma.cliente.fatura.updateMany({
+      where: { id, status: de },
+      data: { status: para },
+    });
+    return count > 0;
   }
 
   /** Grava a transação do pagamento da fatura (natureza `pagamento_fatura`, RN-036). */
