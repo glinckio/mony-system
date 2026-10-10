@@ -590,7 +590,7 @@ describe.runIf(ativo)('integração: cartões e faturas', () => {
     expect(totais(await faturas(usuario, id))).toEqual({ '2026-11-01': soma });
   });
 
-  it('ocorrência de recorrência ainda não vai para o cartão (T-051)', async () => {
+  it('ocorrência de recorrência pode ir para o cartão e entra na fatura (T-051)', async () => {
     const usuario = await usuarioNovo();
     const { id } = await cartaoNovo(usuario);
     const criada = await chamar(
@@ -613,8 +613,14 @@ describe.runIf(ativo)('integração: cartões e faturas', () => {
       formaPagamento: 'cartao_credito',
       cartaoId: id,
     });
-    expect(resposta.statusCode).toBe(400);
+    expect(resposta.statusCode).toBe(200);
+    expect(resposta.json()).toMatchObject({
+      transacao: { cartaoId: id, status: 'pendente' },
+      impacto: { cartao: { cartaoId: id } },
+    });
+    expect(totais(await faturas(usuario, id))).toEqual({ '2026-11-01': 3_990 });
   });
+
   async function contaNova(usuario: Usuario, saldoInicialCentavos = 0) {
     const resposta = await chamar('POST', '/contas', usuario.acesso, {
       nome: 'Conta corrente',

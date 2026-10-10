@@ -283,7 +283,7 @@ describe.runIf(ativo)('integração: recorrências', () => {
     ]);
   });
 
-  it('valida: Idempotency-Key, início no máximo um ano atrás, sem cartão de crédito', async () => {
+  it('valida: Idempotency-Key, início no máximo um ano atrás, cartão de crédito com o cartão', async () => {
     const usuario = await usuarioNovo();
     const corpo = {
       tipo: 'despesa',

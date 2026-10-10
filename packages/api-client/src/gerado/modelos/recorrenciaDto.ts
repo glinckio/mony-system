@@ -23,6 +23,7 @@ export interface RecorrenciaDto {
   categoriaId: string;
   formaPagamento: RecorrenciaDtoFormaPagamento;
   contaId: string | null;
+  cartaoId: string | null;
   frequencia: RecorrenciaDtoFrequencia;
   /**
    * @minimum -9007199254740991

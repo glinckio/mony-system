@@ -357,3 +357,16 @@ Contexto: RN-150, doc 05 (`GET /relatorios/:tipo?inicio=&fim=`). Decisões:
 - **Nome de categoria e cartão excluídos** continua aparecendo, porque o histórico ainda os usa.
 
 Reversível: sim.
+
+## 2026-10-10 — T-051 — Recorrência no cartão de crédito
+Contexto: RN-043 e RN-031, assinaturas pagas no cartão. Decisões:
+- **Mesmas regras da compra no cartão.** A recorrência leva `cartaoId`, é despesa e não tem conta (`problemasDaCompraNoCartao`). Cada ocorrência entra na fatura da sua data, pendente, e as faturas tocadas são refeitas pela soma (T-040).
+- **Ordem da trava: recorrência → cartão → fatura.** A rotina e as rotas já travavam a recorrência (T-038); os fluxos de fatura começam pelo cartão (T-040). Ninguém trava na ordem inversa.
+- **Mudar o modelo não gera de novo.** Valor, descrição, categoria e forma valem para as ocorrências livres (pendentes e não editadas, de hoje em diante), como na T-038. Ao mudar de cartão ou sair dele, cada livre muda de fatura no próprio lugar.
+  - Gerar de novo traria de volta a ocorrência que o usuário excluiu e repetiria a data da editada à mão.
+  - Mudar a agenda (frequência ou dia) continua refazendo as livres, como na T-038. A geração agora pula a data que já tem ocorrência, o que também corrige a repetição com a editada à mão na T-038.
+- **Exclusão.** "Esta e as próximas" e "todas" excluem as ocorrências pagas ou não, menos a paga pela fatura do cartão: compra de fatura quitada não sai (RN-046). Parar a recorrência tira as livres de hoje em diante e refaz as faturas.
+- **Cartão excluído para as recorrências dele.** Na rotina, a recorrência de cartão que saiu para em vez de gerar fora de fatura. Um erro numa recorrência (ex.: fatura de data passada já paga) não para a rotina para as outras: fica no log.
+- **Ocorrência para o cartão.** Uma ocorrência pode ir para o cartão por `PATCH /transacoes/:id`: vira editada à mão e entra na fatura, como qualquer compra. A trava da T-040 que impedia isso saiu.
+
+Reversível: sim.

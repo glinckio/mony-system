@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { type DataCalendario, dataNoFuso } from '@mony/shared/datas';
-import type { TipoTransacao } from '@mony/shared/enums';
+import type { FormaPagamento, TipoTransacao } from '@mony/shared/enums';
 import {
   type AgendaRecorrencia,
   type DadosAtualizacaoRecorrencia,
@@ -15,11 +15,13 @@ import {
   type RespostaRecorrencia,
   somarDias,
 } from '@mony/shared/recorrencias';
+import { problemasDaCompraNoCartao } from '@mony/shared/transacoes';
 
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { Rotina } from '../../core/rotinas/rotinas';
+import { type CartaoTravado, CartoesService } from '../cartoes/cartoes.service';
 import { paraDataDoBanco, paraResposta } from '../transacoes/transacoes.repository';
 import {
   type RecorrenciaDoUsuario,
@@ -62,7 +64,9 @@ function ponteiro(agenda: AgendaRecorrencia, proxima: DataCalendario) {
 
 /**
  * Recorrências (RN-043). A rotina de hora em hora e as próprias rotas materializam as ocorrências
- * dos próximos 35 dias como lançamentos pendentes.
+ * dos próximos 35 dias como lançamentos pendentes. No cartão de crédito (T-051), cada ocorrência
+ * entra na fatura da sua data e as faturas tocadas são refeitas; a trava segue a ordem
+ * recorrência → cartão → fatura.
  */
 @Injectable()
 export class RecorrenciasService {
@@ -70,6 +74,7 @@ export class RecorrenciasService {
 
   constructor(
     private readonly repositorio: RecorrenciasRepository,
+    private readonly cartoes: CartoesService,
     private readonly clock: Clock,
   ) {}
 
@@ -87,7 +92,8 @@ export class RecorrenciasService {
   /** Cria a recorrência e já gera as ocorrências até 35 dias à frente. */
   async criar(contexto: Contexto, dados: DadosNovaRecorrencia): Promise<RespostaRecorrencia> {
     const usuarioId = usuarioDoContexto(contexto);
-    await this.conferirReferencias(usuarioId, dados.tipo, dados);
+    const cartaoId = dados.formaPagamento === 'cartao_credito' ? (dados.cartaoId ?? null) : null;
+    await this.conferirReferencias(usuarioId, dados.tipo, { ...dados, cartaoId });
     const hoje = await this.hoje(usuarioId);
     if (dados.dataInicio < somarDias(hoje, -DIAS_MAXIMOS_NO_PASSADO)) {
       throw new ErroDominio('REQUISICAO_INVALIDA', {
@@ -116,6 +122,7 @@ export class RecorrenciasService {
         categoriaId: dados.categoriaId,
         formaPagamento: dados.formaPagamento ?? null,
         contaId: dados.contaId ?? null,
+        cartaoId,
         frequencia: agenda.frequencia,
         dia: agenda.dia,
         dataInicio: paraDataDoBanco(agenda.dataInicio),
@@ -143,24 +150,46 @@ export class RecorrenciasService {
     const usuarioId = usuarioDoContexto(contexto);
     const atual = await this.repositorio.buscar(usuarioId, id);
     if (!atual) throw new ErroDominio('NAO_ENCONTRADO');
-    await this.conferirReferencias(usuarioId, atual.tipo, dados);
+    const formaPagamento = dados.formaPagamento ?? atual.formaPagamento;
+    const noCartao = formaPagamento === 'cartao_credito';
+    const cartaoId = noCartao ? (dados.cartaoId ?? atual.cartaoId) : null;
+    exigirSemProblemas(
+      problemasDaCompraNoCartao({
+        tipo: atual.tipo,
+        formaPagamento,
+        cartaoId: noCartao ? cartaoId : dados.cartaoId,
+        contaId: dados.contaId,
+      }),
+    );
+    await this.conferirReferencias(usuarioId, atual.tipo, {
+      ...dados,
+      cartaoId: dados.cartaoId === undefined ? undefined : cartaoId,
+    });
     const hoje = await this.hoje(usuarioId);
     const agora = this.clock.agora();
 
     return this.repositorio.emTransacao(async (tx) => {
       const travada = await this.repositorio.travar(tx, usuarioId, id);
       if (!travada) throw new ErroDominio('NAO_ENCONTRADO');
+      const envolveCartao = travada.cartaoId !== null || cartaoId !== null;
+      const travados = envolveCartao
+        ? await this.cartoes.travarCartoes(tx, usuarioId, {
+            entrada: cartaoId === null ? [] : [cartaoId],
+            saida: travada.cartaoId === null ? [] : [travada.cartaoId],
+          })
+        : new Map<string, CartaoTravado>();
 
-      const modelo = {
+      /** O que vale para a recorrência e as ocorrências livres; o cartão muda à parte. */
+      const comum = {
         ...(dados.descricao === undefined ? {} : { descricao: dados.descricao }),
         ...(dados.valorCentavos === undefined ? {} : { valor: BigInt(dados.valorCentavos) }),
         ...(dados.categoriaId === undefined ? {} : { categoriaId: dados.categoriaId }),
         ...(dados.formaPagamento === undefined ? {} : { formaPagamento: dados.formaPagamento }),
         ...(dados.contaId === undefined ? {} : { contaId: dados.contaId }),
+        ...(noCartao && travada.contaId !== null ? { contaId: null } : {}),
       };
-      if (Object.keys(modelo).length > 0) {
-        await this.repositorio.atualizarOcorrenciasLivres(tx, id, paraDataDoBanco(hoje), modelo);
-      }
+      const mudaCartao = cartaoId !== travada.cartaoId;
+      const modelo = { ...comum, ...(mudaCartao ? { cartaoId } : {}) };
 
       const anterior = agendaDe(travada);
       const agenda: AgendaRecorrencia = {
@@ -179,24 +208,52 @@ export class RecorrenciasService {
         });
       }
 
+      const agendaMudou = agenda.frequencia !== anterior.frequencia || agenda.dia !== anterior.dia;
+      const faturasTocadas: string[] = [];
       let proxima = data(travada.proximaGeracao);
-      if (agenda.frequencia !== anterior.frequencia || agenda.dia !== anterior.dia) {
+      if (agendaMudou) {
         // Agenda nova: as ocorrências livres de hoje em diante são refeitas.
-        await this.repositorio.excluirOcorrenciasLivres(
+        const excluidas = await this.repositorio.excluirOcorrenciasLivres(
           tx,
           id,
           { desde: paraDataDoBanco(hoje) },
           agora,
         );
+        faturasTocadas.push(...excluidas.faturaIds);
         proxima = proximaSemFim(agenda, hoje > agenda.dataInicio ? hoje : agenda.dataInicio);
+      } else if (Object.keys(modelo).length > 0) {
+        const livres = envolveCartao
+          ? await this.repositorio.ocorrenciasLivres(tx, id, paraDataDoBanco(hoje))
+          : [];
+        if (Object.keys(comum).length > 0) {
+          await this.repositorio.atualizarOcorrenciasLivres(tx, id, paraDataDoBanco(hoje), comum);
+        }
+        // No cartão, as livres mudam de fatura uma a uma; nenhuma é refeita (a excluída não volta).
+        for (const livre of livres) {
+          if (livre.faturaId !== null) faturasTocadas.push(livre.faturaId);
+          if (!mudaCartao) continue;
+          const faturaId =
+            cartaoId === null
+              ? null
+              : await this.cartoes.faturaParaCompra(
+                  tx,
+                  usuarioId,
+                  exigirCartao(travados, cartaoId),
+                  data(livre.data),
+                  hoje,
+                );
+          await this.repositorio.moverOcorrencia(tx, livre.id, { cartaoId, faturaId });
+          if (faturaId !== null) faturasTocadas.push(faturaId);
+        }
       }
       if (agenda.dataFim !== null) {
-        await this.repositorio.excluirOcorrenciasLivres(
+        const excluidas = await this.repositorio.excluirOcorrenciasLivres(
           tx,
           id,
           { depoisDe: paraDataDoBanco(agenda.dataFim) },
           agora,
         );
+        faturasTocadas.push(...excluidas.faturaIds);
       }
 
       const atualizada = await this.repositorio.atualizar(tx, id, {
@@ -207,6 +264,7 @@ export class RecorrenciasService {
         ...ponteiro(agenda, proxima),
       });
       const { recorrencia, ocorrencias } = await this.materializar(tx, atualizada, hoje);
+      if (faturasTocadas.length > 0) await this.cartoes.recalcular(tx, faturasTocadas, hoje);
       return {
         recorrencia: paraRespostaRecorrencia(recorrencia),
         ocorrencias: ocorrencias.map(paraResposta),
@@ -224,19 +282,24 @@ export class RecorrenciasService {
     await this.repositorio.emTransacao(async (tx) => {
       const travada = await this.repositorio.travar(tx, usuarioId, id);
       if (!travada) throw new ErroDominio('NAO_ENCONTRADO');
-      await this.repositorio.excluirOcorrenciasLivres(
+      await this.travarCartaoDaRecorrencia(tx, usuarioId, travada);
+      const excluidas = await this.repositorio.excluirOcorrenciasLivres(
         tx,
         id,
         { desde: paraDataDoBanco(hoje) },
         this.clock.agora(),
       );
       await this.repositorio.atualizar(tx, id, { ativa: false });
+      if (excluidas.faturaIds.length > 0) {
+        await this.cartoes.recalcular(tx, excluidas.faturaIds, hoje);
+      }
     });
   }
 
   /**
    * RN-043, ao excluir uma ocorrência: "esta e as próximas" exclui a partir dela (pagas ou não) e
-   * encerra a recorrência na véspera; "todas" exclui todas e para a recorrência.
+   * encerra a recorrência na véspera; "todas" exclui todas e para a recorrência. No cartão, a
+   * ocorrência paga pela fatura fica (RN-046) e as faturas das que saem são refeitas.
    */
   async excluirOcorrencias(
     usuarioId: string,
@@ -244,21 +307,29 @@ export class RecorrenciasService {
     dataOcorrencia: DataCalendario,
     escopo: Exclude<EscopoExclusaoOcorrencia, 'esta'>,
   ): Promise<void> {
+    const hoje = await this.hoje(usuarioId);
     await this.repositorio.emTransacao(async (tx) => {
       const travada = await this.repositorio.travar(tx, usuarioId, recorrenciaId);
       if (!travada) throw new ErroDominio('NAO_ENCONTRADO');
+      await this.travarCartaoDaRecorrencia(tx, usuarioId, travada);
       const agora = this.clock.agora();
       if (escopo === 'todas') {
-        await this.repositorio.excluirOcorrencias(tx, recorrenciaId, null, agora);
+        const excluidas = await this.repositorio.excluirOcorrencias(tx, recorrenciaId, null, agora);
         await this.repositorio.atualizar(tx, recorrenciaId, { ativa: false });
+        if (excluidas.faturaIds.length > 0) {
+          await this.cartoes.recalcular(tx, excluidas.faturaIds, hoje);
+        }
         return;
       }
-      await this.repositorio.excluirOcorrencias(
+      const excluidas = await this.repositorio.excluirOcorrencias(
         tx,
         recorrenciaId,
         paraDataDoBanco(dataOcorrencia),
         agora,
       );
+      if (excluidas.faturaIds.length > 0) {
+        await this.cartoes.recalcular(tx, excluidas.faturaIds, hoje);
+      }
       const vespera = somarDias(dataOcorrencia, -1);
       const agenda = { ...agendaDe(travada), dataFim: vespera };
       await this.repositorio.atualizar(tx, recorrenciaId, {
@@ -285,13 +356,18 @@ export class RecorrenciasService {
       const lote = await this.repositorio.pendentesDeGeracao(ate, depoisDe, LOTE_ROTINA);
       for (const item of lote) {
         const hoje = dataNoFuso(agora, item.usuario.fusoHorario);
-        const geradas = await this.repositorio.emTransacao(async (tx) => {
-          const travada = await this.repositorio.travar(tx, item.usuarioId, item.id);
-          if (!travada?.ativa) return 0;
-          return (await this.materializar(tx, travada, hoje)).ocorrencias.length;
-        });
-        if (geradas > 0) recorrencias += 1;
-        ocorrencias += geradas;
+        try {
+          const geradas = await this.repositorio.emTransacao(async (tx) => {
+            const travada = await this.repositorio.travar(tx, item.usuarioId, item.id);
+            if (!travada?.ativa) return 0;
+            return (await this.materializar(tx, travada, hoje)).ocorrencias.length;
+          });
+          if (geradas > 0) recorrencias += 1;
+          ocorrencias += geradas;
+        } catch (erro) {
+          // Uma recorrência com problema (ex.: fatura já paga) não para as outras.
+          this.log.warn(`Recorrência ${item.id} não gerou: ${(erro as Error).message}`);
+        }
       }
       if (lote.length < LOTE_ROTINA) break;
       depoisDe = lote.at(-1)?.id ?? null;
@@ -313,12 +389,31 @@ export class RecorrenciasService {
     const horizonte = somarDias(hoje, HORIZONTE_RECORRENCIA_DIAS);
     const desde = data(recorrencia.proximaGeracao);
     if (desde > horizonte) return { recorrencia, ocorrencias: [] };
-    const datas = ocorrenciasEntre(agenda, desde, horizonte);
+    // Uma data que já tem ocorrência (a editada à mão, que a agenda nova não tira) não repete.
+    const existentes = await this.repositorio.datasComOcorrencia(
+      tx,
+      recorrencia.id,
+      ocorrenciasEntre(agenda, desde, horizonte).map(paraDataDoBanco),
+    );
+    const datas = ocorrenciasEntre(agenda, desde, horizonte).filter((dia) => !existentes.has(dia));
+    const faturaIds = await this.faturasDasDatas(tx, recorrencia, datas, hoje);
+    if (faturaIds === null) {
+      // O cartão saiu: a recorrência para em vez de gerar fora de fatura.
+      return {
+        recorrencia: await this.repositorio.atualizar(tx, recorrencia.id, { ativa: false }),
+        ocorrencias: [],
+      };
+    }
     const ocorrencias = await this.repositorio.gerarOcorrencias(
       tx,
       recorrencia,
-      datas.map(paraDataDoBanco),
+      datas.map((dia, indice) => ({
+        data: paraDataDoBanco(dia),
+        faturaId: faturaIds[indice] ?? null,
+      })),
     );
+    const tocadas = faturaIds.flatMap((faturaId) => (faturaId === null ? [] : [faturaId]));
+    if (tocadas.length > 0) await this.cartoes.recalcular(tx, tocadas, hoje);
     const atualizada = await this.repositorio.atualizar(
       tx,
       recorrencia.id,
@@ -327,24 +422,59 @@ export class RecorrenciasService {
     return { recorrencia: atualizada, ocorrencias };
   }
 
+  /**
+   * RN-031: a fatura de cada data, na recorrência no cartão (o cartão fica travado). Fora do
+   * cartão, sem fatura. `null` quando o cartão foi excluído.
+   */
+  private async faturasDasDatas(
+    tx: TransacaoBanco,
+    recorrencia: RecorrenciaDoUsuario,
+    datas: readonly DataCalendario[],
+    hoje: DataCalendario,
+  ): Promise<(string | null)[] | null> {
+    if (recorrencia.cartaoId === null || datas.length === 0) return datas.map(() => null);
+    const travados = await this.cartoes.travarCartoes(tx, recorrencia.usuarioId, {
+      entrada: [],
+      saida: [recorrencia.cartaoId],
+    });
+    const cartao = travados.get(recorrencia.cartaoId);
+    if (!cartao || cartao.excluidoEm !== null) return null;
+    const faturaIds: string[] = [];
+    for (const dia of datas) {
+      faturaIds.push(
+        await this.cartoes.faturaParaCompra(tx, recorrencia.usuarioId, cartao, dia, hoje),
+      );
+    }
+    return faturaIds;
+  }
+
+  /** Trava o cartão da recorrência (excluído também), antes de mexer nas faturas dele. */
+  private async travarCartaoDaRecorrencia(
+    tx: TransacaoBanco,
+    usuarioId: string,
+    recorrencia: RecorrenciaDoUsuario,
+  ): Promise<void> {
+    if (recorrencia.cartaoId === null) return;
+    await this.cartoes.travarCartoes(tx, usuarioId, { entrada: [], saida: [recorrencia.cartaoId] });
+  }
+
   private async hoje(usuarioId: string): Promise<DataCalendario> {
     return dataNoFuso(this.clock.agora(), await this.repositorio.fusoDoUsuario(usuarioId));
   }
 
-  /** Categoria do usuário e do tipo certo, conta do usuário, sem cartão de crédito (T-051). */
+  /** Categoria do usuário e do tipo certo; conta e cartão do usuário. */
   private async conferirReferencias(
     usuarioId: string,
     tipo: TipoTransacao,
     dados: {
       categoriaId?: string | undefined;
       contaId?: string | null | undefined;
-      formaPagamento?: string | undefined;
+      formaPagamento?: FormaPagamento | undefined;
+      cartaoId?: string | null | undefined;
     },
   ): Promise<void> {
-    if (dados.formaPagamento === 'cartao_credito') {
-      throw new ErroDominio('REQUISICAO_INVALIDA', {
-        mensagem: 'Recorrência no cartão de crédito ainda não pode ser criada.',
-      });
+    if (dados.cartaoId !== undefined && dados.cartaoId !== null) {
+      await this.cartoes.diasDoCartao(usuarioId, dados.cartaoId);
     }
     if (dados.categoriaId !== undefined) {
       const categoria = await this.repositorio.categoria(usuarioId, dados.categoriaId);
@@ -374,6 +504,7 @@ function paraRespostaRecorrencia(recorrencia: RecorrenciaDoUsuario): Recorrencia
     categoriaId: recorrencia.categoriaId,
     formaPagamento: recorrencia.formaPagamento,
     contaId: recorrencia.contaId,
+    cartaoId: recorrencia.cartaoId,
     frequencia: recorrencia.frequencia,
     dia: agenda.dia,
     dataInicio: agenda.dataInicio,
@@ -381,4 +512,21 @@ function paraRespostaRecorrencia(recorrencia: RecorrenciaDoUsuario): Recorrencia
     proximaGeracao: recorrencia.ativa ? data(recorrencia.proximaGeracao) : null,
     ativa: recorrencia.ativa,
   };
+}
+
+/** Regras da compra no cartão (`problemasDaCompraNoCartao`): o primeiro problema vira o 400. */
+function exigirSemProblemas(problemas: readonly { campo: string; mensagem: string }[]): void {
+  const [primeiro] = problemas;
+  if (primeiro) {
+    throw new ErroDominio('REQUISICAO_INVALIDA', {
+      mensagem: `${primeiro.mensagem}.`,
+      detalhes: { campos: problemas.map(({ campo }) => campo) },
+    });
+  }
+}
+
+function exigirCartao(travados: Map<string, CartaoTravado>, cartaoId: string): CartaoTravado {
+  const cartao = travados.get(cartaoId);
+  if (!cartao) throw new ErroDominio('NAO_ENCONTRADO', { detalhes: { cartaoId } });
+  return cartao;
 }

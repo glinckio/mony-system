@@ -124,4 +124,17 @@ describe('contrato', () => {
     );
     expect(esquemaAtualizacaoRecorrencia.safeParse({ dataFim: null }).success).toBe(true);
   });
+
+  it('no cartão de crédito precisa do cartão, sem conta (T-051)', () => {
+    const cartaoId = '0199c0de-0000-7000-8000-0000000000ca';
+    const assinatura = { ...base, formaPagamento: 'cartao_credito', cartaoId };
+    expect(esquemaNovaRecorrencia.safeParse(assinatura).success).toBe(true);
+    expect(esquemaNovaRecorrencia.safeParse({ ...assinatura, cartaoId: undefined }).success).toBe(
+      false,
+    );
+    expect(
+      esquemaNovaRecorrencia.safeParse({ ...assinatura, contaId: base.categoriaId }).success,
+    ).toBe(false);
+    expect(esquemaNovaRecorrencia.safeParse({ ...base, cartaoId }).success).toBe(false);
+  });
 });

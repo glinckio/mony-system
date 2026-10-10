@@ -39,7 +39,14 @@ export type ParcelamentoDoUsuario = Prisma.ParcelamentoGetPayload<{
 /** O que os fluxos de parcelamento usam dentro da transação de banco. */
 export type TransacaoParcelamentos = Pick<
   ClientePrisma,
-  'parcelamento' | 'parcela' | 'transacao' | 'cartao' | 'fatura' | '$queryRaw' | '$executeRaw'
+  | 'parcelamento'
+  | 'parcela'
+  | 'transacao'
+  | 'cartao'
+  | 'fatura'
+  | 'recorrencia'
+  | '$queryRaw'
+  | '$executeRaw'
 >;
 
 /** Acesso ao banco de parcelamentos e parcelas; tudo filtra pelo `usuarioId` (doc 05). */

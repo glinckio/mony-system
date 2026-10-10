@@ -23,6 +23,7 @@ export type ListaRecorrenciasDtoItensItem = {
   categoriaId: string;
   formaPagamento: ListaRecorrenciasDtoItensItemFormaPagamento;
   contaId: string | null;
+  cartaoId: string | null;
   frequencia: ListaRecorrenciasDtoItensItemFrequencia;
   /**
    * @minimum -9007199254740991

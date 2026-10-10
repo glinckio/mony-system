@@ -23,6 +23,7 @@ export type RespostaRecorrenciaDtoRecorrencia = {
   categoriaId: string;
   formaPagamento: RespostaRecorrenciaDtoRecorrenciaFormaPagamento;
   contaId: string | null;
+  cartaoId: string | null;
   frequencia: RespostaRecorrenciaDtoRecorrenciaFrequencia;
   /**
    * @minimum -9007199254740991

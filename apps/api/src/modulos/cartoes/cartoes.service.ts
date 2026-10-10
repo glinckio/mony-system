@@ -64,7 +64,9 @@ const CAMPOS_DO_BANCO = [
 ] as const;
 
 /** Cartão travado para uma compra entrar ou sair da fatura. */
-export type CartaoTravado = Pick<CartaoDoUsuario, 'id' | 'diaFechamento' | 'diaVencimento'>;
+export type CartaoTravado = Pick<CartaoDoUsuario, 'id' | 'diaFechamento' | 'diaVencimento'> & {
+  excluidoEm: Date | null;
+};
 
 /**
  * Cartões de crédito e faturas (RN-030 a RN-035, RN-038). A compra no cartão é gravada pelas
@@ -193,6 +195,7 @@ export class CartoesService {
         });
       }
       await this.repositorio.atualizar(tx, id, { excluidoEm: this.clock.agora() });
+      await this.repositorio.pararRecorrencias(tx, id);
     });
   }
 
