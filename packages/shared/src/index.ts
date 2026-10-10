@@ -1,3 +1,4 @@
+export * from './arquivos.js';
 export * from './autenticacao.js';
 export * from './cartoes.js';
 export * from './categorias.js';
@@ -8,4 +9,5 @@ export * from './dinheiro.js';
 export * from './enums.js';
 export * from './erros.js';
 export * from './nfce.js';
+export * from './transacoes.js';
 export * from './usuario.js';

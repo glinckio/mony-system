@@ -18,6 +18,8 @@
     "openapi:exportar": "pnpm run generate && pnpm run build && node dist/exportar-openapi.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1146.0",
+    "@aws-sdk/s3-request-presigner": "3.1146.0",
     "@fastify/static": "^10.1.5",
     "@mony/shared": "workspace:*",
     "@nestjs/bullmq": "^12.0.0",

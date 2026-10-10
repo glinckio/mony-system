@@ -2,6 +2,10 @@ import { getQueueToken } from '@nestjs/bullmq';
 import type { TestingModuleBuilder } from '@nestjs/testing';
 import { vi } from 'vitest';
 
+import {
+  ArmazenamentoArquivos,
+  ArmazenamentoMemoria,
+} from '../src/core/arquivos/armazenamento-arquivos';
 import { Clock } from '../src/core/clock/clock';
 import { ProcessadorEventos } from '../src/core/eventos/processador-eventos';
 import { FILAS } from '../src/core/filas/filas';
@@ -25,7 +29,7 @@ export function criarFilaFalsa() {
 export type FilaFalsa = ReturnType<typeof criarFilaFalsa>;
 
 /**
- * Troca filas BullMQ, consumidores (eventos e e-mails), armazenamento de idempotência e contadores de
+ * Troca filas BullMQ, consumidores (eventos e e-mails), arquivos (S3), armazenamento de idempotência e contadores de
  * tentativas por versões em memória, para os testes unitários não dependerem de Redis. As filas
  * falsas ficam em `filas`.
  */
@@ -40,6 +44,8 @@ export function semServicosExternos(
     .useValue({})
     .overrideProvider(ProcessadorEmails)
     .useValue({})
+    .overrideProvider(ArmazenamentoArquivos)
+    .useValue(new ArmazenamentoMemoria())
     .overrideProvider(LimiteTentativas)
     .useFactory({ factory: (clock: Clock) => new LimiteTentativasMemoria(clock), inject: [Clock] });
   for (const nome of Object.values(FILAS)) {

@@ -56,6 +56,20 @@ export class Configuracao {
     return this.config.get('SMTP_URL', { infer: true });
   }
 
+  /** Bucket dos arquivos; `undefined` desliga o envio de arquivos. */
+  get bucketArquivos(): string | undefined {
+    return this.config.get('S3_BUCKET', { infer: true });
+  }
+
+  /** Endereço de um S3 compatível (só local); `undefined` na AWS. */
+  get enderecoS3(): string | undefined {
+    return this.config.get('S3_ENDPOINT', { infer: true });
+  }
+
+  get regiaoAws(): string {
+    return this.config.get('AWS_REGION', { infer: true });
+  }
+
   /** Versão mínima do app em cada plataforma (`1.2.3`). */
   get versoesMinimasApp(): Record<PlataformaDispositivo, string> {
     return {
