@@ -300,6 +300,27 @@ Implementado na T-044 (RN-020 a RN-024). `GET /dashboard?periodo=mes_atual|mes_a
 - **`orcamentos`:** os de `GET /orcamentos` no mês em que o período começa.
 - **`onboarding` (RN-024):** o de `GET /me/onboarding`.
 
+## Notificações e preferências de alerta
+
+Implementado na T-080 (RN-100 a RN-105; motor no doc 09). O push entra na T-081 e os avaliadores de cada alerta na T-082.
+
+| Rota | O que faz |
+|---|---|
+| `GET /notificacoes?tipo=&naoLidas=&cursor=&limite=` | Central, da mais nova para a mais antiga → `{ itens, proximoCursor, naoLidas }` |
+| `POST /notificacoes/:id/lida` | Marca como lida (de novo não muda a hora) |
+| `POST /notificacoes/lidas` | Marca todas → `{ afetadas }` |
+| `GET /preferencias-alerta` | `{ silencio, tipos }`: cada tipo com `ativo`, `antecedenciaDias` e `desligavel` |
+| `PUT /preferencias-alerta` | Só o que veio: `tipos` (ligar, desligar, antecedência) e `silencio` (`{ inicio, fim }` em `HH:MM` local, ou `null`) |
+
+- O `GET /dashboard` traz `notificacoesNaoLidas`.
+- **`MotorAlertas.emitir(candidatos, agora)`** é a porta dos avaliadores. Cada candidato traz `tipo`, `chaveUnica`, `urgente`, `titulo`, `corpo`, `linkInterno` (`mony://…`) e `vaiParaChat`.
+- **Filtros do motor, nesta ordem:**
+  1. tipo desligado (assinatura não desliga);
+  2. cota de 3 alertas de consultoria por dia do usuário;
+  3. chave única (`ON CONFLICT DO NOTHING`);
+  4. horário de silêncio: o não urgente fica gravado sem `enviadaEm`.
+- **Envio:** o que passa vai para a central e para `EnvioNotificacoes`, que por enquanto só registra no log; o push entra na T-081.
+
 ## Relatórios
 
 Implementado na T-048 (RN-150), sem exportação (RN-151 fica na tarefa de exportação). `GET /relatorios/:tipo?inicio=&fim=` tem uma rota por tipo, cada uma com o seu contrato. Sem período, vale os últimos 12 meses, com o atual inteiro; o período vai até 5 anos.

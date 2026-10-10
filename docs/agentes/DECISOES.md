@@ -370,3 +370,22 @@ Contexto: RN-043 e RN-031, assinaturas pagas no cartão. Decisões:
 - **Ocorrência para o cartão.** Uma ocorrência pode ir para o cartão por `PATCH /transacoes/:id`: vira editada à mão e entra na fatura, como qualquer compra. A trava da T-040 que impedia isso saiu.
 
 Reversível: sim.
+
+## 2026-10-10 — T-080 — Motor de alertas e central de notificações
+Contexto: RN-100 a RN-105, doc 09. O push é a T-081 e os avaliadores de cada alerta, a T-082. Decisões:
+- **O motor é a porta única.** Os avaliadores chamam `MotorAlertas.emitir(candidatos, agora)`; o motor filtra, grava na central e envia. O candidato é o do doc 09, sem `acoes`: a ação do botão sai da categoria do tipo no push (doc 09), e o id da tela vem no `linkInterno`.
+- **Ordem dos filtros:** tipo desligado → cota de consultoria → chave única → silêncio. A chave única é a do banco (`ON CONFLICT DO NOTHING`), então dois eventos iguais ao mesmo tempo gravam uma notificação só.
+- **Cota de consultoria (RN-103):** 3 por dia do usuário (no fuso dele), contando `gasto_fora_padrao` e `projecao_mes`. Dois eventos de consultoria ao mesmo tempo podem passar um da cota; o custo de travar o usuário não compensa.
+- **Silêncio (RN-101).**
+  - A tabela guarda início e fim em cada linha de preferência, mas o PDF fala de um horário de silêncio só. A API trata como um horário do usuário, gravado em todas as linhas, para todos os tipos não urgentes.
+  - A janela pode passar da meia-noite (22:00 às 07:00); o início conta e o fim não; início igual ao fim é sem silêncio.
+  - O alerta adiado já aparece na central, sem `enviadaEm`. A rotina `liberar-silencio`, a cada 15 minutos, manda os de quem saiu do silêncio, num envio agrupado se forem mais de 3.
+- **Urgente ignora o silêncio**, como manda a coluna "Urgente" do doc 09: fatura atrasada, lembrete, compromisso e assinatura.
+- **Canal de envio trocável** (`EnvioNotificacoes`). Por enquanto só registra no log; a T-081 troca pelo Expo Push sem mexer no motor.
+- **Central:**
+  - lista por cursor, filtros por tipo e não lidas, total de não lidas;
+  - marcar uma ou todas como lidas (`POST /notificacoes/lidas` entrou além do doc 05, para o "marcar todas");
+  - o contador também sai no `GET /dashboard`, como o doc 09 pede.
+- **Preferências:** `GET` e `PUT /preferencias-alerta`. Tipo sem linha conta como ligado. Assinatura não desliga (400). Antecedência de 0 a 30 dias.
+
+Reversível: sim.

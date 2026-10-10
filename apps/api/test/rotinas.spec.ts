@@ -9,6 +9,7 @@ import { Clock, ClockFixo } from '../src/core/clock/clock';
 import { FILAS } from '../src/core/filas/filas';
 import { ProcessadorRotinas, ROTINA, Rotina } from '../src/core/rotinas/rotinas';
 import { CartoesService } from '../src/modulos/cartoes/cartoes.service';
+import { MotorAlertas } from '../src/modulos/notificacoes/motor-alertas';
 import { OrcamentosService } from '../src/modulos/orcamentos/orcamentos.service';
 import { ParcelamentosService } from '../src/modulos/parcelamentos/parcelamentos.service';
 import { RecorrenciasService } from '../src/modulos/recorrencias/recorrencias.service';
@@ -71,6 +72,14 @@ describe('rotinas agendadas (doc 09)', () => {
     expect(Reflect.getMetadata(ROTINA, atrasos)).toEqual({
       nome: 'marcar-atrasos',
       padrao: '0 * * * *',
+    });
+  });
+
+  it('o fim do horário de silêncio é conferido a cada 15 minutos (RN-101)', () => {
+    const metodo = Reflect.get(MotorAlertas.prototype, 'liberarSilencio') as object;
+    expect(Reflect.getMetadata(ROTINA, metodo)).toEqual({
+      nome: 'liberar-silencio',
+      padrao: '*/15 * * * *',
     });
   });
 

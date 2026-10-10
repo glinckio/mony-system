@@ -12,6 +12,7 @@ import { somarDias } from '@mony/shared/recorrencias';
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { CartoesService } from '../cartoes/cartoes.service';
+import { NotificacoesService } from '../notificacoes/notificacoes.service';
 import { OrcamentosService } from '../orcamentos/orcamentos.service';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import { DashboardRepository } from './dashboard.repository';
@@ -30,6 +31,7 @@ export class DashboardService {
     private readonly cartoes: CartoesService,
     private readonly orcamentos: OrcamentosService,
     private readonly usuarios: UsuariosService,
+    private readonly notificacoes: NotificacoesService,
     private readonly clock: Clock,
   ) {}
 
@@ -37,13 +39,15 @@ export class DashboardService {
     const usuarioId = usuarioDoContexto(contexto);
     const hoje = dataNoFuso(this.clock.agora(), await this.repositorio.fusoDoUsuario(usuarioId));
     const periodo = periodoDoDashboard(consulta.periodo, hoje, consulta);
-    const [resumo, proximosVencimentos, cartoes, orcamentos, onboarding] = await Promise.all([
-      this.resumo(usuarioId, periodo.de, periodo.ate),
-      this.vencimentos(usuarioId, hoje),
-      this.cartoes.listar(contexto),
-      this.orcamentos.listar(contexto, competenciaDe(periodo.de)),
-      this.usuarios.onboarding(usuarioId),
-    ]);
+    const [resumo, proximosVencimentos, cartoes, orcamentos, onboarding, notificacoesNaoLidas] =
+      await Promise.all([
+        this.resumo(usuarioId, periodo.de, periodo.ate),
+        this.vencimentos(usuarioId, hoje),
+        this.cartoes.listar(contexto),
+        this.orcamentos.listar(contexto, competenciaDe(periodo.de)),
+        this.usuarios.onboarding(usuarioId),
+        this.notificacoes.contarNaoLidas(usuarioId),
+      ]);
     return {
       periodo: { tipo: consulta.periodo, ...periodo },
       resumo,
@@ -51,6 +55,7 @@ export class DashboardService {
       cartoes: cartoes.itens,
       orcamentos,
       onboarding,
+      notificacoesNaoLidas,
     };
   }
 

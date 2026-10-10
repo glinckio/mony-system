@@ -2447,6 +2447,207 @@
         ]
       }
     },
+    "/v1/notificacoes": {
+      "get": {
+        "operationId": "listarNotificacoes",
+        "parameters": [
+          {
+            "name": "tipo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "limite_cartao",
+                "fatura_fechada",
+                "fatura_vencimento",
+                "fatura_atrasada",
+                "orcamento",
+                "gasto_fora_padrao",
+                "projecao_mes",
+                "vencimento_pendente",
+                "app_compra",
+                "lembrete",
+                "compromisso",
+                "resumo_periodo",
+                "open_finance",
+                "assinatura",
+                "novidade"
+              ]
+            }
+          },
+          {
+            "name": "naoLidas",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 30,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Da mais nova para a mais antiga.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaNotificacoesDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificacoes"
+        ]
+      }
+    },
+    "/v1/notificacoes/lidas": {
+      "post": {
+        "operationId": "marcarTodasNotificacoes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Marca todas como lidas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoLoteDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificacoes"
+        ]
+      }
+    },
+    "/v1/notificacoes/{id}/lida": {
+      "post": {
+        "operationId": "marcarLidaNotificacoes",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificacaoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificacoes"
+        ]
+      }
+    },
+    "/v1/preferencias-alerta": {
+      "get": {
+        "operationId": "obterPreferenciasAlerta",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferenciasAlertaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificacoes"
+        ]
+      },
+      "put": {
+        "operationId": "atualizarPreferenciasAlerta",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizacaoPreferenciasAlertaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Só o que veio muda.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferenciasAlertaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "notificacoes"
+        ]
+      }
+    },
     "/v1/relatorios/mensal": {
       "get": {
         "operationId": "mensalRelatorios",
@@ -9271,6 +9472,11 @@
               "checklistVisivel",
               "dicasVistas"
             ]
+          },
+          "notificacoesNaoLidas": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -9279,8 +9485,348 @@
           "proximosVencimentos",
           "cartoes",
           "orcamentos",
-          "onboarding"
+          "onboarding",
+          "notificacoesNaoLidas"
         ]
+      },
+      "PaginaNotificacoesDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "tipo": {
+                  "type": "string",
+                  "enum": [
+                    "limite_cartao",
+                    "fatura_fechada",
+                    "fatura_vencimento",
+                    "fatura_atrasada",
+                    "orcamento",
+                    "gasto_fora_padrao",
+                    "projecao_mes",
+                    "vencimento_pendente",
+                    "app_compra",
+                    "lembrete",
+                    "compromisso",
+                    "resumo_periodo",
+                    "open_finance",
+                    "assinatura",
+                    "novidade"
+                  ]
+                },
+                "titulo": {
+                  "type": "string"
+                },
+                "corpo": {
+                  "type": "string"
+                },
+                "linkInterno": {
+                  "type": "string"
+                },
+                "criadoEm": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "enviadaEm": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "lidaEm": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "tipo",
+                "titulo",
+                "corpo",
+                "linkInterno",
+                "criadoEm",
+                "enviadaEm",
+                "lidaEm"
+              ]
+            }
+          },
+          "proximoCursor": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "naoLidas": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "itens",
+          "proximoCursor",
+          "naoLidas"
+        ]
+      },
+      "NotificacaoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "limite_cartao",
+              "fatura_fechada",
+              "fatura_vencimento",
+              "fatura_atrasada",
+              "orcamento",
+              "gasto_fora_padrao",
+              "projecao_mes",
+              "vencimento_pendente",
+              "app_compra",
+              "lembrete",
+              "compromisso",
+              "resumo_periodo",
+              "open_finance",
+              "assinatura",
+              "novidade"
+            ]
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "corpo": {
+            "type": "string"
+          },
+          "linkInterno": {
+            "type": "string"
+          },
+          "criadoEm": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "enviadaEm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lidaEm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "titulo",
+          "corpo",
+          "linkInterno",
+          "criadoEm",
+          "enviadaEm",
+          "lidaEm"
+        ]
+      },
+      "PreferenciasAlertaDto": {
+        "type": "object",
+        "properties": {
+          "silencio": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "inicio": {
+                    "type": "string"
+                  },
+                  "fim": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "inicio",
+                  "fim"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tipos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tipo": {
+                  "type": "string",
+                  "enum": [
+                    "limite_cartao",
+                    "fatura_fechada",
+                    "fatura_vencimento",
+                    "fatura_atrasada",
+                    "orcamento",
+                    "gasto_fora_padrao",
+                    "projecao_mes",
+                    "vencimento_pendente",
+                    "app_compra",
+                    "lembrete",
+                    "compromisso",
+                    "resumo_periodo",
+                    "open_finance",
+                    "assinatura",
+                    "novidade"
+                  ]
+                },
+                "ativo": {
+                  "type": "boolean"
+                },
+                "antecedenciaDias": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "desligavel": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "tipo",
+                "ativo",
+                "antecedenciaDias",
+                "desligavel"
+              ]
+            }
+          }
+        },
+        "required": [
+          "silencio",
+          "tipos"
+        ]
+      },
+      "AtualizacaoPreferenciasAlertaDto": {
+        "type": "object",
+        "properties": {
+          "silencio": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "inicio": {
+                    "type": "string",
+                    "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "fim": {
+                    "type": "string",
+                    "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                  }
+                },
+                "required": [
+                  "inicio",
+                  "fim"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tipos": {
+            "maxItems": 15,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tipo": {
+                  "type": "string",
+                  "enum": [
+                    "limite_cartao",
+                    "fatura_fechada",
+                    "fatura_vencimento",
+                    "fatura_atrasada",
+                    "orcamento",
+                    "gasto_fora_padrao",
+                    "projecao_mes",
+                    "vencimento_pendente",
+                    "app_compra",
+                    "lembrete",
+                    "compromisso",
+                    "resumo_periodo",
+                    "open_finance",
+                    "assinatura",
+                    "novidade"
+                  ]
+                },
+                "ativo": {
+                  "type": "boolean"
+                },
+                "antecedenciaDias": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 30
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "tipo"
+              ]
+            }
+          }
+        }
       },
       "RelatorioMensalDto": {
         "type": "object",
