@@ -195,3 +195,29 @@ Contexto: RN-040 a RN-047, docs 05, 06 e 11. Decisões:
   - Nos testes, um armazenamento em memória faz o papel do app enviando o arquivo.
 
 Reversível: sim.
+
+## 2026-10-10 — T-038 — Recorrências e rotina de materialização
+Contexto: RN-043, docs 05, 06 e 09. Decisões:
+- **Agenda.** `dia` é o dia do mês (mensal e anual) ou da semana (semanal, 0 = domingo); sem ele, vale o da data de início. A `k`-ésima data é sempre calculada a partir do início, para que 31 vire 28/02 e volte a 31/03. A regra é pura (`ocorrenciasEntre`, `proximaOcorrencia` em `@mony/shared/recorrencias`), para o app mostrar as próximas datas.
+- **Materialização.** Ocorrências da data do ponteiro até hoje + 35 dias, no fuso do usuário, todas `pendente` (RN-043), inclusive as de datas que já passaram, quando a recorrência começa no passado. O começo pode ser no máximo um ano para trás, para não gerar centenas de lançamentos de uma vez. Na criação, as ocorrências já saem na resposta.
+- **Ponteiro.**
+  - `proxima_geracao` aponta para a próxima data da agenda ainda não gerada, mesmo depois da data final; `ativa` diz se ela ainda vale.
+  - Assim, estender a data final retoma de onde parou, e uma ocorrência excluída nunca volta: o ponteiro já passou dela.
+  - Rotina e rotas travam a recorrência com `FOR UPDATE`, então uma edição e a rotina ao mesmo tempo não geram em dobro.
+- **Rotina de hora em hora (`30 * * * *`),** e não uma vez por dia às 00:30 como no doc 09.
+  - Rodar de novo não repete nada.
+  - Cobre todos os fusos sem agendar por usuário.
+  - A consulta só pega recorrências cujo ponteiro entrou na janela.
+  - O doc 09 foi atualizado.
+- **Infra de rotinas (`core/rotinas`).** `@Rotina({ nome, padrao })` num método de provider. O `ProcessadorRotinas` (só no worker) acha os métodos, cria os agendadores do BullMQ (`upsertJobScheduler`, cron no fuso de São Paulo) e chama a rotina com o `Clock`. As próximas rotinas (T-047, T-080 etc.) seguem o mesmo caminho.
+- **Edição (RN-043).** Modelo (descrição, valor, categoria, forma, conta) vale para as ocorrências de hoje em diante que estão pendentes e não foram editadas à mão. Mudar frequência ou dia exclui essas ocorrências livres e gera pela agenda nova a partir de hoje. Encurtar a data final exclui as livres depois dela.
+- **Exclusão (RN-043).**
+  - Na ocorrência, `DELETE /transacoes/:id?recorrencia=` aceita três escopos:
+    - `esta` (padrão): só ela;
+    - `proximas`: ela e as seguintes, pagas ou não, com a data final na véspera;
+    - `todas`: todas as ocorrências, e a recorrência para.
+  - `DELETE /recorrencias/:id` para a recorrência e tira as livres de hoje em diante; passadas e editadas ficam.
+  - A recorrência fica no banco, inativa: não há exclusão lógica em `recorrencias`.
+- **Cartão.** Recorrência no cartão de crédito é recusada até a T-040, como as transações.
+
+Reversível: sim.

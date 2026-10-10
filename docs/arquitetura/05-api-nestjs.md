@@ -222,6 +222,25 @@ Implementado na T-037 (RN-040 a RN-047).
   - um anexo fica em um lançamento só;
   - a chave no S3 é `usuarios/<usuarioId>/anexos/<aleatório>.<extensão>`.
 
+## Recorrências
+
+Implementado na T-038 (RN-043).
+
+| Rota | O que faz |
+|---|---|
+| `GET /recorrencias` | Recorrências ativas |
+| `POST /recorrencias` | `Idempotency-Key`; cria e devolve `{ recorrencia, ocorrencias }`, com as ocorrências até 35 dias à frente |
+| `PATCH /recorrencias/:id` | Muda o modelo e as ocorrências futuras pendentes não editadas à mão |
+| `DELETE /recorrencias/:id` | Para a recorrência; as ocorrências livres de hoje em diante saem |
+| `DELETE /transacoes/:id?recorrencia=esta\|proximas\|todas` | Exclusão de uma ocorrência, com o escopo da RN-043 |
+
+- **Agenda:** `frequencia` (`semanal`, `mensal`, `anual`) e `dia` (do mês, ou da semana com 0 = domingo; sem ele vale o da data de início), `dataInicio` e `dataFim` opcional. As datas vêm de `ocorrenciasEntre` em `@mony/shared/recorrencias`, sempre a partir do início (31/01 → 28/02 → 31/03).
+- **Ponteiro:** `proxima_geracao` é a próxima data da agenda ainda não gerada, mesmo depois da data final; `ativa` diz se ainda vale. A rotina e as rotas travam a recorrência (`FOR UPDATE`) e só andam o ponteiro para a frente, então nada se repete.
+- **Edição:** mudar frequência ou dia refaz as ocorrências livres de hoje em diante. Encurtar a data final tira as livres que passaram dela; estender retoma a geração de onde parou.
+- **"Esta e as próximas":** exclui a ocorrência e as seguintes (pagas ou não) e põe a data final na véspera. **"Todas"** exclui todas e para a recorrência.
+- **Rotina `gerar-recorrencias`:** roda de hora em hora (`30 * * * *`), no fuso de cada usuário (doc 09).
+- **Limites:** sem cartão de crédito até a T-040; começo no máximo um ano atrás.
+
 ## Guardas e decoradores
 
 | Decorador | Função |
