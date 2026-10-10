@@ -221,3 +221,35 @@ Contexto: RN-043, docs 05, 06 e 09. Decisões:
 - **Cartão.** Recorrência no cartão de crédito é recusada até a T-040, como as transações.
 
 Reversível: sim.
+
+## 2026-10-10 — T-040 — Cartões e faturas
+Contexto: RN-030 a RN-035, RN-038 e RN-046, docs 05, 06 e 07. As regras puras são as da T-039. Decisões:
+- **Escopo.** Só a API. As telas ficam na T-050 (mesmo motivo da T-049), a recorrência no cartão na T-051, o pagamento da fatura na T-041, a rotina que fecha faturas e marca atrasos na T-047 e a cota de 1 cartão do plano gratuito na T-100.
+- **Compra pelo `POST /transacoes`.** Não há rota própria: `formaPagamento: 'cartao_credito'` com `cartaoId`. App e Mony usam a mesma entrada.
+  - A compra é sempre despesa. Estorno no cartão fica para quando o Open Finance trouxer (T-120).
+  - Não tem `contaId`: quando a T-041 pagar a fatura e marcar as compras como pagas, elas não podem sair de novo do saldo da conta, porque o pagamento já sai.
+  - Fica `pendente` até a fatura ser paga (RN-042); pedir `pago` dá 400.
+  - As regras ficam em `problemasDaCompraNoCartao` (`@mony/shared/transacoes`), usadas pelo esquema e pelo Service.
+- **Fatura sob demanda.** A fatura de uma competência nasce com a primeira compra. A fatura atual do cartão vem com `id: null` enquanto não existe.
+- **Mudar os dias** vale para as faturas que ainda não existem; as criadas mantêm as datas, como o banco faz ao trocar o vencimento. A compra entra na fatura da competência calculada. Se essa fatura já existe e fechou antes da data da compra, a compra vai para a seguinte (`faturaDestino`).
+- **Total refeito pela soma.** A cada compra que entra, muda ou sai, o total da fatura é a soma das compras não excluídas, e não o total antigo mais a diferença. Assim um erro nunca se acumula. O status gravado é refeito junto.
+- **Trava.** Todo fluxo que mexe em fatura trava o cartão (`FOR UPDATE`) e depois as faturas, sempre em ordem de id. Doze compras ao mesmo tempo no mesmo cartão somam certo (teste de integração). A T-041 deve seguir a mesma ordem: cartão, depois fatura.
+- **Fatura quitada** = tem pagamento e o pago cobre o total.
+  - Compra nela não entra, não muda valor, data, cartão nem forma, e não sai: 409 `TRANSACAO_EM_FATURA_PAGA` (RN-046). Descrição, categoria, observação e anexos continuam mudando.
+  - Fatura fechada e sem pagamento ainda aceita compra com data antiga, para o usuário acertar com o extrato.
+  - Fatura zerada não conta como quitada.
+- **Status na leitura.** A resposta calcula o status no "hoje" do usuário com `statusDaFatura`, então já sai certo antes da rotina da T-047. A coluna também é gravada a cada mudança.
+- **Sair do cartão.** Ao mudar a forma de pagamento para outra, a compra sai da fatura e, se o status não veio, ganha o padrão da RN-042.
+- **Recorrência.** Ocorrência de recorrência não pode ir para o cartão até a T-051, porque editar ou excluir a recorrência ainda não refaz faturas.
+- **Exclusão do cartão** é lógica.
+  - Com saldo em aberto em qualquer fatura, inclusive compra futura, dá 409 com o saldo: as compras ficariam pendentes para sempre. Paga-se a fatura (T-041) ou excluem-se as compras antes.
+  - Sem saldo, o cartão some das listas, e as faturas dele também.
+  - Cartão do Open Finance só sai desconectando o banco. Ele também só muda nome, cor, faixas e conta de pagamento (RN-039).
+- **Cadastro.**
+  - Bandeira de uma lista (`BANDEIRAS_CARTAO`: visa, mastercard, elo, amex, hipercard, diners, outra), para o app escolher o ícone. A resposta aceita qualquer texto, por causa do Open Finance.
+  - O limite é de pelo menos 1 centavo.
+  - Até 5 faixas de alerta, de 1% a 100%, gravadas em ordem e sem repetição. Lista vazia desliga os alertas do cartão.
+  - O primeiro cartão conclui a etapa `cartoes` do onboarding.
+- **`impacto.cartao`** traz o percentual do limite usado depois da compra (doc 05). O alerta de faixa (RN-038, RN-102) fica com o motor de alertas (T-080), a partir do evento `transacao.registrada`.
+
+Reversível: sim.

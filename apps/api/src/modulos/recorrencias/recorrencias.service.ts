@@ -331,7 +331,7 @@ export class RecorrenciasService {
     return dataNoFuso(this.clock.agora(), await this.repositorio.fusoDoUsuario(usuarioId));
   }
 
-  /** Categoria do usuário e do tipo certo, conta do usuário, sem cartão de crédito (T-040). */
+  /** Categoria do usuário e do tipo certo, conta do usuário, sem cartão de crédito (T-051). */
   private async conferirReferencias(
     usuarioId: string,
     tipo: TipoTransacao,

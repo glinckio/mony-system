@@ -1,6 +1,7 @@
 export * from './app/app';
 export * from './arquivos/arquivos';
 export * from './autenticacao/autenticacao';
+export * from './cartoes/cartoes';
 export * from './categorias/categorias';
 export * from './contas/contas';
 export * from './recorrencias/recorrencias';

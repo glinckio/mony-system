@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  esquemaAtualizacaoCartao,
+  esquemaNovoCartao,
   faixaAtingida,
   faturaDaCompetencia,
   faturaDaCompra,
@@ -206,5 +208,57 @@ describe('vencimento no fim de semana (RN-032)', () => {
     expect(venceNoFimDeSemana('2026-10-10')).toBe(true); // sábado
     expect(venceNoFimDeSemana('2026-10-11')).toBe(true); // domingo
     expect(venceNoFimDeSemana('2026-10-12')).toBe(false); // segunda
+  });
+});
+
+describe('cadastro do cartão (RN-030)', () => {
+  const cartao = {
+    nome: 'Nubank',
+    bandeira: 'mastercard',
+    final: '1234',
+    limiteTotalCentavos: 500_000,
+    diaFechamento: 3,
+    diaVencimento: 10,
+    cor: '#820AD1',
+  };
+
+  it('aceita o cadastro do PDF; final e bandeira são opcionais', () => {
+    expect(esquemaNovoCartao.safeParse(cartao).success).toBe(true);
+    expect(
+      esquemaNovoCartao.safeParse({ ...cartao, final: undefined, bandeira: undefined }).success,
+    ).toBe(true);
+  });
+
+  it.each([
+    ['dia de fechamento 0', { diaFechamento: 0 }],
+    ['dia de vencimento 32', { diaVencimento: 32 }],
+    ['dia quebrado', { diaFechamento: 2.5 }],
+    ['final com 3 dígitos', { final: '123' }],
+    ['final com letra', { final: '12a4' }],
+    ['bandeira fora da lista', { bandeira: 'discover' }],
+    ['cor sem #', { cor: '820AD1' }],
+    ['limite zero', { limiteTotalCentavos: 0 }],
+    ['limite em reais quebrados', { limiteTotalCentavos: Number('10.5') }],
+    ['faixa repetida', { faixasAlerta: [50, 50] }],
+    ['faixa acima de 100', { faixasAlerta: [120] }],
+    ['faixas demais', { faixasAlerta: [10, 20, 30, 40, 50, 60] }],
+    ['nome vazio', { nome: '  ' }],
+  ])('recusa %s', (_caso, mudanca) => {
+    expect(esquemaNovoCartao.safeParse({ ...cartao, ...mudanca }).success).toBe(false);
+  });
+
+  it('dia 31 vale em qualquer mês (RN-032) e faixas vazias desligam os alertas', () => {
+    expect(
+      esquemaNovoCartao.safeParse({ ...cartao, diaFechamento: 31, faixasAlerta: [] }).success,
+    ).toBe(true);
+  });
+
+  it('a mudança aceita null para limpar bandeira, final e conta de pagamento', () => {
+    expect(
+      esquemaAtualizacaoCartao.safeParse({ bandeira: null, final: null, contaPagamentoId: null })
+        .success,
+    ).toBe(true);
+    expect(esquemaAtualizacaoCartao.safeParse({ nome: null }).success).toBe(false);
+    expect(esquemaAtualizacaoCartao.safeParse({}).success).toBe(true);
   });
 });

@@ -14,6 +14,7 @@ import {
   type StatusTransacao,
   TIPOS_ANEXO,
   TIPOS_TRANSACAO,
+  type TipoTransacao,
 } from './enums.js';
 
 /** Até R$ 1 bilhão por lançamento. */
@@ -88,6 +89,8 @@ export const esquemaNovaTransacao = z
     status: z.enum(STATUS_TRANSACAO).optional(),
     observacao: z.string().trim().max(1000).optional(),
     contaId: z.uuid().optional(),
+    /** Obrigatório na compra no cartão de crédito, e só nela. */
+    cartaoId: z.uuid().optional(),
     anexoIds: z.array(z.uuid()).max(MAXIMO_ANEXOS_POR_TRANSACAO).optional(),
   })
   .superRefine((dados, contexto) => {
@@ -98,9 +101,15 @@ export const esquemaNovaTransacao = z
         message: 'Despesa precisa da forma de pagamento (RN-041)',
       });
     }
+    for (const { campo, mensagem } of problemasDaCompraNoCartao(dados)) {
+      contexto.addIssue({ code: 'custom', path: [campo], message: mensagem });
+    }
   });
 
-/** Só o que mudou. `null` em observação e conta limpa o campo; `anexoIds` substitui a lista. */
+/**
+ * Só o que mudou. `null` em observação e conta limpa o campo; `anexoIds` substitui a lista. Na
+ * compra no cartão, `cartaoId` troca o cartão; mudar a forma de pagamento tira a compra da fatura.
+ */
 export const esquemaAtualizacaoTransacao = z.object({
   tipo: z.enum(TIPOS_TRANSACAO).optional(),
   descricao: z.string().trim().min(1).max(200).optional(),
@@ -111,6 +120,7 @@ export const esquemaAtualizacaoTransacao = z.object({
   status: z.enum(STATUS_TRANSACAO).optional(),
   observacao: z.string().trim().max(1000).nullable().optional(),
   contaId: z.uuid().nullable().optional(),
+  cartaoId: z.uuid().optional(),
   anexoIds: z.array(z.uuid()).max(MAXIMO_ANEXOS_POR_TRANSACAO).optional(),
 });
 
@@ -185,6 +195,49 @@ export function statusPadrao(
   if (data > hoje) return 'pendente';
   if (formaPagamento === 'boleto' || formaPagamento === 'cartao_credito') return 'pendente';
   return 'pago';
+}
+
+export interface ProblemaDeCampo {
+  campo: 'cartaoId' | 'tipo' | 'contaId' | 'status';
+  mensagem: string;
+}
+
+/**
+ * Compra no cartão de crédito (RN-031, RN-042): é despesa, tem o cartão, não sai de uma conta (sai
+ * da fatura, que é paga de uma conta) e fica pendente até a fatura ser paga. Cartão em outra forma
+ * de pagamento também é erro. Lista vazia: tudo certo.
+ */
+export function problemasDaCompraNoCartao(dados: {
+  tipo: TipoTransacao;
+  formaPagamento?: FormaPagamento | null | undefined;
+  cartaoId?: string | null | undefined;
+  contaId?: string | null | undefined;
+  status?: StatusTransacao | undefined;
+}): ProblemaDeCampo[] {
+  const temCartao = dados.cartaoId !== undefined && dados.cartaoId !== null;
+  if (dados.formaPagamento !== 'cartao_credito') {
+    return temCartao
+      ? [{ campo: 'cartaoId', mensagem: 'Cartão só vale para compra no cartão de crédito' }]
+      : [];
+  }
+  const problemas: ProblemaDeCampo[] = [];
+  if (!temCartao) problemas.push({ campo: 'cartaoId', mensagem: 'Informe o cartão da compra' });
+  if (dados.tipo !== 'despesa') {
+    problemas.push({ campo: 'tipo', mensagem: 'Lançamento no cartão de crédito é despesa' });
+  }
+  if (dados.contaId !== undefined && dados.contaId !== null) {
+    problemas.push({
+      campo: 'contaId',
+      mensagem: 'Compra no cartão entra na fatura; a conta é a do pagamento da fatura',
+    });
+  }
+  if (dados.status === 'pago') {
+    problemas.push({
+      campo: 'status',
+      mensagem: 'Compra no cartão fica pendente até a fatura ser paga (RN-042)',
+    });
+  }
+  return problemas;
 }
 
 export type Transacao = z.infer<typeof esquemaTransacao>;

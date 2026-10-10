@@ -185,7 +185,7 @@ describe.runIf(ativo)('integração: transações', () => {
     expect(await prisma.transacao.count({ where: { usuarioId: usuario.usuarioId } })).toBe(1);
   });
 
-  it('categoria precisa ser do usuário e do mesmo tipo; cartão de crédito ainda não', async () => {
+  it('categoria precisa ser do usuário e do mesmo tipo; compra no cartão precisa do cartão', async () => {
     const usuario = await usuarioNovo();
     const outro = await usuarioNovo();
     const base = { tipo: 'despesa', descricao: 'X', valorCentavos: 100, formaPagamento: 'pix' };
