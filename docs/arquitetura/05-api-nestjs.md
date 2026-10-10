@@ -188,6 +188,40 @@ Implementado na T-036 (rotas propostas; a tabela é do PDF).
 - `DELETE /contas/:id` apaga a conta; transações, recorrências e cartões que a usavam ficam sem conta.
 - Conta do Open Finance (`origem = open_finance`) só muda o nome. Tipo e saldo vêm do banco, e ela sai desconectando o banco (409 `CONFLITO` nos outros casos).
 
+## Transações e arquivos
+
+Implementado na T-037 (RN-040 a RN-047).
+
+| Rota | O que faz |
+|---|---|
+| `GET /transacoes` | Filtros da RN-047 (`de`, `ate`, `tipo`, `categoriaId`, `formaPagamento`, `cartaoId`, `contaId`, `status`, `origem`, `texto`), por data e id decrescentes, `?cursor=&limite=` → `{ itens, proximoCursor }` |
+| `GET /transacoes/totais` | Com os mesmos filtros: receitas, despesas, saldo, despesas pagas e pendentes, quantidade |
+| `POST /transacoes` | `Idempotency-Key` obrigatória → 201 `{ transacao, impacto }` |
+| `PATCH /transacoes/:id` | Só o que veio; `anexoIds` substitui a lista |
+| `DELETE /transacoes/:id` | Exclusão lógica (RN-046) |
+| `POST /transacoes/lote` | `excluir` ou `mudar_categoria` em vários, tudo ou nada (RN-044) |
+| `POST /arquivos` | URL assinada de `PUT` (5 min) e o id do anexo |
+| `GET /arquivos/:id` | URL assinada de leitura (15 min) |
+
+- **Gravação:**
+  - sem data, vale o "hoje" no fuso do usuário;
+  - sem status, vale o padrão da RN-042 (`statusPadrao` em `@mony/shared/transacoes`);
+  - a categoria precisa ser do usuário e do mesmo tipo;
+  - despesa exige forma de pagamento (RN-041);
+  - o primeiro lançamento conclui a etapa `primeiro-lancamento` do onboarding;
+  - depois de gravar sai o evento `transacao.registrada`, para alertas e preferências (T-080, T-063).
+- **Compra no cartão** (`cartao_credito`) é recusada até a T-040. Lançamentos de cartão, parcelamento e pagamento de fatura só mudam categoria, descrição, observação e anexos por aqui, e não são excluídos por estas rotas: os fluxos deles cuidam de fatura e limite.
+- **Open Finance (RN-045):** valor, data e os demais campos travados dão 409 `TRANSACAO_OPEN_FINANCE_BLOQUEADA`.
+- **Recorrência (RN-043):** ocorrência editada à mão fica com `editada_manualmente`.
+- **Totais:** pagamento de fatura e transferência não entram nas despesas (RN-037).
+- **Busca por texto:** `ILIKE` na descrição e na observação, depois do filtro por usuário.
+- **`impacto`** vem vazio até orçamentos (T-043) e cartões (T-040).
+- **Anexos:**
+  - o app envia o arquivo direto ao S3 com a URL assinada; o `content-type` faz parte da assinatura;
+  - ao ligar o anexo (`anexoIds`), a API confere que o arquivo chegou, que tem até 10 MB e que é do usuário;
+  - um anexo fica em um lançamento só;
+  - a chave no S3 é `usuarios/<usuarioId>/anexos/<aleatório>.<extensão>`.
+
 ## Guardas e decoradores
 
 | Decorador | Função |

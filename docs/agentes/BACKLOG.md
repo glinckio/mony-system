@@ -95,7 +95,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-030 · RN-065, RN-066
 - [x] **T-036** Contas (API + app) (PR #19; telas na T-049)
   - dep: T-030 · docs: 06
-- [ ] **T-037** Transações: CRUD, filtros, totais, busca, lote, anexos via S3 com URL assinada
+- [x] **T-037** Transações: CRUD, filtros, totais, busca, lote, anexos via S3 com URL assinada (PR #21)
   - dep: T-035, T-036 · RN-040 a RN-042, RN-044 a RN-047
 - [ ] **T-038** Recorrências e rotina de materialização (35 dias)
   - dep: T-037 · RN-043
