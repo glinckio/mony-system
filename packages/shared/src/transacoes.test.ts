@@ -4,6 +4,7 @@ import {
   esquemaConsultaTransacoes,
   esquemaLoteTransacoes,
   esquemaNovaTransacao,
+  problemasDaCompraNoCartao,
   statusPadrao,
 } from './transacoes.js';
 
@@ -53,6 +54,43 @@ describe('nova transação (RN-040, RN-041)', () => {
     ).toBe(false);
     expect(esquemaNovaTransacao.safeParse({ ...despesa, data: '2026-02-30' }).success).toBe(false);
     expect(esquemaNovaTransacao.safeParse({ ...despesa, data: '2026-02-28' }).success).toBe(true);
+  });
+});
+
+describe('compra no cartão (RN-031, RN-042)', () => {
+  const CARTAO = '0199c0de-0000-7000-8000-0000000000ca';
+  const compra = {
+    tipo: 'despesa',
+    descricao: 'Livraria',
+    valorCentavos: 8990,
+    categoriaId: CATEGORIA,
+    formaPagamento: 'cartao_credito',
+    cartaoId: CARTAO,
+  } as const;
+
+  const campos = (dados: Parameters<typeof problemasDaCompraNoCartao>[0]) =>
+    problemasDaCompraNoCartao(dados).map(({ campo }) => campo);
+
+  it('é despesa, com o cartão, sem conta e não paga', () => {
+    expect(esquemaNovaTransacao.safeParse(compra).success).toBe(true);
+    expect(campos(compra)).toEqual([]);
+    expect(campos({ ...compra, cartaoId: undefined })).toEqual(['cartaoId']);
+    expect(campos({ ...compra, tipo: 'receita' })).toEqual(['tipo']);
+    expect(campos({ ...compra, contaId: CATEGORIA })).toEqual(['contaId']);
+    expect(campos({ ...compra, status: 'pago' })).toEqual(['status']);
+    expect(campos({ ...compra, status: 'pendente', contaId: null })).toEqual([]);
+  });
+
+  it('cartão só na forma cartão de crédito', () => {
+    expect(campos({ ...compra, formaPagamento: 'pix' })).toEqual(['cartaoId']);
+    expect(campos({ ...compra, formaPagamento: 'pix', cartaoId: null })).toEqual([]);
+    expect(campos({ tipo: 'receita', formaPagamento: undefined })).toEqual([]);
+  });
+
+  it('o esquema aponta o campo do problema', () => {
+    const resultado = esquemaNovaTransacao.safeParse({ ...compra, status: 'pago' });
+    expect(resultado.success).toBe(false);
+    expect(resultado.error?.issues.map(({ path }) => path.join('.'))).toEqual(['status']);
   });
 });
 

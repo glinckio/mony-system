@@ -210,12 +210,12 @@ Implementado na T-037 (RN-040 a RN-047).
   - despesa exige forma de pagamento (RN-041);
   - o primeiro lançamento conclui a etapa `primeiro-lancamento` do onboarding;
   - depois de gravar sai o evento `transacao.registrada`, para alertas e preferências (T-080, T-063).
-- **Compra no cartão** (`cartao_credito`) é recusada até a T-040. Lançamentos de cartão, parcelamento e pagamento de fatura só mudam categoria, descrição, observação e anexos por aqui, e não são excluídos por estas rotas: os fluxos deles cuidam de fatura e limite.
+- **Compra no cartão** (`cartao_credito`, T-040) leva `cartaoId` e entra na fatura certa (ver "Cartões e faturas" abaixo). Parcela e pagamento de fatura só mudam categoria, descrição, observação e anexos por aqui, e não são excluídos por estas rotas: os fluxos deles (T-041, T-042) cuidam de fatura e limite.
 - **Open Finance (RN-045):** valor, data e os demais campos travados dão 409 `TRANSACAO_OPEN_FINANCE_BLOQUEADA`.
 - **Recorrência (RN-043):** ocorrência editada à mão fica com `editada_manualmente`.
 - **Totais:** pagamento de fatura e transferência não entram nas despesas (RN-037).
 - **Busca por texto:** `ILIKE` na descrição e na observação, depois do filtro por usuário.
-- **`impacto`** vem vazio até orçamentos (T-043) e cartões (T-040).
+- **`impacto`** traz `cartao` (`cartaoId`, `percentualUsado`) na compra no cartão; o do orçamento entra na T-043.
 - **Anexos:**
   - o app envia o arquivo direto ao S3 com a URL assinada; o `content-type` faz parte da assinatura;
   - ao ligar o anexo (`anexoIds`), a API confere que o arquivo chegou, que tem até 10 MB e que é do usuário;
@@ -239,7 +239,33 @@ Implementado na T-038 (RN-043).
 - **Edição:** mudar frequência ou dia refaz as ocorrências livres de hoje em diante. Encurtar a data final tira as livres que passaram dela; estender retoma a geração de onde parou.
 - **"Esta e as próximas":** exclui a ocorrência e as seguintes (pagas ou não) e põe a data final na véspera. **"Todas"** exclui todas e para a recorrência.
 - **Rotina `gerar-recorrencias`:** roda de hora em hora (`30 * * * *`), no fuso de cada usuário (doc 09).
-- **Limites:** sem cartão de crédito até a T-040; começo no máximo um ano atrás.
+- **Limites:** sem cartão de crédito até a T-051; começo no máximo um ano atrás.
+
+## Cartões e faturas
+
+Implementado na T-040 (RN-030 a RN-035, RN-038, RN-046). O pagamento da fatura entra na T-041.
+
+| Rota | O que faz |
+|---|---|
+| `GET /cartoes` | Cartões com limite usado, disponível, percentual e a fatura atual |
+| `GET /cartoes/:id` | Um cartão, no mesmo formato |
+| `POST /cartoes` | Nome, bandeira, final, limite, dias de fechamento e vencimento, cor, faixas de alerta e conta de pagamento → 201 |
+| `PATCH /cartoes/:id` | Só o que veio; `null` limpa bandeira, final e conta de pagamento |
+| `DELETE /cartoes/:id` | Exclusão lógica; com saldo em aberto em alguma fatura → 409 `CONFLITO` com `detalhes.saldoEmAbertoCentavos` |
+| `GET /cartoes/:id/faturas` | Faturas do cartão, da mais nova para a mais antiga |
+| `GET /faturas/:id` | `{ fatura, cartao, transacoes }`, com as compras da mais nova para a mais antiga |
+
+- **Compra:** `POST /transacoes` com `formaPagamento: 'cartao_credito'` e `cartaoId`.
+  - É sempre despesa, sem `contaId` e pendente até a fatura ser paga; o contrário dá 400 (`problemasDaCompraNoCartao` em `@mony/shared/transacoes`).
+  - A fatura vem de `faturaDaCompra` (RN-031) e é criada na primeira compra. Se a fatura daquela competência já existe e fechou antes da data (os dias do cartão mudaram depois), a compra vai para a seguinte.
+  - Mudar valor, data, cartão ou forma de pagamento tira a compra de uma fatura e põe na outra; excluir tira da fatura.
+- **Fatura quitada** (tem pagamento e o pago cobre o total): compra nela não entra, não muda de valor, data, cartão ou forma, e não sai → 409 `TRANSACAO_EM_FATURA_PAGA`. Descrição, categoria, observação e anexos continuam mudando.
+- **Total da fatura:** a cada mudança, a soma das compras é refeita (sem as excluídas), em vez de somar a diferença.
+- **Trava:** todo fluxo que mexe em fatura trava o cartão (`FOR UPDATE`) e depois as faturas, sempre em ordem de id. Assim, compras ao mesmo tempo não se perdem e a T-041 segue a mesma ordem.
+- **Status (RN-033):** a resposta calcula o status no "hoje" do usuário com `statusDaFatura`; a coluna é atualizada a cada mudança e pela rotina diária (T-047).
+- **Fatura atual:** a que recebe uma compra feita hoje, com `id: null` enquanto não tem lançamento.
+- **Dias:** mudar o fechamento ou o vencimento vale para as faturas que ainda não existem; as criadas mantêm as datas.
+- **Open Finance (RN-039):** cartão conectado só muda nome, cor, faixas de alerta e conta de pagamento, e sai desconectando o banco.
 
 ## Guardas e decoradores
 

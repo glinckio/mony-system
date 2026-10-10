@@ -13,6 +13,7 @@ import { VersaoAppModule } from './core/versao-app/versao-app';
 import { ArmazenamentoModule } from './core/arquivos/armazenamento-arquivos';
 import { ArquivosModule } from './modulos/arquivos/arquivos.module';
 import { AutenticacaoModule } from './modulos/autenticacao/autenticacao.module';
+import { CartoesModule } from './modulos/cartoes/cartoes.module';
 import { CategoriasModule } from './modulos/categorias/categorias.module';
 import { ConfigAppModule } from './modulos/config-app/config-app';
 import { ContasModule } from './modulos/contas/contas.module';
@@ -34,6 +35,7 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     ConfigAppModule,
     CategoriasModule,
     ContasModule,
+    CartoesModule,
     ArmazenamentoModule,
     ArquivosModule,
     TransacoesModule,

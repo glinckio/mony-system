@@ -64,6 +64,18 @@ export type TipoConta = (typeof TIPOS_CONTA)[number];
 export const ORIGENS_CONTA = ['manual', 'open_finance'] as const;
 export type OrigemConta = (typeof ORIGENS_CONTA)[number];
 
+/** RN-030: bandeira do cartão; o app mostra o ícone. `outra` quando não está na lista. */
+export const BANDEIRAS_CARTAO = [
+  'visa',
+  'mastercard',
+  'elo',
+  'amex',
+  'hipercard',
+  'diners',
+  'outra',
+] as const;
+export type BandeiraCartao = (typeof BANDEIRAS_CARTAO)[number];
+
 /** RN-033 */
 export const STATUS_FATURA = ['aberta', 'fechada', 'paga', 'parcial', 'atrasada'] as const;
 export type StatusFatura = (typeof STATUS_FATURA)[number];

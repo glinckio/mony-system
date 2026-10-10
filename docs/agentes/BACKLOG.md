@@ -101,7 +101,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-037 · RN-043
 - [x] **T-039** Funções de domínio de cartão e fatura (puras, com testes exaustivos de datas) (PR #20)
   - dep: T-003 · RN-031, RN-032, RN-033, RN-034
-- [ ] **T-040** Cartões e faturas: CRUD de cartão, compra no cartão, telas do cartão e da fatura
+- [x] **T-040** Cartões e faturas: CRUD de cartão, compra no cartão, telas do cartão e da fatura (PR #23; telas na T-050, recorrência no cartão na T-051)
   - dep: T-037, T-039 · RN-030 a RN-035, RN-038
 - [ ] **T-041** Pagar fatura (total/parcial) com natureza `pagamento_fatura`
   - dep: T-040 · RN-036, RN-037 (padrão do doc; decisão pendente do cliente, ver 15)
@@ -123,6 +123,11 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-049** Telas de categorias e contas no app (lista, criar, editar, excluir escolhendo para onde mover os lançamentos)
   - dep: T-035, T-036, T-011, T-034 · docs: 04 · RN-065, RN-066
   - Separada da T-035 e da T-036: as telas dependem do esqueleto do app (T-010), do design system (T-011) e da sessão no app (T-034), que ainda não existiam.
+- [ ] **T-050** Telas de cartões e faturas no app (lista com limite, cadastro e edição, fatura atual, lista de faturas, detalhe da fatura com as compras)
+  - dep: T-040, T-011, T-034 · docs: 04 · RN-030 a RN-034
+  - Separada da T-040 pelo mesmo motivo da T-049.
+- [ ] **T-051** Recorrência no cartão de crédito (assinaturas): ocorrências entram nas faturas e editar ou excluir a recorrência refaz as faturas
+  - dep: T-040 · RN-043, RN-031
 
 ## Fase 2 — Mony
 

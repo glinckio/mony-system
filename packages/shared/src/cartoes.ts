@@ -1,8 +1,12 @@
 /**
- * Regras puras de cartão de crédito e fatura (RN-030 a RN-035, docs/arquitetura/07). Sem banco e
- * sem relógio: quem chama passa as datas. A API usa para gravar e a Mony e o app podem usar para
- * mostrar ("vai para a fatura de novembro") sem perguntar ao servidor.
+ * Cartão de crédito e fatura (RN-030 a RN-035 e RN-038, docs/arquitetura/07): o contrato das rotas
+ * e as regras puras. As regras não têm banco nem relógio: quem chama passa as datas. A API usa
+ * para gravar e a Mony e o app podem usar para mostrar ("vai para a fatura de novembro") sem
+ * perguntar ao servidor.
  */
+import { z } from 'zod';
+
+import { REGEX_COR } from './categorias.js';
 import {
   competenciaDe,
   type Competencia,
@@ -11,7 +15,8 @@ import {
   ehCompetencia,
   ehDataCalendario,
 } from './datas.js';
-import type { StatusFatura } from './enums.js';
+import { BANDEIRAS_CARTAO, ORIGENS_CONTA, STATUS_FATURA, type StatusFatura } from './enums.js';
+import { esquemaTransacao, VALOR_MAXIMO_CENTAVOS } from './transacoes.js';
 
 /** Dias de fechamento e vencimento de um cartão (1 a 31, RN-030). */
 export interface DiasDoCartao {
@@ -190,3 +195,123 @@ export function venceNoFimDeSemana(dataVencimento: DataCalendario): boolean {
   const diaDaSemana = new Date(`${dataVencimento}T12:00:00Z`).getUTCDay();
   return diaDaSemana === 0 || diaDaSemana === 6;
 }
+
+// Contrato das rotas (docs/arquitetura/05)
+
+/** Até 5 faixas de alerta por cartão, de 1% a 100% (RN-038). */
+export const MAXIMO_FAIXAS_ALERTA = 5;
+
+const esquemaDia = z.number().int().min(1).max(31);
+
+const esquemaFaixas = z
+  .array(z.number().int().min(1).max(100))
+  .max(MAXIMO_FAIXAS_ALERTA)
+  .refine((faixas) => new Set(faixas).size === faixas.length, {
+    message: 'Faixas de alerta sem repetição',
+  });
+
+export const esquemaFatura = z.object({
+  id: z.uuid(),
+  cartaoId: z.uuid(),
+  /** Mês do vencimento, `YYYY-MM-01` (RN-031). */
+  competencia: z.string(),
+  dataFechamento: z.string(),
+  dataVencimento: z.string(),
+  valorTotalCentavos: z.number().int(),
+  valorPagoCentavos: z.number().int(),
+  /** Quanto falta pagar; nunca negativo. */
+  saldoCentavos: z.number().int(),
+  /** RN-033, calculado no dia de hoje do usuário. */
+  status: z.enum(STATUS_FATURA),
+  /** RN-032: o vencimento não muda; o app só avisa. */
+  venceNoFimDeSemana: z.boolean(),
+});
+
+/** A fatura que recebe as compras de hoje. `id` nulo enquanto ela ainda não tem lançamento. */
+export const esquemaFaturaAtual = esquemaFatura.extend({ id: z.uuid().nullable() });
+
+export const esquemaCartao = z.object({
+  id: z.uuid(),
+  nome: z.string(),
+  /** Uma de `BANDEIRAS_CARTAO` no cadastro manual; do Open Finance pode vir outra. */
+  bandeira: z.string().nullable(),
+  /** Últimos 4 dígitos. */
+  final: z.string().nullable(),
+  cor: z.string(),
+  diaFechamento: z.number().int(),
+  diaVencimento: z.number().int(),
+  faixasAlerta: z.array(z.number().int()),
+  origem: z.enum(ORIGENS_CONTA),
+  /** Conta de onde sai o pagamento da fatura, por padrão. */
+  contaPagamentoId: z.uuid().nullable(),
+  limiteTotalCentavos: z.number().int(),
+  /** RN-034: o que falta pagar em todas as faturas, inclusive as futuras. */
+  limiteUsadoCentavos: z.number().int(),
+  /** Pode ser negativo: "acima do limite". */
+  limiteDisponivelCentavos: z.number().int(),
+  percentualUsado: z.number().int(),
+  faturaAtual: esquemaFaturaAtual,
+});
+
+export const esquemaListaCartoes = z.object({ itens: z.array(esquemaCartao) });
+
+export const esquemaNovoCartao = z.object({
+  nome: z.string().trim().min(1).max(60),
+  bandeira: z.enum(BANDEIRAS_CARTAO).optional(),
+  final: z
+    .string()
+    .regex(/^\d{4}$/, 'Os 4 últimos dígitos do cartão')
+    .optional(),
+  limiteTotalCentavos: z.number().int().min(1).max(VALOR_MAXIMO_CENTAVOS),
+  diaFechamento: esquemaDia,
+  diaVencimento: esquemaDia,
+  cor: z.string().regex(REGEX_COR, 'Cor no formato #RRGGBB'),
+  /** Sem faixas, valem 50%, 80% e 100% (RN-038). Lista vazia desliga os alertas do cartão. */
+  faixasAlerta: esquemaFaixas.optional(),
+  contaPagamentoId: z.uuid().optional(),
+});
+
+/**
+ * Só o que mudou; `null` limpa bandeira, final e conta de pagamento. Mudar os dias vale para as
+ * faturas que ainda não existem. Cartão do Open Finance só muda nome, cor, faixas e conta de
+ * pagamento (RN-039).
+ */
+export const esquemaAtualizacaoCartao = z.object({
+  nome: z.string().trim().min(1).max(60).optional(),
+  bandeira: z.enum(BANDEIRAS_CARTAO).nullable().optional(),
+  final: z
+    .string()
+    .regex(/^\d{4}$/, 'Os 4 últimos dígitos do cartão')
+    .nullable()
+    .optional(),
+  limiteTotalCentavos: z.number().int().min(1).max(VALOR_MAXIMO_CENTAVOS).optional(),
+  diaFechamento: esquemaDia.optional(),
+  diaVencimento: esquemaDia.optional(),
+  cor: z.string().regex(REGEX_COR, 'Cor no formato #RRGGBB').optional(),
+  faixasAlerta: esquemaFaixas.optional(),
+  contaPagamentoId: z.uuid().nullable().optional(),
+});
+
+export const esquemaListaFaturas = z.object({ itens: z.array(esquemaFatura) });
+
+/** A fatura, o cartão dela e as compras que entraram nela, da mais nova para a mais antiga. */
+export const esquemaDetalheFatura = z.object({
+  fatura: esquemaFatura,
+  cartao: z.object({
+    id: z.uuid(),
+    nome: z.string(),
+    bandeira: z.string().nullable(),
+    final: z.string().nullable(),
+    cor: z.string(),
+  }),
+  transacoes: z.array(esquemaTransacao),
+});
+
+export type Fatura = z.infer<typeof esquemaFatura>;
+export type FaturaAtual = z.infer<typeof esquemaFaturaAtual>;
+export type Cartao = z.infer<typeof esquemaCartao>;
+export type ListaCartoes = z.infer<typeof esquemaListaCartoes>;
+export type DadosNovoCartao = z.infer<typeof esquemaNovoCartao>;
+export type DadosAtualizacaoCartao = z.infer<typeof esquemaAtualizacaoCartao>;
+export type ListaFaturas = z.infer<typeof esquemaListaFaturas>;
+export type DetalheFatura = z.infer<typeof esquemaDetalheFatura>;

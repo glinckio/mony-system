@@ -38,7 +38,13 @@ export interface Posicao {
   id: string;
 }
 
-type Transacao = Pick<ClientePrisma, 'transacao' | 'anexo'>;
+/** A transação de banco das gravações; inclui cartão e fatura para a compra no cartão. */
+export type TransacaoBancoTransacoes = Pick<
+  ClientePrisma,
+  'transacao' | 'anexo' | 'cartao' | 'fatura' | '$queryRaw'
+>;
+
+type Transacao = TransacaoBancoTransacoes;
 
 /** `YYYY-MM-DD` → `Date` à meia-noite UTC, como o Prisma grava colunas `date`. */
 export function paraDataDoBanco(data: string): Date {
@@ -168,6 +174,7 @@ export class TransacoesRepository {
         origem: true,
         natureza: true,
         cartaoId: true,
+        faturaId: true,
         parcelamentoId: true,
       },
     });
