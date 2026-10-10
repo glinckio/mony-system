@@ -22,6 +22,7 @@ jobs:
     env:
       HUSKY: '0'
       TURBO_TELEMETRY_DISABLED: '1'
+      EXPO_NO_TELEMETRY: '1'
     steps:
       - name: Baixar o código
         uses: actions/checkout@v7
@@ -51,6 +52,7 @@ jobs:
         run: pnpm format:check
 
       - name: Build, lint, typecheck e testes
+        # O build do app (`apps/mobile`) empacota o JS de iOS e Android com o Metro, como o EAS faz.
         run: pnpm turbo run build lint typecheck test
 
       - name: Arquivos gerados commitados
@@ -62,6 +64,19 @@ jobs:
             echo "$mudancas"
             arquivos=$(echo "$mudancas" | awk '{print $2}' | paste -sd ' ')
             echo "::error title=Arquivo gerado desatualizado::Rode pnpm build e commite. Arquivos: $arquivos"
+            exit 1
+          fi
+
+      - name: App com as versões do SDK do Expo
+        # Pacote nativo fora da versão do SDK quebra o build do EAS (doc 02, T-010). O resultado vira
+        # anotação, para aparecer no resumo do CI.
+        working-directory: apps/mobile
+        run: |
+          if saida=$(pnpm exec expo install --check 2>&1); then
+            echo "::notice title=Versões do SDK do Expo::$(echo "$saida" | tail -n 1)"
+          else
+            echo "$saida"
+            echo "::error title=Versões fora do SDK do Expo::Rode pnpm --filter mobile exec expo install --fix. $(echo "$saida" | paste -sd ' ' | cut -c1-900)"
             exit 1
           fi
 
