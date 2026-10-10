@@ -103,7 +103,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-003 · RN-031, RN-032, RN-033, RN-034
 - [x] **T-040** Cartões e faturas: CRUD de cartão, compra no cartão, telas do cartão e da fatura (PR #23; telas na T-050, recorrência no cartão na T-051)
   - dep: T-037, T-039 · RN-030 a RN-035, RN-038
-- [ ] **T-041** Pagar fatura (total/parcial) com natureza `pagamento_fatura`
+- [x] **T-041** Pagar fatura (total/parcial) com natureza `pagamento_fatura` (PR #24)
   - dep: T-040 · RN-036, RN-037 (padrão do doc; decisão pendente do cliente, ver 15)
 - [ ] **T-042** Parcelamentos e dívidas: geração de parcelas, Tabela Price, simulação, pagar/desfazer
   - dep: T-040 · RN-050 a RN-055

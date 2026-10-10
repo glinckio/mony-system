@@ -172,6 +172,22 @@ describe.runIf(ativo)('integração: cartões e faturas', () => {
     return resposta.json<{ itens: Fatura[] }>().itens;
   }
 
+  function pedirPagamento(usuario: Usuario, faturaId: string, dados: Record<string, unknown> = {}) {
+    return chamar('POST', `/faturas/${faturaId}/pagar`, usuario.acesso, dados, {
+      'idempotency-key': randomUUID(),
+    });
+  }
+
+  async function pagar(usuario: Usuario, faturaId: string, dados: Record<string, unknown> = {}) {
+    const resposta = await pedirPagamento(usuario, faturaId, dados);
+    expect(resposta.statusCode).toBe(201);
+    return resposta.json<{
+      fatura: Fatura;
+      transacao: Transacao & { natureza: string; descricao: string; categoriaId: string };
+      impacto: { cartao?: { percentualUsado: number } };
+    }>();
+  }
+
   async function cartao(usuario: Usuario, id: string): Promise<Cartao> {
     const resposta = await chamar('GET', `/cartoes/${id}`, usuario.acesso);
     expect(resposta.statusCode).toBe(200);
@@ -441,11 +457,7 @@ describe.runIf(ativo)('integração: cartões e faturas', () => {
     const { id } = await cartaoNovo(usuario);
     const { transacao } = await compra(usuario, id, { data: '2026-09-20', valorCentavos: 8_000 });
     const outra = await compra(usuario, id, { valorCentavos: 1_000 });
-    // O pagamento da fatura chega na T-041; aqui ele é simulado direto no banco.
-    await prisma.fatura.update({
-      where: { id: transacao.faturaId ?? '' },
-      data: { valorPago: 8_000n },
-    });
+    await pagar(usuario, transacao.faturaId ?? '');
 
     const casos = [
       ['PATCH', `/transacoes/${transacao.id}`, { valorCentavos: 9_000 }],
@@ -602,5 +614,230 @@ describe.runIf(ativo)('integração: cartões e faturas', () => {
       cartaoId: id,
     });
     expect(resposta.statusCode).toBe(400);
+  });
+  async function contaNova(usuario: Usuario, saldoInicialCentavos = 0) {
+    const resposta = await chamar('POST', '/contas', usuario.acesso, {
+      nome: 'Conta corrente',
+      tipo: 'corrente',
+      saldoInicialCentavos,
+    });
+    return resposta.json<{ id: string }>().id;
+  }
+
+  async function saldoDaConta(usuario: Usuario, contaId: string): Promise<number> {
+    const resposta = await chamar('GET', '/contas', usuario.acesso);
+    const conta = resposta
+      .json<{ itens: { id: string; saldoAtualCentavos: number }[] }>()
+      .itens.find(({ id }) => id === contaId);
+    return conta?.saldoAtualCentavos ?? Number.NaN;
+  }
+
+  async function statusDasCompras(usuario: Usuario, faturaId: string): Promise<string[]> {
+    const resposta = await chamar('GET', `/faturas/${faturaId}`, usuario.acesso);
+    return resposta.json<{ transacoes: Transacao[] }>().transacoes.map(({ status }) => status);
+  }
+
+  it('RN-036 e RN-037 pagamento total: sai da conta, não é despesa e baixa as compras', async () => {
+    const usuario = await usuarioNovo();
+    const contaId = await contaNova(usuario, 100_000);
+    const { id } = await cartaoNovo(usuario, { contaPagamentoId: contaId });
+    const a = await compra(usuario, id, { data: '2026-09-20', valorCentavos: 30_000 });
+    await compra(usuario, id, { data: '2026-09-25', valorCentavos: 12_345 });
+    const faturaId = a.transacao.faturaId ?? '';
+    await compra(usuario, id, { valorCentavos: 5_000 }); // fatura de novembro, fica em aberto
+    const despesasAntes = (await chamar('GET', '/transacoes/totais', usuario.acesso)).json<{
+      despesasCentavos: number;
+    }>().despesasCentavos;
+
+    // Sem corpo: paga o saldo, hoje, da conta de pagamento do cartão.
+    const pago = await pagar(usuario, faturaId);
+    expect(pago.transacao).toMatchObject({
+      tipo: 'despesa',
+      natureza: 'pagamento_fatura',
+      descricao: 'Pagamento da fatura Nubank (10/2026)',
+      valorCentavos: 42_345,
+      data: HOJE,
+      status: 'pago',
+      contaId,
+      cartaoId: id,
+      faturaId,
+      formaPagamento: null,
+    });
+    expect(pago.fatura).toMatchObject({
+      valorTotalCentavos: 42_345,
+      valorPagoCentavos: 42_345,
+      saldoCentavos: 0,
+      status: 'paga',
+    });
+    expect(pago.impacto).toEqual({ cartao: { cartaoId: id, percentualUsado: 5 } });
+    expect(await statusDasCompras(usuario, faturaId)).toEqual(['pago', 'pago']);
+    expect(await saldoDaConta(usuario, contaId)).toBe(100_000 - 42_345);
+    const despesasDepois = (await chamar('GET', '/transacoes/totais', usuario.acesso)).json<{
+      despesasCentavos: number;
+      despesasPagasCentavos: number;
+    }>();
+    expect(despesasDepois.despesasCentavos).toBe(despesasAntes);
+    expect(despesasDepois.despesasPagasCentavos).toBe(42_345);
+
+    // A categoria padrão do pagamento é a "Contas"; o detalhe mostra o pagamento à parte.
+    const contas = await prisma.categoria.findFirstOrThrow({
+      where: { usuarioId: usuario.usuarioId, icone: 'contas' },
+    });
+    expect(pago.transacao.categoriaId).toBe(contas.id);
+    const detalhe = await chamar('GET', `/faturas/${faturaId}`, usuario.acesso);
+    expect(detalhe.json<{ pagamentos: Transacao[] }>().pagamentos.map((p) => p.id)).toEqual([
+      pago.transacao.id,
+    ]);
+    expect(await cartao(usuario, id)).toMatchObject({ limiteUsadoCentavos: 5_000 });
+  });
+
+  it('RN-036 pagamento parcial deixa o restante na mesma fatura, sem juros', async () => {
+    const usuario = await usuarioNovo();
+    // Fecha dia 10 e vence dia 20: em 15/10 a fatura de outubro está fechada e ainda não venceu.
+    const { id } = await cartaoNovo(usuario, { diaFechamento: 10, diaVencimento: 20 });
+    const { transacao } = await compra(usuario, id, { data: '2026-10-05', valorCentavos: 50_000 });
+    const faturaId = transacao.faturaId ?? '';
+
+    const parcial = await pagar(usuario, faturaId, {
+      valorCentavos: 20_000,
+      contaId: null,
+      formaPagamento: 'pix',
+      data: '2026-10-14',
+    });
+    expect(parcial.transacao).toMatchObject({ contaId: null, formaPagamento: 'pix' });
+    expect(parcial.fatura).toMatchObject({
+      valorTotalCentavos: 50_000,
+      valorPagoCentavos: 20_000,
+      saldoCentavos: 30_000,
+      status: 'parcial',
+    });
+    expect(await statusDasCompras(usuario, faturaId)).toEqual(['pendente']);
+    expect(await cartao(usuario, id)).toMatchObject({ limiteUsadoCentavos: 30_000 });
+
+    const resto = await pagar(usuario, faturaId);
+    expect(resto.transacao.valorCentavos).toBe(30_000);
+    expect(resto.fatura.status).toBe('paga');
+    expect(await statusDasCompras(usuario, faturaId)).toEqual(['pago']);
+  });
+
+  it('valida o pagamento: saldo, data, conta, categoria, dono e Idempotency-Key', async () => {
+    const usuario = await usuarioNovo();
+    const outro = await usuarioNovo();
+    const { id } = await cartaoNovo(usuario);
+    const { transacao } = await compra(usuario, id, { valorCentavos: 10_000 });
+    const faturaId = transacao.faturaId ?? '';
+    const contaDoOutro = await contaNova(outro);
+
+    const casos = [
+      [{ valorCentavos: 10_001 }, 400],
+      [{ data: '2026-10-16' }, 400],
+      [{ contaId: contaDoOutro }, 404],
+      [{ categoriaId: usuario.receita }, 400],
+      [{ formaPagamento: 'cartao_credito' }, 400],
+    ] as const;
+    for (const [corpo, status] of casos) {
+      expect((await pedirPagamento(usuario, faturaId, corpo)).statusCode).toBe(status);
+    }
+    const acima = await pedirPagamento(usuario, faturaId, { valorCentavos: 10_001 });
+    expect(acima.json()).toMatchObject({ erro: { detalhes: { saldoCentavos: 10_000 } } });
+    expect((await pedirPagamento(outro, faturaId)).statusCode).toBe(404);
+    const semChave = await chamar('POST', `/faturas/${faturaId}/pagar`, usuario.acesso, {});
+    expect(semChave.statusCode).toBe(400);
+
+    const chave = randomUUID();
+    const primeira = await chamar(
+      'POST',
+      `/faturas/${faturaId}/pagar`,
+      usuario.acesso,
+      {},
+      {
+        'idempotency-key': chave,
+      },
+    );
+    const segunda = await chamar(
+      'POST',
+      `/faturas/${faturaId}/pagar`,
+      usuario.acesso,
+      {},
+      {
+        'idempotency-key': chave,
+      },
+    );
+    expect(segunda.json()).toEqual(primeira.json());
+    const semSaldo = await pedirPagamento(usuario, faturaId);
+    expect(semSaldo.statusCode).toBe(409);
+    expect(semSaldo.json()).toMatchObject({ erro: { codigo: 'CONFLITO' } });
+  });
+
+  it('pagamento antecipado: fatura aberta paga ainda recebe compra, que vira saldo', async () => {
+    const usuario = await usuarioNovo();
+    const { id } = await cartaoNovo(usuario);
+    const { transacao } = await compra(usuario, id, { valorCentavos: 7_000 });
+    const faturaId = transacao.faturaId ?? '';
+    const pago = await pagar(usuario, faturaId);
+    expect(pago.fatura).toMatchObject({ status: 'aberta', saldoCentavos: 0 });
+    expect(await statusDasCompras(usuario, faturaId)).toEqual(['pago']);
+
+    // Compra paga não muda; compra nova entra e a fatura volta a ter saldo.
+    const mudar = await chamar('PATCH', `/transacoes/${transacao.id}`, usuario.acesso, {
+      valorCentavos: 6_000,
+    });
+    expect(mudar.statusCode).toBe(409);
+    const nova = await compra(usuario, id, { valorCentavos: 3_000 });
+    expect(nova.transacao.faturaId).toBe(faturaId);
+    expect(await statusDasCompras(usuario, faturaId)).toEqual(['pendente', 'pendente']);
+    expect((await faturas(usuario, id))[0]).toMatchObject({
+      valorPagoCentavos: 7_000,
+      saldoCentavos: 3_000,
+      status: 'aberta',
+    });
+  });
+
+  it('excluir o pagamento desfaz: volta o saldo da fatura, da conta e as compras pendentes', async () => {
+    const usuario = await usuarioNovo();
+    const contaId = await contaNova(usuario, 50_000);
+    const { id } = await cartaoNovo(usuario);
+    const { transacao } = await compra(usuario, id, { data: '2026-09-28', valorCentavos: 9_900 });
+    const faturaId = transacao.faturaId ?? '';
+    const pago = await pagar(usuario, faturaId, { contaId });
+    expect(await saldoDaConta(usuario, contaId)).toBe(50_000 - 9_900);
+
+    const mudar = await chamar('PATCH', `/transacoes/${pago.transacao.id}`, usuario.acesso, {
+      valorCentavos: 100,
+    });
+    expect(mudar.statusCode).toBe(409);
+    const descricao = await chamar('PATCH', `/transacoes/${pago.transacao.id}`, usuario.acesso, {
+      descricao: 'Fatura de outubro',
+    });
+    expect(descricao.statusCode).toBe(200);
+
+    const desfeito = await chamar('DELETE', `/transacoes/${pago.transacao.id}`, usuario.acesso);
+    expect(desfeito.statusCode).toBe(204);
+    expect(await saldoDaConta(usuario, contaId)).toBe(50_000);
+    expect(await statusDasCompras(usuario, faturaId)).toEqual(['pendente']);
+    expect((await faturas(usuario, id))[0]).toMatchObject({
+      valorPagoCentavos: 0,
+      saldoCentavos: 9_900,
+      status: 'atrasada',
+    });
+    // Sem o pagamento, a compra volta a mudar.
+    const agora = await chamar('PATCH', `/transacoes/${transacao.id}`, usuario.acesso, {
+      valorCentavos: 9_000,
+    });
+    expect(agora.statusCode).toBe(200);
+  });
+
+  it('dois pagamentos ao mesmo tempo não pagam a fatura duas vezes', async () => {
+    const usuario = await usuarioNovo();
+    const { id } = await cartaoNovo(usuario);
+    const { transacao } = await compra(usuario, id, { valorCentavos: 25_000 });
+    const faturaId = transacao.faturaId ?? '';
+    const respostas = await Promise.all([
+      pedirPagamento(usuario, faturaId),
+      pedirPagamento(usuario, faturaId),
+      pedirPagamento(usuario, faturaId),
+    ]);
+    expect(respostas.map(({ statusCode }) => statusCode).sort()).toEqual([201, 409, 409]);
+    expect((await faturas(usuario, id))[0]).toMatchObject({ valorPagoCentavos: 25_000 });
   });
 });

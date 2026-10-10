@@ -16,7 +16,7 @@ import {
   ehDataCalendario,
 } from './datas.js';
 import { BANDEIRAS_CARTAO, ORIGENS_CONTA, STATUS_FATURA, type StatusFatura } from './enums.js';
-import { esquemaTransacao, VALOR_MAXIMO_CENTAVOS } from './transacoes.js';
+import { esquemaImpacto, esquemaTransacao, VALOR_MAXIMO_CENTAVOS } from './transacoes.js';
 
 /** Dias de fechamento e vencimento de um cartão (1 a 31, RN-030). */
 export interface DiasDoCartao {
@@ -294,7 +294,10 @@ export const esquemaAtualizacaoCartao = z.object({
 
 export const esquemaListaFaturas = z.object({ itens: z.array(esquemaFatura) });
 
-/** A fatura, o cartão dela e as compras que entraram nela, da mais nova para a mais antiga. */
+/**
+ * A fatura, o cartão dela, as compras que entraram nela e os pagamentos, cada lista da mais nova
+ * para a mais antiga.
+ */
 export const esquemaDetalheFatura = z.object({
   fatura: esquemaFatura,
   cartao: z.object({
@@ -304,7 +307,39 @@ export const esquemaDetalheFatura = z.object({
     final: z.string().nullable(),
     cor: z.string(),
   }),
+  /** Compras (natureza `normal`). */
   transacoes: z.array(esquemaTransacao),
+  /** Pagamentos da fatura (natureza `pagamento_fatura`, RN-036). */
+  pagamentos: z.array(esquemaTransacao),
+});
+
+/** Como a fatura foi paga: tudo menos o próprio cartão de crédito. */
+export const FORMAS_PAGAMENTO_FATURA = ['pix', 'debito', 'dinheiro', 'boleto'] as const;
+
+/**
+ * RN-036: pagamento total ou parcial. Tudo é opcional, para o [Paguei] da notificação pagar com
+ * um toque: sem valor, paga o saldo; sem data, hoje; sem conta, a conta de pagamento do cartão.
+ */
+export const esquemaPagamentoFatura = z.object({
+  /** Até o saldo da fatura. */
+  valorCentavos: z.number().int().min(1).max(VALOR_MAXIMO_CENTAVOS).optional(),
+  /** O pagamento já aconteceu: data futura não vale. */
+  data: z
+    .string()
+    .refine(ehDataCalendario, { message: 'Data de calendário no formato AAAA-MM-DD' })
+    .optional(),
+  /** `null` registra sem conta (não mexe em saldo de conta). */
+  contaId: z.uuid().nullable().optional(),
+  formaPagamento: z.enum(FORMAS_PAGAMENTO_FATURA).optional(),
+  /** Só para o extrato: pagamento de fatura não entra em totais por categoria (RN-037). */
+  categoriaId: z.uuid().optional(),
+});
+
+export const esquemaRespostaPagamentoFatura = z.object({
+  fatura: esquemaFatura,
+  /** A transação do pagamento, com natureza `pagamento_fatura`. */
+  transacao: esquemaTransacao,
+  impacto: esquemaImpacto,
 });
 
 export type Fatura = z.infer<typeof esquemaFatura>;
@@ -315,3 +350,5 @@ export type DadosNovoCartao = z.infer<typeof esquemaNovoCartao>;
 export type DadosAtualizacaoCartao = z.infer<typeof esquemaAtualizacaoCartao>;
 export type ListaFaturas = z.infer<typeof esquemaListaFaturas>;
 export type DetalheFatura = z.infer<typeof esquemaDetalheFatura>;
+export type DadosPagamentoFatura = z.infer<typeof esquemaPagamentoFatura>;
+export type RespostaPagamentoFatura = z.infer<typeof esquemaRespostaPagamentoFatura>;

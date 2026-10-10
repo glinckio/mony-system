@@ -96,19 +96,51 @@ export class CartoesRepository {
       where: { id, usuarioId, cartao: { excluidoEm: null } },
       select: {
         ...CAMPOS_FATURA,
-        cartao: { select: { id: true, nome: true, bandeira: true, final: true, cor: true } },
+        cartao: {
+          select: {
+            id: true,
+            nome: true,
+            bandeira: true,
+            final: true,
+            cor: true,
+            contaPagamentoId: true,
+          },
+        },
       },
     });
     if (!linha) return null;
     return { fatura: paraFaturaGravada(linha), cartao: linha.cartao };
   }
 
-  /** Compras da fatura, da mais nova para a mais antiga. */
+  /** Compras e pagamentos da fatura, do mais novo para o mais antigo. */
   transacoesDaFatura(usuarioId: string, faturaId: string): Promise<TransacaoDoUsuario[]> {
     return this.prisma.cliente.transacao.findMany({
       where: { usuarioId, faturaId },
       select: CAMPOS_TRANSACAO,
       orderBy: [{ data: 'desc' }, { id: 'desc' }],
+    });
+  }
+
+  buscarTransacao(usuarioId: string, id: string): Promise<TransacaoDoUsuario | null> {
+    return this.prisma.cliente.transacao.findFirst({
+      where: { id, usuarioId },
+      select: CAMPOS_TRANSACAO,
+    });
+  }
+
+  categoria(usuarioId: string, id: string) {
+    return this.prisma.cliente.categoria.findFirst({
+      where: { id, usuarioId },
+      select: { id: true, tipo: true },
+    });
+  }
+
+  /** Categorias de despesa do usuário, das mais antigas para as mais novas. */
+  categoriasDeDespesa(usuarioId: string) {
+    return this.prisma.cliente.categoria.findMany({
+      where: { usuarioId, tipo: 'despesa' },
+      select: { id: true, icone: true, padrao: true },
+      orderBy: [{ criadoEm: 'asc' }, { id: 'asc' }],
     });
   }
 
@@ -200,25 +232,62 @@ export class CartoesRepository {
     return paraFaturaGravada(linha);
   }
 
-  /** Trava a fatura e soma as compras dela que valem (sem as excluídas e sem pagamento). */
+  /**
+   * Trava a fatura e soma, sem as excluídas, as compras (natureza `normal`) e os pagamentos
+   * (`pagamento_fatura`) dela.
+   */
   async travarESomar(tx: TransacaoCartoes, faturaId: string) {
     await tx.$queryRaw`SELECT id FROM faturas WHERE id = ${faturaId}::uuid FOR UPDATE`;
     const linha = await tx.fatura.findUniqueOrThrow({
       where: { id: faturaId },
       select: CAMPOS_FATURA,
     });
-    const soma = await tx.transacao.aggregate({
-      where: { faturaId, tipo: 'despesa', natureza: 'normal' },
+    const grupos = await tx.transacao.groupBy({
+      by: ['natureza'],
+      where: { faturaId, tipo: 'despesa' },
       _sum: { valor: true },
     });
-    return { fatura: paraFaturaGravada(linha), soma: soma._sum.valor ?? 0n };
+    const soma = (natureza: 'normal' | 'pagamento_fatura') =>
+      grupos.find((grupo) => grupo.natureza === natureza)?._sum.valor ?? 0n;
+    return {
+      fatura: paraFaturaGravada(linha),
+      compras: soma('normal'),
+      pagamentos: soma('pagamento_fatura'),
+    };
   }
 
-  async gravarTotal(
+  async gravarTotais(
     tx: TransacaoCartoes,
     faturaId: string,
-    dados: Pick<Prisma.FaturaUncheckedUpdateInput, 'valorTotal' | 'status'>,
+    dados: Pick<Prisma.FaturaUncheckedUpdateInput, 'valorTotal' | 'valorPago' | 'status'>,
   ): Promise<void> {
     await tx.fatura.update({ where: { id: faturaId }, data: dados });
+  }
+
+  /** RN-037: as compras da fatura ficam pagas quando ela está quitada, e pendentes se não. */
+  async marcarCompras(
+    tx: TransacaoCartoes,
+    faturaId: string,
+    status: 'pago' | 'pendente',
+  ): Promise<void> {
+    await tx.transacao.updateMany({
+      where: {
+        faturaId,
+        natureza: 'normal',
+        tipo: 'despesa',
+        excluidoEm: null,
+        status: { not: status },
+      },
+      data: { status },
+    });
+  }
+
+  /** Grava a transação do pagamento da fatura (natureza `pagamento_fatura`, RN-036). */
+  async criarPagamento(
+    tx: TransacaoCartoes,
+    dados: Prisma.TransacaoUncheckedCreateInput,
+  ): Promise<string> {
+    const { id } = await tx.transacao.create({ data: dados, select: { id: true } });
+    return id;
   }
 }

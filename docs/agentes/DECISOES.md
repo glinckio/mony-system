@@ -253,3 +253,22 @@ Contexto: RN-030 a RN-035, RN-038 e RN-046, docs 05, 06 e 07. As regras puras s�
 - **`impacto.cartao`** traz o percentual do limite usado depois da compra (doc 05). O alerta de faixa (RN-038, RN-102) fica com o motor de alertas (T-080), a partir do evento `transacao.registrada`.
 
 Reversível: sim.
+
+## 2026-10-10 — T-041 — Pagar fatura
+Contexto: RN-036 e RN-037, no padrão documentado. As duas estão marcadas "confirmar com cliente" no doc 15, mas a tarefa não muda o padrão. Decisões:
+- **`POST /faturas/:id/pagar`, tudo opcional.** O [Paguei] da notificação (doc 09) paga com um toque.
+  - Sem valor, paga o saldo; acima do saldo dá 400 (não há crédito para a fatura seguinte); sem saldo, 409.
+  - Sem data, hoje. Data futura dá 400: o pagamento é registro do que aconteceu, e agendar pagamento não está na especificação.
+  - Sem conta, vale a conta de pagamento do cartão; `null` grava sem conta, e então nenhum saldo de conta muda.
+  - A forma é opcional e não pode ser o próprio cartão.
+  - `Idempotency-Key` obrigatória (doc 05).
+- **Categoria do pagamento.** A transação precisa de categoria (coluna obrigatória), mas o pagamento não entra em totais por categoria (RN-037). Sem escolha, vale a "Contas" padrão do cadastro; se ela foi excluída, a categoria de despesa mais antiga. Sempre sobra uma, pela RN-066.
+- **Pago refeito pela soma.** O valor pago da fatura é a soma das transações `pagamento_fatura` não excluídas dela, como o total é a soma das compras (T-040). Assim pagar é gravar a transação e refazer as somas, e desfazer é excluí-la e refazer.
+- **Desfazer = excluir o pagamento** por `DELETE /transacoes/:id` (também no lote). O pago, o status e as compras voltam. Valor e data do pagamento não mudam por `PATCH`: exclui-se e paga-se de novo. Desfazer pagamento de cartão excluído dá 404, para não reabrir saldo num cartão que saiu.
+- **Compras seguem a fatura (RN-037).** Quitada, todas as compras dela ficam `pago`; senão, `pendente`. Isso é refeito a cada mudança, então nunca há fatura quitada com compra pendente, nem o contrário.
+- **Pagamento antecipado.** Pagar fatura ainda aberta é permitido, porque muita gente antecipa para liberar limite. A regra da T-040 para compra nova mudou: só fatura **fechada** e quitada recusa a compra. Aberta e já paga recebe a compra, que vira saldo, e as compras voltam a pendentes. Compra de fatura quitada continua sem mudar valor e data nem sair, aberta ou fechada.
+- **Detalhe da fatura.** `GET /faturas/:id` separa `transacoes` (compras) de `pagamentos`.
+- **Trava.** Cartão, depois fatura, como na T-040. Três pagamentos ao mesmo tempo da mesma fatura: um passa e os outros recebem 409 (teste de integração).
+- **Evento `fatura.paga`** (com `faturaId` e `transacaoId`) para o motor de alertas (T-080), que vai encerrar o aviso de fatura atrasada.
+
+Reversível: sim.

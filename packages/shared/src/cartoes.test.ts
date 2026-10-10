@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   esquemaAtualizacaoCartao,
   esquemaNovoCartao,
+  esquemaPagamentoFatura,
   faixaAtingida,
   faturaDaCompetencia,
   faturaDaCompra,
@@ -260,5 +261,28 @@ describe('cadastro do cartão (RN-030)', () => {
     ).toBe(true);
     expect(esquemaAtualizacaoCartao.safeParse({ nome: null }).success).toBe(false);
     expect(esquemaAtualizacaoCartao.safeParse({}).success).toBe(true);
+  });
+});
+
+describe('pagamento da fatura (RN-036)', () => {
+  it('tudo é opcional, para pagar o saldo com um toque', () => {
+    expect(esquemaPagamentoFatura.safeParse({}).success).toBe(true);
+    expect(
+      esquemaPagamentoFatura.safeParse({
+        valorCentavos: 15_000,
+        data: '2026-10-10',
+        contaId: null,
+        formaPagamento: 'pix',
+      }).success,
+    ).toBe(true);
+  });
+
+  it.each([
+    ['valor zero', { valorCentavos: 0 }],
+    ['valor quebrado', { valorCentavos: Number('10.5') }],
+    ['data que não existe', { data: '2026-02-30' }],
+    ['pagar a fatura com o próprio cartão', { formaPagamento: 'cartao_credito' }],
+  ])('recusa %s', (_caso, dados) => {
+    expect(esquemaPagamentoFatura.safeParse(dados).success).toBe(false);
   });
 });

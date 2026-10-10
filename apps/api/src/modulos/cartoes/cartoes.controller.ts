@@ -26,12 +26,16 @@ import {
   esquemaListaCartoes,
   esquemaListaFaturas,
   esquemaNovoCartao,
+  esquemaPagamentoFatura,
+  esquemaRespostaPagamentoFatura,
   type ListaCartoes,
   type ListaFaturas,
+  type RespostaPagamentoFatura,
 } from '@mony/shared/cartoes';
 import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
+import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
 import { CartoesService } from './cartoes.service';
 
 class CartaoDto extends createZodDto(esquemaCartao) {}
@@ -40,6 +44,8 @@ class NovoCartaoDto extends createZodDto(esquemaNovoCartao) {}
 class AtualizacaoCartaoDto extends createZodDto(esquemaAtualizacaoCartao) {}
 class ListaFaturasDto extends createZodDto(esquemaListaFaturas) {}
 class DetalheFaturaDto extends createZodDto(esquemaDetalheFatura) {}
+class PagamentoFaturaDto extends createZodDto(esquemaPagamentoFatura) {}
+class RespostaPagamentoFaturaDto extends createZodDto(esquemaRespostaPagamentoFatura) {}
 
 /** Rotas de cartões (doc 05). A compra no cartão entra por `POST /transacoes`. */
 @ApiTags('cartoes')
@@ -107,7 +113,7 @@ export class CartoesController {
   }
 }
 
-/** Rotas de fatura (doc 05). O pagamento (`POST /faturas/:id/pagar`) entra na T-041. */
+/** Rotas de fatura (doc 05): detalhe e pagamento. */
 @ApiTags('cartoes')
 @ApiBearerAuth()
 @Controller('faturas')
@@ -115,11 +121,26 @@ export class FaturasController {
   constructor(private readonly cartoes: CartoesService) {}
 
   @Get(':id')
-  @ApiOkResponse({ type: DetalheFaturaDto, description: 'A fatura e as compras dela.' })
+  @ApiOkResponse({ type: DetalheFaturaDto, description: 'A fatura, as compras e os pagamentos.' })
   buscar(
     @ContextoAtual() contexto: Contexto,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<DetalheFatura> {
     return this.cartoes.fatura(contexto, id);
+  }
+
+  @Post(':id/pagar')
+  @Idempotente()
+  @ApiCreatedResponse({
+    type: RespostaPagamentoFaturaDto,
+    description:
+      'Pagamento total ou parcial (RN-036), gravado como transação `pagamento_fatura` (RN-037).',
+  })
+  pagar(
+    @ContextoAtual() contexto: Contexto,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dados: PagamentoFaturaDto,
+  ): Promise<RespostaPagamentoFatura> {
+    return this.cartoes.pagar(contexto, id, dados);
   }
 }

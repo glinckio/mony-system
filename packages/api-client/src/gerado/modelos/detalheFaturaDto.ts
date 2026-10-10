@@ -7,10 +7,12 @@
  */
 import type { DetalheFaturaDtoCartao } from './detalheFaturaDtoCartao';
 import type { DetalheFaturaDtoFatura } from './detalheFaturaDtoFatura';
+import type { DetalheFaturaDtoPagamentosItem } from './detalheFaturaDtoPagamentosItem';
 import type { DetalheFaturaDtoTransacoesItem } from './detalheFaturaDtoTransacoesItem';
 
 export interface DetalheFaturaDto {
   fatura: DetalheFaturaDtoFatura;
   cartao: DetalheFaturaDtoCartao;
   transacoes: DetalheFaturaDtoTransacoesItem[];
+  pagamentos: DetalheFaturaDtoPagamentosItem[];
 }

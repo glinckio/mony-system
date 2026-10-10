@@ -210,7 +210,8 @@ Implementado na T-037 (RN-040 a RN-047).
   - despesa exige forma de pagamento (RN-041);
   - o primeiro lançamento conclui a etapa `primeiro-lancamento` do onboarding;
   - depois de gravar sai o evento `transacao.registrada`, para alertas e preferências (T-080, T-063).
-- **Compra no cartão** (`cartao_credito`, T-040) leva `cartaoId` e entra na fatura certa (ver "Cartões e faturas" abaixo). Parcela e pagamento de fatura só mudam categoria, descrição, observação e anexos por aqui, e não são excluídos por estas rotas: os fluxos deles (T-041, T-042) cuidam de fatura e limite.
+- **Compra no cartão** (`cartao_credito`, T-040) leva `cartaoId` e entra na fatura certa (ver "Cartões e faturas" abaixo).
+- **Parcela e pagamento de fatura** só mudam categoria, descrição, observação e anexos por aqui. A parcela sai pelo parcelamento (T-042). O pagamento de fatura sai por `DELETE /transacoes/:id`, o que desfaz o pagamento (T-041).
 - **Open Finance (RN-045):** valor, data e os demais campos travados dão 409 `TRANSACAO_OPEN_FINANCE_BLOQUEADA`.
 - **Recorrência (RN-043):** ocorrência editada à mão fica com `editada_manualmente`.
 - **Totais:** pagamento de fatura e transferência não entram nas despesas (RN-037).
@@ -243,7 +244,7 @@ Implementado na T-038 (RN-043).
 
 ## Cartões e faturas
 
-Implementado na T-040 (RN-030 a RN-035, RN-038, RN-046). O pagamento da fatura entra na T-041.
+Implementado na T-040 (RN-030 a RN-035, RN-038, RN-046) e na T-041 (pagamento, RN-036 e RN-037).
 
 | Rota | O que faz |
 |---|---|
@@ -253,14 +254,26 @@ Implementado na T-040 (RN-030 a RN-035, RN-038, RN-046). O pagamento da fatura e
 | `PATCH /cartoes/:id` | Só o que veio; `null` limpa bandeira, final e conta de pagamento |
 | `DELETE /cartoes/:id` | Exclusão lógica; com saldo em aberto em alguma fatura → 409 `CONFLITO` com `detalhes.saldoEmAbertoCentavos` |
 | `GET /cartoes/:id/faturas` | Faturas do cartão, da mais nova para a mais antiga |
-| `GET /faturas/:id` | `{ fatura, cartao, transacoes }`, com as compras da mais nova para a mais antiga |
+| `GET /faturas/:id` | `{ fatura, cartao, transacoes, pagamentos }`: compras e pagamentos, do mais novo para o mais antigo |
+| `POST /faturas/:id/pagar` | `Idempotency-Key`; pagamento total ou parcial → 201 `{ fatura, transacao, impacto }` |
 
 - **Compra:** `POST /transacoes` com `formaPagamento: 'cartao_credito'` e `cartaoId`.
   - É sempre despesa, sem `contaId` e pendente até a fatura ser paga; o contrário dá 400 (`problemasDaCompraNoCartao` em `@mony/shared/transacoes`).
   - A fatura vem de `faturaDaCompra` (RN-031) e é criada na primeira compra. Se a fatura daquela competência já existe e fechou antes da data (os dias do cartão mudaram depois), a compra vai para a seguinte.
   - Mudar valor, data, cartão ou forma de pagamento tira a compra de uma fatura e põe na outra; excluir tira da fatura.
-- **Fatura quitada** (tem pagamento e o pago cobre o total): compra nela não entra, não muda de valor, data, cartão ou forma, e não sai → 409 `TRANSACAO_EM_FATURA_PAGA`. Descrição, categoria, observação e anexos continuam mudando.
-- **Total da fatura:** a cada mudança, a soma das compras é refeita (sem as excluídas), em vez de somar a diferença.
+- **Fatura quitada** (tem pagamento e o pago cobre o total):
+  - as compras dela ficam pagas (RN-037) e não mudam de valor, data, cartão ou forma, nem saem → 409 `TRANSACAO_EM_FATURA_PAGA`. Descrição, categoria, observação e anexos continuam mudando;
+  - se já fechou, compra nova com data dela também não entra. Ainda aberta (pagamento antecipado), recebe a compra, que vira saldo, e as compras voltam a pendentes.
+- **Total e pago da fatura:** a cada mudança, as somas das compras e dos pagamentos são refeitas (sem os excluídos), em vez de somar a diferença.
+- **Pagamento (RN-036, RN-037):**
+  - Todos os campos são opcionais, para o [Paguei] da notificação pagar com um toque.
+  - Sem `valorCentavos`, paga o saldo; acima do saldo → 400 com `detalhes.saldoCentavos`; sem saldo → 409.
+  - Sem `data`, hoje; data futura → 400.
+  - Sem `contaId`, usa a conta de pagamento do cartão; `null` registra sem conta.
+  - Sem `categoriaId`, usa a categoria "Contas" padrão ou a de despesa mais antiga.
+  - Grava a transação `pagamento_fatura`, paga, ligada ao cartão e à fatura. Ela sai do saldo da conta, mas não entra nos totais de despesa. Depois publica `fatura.paga`.
+  - Pagamento parcial deixa o restante na mesma fatura, sem juros.
+  - Excluir o pagamento (`DELETE /transacoes/:id`) desfaz: refaz o pago da fatura e devolve as compras a pendentes.
 - **Trava:** todo fluxo que mexe em fatura trava o cartão (`FOR UPDATE`) e depois as faturas, sempre em ordem de id. Assim, compras ao mesmo tempo não se perdem e a T-041 segue a mesma ordem.
 - **Status (RN-033):** a resposta calcula o status no "hoje" do usuário com `statusDaFatura`; a coluna é atualizada a cada mudança e pela rotina diária (T-047).
 - **Fatura atual:** a que recebe uma compra feita hoje, com `id: null` enquanto não tem lançamento.
