@@ -10,6 +10,7 @@ import {
   ArmazenamentoIdempotenciaMemoria,
 } from '../src/core/idempotencia/armazenamento';
 import { LimiteTentativas, LimiteTentativasMemoria } from '../src/core/limites/limite-tentativas';
+import { ProcessadorEmails } from '../src/integracoes/email/processador-emails';
 
 export function criarFilaFalsa() {
   return {
@@ -24,7 +25,7 @@ export function criarFilaFalsa() {
 export type FilaFalsa = ReturnType<typeof criarFilaFalsa>;
 
 /**
- * Troca filas BullMQ, consumidor de eventos, armazenamento de idempotência e contadores de
+ * Troca filas BullMQ, consumidores (eventos e e-mails), armazenamento de idempotência e contadores de
  * tentativas por versões em memória, para os testes unitários não dependerem de Redis. As filas
  * falsas ficam em `filas`.
  */
@@ -36,6 +37,8 @@ export function semServicosExternos(
     .overrideProvider(ArmazenamentoIdempotencia)
     .useValue(new ArmazenamentoIdempotenciaMemoria())
     .overrideProvider(ProcessadorEventos)
+    .useValue({})
+    .overrideProvider(ProcessadorEmails)
     .useValue({})
     .overrideProvider(LimiteTentativas)
     .useFactory({ factory: (clock: Clock) => new LimiteTentativasMemoria(clock), inject: [Clock] });

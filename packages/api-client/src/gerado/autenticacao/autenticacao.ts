@@ -13,7 +13,15 @@ import type {
   UseMutationResult,
 } from '@tanstack/react-query';
 
-import type { CadastroDto, LoginDto, RenovacaoDto, SessaoDto } from '../modelos';
+import type {
+  CadastroDto,
+  ConferenciaCodigoDto,
+  LoginDto,
+  PedidoCodigoDto,
+  RedefinicaoSenhaDto,
+  RenovacaoDto,
+  SessaoDto,
+} from '../modelos';
 
 import { requisicao } from '../../requisicao';
 
@@ -411,6 +419,306 @@ export const useSairAutenticacao = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   return useMutation(getSairAutenticacaoMutationOptions(options), queryClient);
+};
+export const getPedirCodigoSenhaAutenticacaoUrl = () => {
+  return `/v1/auth/senha/codigo`;
+};
+
+export const pedirCodigoSenhaAutenticacao = async (
+  pedidoCodigoDto: PedidoCodigoDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<void> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<void>(getPedirCodigoSenhaAutenticacaoUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(pedidoCodigoDto),
+  });
+};
+
+export const getPedirCodigoSenhaAutenticacaoMutationKey = () =>
+  ['pedirCodigoSenhaAutenticacao'] as const;
+
+export const getPedirCodigoSenhaAutenticacaoMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof pedirCodigoSenhaAutenticacao>>,
+    TError,
+    PedirCodigoSenhaAutenticacaoMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof pedirCodigoSenhaAutenticacao>>,
+  TError,
+  PedirCodigoSenhaAutenticacaoMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPedirCodigoSenhaAutenticacaoMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof pedirCodigoSenhaAutenticacao>>,
+    PedirCodigoSenhaAutenticacaoMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return pedirCodigoSenhaAutenticacao(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PedirCodigoSenhaAutenticacaoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof pedirCodigoSenhaAutenticacao>>
+>;
+export type PedirCodigoSenhaAutenticacaoMutationBody = PedidoCodigoDto;
+export type PedirCodigoSenhaAutenticacaoMutationError = unknown;
+export type PedirCodigoSenhaAutenticacaoMutationVariables = { data: PedidoCodigoDto };
+
+export const usePedirCodigoSenhaAutenticacao = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof pedirCodigoSenhaAutenticacao>>,
+      TError,
+      PedirCodigoSenhaAutenticacaoMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof pedirCodigoSenhaAutenticacao>>,
+  TError,
+  PedirCodigoSenhaAutenticacaoMutationVariables,
+  TContext
+> => {
+  return useMutation(getPedirCodigoSenhaAutenticacaoMutationOptions(options), queryClient);
+};
+export const getConferirCodigoSenhaAutenticacaoUrl = () => {
+  return `/v1/auth/senha/conferir`;
+};
+
+export const conferirCodigoSenhaAutenticacao = async (
+  conferenciaCodigoDto: ConferenciaCodigoDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<void> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<void>(getConferirCodigoSenhaAutenticacaoUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(conferenciaCodigoDto),
+  });
+};
+
+export const getConferirCodigoSenhaAutenticacaoMutationKey = () =>
+  ['conferirCodigoSenhaAutenticacao'] as const;
+
+export const getConferirCodigoSenhaAutenticacaoMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof conferirCodigoSenhaAutenticacao>>,
+    TError,
+    ConferirCodigoSenhaAutenticacaoMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof conferirCodigoSenhaAutenticacao>>,
+  TError,
+  ConferirCodigoSenhaAutenticacaoMutationVariables,
+  TContext
+> => {
+  const mutationKey = getConferirCodigoSenhaAutenticacaoMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof conferirCodigoSenhaAutenticacao>>,
+    ConferirCodigoSenhaAutenticacaoMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return conferirCodigoSenhaAutenticacao(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ConferirCodigoSenhaAutenticacaoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof conferirCodigoSenhaAutenticacao>>
+>;
+export type ConferirCodigoSenhaAutenticacaoMutationBody = ConferenciaCodigoDto;
+export type ConferirCodigoSenhaAutenticacaoMutationError = unknown;
+export type ConferirCodigoSenhaAutenticacaoMutationVariables = { data: ConferenciaCodigoDto };
+
+export const useConferirCodigoSenhaAutenticacao = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof conferirCodigoSenhaAutenticacao>>,
+      TError,
+      ConferirCodigoSenhaAutenticacaoMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof conferirCodigoSenhaAutenticacao>>,
+  TError,
+  ConferirCodigoSenhaAutenticacaoMutationVariables,
+  TContext
+> => {
+  return useMutation(getConferirCodigoSenhaAutenticacaoMutationOptions(options), queryClient);
+};
+export const getRedefinirSenhaAutenticacaoUrl = () => {
+  return `/v1/auth/senha/redefinir`;
+};
+
+export const redefinirSenhaAutenticacao = async (
+  redefinicaoSenhaDto: RedefinicaoSenhaDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<SessaoDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<SessaoDto>(getRedefinirSenhaAutenticacaoUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(redefinicaoSenhaDto),
+  });
+};
+
+export const getRedefinirSenhaAutenticacaoMutationKey = () =>
+  ['redefinirSenhaAutenticacao'] as const;
+
+export const getRedefinirSenhaAutenticacaoMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof redefinirSenhaAutenticacao>>,
+    TError,
+    RedefinirSenhaAutenticacaoMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof redefinirSenhaAutenticacao>>,
+  TError,
+  RedefinirSenhaAutenticacaoMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRedefinirSenhaAutenticacaoMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof redefinirSenhaAutenticacao>>,
+    RedefinirSenhaAutenticacaoMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return redefinirSenhaAutenticacao(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RedefinirSenhaAutenticacaoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof redefinirSenhaAutenticacao>>
+>;
+export type RedefinirSenhaAutenticacaoMutationBody = RedefinicaoSenhaDto;
+export type RedefinirSenhaAutenticacaoMutationError = unknown;
+export type RedefinirSenhaAutenticacaoMutationVariables = { data: RedefinicaoSenhaDto };
+
+export const useRedefinirSenhaAutenticacao = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof redefinirSenhaAutenticacao>>,
+      TError,
+      RedefinirSenhaAutenticacaoMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof redefinirSenhaAutenticacao>>,
+  TError,
+  RedefinirSenhaAutenticacaoMutationVariables,
+  TContext
+> => {
+  return useMutation(getRedefinirSenhaAutenticacaoMutationOptions(options), queryClient);
 };
 export const getSairDeTodosAutenticacaoUrl = () => {
   return `/v1/auth/sair-todos`;

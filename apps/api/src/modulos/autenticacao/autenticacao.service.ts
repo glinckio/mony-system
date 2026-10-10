@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
   type DadosCadastro,
+  type DadosDispositivo,
   type DadosLogin,
   normalizarEmail,
   normalizarTelefoneBr,
@@ -97,13 +98,20 @@ export class AutenticacaoService {
     }
     if (usuario.status === 'bloqueado') throw new ErroDominio('CONTA_BLOQUEADA');
     await this.limites.zerar(chaveEmail);
+    return this.iniciarSessao(usuario, dados.dispositivo);
+  }
 
+  /**
+   * Abre a sessão deste aparelho para quem já provou quem é (senha certa, código de recuperação).
+   * A sessão anterior do mesmo aparelho é revogada.
+   */
+  async iniciarSessao(usuario: UsuarioDaSessao, dispositivo: DadosDispositivo): Promise<Sessao> {
     const agora = this.clock.agora();
     const renovacao = gerarTokenRenovacao();
     const expiraEm = somarDias(agora, VALIDADE_RENOVACAO_DIAS);
     const aberta = await this.repositorio.abrirSessao(
       usuario.id,
-      dados.dispositivo,
+      dispositivo,
       { resumoRenovacao: renovacao.resumo, expiraEm },
       agora,
     );

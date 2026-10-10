@@ -11,7 +11,7 @@ async function iniciar(): Promise<void> {
   const log = app.get(Logger);
   app.useLogger(log);
   app.enableShutdownHooks();
-  log.log('Worker iniciado: consumindo a fila eventos-dominio.', 'Worker');
+  log.log('Worker iniciado: consumindo as filas eventos-dominio e emails.', 'Worker');
 }
 
 iniciar().catch((erro: unknown) => {

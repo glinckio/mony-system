@@ -139,6 +139,85 @@
         ]
       }
     },
+    "/v1/auth/senha/codigo": {
+      "post": {
+        "operationId": "pedirCodigoSenhaAutenticacao",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoCodigoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Se existe conta ativa com o e-mail, o código foi enviado. A resposta é a mesma nos dois casos."
+          }
+        },
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/v1/auth/senha/conferir": {
+      "post": {
+        "operationId": "conferirCodigoSenhaAutenticacao",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConferenciaCodigoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Código certo e ainda válido; ele não é gasto aqui."
+          }
+        },
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/v1/auth/senha/redefinir": {
+      "post": {
+        "operationId": "redefinirSenhaAutenticacao",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedefinicaoSenhaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Senha trocada, sessões dos outros aparelhos encerradas e sessão aberta neste.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
     "/v1/auth/sair-todos": {
       "post": {
         "operationId": "sairDeTodosAutenticacao",
@@ -401,6 +480,90 @@
         },
         "required": [
           "renovacao"
+        ]
+      },
+      "PedidoCodigoDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ConferenciaCodigoDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "codigo": {
+            "type": "string",
+            "pattern": "^\\d{6}$"
+          }
+        },
+        "required": [
+          "email",
+          "codigo"
+        ]
+      },
+      "RedefinicaoSenhaDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "codigo": {
+            "type": "string",
+            "pattern": "^\\d{6}$"
+          },
+          "senha": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          },
+          "dispositivo": {
+            "type": "object",
+            "properties": {
+              "identificador": {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 200
+              },
+              "plataforma": {
+                "type": "string",
+                "enum": [
+                  "ios",
+                  "android"
+                ]
+              },
+              "modelo": {
+                "type": "string",
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "identificador",
+              "plataforma"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "codigo",
+          "senha",
+          "dispositivo"
         ]
       }
     }

@@ -78,6 +78,25 @@ export const esquemaRenovacao = z.object({
   renovacao: z.string().min(20).max(200),
 });
 
+/** RN-003: código de recuperação de senha com 6 dígitos. */
+export const DIGITOS_CODIGO_RECUPERACAO = 6;
+
+export const esquemaPedidoCodigo = z.object({
+  email: z.email().max(254),
+});
+
+export const esquemaConferenciaCodigo = z.object({
+  email: z.email().max(254),
+  /** Código recebido por e-mail. */
+  codigo: z.string().regex(/^\d{6}$/, 'Código de 6 dígitos'),
+});
+
+export const esquemaRedefinicaoSenha = esquemaConferenciaCodigo.extend({
+  /** Senha nova, com as mesmas regras do cadastro (RN-001). */
+  senha: z.string().min(SENHA_MINIMO).max(SENHA_MAXIMO),
+  dispositivo: esquemaDispositivo,
+});
+
 export const esquemaSessao = z.object({
   usuario: z.object({
     id: z.uuid(),
@@ -103,3 +122,6 @@ export type DadosCadastro = z.infer<typeof esquemaCadastro>;
 export type DadosLogin = z.infer<typeof esquemaLogin>;
 export type DadosRenovacao = z.infer<typeof esquemaRenovacao>;
 export type Sessao = z.infer<typeof esquemaSessao>;
+export type DadosPedidoCodigo = z.infer<typeof esquemaPedidoCodigo>;
+export type DadosConferenciaCodigo = z.infer<typeof esquemaConferenciaCodigo>;
+export type DadosRedefinicaoSenha = z.infer<typeof esquemaRedefinicaoSenha>;

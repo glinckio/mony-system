@@ -40,4 +40,23 @@ export class Configuracao {
   get idChaveJwt(): string {
     return this.config.get('JWT_ID_CHAVE', { infer: true });
   }
+
+  get provedorEmail(): Ambiente['EMAIL_PROVEDOR'] {
+    return this.config.get('EMAIL_PROVEDOR', { infer: true });
+  }
+
+  /** Chave da API do Brevo; definida quando `provedorEmail` é `brevo`. */
+  get chaveApiBrevo(): string | undefined {
+    return this.config.get('BREVO_CHAVE_API', { infer: true });
+  }
+
+  /** Servidor SMTP; definido quando `provedorEmail` é `smtp`. */
+  get urlSmtp(): string | undefined {
+    return this.config.get('SMTP_URL', { infer: true });
+  }
+
+  /** Remetente dos e-mails; obrigatório quando `provedorEmail` é `brevo`. */
+  get remetenteEmail(): string | undefined {
+    return this.config.get('EMAIL_REMETENTE', { infer: true });
+  }
 }
