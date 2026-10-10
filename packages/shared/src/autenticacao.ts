@@ -4,7 +4,7 @@
  */
 import { z } from 'zod';
 
-import { DOCUMENTOS_ACEITE, PLATAFORMAS_DISPOSITIVO } from './enums.js';
+import { DOCUMENTOS_ACEITE, PLATAFORMAS_DISPOSITIVO, PROVEDORES_LOGIN_SOCIAL } from './enums.js';
 
 /**
  * Versões vigentes dos documentos que o usuário aceita no cadastro (RN-007). Quando o texto mudar,
@@ -49,21 +49,27 @@ export const esquemaDispositivo = z.object({
   modelo: z.string().max(100).optional(),
 });
 
+const esquemaNome = z.string().trim().min(1).max(120);
+
+const esquemaTelefone = z
+  .string()
+  .max(30)
+  .refine((valor) => normalizarTelefoneBr(valor) !== null, {
+    message: 'Telefone brasileiro com DDD, ex.: (11) 98765-4321',
+  });
+
+/** Versões dos termos e da política que o usuário leu e aceitou (RN-007). */
+const esquemaAceites = z.object({
+  termos: z.string().min(1).max(40),
+  privacidade: z.string().min(1).max(40),
+});
+
 export const esquemaCadastro = z.object({
-  nome: z.string().trim().min(1).max(120),
+  nome: esquemaNome,
   email: z.email().max(254),
-  telefone: z
-    .string()
-    .max(30)
-    .refine((valor) => normalizarTelefoneBr(valor) !== null, {
-      message: 'Telefone brasileiro com DDD, ex.: (11) 98765-4321',
-    }),
+  telefone: esquemaTelefone,
   senha: z.string().min(SENHA_MINIMO).max(SENHA_MAXIMO),
-  /** Versões dos termos e da política que o usuário leu e aceitou (RN-007). */
-  aceites: z.object({
-    termos: z.string().min(1).max(40),
-    privacidade: z.string().min(1).max(40),
-  }),
+  aceites: esquemaAceites,
   dispositivo: esquemaDispositivo,
 });
 
@@ -76,6 +82,33 @@ export const esquemaLogin = z.object({
 export const esquemaRenovacao = z.object({
   /** Token de renovação recebido no login ou na última renovação. */
   renovacao: z.string().min(20).max(200),
+});
+
+/**
+ * RN-002: login com Google ou Apple. Conta nova precisa de nome, telefone e aceites; se faltar
+ * algum, a API responde `CADASTRO_INCOMPLETO` e o app chama de novo com o mesmo `idToken`.
+ */
+export const esquemaLoginSocial = z.object({
+  provedor: z.enum(PROVEDORES_LOGIN_SOCIAL),
+  /** `id_token` que o SDK do Google ou da Apple devolveu no aparelho. */
+  idToken: z.string().min(20).max(8000),
+  /**
+   * Valor aleatório gerado pelo app para este login. Obrigatório com a Apple, que devolve no token
+   * o resumo SHA-256 dele; com o Google, quando o SDK aceitar nonce.
+   */
+  nonce: z.string().min(16).max(200).optional(),
+  /** A Apple entrega o nome ao app só no primeiro login, fora do token. */
+  nome: esquemaNome.optional(),
+  telefone: esquemaTelefone.optional(),
+  aceites: esquemaAceites.optional(),
+  dispositivo: esquemaDispositivo,
+});
+
+/** Vincular Google ou Apple à conta de quem já entrou (RN-002). */
+export const esquemaVinculoSocial = esquemaLoginSocial.pick({
+  provedor: true,
+  idToken: true,
+  nonce: true,
 });
 
 /** RN-003: código de recuperação de senha com 6 dígitos. */
@@ -125,3 +158,5 @@ export type Sessao = z.infer<typeof esquemaSessao>;
 export type DadosPedidoCodigo = z.infer<typeof esquemaPedidoCodigo>;
 export type DadosConferenciaCodigo = z.infer<typeof esquemaConferenciaCodigo>;
 export type DadosRedefinicaoSenha = z.infer<typeof esquemaRedefinicaoSenha>;
+export type DadosLoginSocial = z.infer<typeof esquemaLoginSocial>;
+export type DadosVinculoSocial = z.infer<typeof esquemaVinculoSocial>;
