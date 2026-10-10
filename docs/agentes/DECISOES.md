@@ -345,3 +345,15 @@ Contexto: doc 09 (Rotinas). O status de fatura, parcela e parcelamento já é ca
 - **T-046** ganhou as dependências T-011 e T-034 no BACKLOG: é tarefa do app e parecia livre só por depender da T-044.
 
 Reversível: sim.
+
+## 2026-10-10 — T-048 — Relatórios
+Contexto: RN-150, doc 05 (`GET /relatorios/:tipo?inicio=&fim=`). Decisões:
+- **Escopo.** Só a API e sem exportação (RN-151 tem tarefa própria). As telas ficam na T-054, pelo mesmo motivo da T-049. O histórico de preços da NFC-e fica com a T-066, que lê as notas. O limite do gratuito (só o mês atual, RN-120) fica com a T-100.
+- **Uma rota por tipo** (`/relatorios/mensal`, `anual`, `categorias`, `dias-da-semana`, `cartoes`, `formas-pagamento`) em vez de um `:tipo` com resposta variável: cada uma tem o seu contrato no OpenAPI e no cliente gerado, e o caminho continua sendo o do doc 05.
+- **O que conta.** Lançamentos pagos e pendentes (competência, como no Início e nos orçamentos), sem os excluídos, só de natureza `normal`. Compra no cartão conta na data da compra, e cada parcela no mês da sua despesa.
+- **Período.** Sem `inicio` e `fim`, os últimos 12 meses com o atual inteiro; com eles, até 5 anos. Os meses e anos sem lançamento vêm zerados, para o gráfico não pular.
+- **"Evolução anual"** foi lida como receitas × despesas por ano. A evolução mês a mês dentro do ano é o relatório mensal com o saldo acumulado.
+- **SQL só onde o Prisma não agrupa** (mês, ano e dia da semana): `$queryRaw` com parâmetros e `excluido_em IS NULL` explícito, porque a extensão de exclusão lógica não alcança SQL. As outras somas são `groupBy`.
+- **Nome de categoria e cartão excluídos** continua aparecendo, porque o histórico ainda os usa.
+
+Reversível: sim.

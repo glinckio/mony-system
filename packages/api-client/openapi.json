@@ -2446,6 +2446,277 @@
           "dashboard"
         ]
       }
+    },
+    "/v1/relatorios/mensal": {
+      "get": {
+        "operationId": "mensalRelatorios",
+        "parameters": [
+          {
+            "name": "inicio",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fim",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Receitas × despesas por mês.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatorioMensalDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "relatorios"
+        ]
+      }
+    },
+    "/v1/relatorios/anual": {
+      "get": {
+        "operationId": "anualRelatorios",
+        "parameters": [
+          {
+            "name": "inicio",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fim",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Evolução anual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatorioAnualDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "relatorios"
+        ]
+      }
+    },
+    "/v1/relatorios/categorias": {
+      "get": {
+        "operationId": "categoriasRelatorios",
+        "parameters": [
+          {
+            "name": "inicio",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fim",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tipo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "despesa",
+              "type": "string",
+              "enum": [
+                "receita",
+                "despesa"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Despesas ou receitas por categoria.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatorioCategoriasDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "relatorios"
+        ]
+      }
+    },
+    "/v1/relatorios/dias-da-semana": {
+      "get": {
+        "operationId": "diasDaSemanaRelatorios",
+        "parameters": [
+          {
+            "name": "inicio",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fim",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Despesas por dia da semana.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatorioDiasDaSemanaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "relatorios"
+        ]
+      }
+    },
+    "/v1/relatorios/cartoes": {
+      "get": {
+        "operationId": "cartoesRelatorios",
+        "parameters": [
+          {
+            "name": "inicio",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fim",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Despesas por cartão de crédito.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatorioCartoesDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "relatorios"
+        ]
+      }
+    },
+    "/v1/relatorios/formas-pagamento": {
+      "get": {
+        "operationId": "formasPagamentoRelatorios",
+        "parameters": [
+          {
+            "name": "inicio",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fim",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Despesas por forma de pagamento.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatorioFormasPagamentoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "relatorios"
+        ]
+      }
     }
   },
   "info": {
@@ -8960,6 +9231,357 @@
           "cartoes",
           "orcamentos",
           "onboarding"
+        ]
+      },
+      "RelatorioMensalDto": {
+        "type": "object",
+        "properties": {
+          "inicio": {
+            "type": "string"
+          },
+          "fim": {
+            "type": "string"
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "competencia": {
+                  "type": "string"
+                },
+                "receitasCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "despesasCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "saldoCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "saldoAcumuladoCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "competencia",
+                "receitasCentavos",
+                "despesasCentavos",
+                "saldoCentavos",
+                "saldoAcumuladoCentavos"
+              ]
+            }
+          },
+          "totais": {
+            "type": "object",
+            "properties": {
+              "receitasCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "despesasCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "saldoCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "receitasCentavos",
+              "despesasCentavos",
+              "saldoCentavos"
+            ]
+          }
+        },
+        "required": [
+          "inicio",
+          "fim",
+          "itens",
+          "totais"
+        ]
+      },
+      "RelatorioAnualDto": {
+        "type": "object",
+        "properties": {
+          "inicio": {
+            "type": "string"
+          },
+          "fim": {
+            "type": "string"
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ano": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "receitasCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "despesasCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "saldoCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "ano",
+                "receitasCentavos",
+                "despesasCentavos",
+                "saldoCentavos"
+              ]
+            }
+          }
+        },
+        "required": [
+          "inicio",
+          "fim",
+          "itens"
+        ]
+      },
+      "RelatorioCategoriasDto": {
+        "type": "object",
+        "properties": {
+          "inicio": {
+            "type": "string"
+          },
+          "fim": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "receita",
+              "despesa"
+            ]
+          },
+          "totalCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "categoriaId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "nome": {
+                  "type": "string"
+                },
+                "cor": {
+                  "type": "string"
+                },
+                "icone": {
+                  "type": "string"
+                },
+                "totalCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "percentual": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "quantidade": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "categoriaId",
+                "nome",
+                "cor",
+                "icone",
+                "totalCentavos",
+                "percentual",
+                "quantidade"
+              ]
+            }
+          }
+        },
+        "required": [
+          "inicio",
+          "fim",
+          "tipo",
+          "totalCentavos",
+          "itens"
+        ]
+      },
+      "RelatorioDiasDaSemanaDto": {
+        "type": "object",
+        "properties": {
+          "inicio": {
+            "type": "string"
+          },
+          "fim": {
+            "type": "string"
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "diaDaSemana": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "totalCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "quantidade": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "diaDaSemana",
+                "totalCentavos",
+                "quantidade"
+              ]
+            }
+          }
+        },
+        "required": [
+          "inicio",
+          "fim",
+          "itens"
+        ]
+      },
+      "RelatorioCartoesDto": {
+        "type": "object",
+        "properties": {
+          "inicio": {
+            "type": "string"
+          },
+          "fim": {
+            "type": "string"
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "cartaoId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "nome": {
+                  "type": "string"
+                },
+                "cor": {
+                  "type": "string"
+                },
+                "totalCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "quantidade": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "cartaoId",
+                "nome",
+                "cor",
+                "totalCentavos",
+                "quantidade"
+              ]
+            }
+          }
+        },
+        "required": [
+          "inicio",
+          "fim",
+          "itens"
+        ]
+      },
+      "RelatorioFormasPagamentoDto": {
+        "type": "object",
+        "properties": {
+          "inicio": {
+            "type": "string"
+          },
+          "fim": {
+            "type": "string"
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "formaPagamento": {
+                  "type": "string",
+                  "enum": [
+                    "cartao_credito",
+                    "pix",
+                    "debito",
+                    "dinheiro",
+                    "boleto"
+                  ]
+                },
+                "totalCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "quantidade": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "formaPagamento",
+                "totalCentavos",
+                "quantidade"
+              ]
+            }
+          }
+        },
+        "required": [
+          "inicio",
+          "fim",
+          "itens"
         ]
       }
     }

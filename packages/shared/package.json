@@ -74,6 +74,10 @@
       "types": "./dist/recorrencias.d.ts",
       "default": "./dist/recorrencias.js"
     },
+    "./relatorios": {
+      "types": "./dist/relatorios.d.ts",
+      "default": "./dist/relatorios.js"
+    },
     "./transacoes": {
       "types": "./dist/transacoes.d.ts",
       "default": "./dist/transacoes.js"
