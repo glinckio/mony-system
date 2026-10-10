@@ -99,7 +99,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-035, T-036 · RN-040 a RN-042, RN-044 a RN-047
 - [ ] **T-038** Recorrências e rotina de materialização (35 dias)
   - dep: T-037 · RN-043
-- [ ] **T-039** Funções de domínio de cartão e fatura (puras, com testes exaustivos de datas)
+- [x] **T-039** Funções de domínio de cartão e fatura (puras, com testes exaustivos de datas) (PR #20)
   - dep: T-003 · RN-031, RN-032, RN-033, RN-034
 - [ ] **T-040** Cartões e faturas: CRUD de cartão, compra no cartão, telas do cartão e da fatura
   - dep: T-037, T-039 · RN-030 a RN-035, RN-038
