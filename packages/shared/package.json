@@ -17,6 +17,7 @@
     "./categorias": {
       "types": "./dist/categorias.d.ts",
       "default": "./dist/categorias.js"
+    },
     "./cartoes": {
       "types": "./dist/cartoes.d.ts",
       "default": "./dist/cartoes.js"
