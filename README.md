@@ -103,6 +103,10 @@ pnpm --filter admin build     # gera apps/admin/dist (site estático)
 - **Componentes do shadcn/ui** ficam em `src/components/ui/`. Para adicionar outro: `pnpm dlx shadcn@latest add <componente>` dentro de `apps/admin`.
 - **Sem login ainda:** o login do admin com 2FA tem tarefa própria no BACKLOG.
 
+## Infraestrutura
+
+Terraform da AWS em [`infra/`](infra/README.md): bootstrap da conta, módulo de ambiente e staging. Quem aplica é o humano, com a conta do cliente; o CI só valida. A imagem da API sai de [`apps/api/Dockerfile`](apps/api/Dockerfile) (`docker build -f apps/api/Dockerfile .` na raiz) e o deploy de staging roda a cada merge na `main` depois que a infra existir.
+
 ## Comandos
 
 ```bash

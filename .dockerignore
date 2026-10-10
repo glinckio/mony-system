@@ -1,0 +1,16 @@
+# Contexto do `docker build` (raiz do monorepo): só o código-fonte, sem dependências, builds,
+# segredos e o que a imagem não usa.
+.git
+**/node_modules
+**/dist
+**/.turbo
+**/.expo
+**/coverage
+**/.env
+**/.env.*
+!**/.env.example
+apps/api/src/generated
+apps/mobile/ios
+apps/mobile/android
+docs
+infra

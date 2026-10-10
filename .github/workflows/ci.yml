@@ -77,6 +77,105 @@ jobs:
             exit 1
           fi
 
+  # Terraform (formatação e validação, sem tocar na AWS) e a imagem da API compilando (doc 12).
+  infra:
+    name: Infra
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: public.ecr.aws/docker/library/postgres:18-alpine
+        env:
+          POSTGRES_USER: mony
+          POSTGRES_PASSWORD: mony-ci
+          POSTGRES_DB: mony
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mony -d mony"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.16.5
+          terraform_wrapper: false
+
+      - name: Terraform formatado
+        run: |
+          if ! terraform fmt -check -recursive infra > /dev/null; then
+            diferenca=$(terraform fmt -recursive -diff infra | grep -E '^(---|\+\+\+|[-+] )' | head -n 80)
+            printf '::error title=Terraform sem formatação::Rode terraform fmt -recursive infra.%%0A%s\n' \
+              "$(echo "$diferenca" | sed 's/%/%25/g' | awk 'BEGIN { ORS = "%0A" } { print }')"
+            exit 1
+          fi
+
+      - name: Terraform válido
+        # Os erros viram anotações com arquivo e linha, para aparecer no resumo do CI.
+        run: |
+          falhou=0
+          for pasta in infra/bootstrap infra/ambientes/staging; do
+            if ! saida=$(terraform -chdir="$pasta" init -backend=false -input=false -no-color 2>&1); then
+              printf '::error title=terraform init em %s::%s\n' "$pasta" \
+                "$(echo "$saida" | grep -v '^$' | tail -n 30 | sed 's/%/%25/g' | awk 'BEGIN { ORS = "%0A" } { print }')"
+              falhou=1
+              continue
+            fi
+            resultado=$(terraform -chdir="$pasta" validate -json -no-color || true)
+            echo "$resultado" | jq -r --arg pasta "$pasta" '.diagnostics[] |
+              "::\(if .severity == "error" then "error" else "warning" end) file=\($pasta)/\(.range.filename // ""),line=\(.range.start.line // 1),title=\(.summary | gsub("[:,]"; " "))::\(.detail // .summary | gsub("%"; "%25") | gsub("\n"; "%0A"))"'
+            if [ "$(echo "$resultado" | jq -r .valid)" != "true" ]; then
+              falhou=1
+            fi
+          done
+          exit $falhou
+
+      - name: Imagem da API compila
+        run: |
+          set -o pipefail
+          if ! docker build -f apps/api/Dockerfile -t mony-api:ci --progress plain . 2>&1 | tee /tmp/build.log; then
+            printf '::error title=Imagem da API não compila::%s\n' \
+              "$(grep -v '^$' /tmp/build.log | tail -n 60 | cut -c1-300 | sed 's/%/%25/g' | awk 'BEGIN { ORS = "%0A" } { print }')"
+            exit 1
+          fi
+
+      - name: Imagem da API sobe
+        # Sem banco e sem Redis de verdade a API sobe e responde o health check (conexões são preguiçosas).
+        # Em produção a chave dos tokens é obrigatória: o CI gera uma descartável.
+        run: |
+          JWT_CHAVE_PRIVADA="$(openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256)"
+          export JWT_CHAVE_PRIVADA
+          docker run -d --name api -p 3000:3000 -e JWT_CHAVE_PRIVADA \
+            -e DATABASE_URL=postgresql://x:y@127.0.0.1:5432/z -e REDIS_URL=redis://127.0.0.1:6379 mony-api:ci
+          for tentativa in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/v1/health; then
+              echo
+              docker run --rm --entrypoint node mony-api:ci -e "require('fs').accessSync('dist/worker.js')"
+              exit 0
+            fi
+            sleep 1
+          done
+          printf '::error title=Imagem da API não respondeu::%s\n' \
+            "$(docker logs api 2>&1 | tail -n 30 | cut -c1-300 | sed 's/%/%25/g' | awk 'BEGIN { ORS = "%0A" } { print }')"
+          exit 1
+
+      - name: Migração e seed pela imagem
+        # O mesmo comando que o deploy roda na tarefa avulsa, contra um Postgres vazio.
+        run: |
+          if ! saida=$(docker run --rm --network host \
+            -e DATABASE_URL=postgresql://mony:mony-ci@localhost:5432/mony \
+            mony-api:ci sh -c "prisma migrate deploy && prisma db seed" 2>&1); then
+            printf '::error title=Migração pela imagem falhou::%s\n' \
+              "$(echo "$saida" | tail -n 40 | cut -c1-300 | sed 's/%/%25/g' | awk 'BEGIN { ORS = "%0A" } { print }')"
+            exit 1
+          fi
+          echo "$saida" | tail -n 5
+
   # Migrações do Prisma e testes de integração com Postgres e Redis de verdade (doc 12 e 14).
   # O check "Banco" também é obrigatório para mergear na main.
   banco:
