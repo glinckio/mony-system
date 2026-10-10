@@ -8,13 +8,17 @@ import {
   type Sessao,
   VERSOES_DOCUMENTOS,
 } from '@mony/shared/autenticacao';
-import { DOCUMENTOS_ACEITE } from '@mony/shared/enums';
+import { DOCUMENTOS_ACEITE, type ProvedorLoginSocial } from '@mony/shared/enums';
 
 import { TokensAcesso, type UsuarioAutenticado } from '../../core/auth/tokens-acesso';
 import { Clock } from '../../core/clock/clock';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { LimiteTentativas } from '../../core/limites/limite-tentativas';
-import { AutenticacaoRepository, type UsuarioDaSessao } from './autenticacao.repository';
+import {
+  AutenticacaoRepository,
+  type NovaConta,
+  type UsuarioDaSessao,
+} from './autenticacao.repository';
 import {
   aceitesPendentes,
   DURACAO_TESTE_DIAS,
@@ -43,8 +47,50 @@ export class AutenticacaoService {
 
   private readonly log = new Logger(AutenticacaoService.name);
 
-  /** RN-001, RN-006, RN-007. */
+  /** RN-001, RN-006, RN-007: cadastro com e-mail e senha. */
   async cadastrar(dados: DadosCadastro, ip: string): Promise<Sessao> {
+    const telefone = this.conferirDadosDaConta(dados);
+    return this.abrirContaNova(
+      {
+        nome: dados.nome,
+        email: normalizarEmail(dados.email),
+        telefone,
+        senhaHash: await gerarHashSenha(dados.senha),
+        aceites: dados.aceites,
+      },
+      dados.dispositivo,
+      ip,
+    );
+  }
+
+  /**
+   * RN-002: conta nova vinda do Google ou da Apple, sem senha. Mesmas regras do cadastro para
+   * telefone e aceites (RN-001, RN-007).
+   */
+  async cadastrarPorLoginSocial(
+    dados: {
+      nome: string;
+      email: string;
+      telefone: string;
+      aceites: DadosCadastro['aceites'];
+      loginSocial: { provedor: ProvedorLoginSocial; idExterno: string };
+    },
+    dispositivo: DadosDispositivo,
+    ip: string,
+  ): Promise<Sessao> {
+    const telefone = this.conferirDadosDaConta(dados);
+    return this.abrirContaNova(
+      { ...dados, email: normalizarEmail(dados.email), telefone, senhaHash: null },
+      dispositivo,
+      ip,
+    );
+  }
+
+  /** RN-007: aceites nas versões vigentes. RN-001: telefone válido. Devolve o telefone em E.164. */
+  private conferirDadosDaConta(dados: {
+    telefone: string;
+    aceites: DadosCadastro['aceites'];
+  }): string {
     const versoesVelhas = DOCUMENTOS_ACEITE.filter(
       (documento) => dados.aceites[documento] !== VERSOES_DOCUMENTOS[documento],
     );
@@ -55,22 +101,29 @@ export class AutenticacaoService {
     }
     const telefone = normalizarTelefoneBr(dados.telefone);
     if (telefone === null) throw new ErroDominio('REQUISICAO_INVALIDA');
+    return telefone;
+  }
 
+  /** RN-006: conta com teste de 3 dias e padrões, e a sessão do aparelho, numa transação. */
+  private async abrirContaNova(
+    conta: Pick<NovaConta, 'nome' | 'email' | 'telefone' | 'senhaHash' | 'loginSocial'> & {
+      aceites: DadosCadastro['aceites'];
+    },
+    dispositivo: DadosDispositivo,
+    ip: string,
+  ): Promise<Sessao> {
     const agora = this.clock.agora();
     const renovacao = gerarTokenRenovacao();
     const expiraEm = somarDias(agora, VALIDADE_RENOVACAO_DIAS);
     const criada = await this.repositorio.criarConta(
       {
-        nome: dados.nome,
-        email: normalizarEmail(dados.email),
-        telefone,
-        senhaHash: await gerarHashSenha(dados.senha),
-        aceites: { termos: dados.aceites.termos, privacidade: dados.aceites.privacidade },
+        ...conta,
+        aceites: { termos: conta.aceites.termos, privacidade: conta.aceites.privacidade },
         ip,
         testeInicio: agora,
         testeFim: somarDias(agora, DURACAO_TESTE_DIAS),
       },
-      dados.dispositivo,
+      dispositivo,
       { resumoRenovacao: renovacao.resumo, expiraEm },
       agora,
     );

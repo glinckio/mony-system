@@ -11,10 +11,12 @@ import {
   esquemaCadastro,
   esquemaConferenciaCodigo,
   esquemaLogin,
+  esquemaLoginSocial,
   esquemaPedidoCodigo,
   esquemaRedefinicaoSenha,
   esquemaRenovacao,
   esquemaSessao,
+  esquemaVinculoSocial,
   type Sessao,
 } from '@mony/shared/autenticacao';
 import { createZodDto } from 'nestjs-zod';
@@ -23,6 +25,7 @@ import { Publico } from '../../core/auth/publico.decorator';
 import type { UsuarioAutenticado } from '../../core/auth/tokens-acesso';
 import { UsuarioAtual } from '../../core/auth/usuario-atual.decorator';
 import { AutenticacaoService } from './autenticacao.service';
+import { LoginSocialService } from './login-social.service';
 import { RecuperacaoSenhaService } from './recuperacao-senha.service';
 
 class CadastroDto extends createZodDto(esquemaCadastro) {}
@@ -32,6 +35,8 @@ class SessaoDto extends createZodDto(esquemaSessao) {}
 class PedidoCodigoDto extends createZodDto(esquemaPedidoCodigo) {}
 class ConferenciaCodigoDto extends createZodDto(esquemaConferenciaCodigo) {}
 class RedefinicaoSenhaDto extends createZodDto(esquemaRedefinicaoSenha) {}
+class LoginSocialDto extends createZodDto(esquemaLoginSocial) {}
+class VinculoSocialDto extends createZodDto(esquemaVinculoSocial) {}
 
 /** Rotas de autenticação (docs/arquitetura/05). Só fazem HTTP; a regra está no Service. */
 @ApiTags('autenticacao')
@@ -40,6 +45,7 @@ export class AutenticacaoController {
   constructor(
     private readonly autenticacao: AutenticacaoService,
     private readonly recuperacao: RecuperacaoSenhaService,
+    private readonly social: LoginSocialService,
   ) {}
 
   @Publico()
@@ -55,6 +61,29 @@ export class AutenticacaoController {
   @ApiOkResponse({ type: SessaoDto, description: 'Sessão aberta neste aparelho.' })
   entrar(@Body() dados: LoginDto, @Ip() ip: string): Promise<Sessao> {
     return this.autenticacao.entrar(dados, ip);
+  }
+
+  @Publico()
+  @Post('social')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    type: SessaoDto,
+    description:
+      'Sessão aberta com Google ou Apple (conta criada se for o primeiro acesso). VINCULO_SOCIAL_PENDENTE: o e-mail já tem conta; CADASTRO_INCOMPLETO: faltam dados em detalhes.faltando.',
+  })
+  entrarComLoginSocial(@Body() dados: LoginSocialDto, @Ip() ip: string): Promise<Sessao> {
+    return this.social.entrar(dados, ip);
+  }
+
+  @Post('social/vincular')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiNoContentResponse({ description: 'Login do Google ou da Apple ligado à conta atual.' })
+  vincularLoginSocial(
+    @UsuarioAtual() usuario: UsuarioAutenticado,
+    @Body() dados: VinculoSocialDto,
+  ): Promise<void> {
+    return this.social.vincular(usuario, dados);
   }
 
   @Publico()
