@@ -129,3 +129,20 @@ Contexto: docs 04 (rede e onboarding), 05, 06, 09 e RN-024. Decisões:
 - **`GET /config-app`** é público, porque o app consulta antes do login. `flags` vazio por enquanto. `sugestoesChat` com quatro sugestões provisórias até a Mony (T-060).
 
 Reversível: sim.
+
+## 2026-10-10 — T-035 — Categorias
+Contexto: RN-065, RN-066, doc 05. Decisões:
+- **Escopo.** A T-035 pedia API e app. As telas precisam do esqueleto do app (T-010, aguardando merge), do design system (T-011) e da sessão no app (T-034). Por isso a T-035 entregou a API, e as telas de categorias e contas viraram a T-049. A T-036 segue o mesmo caminho.
+- **Nome único** por usuário e tipo, comparado sem diferença de maiúsculas e de espaços repetidos; acento conta ("Saúde" ≠ "Saude"). Vale só entre categorias ativas: excluir libera o nome. Sem índice único no banco por causa da exclusão lógica. A garantia vem de travar as categorias do usuário naquele tipo (`SELECT … FOR UPDATE`) antes de conferir, o que também impede duas exclusões simultâneas de apagarem as duas últimas de um tipo.
+- **Edição.** Muda nome, cor e ícone; o tipo não muda, porque os lançamentos de uma categoria são de um tipo só. Categorias padrão podem ser editadas e excluídas como as outras.
+- **Exclusão (RN-066).**
+  - `?mover_para=` segue o doc 05.
+  - Movem para a categoria escolhida, que precisa ser do mesmo tipo: transações (inclusive as excluídas, para nenhuma apontar para categoria excluída), recorrências, parcelamentos e preferências aprendidas.
+  - Orçamentos da categoria são apagados.
+  - Sem lançamentos, o destino é dispensável. Com lançamentos e sem destino, 400 com `detalhes.lancamentos`, para o app pedir a escolha.
+  - A última categoria de um tipo fica (`ULTIMA_CATEGORIA_DO_TIPO`).
+- **Lista** sem paginação (`{ itens }`), porque são poucas por usuário.
+- **Formato.** Cor em `#RRGGBB`; ícone como chave (`pet-shop`) que o app mapeia para o design system.
+- **Services com `Contexto`.** Os Services de domínio financeiro recebem o `Contexto` (doc 05), com `usuarioDoContexto` para exigir alguém logado.
+
+Reversível: sim.

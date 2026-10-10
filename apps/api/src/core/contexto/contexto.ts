@@ -3,6 +3,7 @@ import type { OrigemContexto } from '@mony/shared/enums';
 import type { FastifyRequest } from 'fastify';
 
 import type { UsuarioAutenticado } from '../auth/tokens-acesso';
+import { ErroDominio } from '../erros/erro-dominio';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -30,6 +31,12 @@ export const CABECALHO_IDEMPOTENCIA = 'idempotency-key';
 /** Contexto de rotinas e consumidores de fila, que agem sem usuário logado. */
 export function contextoDoSistema(): Contexto {
   return { usuarioId: null, origem: 'sistema' };
+}
+
+/** O usuário do contexto, para Services que só fazem sentido com alguém logado. */
+export function usuarioDoContexto(contexto: Contexto): string {
+  if (contexto.usuarioId === null) throw new ErroDominio('NAO_AUTENTICADO');
+  return contexto.usuarioId;
 }
 
 /** Monta o `Contexto` de uma requisição HTTP do app. */
