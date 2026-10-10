@@ -2,6 +2,7 @@
 export const FILAS = {
   eventosDominio: 'eventos-dominio',
   notificacoes: 'notificacoes',
+  emails: 'emails',
   monyMidia: 'mony-midia',
   openFinance: 'open-finance',
   webhooks: 'webhooks',

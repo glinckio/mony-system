@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   esquemaCadastro,
+  esquemaConferenciaCodigo,
   esquemaLogin,
+  esquemaRedefinicaoSenha,
   normalizarEmail,
   normalizarTelefoneBr,
   VERSOES_DOCUMENTOS,
@@ -82,5 +84,28 @@ describe('esquemaLogin', () => {
         dispositivo: { identificador: 'aparelho-0001', plataforma: 'android' },
       }).success,
     ).toBe(true);
+  });
+});
+
+describe('recuperação de senha', () => {
+  it('RN-003 o código tem exatamente 6 dígitos', () => {
+    const base = { email: 'ana@exemplo.com' };
+    expect(esquemaConferenciaCodigo.safeParse({ ...base, codigo: '012345' }).success).toBe(true);
+    for (const codigo of ['12345', '1234567', '12345a', ' 123456', '']) {
+      expect(esquemaConferenciaCodigo.safeParse({ ...base, codigo }).success).toBe(false);
+    }
+  });
+
+  it('RN-001 a senha nova segue as regras do cadastro', () => {
+    const redefinicao = {
+      email: 'ana@exemplo.com',
+      codigo: '123456',
+      senha: 'nova-senha',
+      dispositivo: { identificador: 'aparelho-0001', plataforma: 'ios' },
+    };
+    expect(esquemaRedefinicaoSenha.safeParse(redefinicao).success).toBe(true);
+    expect(esquemaRedefinicaoSenha.safeParse({ ...redefinicao, senha: '1234567' }).success).toBe(
+      false,
+    );
   });
 });

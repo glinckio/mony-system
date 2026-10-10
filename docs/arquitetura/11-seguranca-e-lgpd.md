@@ -11,7 +11,8 @@ O app guarda dados financeiros e acessa contas bancárias. Segurança e LGPD sã
 | Refresh por aparelho, revogável | Token aleatório de 256 bits; banco guarda só o hash SHA-256 (`sessoes.refresh_token_hash`). Vale 60 dias sem uso. Rotação a cada uso; reuso detectado revoga todas as sessões do aparelho (a família, RN-004). Uma sessão por aparelho |
 | Tokens no aparelho | `expo-secure-store` (Keychain com `WHEN_UNLOCKED_THIS_DEVICE_ONLY` / Android Keystore) |
 | Biometria | Só destrava o refresh local (RN-005) |
-| Limite de tentativas | Contadores por e-mail (resumo SHA-256) e por IP no Redis, janela fixa de 15 minutos (`core/limites`, RN-008). Login com sucesso zera o contador do e-mail. Limite geral por IP (`@nestjs/throttler` ou WAF) fica para o hardening (T-144) |
+| Recuperação de senha | Código de 6 dígitos com gerador criptográfico, guardado com o mesmo Argon2id das senhas (só um milhão de valores; o hash lento atrasa quem ler o banco). 15 minutos, uso único, 5 tentativas erradas por código, e o pedido de outro código invalida o anterior (RN-003). A resposta do pedido é igual exista a conta ou não. A senha nova encerra as sessões de todos os aparelhos. O e-mail passa pela fila, que guarda o código só até o envio |
+| Limite de tentativas | Contadores por e-mail (resumo SHA-256) e por IP no Redis, janela fixa de 15 minutos (`core/limites`, RN-008), separados para login, pedido de código e conferência de código. Login com sucesso zera o contador do e-mail; código certo zera o da conferência; senha redefinida zera o do login. Limite geral por IP (`@nestjs/throttler` ou WAF) fica para o hardening (T-144) |
 | Posse do recurso | Repositories sempre filtram `usuario_id`; testes de acesso cruzado por rota |
 | Login social | Validar `id_token` do Google e da Apple no servidor (assinatura, `aud`, `iss`, `nonce`) |
 | Admin | Login separado, 2FA TOTP obrigatório, sessão curta, IP allowlist opcional |

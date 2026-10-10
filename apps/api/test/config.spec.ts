@@ -21,6 +21,7 @@ describe('variáveis de ambiente', () => {
       PORT: 3000,
       LOG_LEVEL: 'info',
       JWT_ID_CHAVE: 'mony-1',
+      EMAIL_PROVEDOR: 'fake',
       ...banco,
     });
     expect(validarAmbiente({ ...banco, ...jwt, PORT: '8080', NODE_ENV: 'production' }).PORT).toBe(
@@ -41,6 +42,38 @@ describe('variáveis de ambiente', () => {
     expect(validarAmbiente({ ...banco, ...jwt }).JWT_CHAVE_PRIVADA).toBe(
       '-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----',
     );
+  });
+
+  it('com o Brevo exige a chave da API e o remetente; vazio no .env vale como ausente', () => {
+    const brevo = { ...banco, EMAIL_PROVEDOR: 'brevo' };
+    expect(() => validarAmbiente(brevo)).toThrow(/BREVO_CHAVE_API[\s\S]*EMAIL_REMETENTE/);
+    expect(() =>
+      validarAmbiente({ ...brevo, BREVO_CHAVE_API: 'xkeysib-1', EMAIL_REMETENTE: '' }),
+    ).toThrow(/EMAIL_REMETENTE/);
+    expect(() =>
+      validarAmbiente({ ...brevo, BREVO_CHAVE_API: 'xkeysib-1', EMAIL_REMETENTE: 'nao-e-email' }),
+    ).toThrow(/EMAIL_REMETENTE/);
+    expect(
+      validarAmbiente({
+        ...brevo,
+        BREVO_CHAVE_API: 'xkeysib-1',
+        EMAIL_REMETENTE: 'nao-responda@exemplo.com',
+      }),
+    ).toMatchObject({ EMAIL_PROVEDOR: 'brevo', EMAIL_REMETENTE: 'nao-responda@exemplo.com' });
+    expect(validarAmbiente({ ...banco, BREVO_CHAVE_API: '' }).BREVO_CHAVE_API).toBeUndefined();
+  });
+
+  it('com SMTP exige a URL do servidor (o Mailpit, em desenvolvimento)', () => {
+    const smtp = { ...banco, EMAIL_PROVEDOR: 'smtp' };
+    expect(() => validarAmbiente(smtp)).toThrow(/SMTP_URL/);
+    expect(() => validarAmbiente({ ...smtp, SMTP_URL: 'localhost:1025' })).toThrow(/SMTP_URL/);
+    expect(
+      validarAmbiente({
+        ...smtp,
+        SMTP_URL: 'smtp://localhost:1025',
+        EMAIL_REMETENTE: 'nao-responda@mony.local',
+      }),
+    ).toMatchObject({ SMTP_URL: 'smtp://localhost:1025' });
   });
 
   it('exige as URLs do banco e do Redis', () => {

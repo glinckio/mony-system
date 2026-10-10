@@ -258,6 +258,7 @@ describe('filas e eventos de domínio', () => {
     expect(Object.values(FILAS)).toEqual([
       'eventos-dominio',
       'notificacoes',
+      'emails',
       'mony-midia',
       'open-finance',
       'webhooks',

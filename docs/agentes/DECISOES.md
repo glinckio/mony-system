@@ -96,3 +96,19 @@ Contexto: RN-001 a RN-008 e docs 05 e 11. Decisões:
 - **Infra.** Quando a T-013 entrar, o `ecs.tf` precisa ler `JWT_CHAVE_PRIVADA` do segredo `mony/<ambiente>/app`.
 
 Reversível: sim.
+
+## 2026-10-09 — T-031 — Recuperação de senha e e-mails
+Contexto: RN-003, RN-008, docs 05, 10 e 11. Decisões:
+- **Rotas.** `POST /v1/auth/senha/codigo` (202 sempre), `senha/conferir` (204, confere sem gastar) e `senha/redefinir` (200 + sessão). O doc 05 previa só `codigo` e `redefinir`. O `conferir` entrou para o app validar o código antes de pedir a senha nova (fluxo e-mail → código → senha do doc 04).
+- **Código.** 6 dígitos com `randomInt`, guardado com o mesmo Argon2id das senhas: são só um milhão de valores, e um resumo rápido seria quebrado na hora por quem lesse o banco. 15 minutos, uso único, 5 tentativas erradas por código. Pedir outro faz os anteriores vencerem. Só o último código vale.
+- **Respostas.** O pedido responde igual exista a conta ou não, e calcula o hash nos dois casos, para o tempo também não revelar. Contas bloqueadas ou excluídas não recebem código. `CODIGO_INVALIDO` para código errado e para e-mail sem conta. `CODIGO_EXPIRADO` para código vencido, usado, substituído ou esgotado.
+- **Senha nova.** Encerra as sessões de todos os aparelhos e abre uma neste, numa sequência: primeiro uma transação (gasta o código, grava a senha, revoga as sessões), depois a sessão nova. Também zera o contador de login do e-mail, porque quem esquece a senha costuma ter esgotado as tentativas.
+- **RN-008.** Contadores separados para pedir código (`recuperacao:*`) e para conferir (`codigo:*`), 5 por e-mail e 20 por IP em 15 minutos. Conferência certa zera o contador do e-mail. Na prática o limite por e-mail esgota junto com as 5 tentativas do código; as duas regras ficam.
+- **E-mails.**
+  - `EmailProvider` com três implementações: `brevo` (API HTTP), `smtp` e `fake`. O `smtp` entrou para o Mailpit do `docker compose`, que já esperava os e-mails da API em desenvolvimento. Usa `nodemailer`.
+  - Os modelos ficam no Git, como funções que montam assunto, HTML e texto. Os templates do painel do Brevo não são usados, para o texto passar por revisão junto com o código.
+  - A API só põe o e-mail na fila nova `emails`; o worker envia, com 5 tentativas. Erro 4xx do Brevo (ou 5xx do SMTP) não repete.
+  - O job leva o código em texto e sai do Redis assim que o envio dá certo. Se falhar, fica um dia para investigação.
+- **Produção sem Brevo.** A API sobe com `EMAIL_PROVEDOR=fake` e avisa no log, sem o conteúdo. Por isso o merge não depende da chave do Brevo, que ficou em `BLOQUEIOS.md`.
+
+Reversível: sim.
