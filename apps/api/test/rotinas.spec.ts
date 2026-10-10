@@ -8,6 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Clock, ClockFixo } from '../src/core/clock/clock';
 import { FILAS } from '../src/core/filas/filas';
 import { ProcessadorRotinas, ROTINA, Rotina } from '../src/core/rotinas/rotinas';
+import { OrcamentosService } from '../src/modulos/orcamentos/orcamentos.service';
 import { RecorrenciasService } from '../src/modulos/recorrencias/recorrencias.service';
 
 const AGORA = new Date('2026-10-10T03:30:00Z');
@@ -56,6 +57,14 @@ describe('rotinas agendadas (doc 09)', () => {
     expect(modulo.get(RotinaDeExemplo).chamadas).toEqual([AGORA]);
     await expect(processador.process({ name: 'outra' } as Job)).resolves.toBeNull();
     await modulo.close();
+  });
+
+  it('a repetição de orçamentos roda no dia 1, às 00:15 (RN-060)', () => {
+    const metodo = Reflect.get(OrcamentosService.prototype, 'repetir') as object;
+    expect(Reflect.getMetadata(ROTINA, metodo)).toEqual({
+      nome: 'repetir-orcamentos',
+      padrao: '15 0 1 * *',
+    });
   });
 
   it('a geração de recorrências roda de hora em hora', () => {

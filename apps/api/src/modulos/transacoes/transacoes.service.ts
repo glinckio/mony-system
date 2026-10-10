@@ -26,6 +26,7 @@ import { BarramentoEventos } from '../../core/eventos/barramento-eventos';
 import { idDeJob } from '../../core/filas/filas';
 import { ArquivosService } from '../arquivos/arquivos.service';
 import { type CartaoTravado, CartoesService } from '../cartoes/cartoes.service';
+import { OrcamentosService } from '../orcamentos/orcamentos.service';
 import { RecorrenciasService } from '../recorrencias/recorrencias.service';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import {
@@ -57,6 +58,7 @@ export class TransacoesService {
     private readonly repositorio: TransacoesRepository,
     private readonly arquivos: ArquivosService,
     private readonly cartoes: CartoesService,
+    private readonly orcamentos: OrcamentosService,
     private readonly usuarios: UsuariosService,
     private readonly recorrencias: RecorrenciasService,
     private readonly eventos: BarramentoEventos,
@@ -154,10 +156,7 @@ export class TransacoesService {
     await this.eventos.publicar(EVENTO_TRANSACAO_REGISTRADA, { transacaoId: id }, contexto, {
       idUnico: idDeJob('transacao-registrada', id),
     });
-    return {
-      transacao: paraResposta(await this.exigir(usuarioId, id)),
-      impacto: await this.impacto(usuarioId, cartaoId),
-    };
+    return this.comImpacto(usuarioId, await this.exigir(usuarioId, id));
   }
 
   /**
@@ -265,10 +264,7 @@ export class TransacoesService {
         await this.cartoes.recalcular(tx, tocadas, hoje);
       }
     });
-    return {
-      transacao: paraResposta(await this.exigir(usuarioId, id)),
-      impacto: await this.impacto(usuarioId, cartaoId),
-    };
+    return this.comImpacto(usuarioId, await this.exigir(usuarioId, id));
   }
 
   /**
@@ -383,10 +379,28 @@ export class TransacoesService {
     return this.cartoes.faturaParaCompra(tx, usuarioId, cartao, data, hoje);
   }
 
-  /** Efeito no cartão da compra (doc 05); o do orçamento entra na T-043. */
-  private async impacto(usuarioId: string, cartaoId: string | null): Promise<Impacto> {
-    const cartao = cartaoId === null ? null : await this.cartoes.impacto(usuarioId, cartaoId);
-    return cartao === null ? {} : { cartao };
+  /**
+   * O lançamento e o efeito dele no cartão e no orçamento da categoria no mês da data (doc 05):
+   * "Nubank: 62% do limite usado", "Mercado: 81% do orçamento".
+   */
+  private async comImpacto(
+    usuarioId: string,
+    transacao: TransacaoDoUsuario,
+  ): Promise<RespostaTransacao> {
+    const impacto: Impacto = {};
+    if (transacao.cartaoId !== null) {
+      const cartao = await this.cartoes.impacto(usuarioId, transacao.cartaoId);
+      if (cartao !== null) impacto.cartao = cartao;
+    }
+    if (transacao.tipo === 'despesa' && transacao.natureza === 'normal') {
+      const orcamento = await this.orcamentos.impacto(
+        usuarioId,
+        transacao.categoriaId,
+        diaDoBanco(transacao.data),
+      );
+      if (orcamento !== null) impacto.orcamento = orcamento;
+    }
+    return { transacao: paraResposta(transacao), impacto };
   }
 
   private async hoje(usuarioId: string): Promise<DataCalendario> {

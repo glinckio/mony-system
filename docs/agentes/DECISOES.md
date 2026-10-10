@@ -293,3 +293,24 @@ Contexto: RN-050 a RN-055, docs 05, 06 e 07. Decisões:
 - **Edição** só de nome, categoria e observação. Nome e categoria vão para as despesas. Valores e datas mudam cancelando e lançando de novo.
 
 Reversível: sim.
+
+## 2026-10-10 — T-043 — Orçamentos e metas
+Contexto: RN-060 a RN-063, docs 05, 06 e 09. Decisões:
+- **Escopo.** Só a API; as telas ficam na T-052 (mesmo motivo da T-049).
+- **Gasto calculado na leitura**, sem coluna de gasto. É a soma das despesas `normal` da categoria com data no mês, pagas e pendentes, sem as excluídas (RN-061). Compra no cartão conta na data da compra, como no Início (RN-020), e cada parcela no mês da sua despesa (T-042).
+- **Projeção (RN-061).** No mês corrente, gasto até hoje ÷ dias decorridos × dias do mês, mais o que já está lançado para depois de hoje pelo valor certo (recorrências, parcelas, compras futuras, como o doc 07 pede para as recorrências). Mês passado ou futuro: o que está lançado. A regra é pura (`projecaoDoMes`), para o app.
+- **`PUT /orcamentos` é criar ou mudar** a categoria na competência (`ON CONFLICT`), sem competência = mês de hoje do usuário. Orçamento novo repete todo mês por padrão, porque é o uso comum; `repetirMensal: false` desliga. `DELETE /orcamentos/:id` entrou, porque o doc 05 não tinha como tirar um orçamento.
+- **Rotina `repetir-orcamentos`** no dia 1, às 00:15 de São Paulo, como no doc 09, e só nesse dia.
+  - Ela copia do mês anterior os que repetem, de categorias que ainda existem, em lotes, sem mexer no que já existe no mês novo.
+  - Se rodasse todo dia, recriaria um orçamento que o usuário tirou do mês. Tirar o orçamento do mês também para a repetição.
+  - O mês é o de São Paulo: em outros fusos a cópia pode chegar algumas horas antes ou depois da virada do mês local, o que não muda o gasto.
+- **`impacto.orcamento`** em `POST` e `PATCH /transacoes` de despesa `normal` cuja categoria tem orçamento no mês da data. O alerta de 80% e 100% (RN-102) fica com o motor de alertas (T-080).
+- **Metas.**
+  - O valor atual é a soma dos aportes, refeita com a meta travada: dez aportes ao mesmo tempo somam certo (teste).
+  - O aporte é positivo e não tem data futura.
+  - `DELETE /metas/:id/aportes/:aporteId` desfaz aporte lançado por engano.
+  - `sugerirConclusao` vem só no aporte que fez a meta chegar ao alvo, se ela não estiver concluída; a Mony usa para perguntar (RN-063).
+  - A meta pode ser concluída ou reaberta a qualquer momento.
+  - Aporte não gera transação nem mexe em conta: o PDF não pede, e mexer no saldo pediria escolher conta de origem e destino.
+
+Reversível: sim.

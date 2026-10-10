@@ -50,9 +50,17 @@
       "types": "./dist/erros.d.ts",
       "default": "./dist/erros.js"
     },
+    "./metas": {
+      "types": "./dist/metas.d.ts",
+      "default": "./dist/metas.js"
+    },
     "./nfce": {
       "types": "./dist/nfce.d.ts",
       "default": "./dist/nfce.js"
+    },
+    "./orcamentos": {
+      "types": "./dist/orcamentos.d.ts",
+      "default": "./dist/orcamentos.js"
     },
     "./parcelamentos": {
       "types": "./dist/parcelamentos.d.ts",

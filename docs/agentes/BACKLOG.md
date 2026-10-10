@@ -107,7 +107,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-040 · RN-036, RN-037 (padrão do doc; decisão pendente do cliente, ver 15)
 - [x] **T-042** Parcelamentos e dívidas: geração de parcelas, Tabela Price, simulação, pagar/desfazer (PR #25)
   - dep: T-040 · RN-050 a RN-055
-- [ ] **T-043** Orçamentos e metas (API + app) e rotina de repetir orçamentos
+- [x] **T-043** Orçamentos e metas (API + app) e rotina de repetir orçamentos (PR #26; telas na T-052)
   - dep: T-037 · RN-060 a RN-063
 - [ ] **T-044** Dashboard (`GET /dashboard` em uma chamada) e tela Início
   - dep: T-041, T-042, T-043 · RN-020 a RN-024
@@ -128,6 +128,9 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Separada da T-040 pelo mesmo motivo da T-049.
 - [ ] **T-051** Recorrência no cartão de crédito (assinaturas): ocorrências entram nas faturas e editar ou excluir a recorrência refaz as faturas
   - dep: T-040 · RN-043, RN-031
+- [ ] **T-052** Telas de orçamentos e metas no app (barras por faixa, projeção, definir orçamento, metas com aportes e sugestão de concluir)
+  - dep: T-043, T-011, T-034 · docs: 04 · RN-060 a RN-063
+  - Separada da T-043 pelo mesmo motivo da T-049.
 
 ## Fase 2 — Mony
 

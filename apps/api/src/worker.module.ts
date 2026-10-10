@@ -8,6 +8,7 @@ import { NucleoModule } from './core/nucleo.module';
 import { ProcessadorRotinas } from './core/rotinas/rotinas';
 import { EmailModule } from './integracoes/email/email.module';
 import { ProcessadorEmails } from './integracoes/email/processador-emails';
+import { OrcamentosModule } from './modulos/orcamentos/orcamentos.module';
 import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
 
 /**
@@ -23,6 +24,7 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     EmailModule,
     DiscoveryModule,
     RecorrenciasModule,
+    OrcamentosModule,
   ],
   providers: [ProcessadorEventos, ProcessadorEmails, ProcessadorRotinas],
 })
