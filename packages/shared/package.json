@@ -38,6 +38,10 @@
       "types": "./dist/contas.d.ts",
       "default": "./dist/contas.js"
     },
+    "./dashboard": {
+      "types": "./dist/dashboard.d.ts",
+      "default": "./dist/dashboard.js"
+    },
     "./datas": {
       "types": "./dist/datas.d.ts",
       "default": "./dist/datas.js"

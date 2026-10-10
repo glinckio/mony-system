@@ -17,6 +17,7 @@ import { CartoesModule } from './modulos/cartoes/cartoes.module';
 import { CategoriasModule } from './modulos/categorias/categorias.module';
 import { ConfigAppModule } from './modulos/config-app/config-app';
 import { ContasModule } from './modulos/contas/contas.module';
+import { DashboardModule } from './modulos/dashboard/dashboard.module';
 import { MetasModule } from './modulos/metas/metas.module';
 import { OrcamentosModule } from './modulos/orcamentos/orcamentos.module';
 import { ParcelamentosModule } from './modulos/parcelamentos/parcelamentos.module';
@@ -46,6 +47,7 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     ParcelamentosModule,
     OrcamentosModule,
     MetasModule,
+    DashboardModule,
   ],
   controllers: [SaudeController],
   providers: [
