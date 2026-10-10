@@ -179,6 +179,15 @@ Implementado na T-035 (RN-065, RN-066).
 - Criar, editar e excluir travam as categorias do usuário naquele tipo (`SELECT … FOR UPDATE`), para dois pedidos ao mesmo tempo não criarem nomes repetidos nem apagarem as duas últimas.
 - O `CategoriasService` recebe o `Contexto`; a Mony vai usá-lo na T-062.
 
+## Contas
+
+Implementado na T-036 (rotas propostas; a tabela é do PDF).
+
+- `GET /contas` → `{ itens }` com `saldoInicialCentavos` e `saldoAtualCentavos`. O saldo atual é o inicial mais as receitas pagas, menos as despesas pagas lançadas na conta, sem as excluídas. Pagamento de fatura e transferência também contam: saem da conta, só não entram nos totais de despesa.
+- `POST /contas` com `nome`, `tipo` (`corrente`, `poupanca`, `carteira`) e `saldoInicialCentavos` (padrão 0; pode ser negativo) → 201. `PATCH /contas/:id` muda os mesmos campos.
+- `DELETE /contas/:id` apaga a conta; transações, recorrências e cartões que a usavam ficam sem conta.
+- Conta do Open Finance (`origem = open_finance`) só muda o nome. Tipo e saldo vêm do banco, e ela sai desconectando o banco (409 `CONFLITO` nos outros casos).
+
 ## Guardas e decoradores
 
 | Decorador | Função |

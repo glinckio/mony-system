@@ -560,6 +560,137 @@
           "categorias"
         ]
       }
+    },
+    "/v1/contas": {
+      "get": {
+        "operationId": "listarContas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Contas do usuário, com o saldo atual.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaContasDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "contas"
+        ]
+      },
+      "post": {
+        "operationId": "criarContas",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovaContaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Conta criada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "contas"
+        ]
+      }
+    },
+    "/v1/contas/{id}": {
+      "patch": {
+        "operationId": "atualizarContas",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizacaoContaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Conta depois da mudança.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "contas"
+        ]
+      },
+      "delete": {
+        "operationId": "excluirContas",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Conta excluída; os lançamentos ficam sem conta."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "contas"
+        ]
+      }
     }
   },
   "info": {
@@ -1278,6 +1409,160 @@
             "type": "string",
             "maxLength": 40,
             "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          }
+        }
+      },
+      "ListaContasDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "nome": {
+                  "type": "string"
+                },
+                "tipo": {
+                  "type": "string",
+                  "enum": [
+                    "corrente",
+                    "poupanca",
+                    "carteira"
+                  ]
+                },
+                "origem": {
+                  "type": "string",
+                  "enum": [
+                    "manual",
+                    "open_finance"
+                  ]
+                },
+                "saldoInicialCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "saldoAtualCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "nome",
+                "tipo",
+                "origem",
+                "saldoInicialCentavos",
+                "saldoAtualCentavos"
+              ]
+            }
+          }
+        },
+        "required": [
+          "itens"
+        ]
+      },
+      "NovaContaDto": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "corrente",
+              "poupanca",
+              "carteira"
+            ]
+          },
+          "saldoInicialCentavos": {
+            "default": 0,
+            "type": "integer",
+            "minimum": -100000000000,
+            "maximum": 100000000000
+          }
+        },
+        "required": [
+          "nome",
+          "tipo"
+        ]
+      },
+      "ContaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "corrente",
+              "poupanca",
+              "carteira"
+            ]
+          },
+          "origem": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "open_finance"
+            ]
+          },
+          "saldoInicialCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "saldoAtualCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "tipo",
+          "origem",
+          "saldoInicialCentavos",
+          "saldoAtualCentavos"
+        ]
+      },
+      "AtualizacaoContaDto": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "corrente",
+              "poupanca",
+              "carteira"
+            ]
+          },
+          "saldoInicialCentavos": {
+            "type": "integer",
+            "minimum": -100000000000,
+            "maximum": 100000000000
           }
         }
       }

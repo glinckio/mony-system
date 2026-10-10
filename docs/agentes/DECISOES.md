@@ -162,3 +162,13 @@ Contexto: RN-031 a RN-035, RN-038 e doc 05 ("cálculos são funções puras em `
   - faturas seguidas não pulam nem repetem competência.
 
 Reversível: sim.
+
+## 2026-10-10 — T-036 — Contas
+Contexto: tabela `contas` do doc 06; rotas propostas no doc 05; sem regra de negócio própria. Decisões:
+- **Escopo.** Só a API; as telas ficam na T-049, como na T-035.
+- **Saldo atual calculado na leitura:** saldo inicial + receitas pagas − despesas pagas da conta, sem as excluídas. Pendentes ficam fora, como no saldo do Início (RN-020). Pagamento de fatura e transferência entram, porque o dinheiro sai da conta. Não há coluna de saldo para manter em dia. A soma usa o índice `transacoes(conta_id)`, que já existe.
+- **Excluir apaga a conta** (a tabela não tem exclusão lógica): os lançamentos continuam, sem conta (`SET NULL`, que o schema já define).
+- **Open Finance.** Conta conectada só muda o nome e não sai por esta rota, mesma ideia da RN-045 para transações; quem tira é a desconexão do banco (T-120).
+- **Sem nome único**, porque duas contas no mesmo banco podem ter o mesmo nome.
+
+Reversível: sim.

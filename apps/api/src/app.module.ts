@@ -13,6 +13,7 @@ import { VersaoAppModule } from './core/versao-app/versao-app';
 import { AutenticacaoModule } from './modulos/autenticacao/autenticacao.module';
 import { CategoriasModule } from './modulos/categorias/categorias.module';
 import { ConfigAppModule } from './modulos/config-app/config-app';
+import { ContasModule } from './modulos/contas/contas.module';
 import { UsuariosModule } from './modulos/usuarios/usuarios.module';
 
 /** Módulo raiz da API HTTP. Os módulos de domínio (`modulos/*`) entram aqui. */
@@ -28,6 +29,7 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     UsuariosModule,
     ConfigAppModule,
     CategoriasModule,
+    ContasModule,
   ],
   controllers: [SaudeController],
   providers: [
