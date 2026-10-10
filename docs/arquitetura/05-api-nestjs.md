@@ -274,6 +274,36 @@ Implementado na T-040 (RN-030 a RN-035, RN-038, RN-046) e na T-041 (pagamento, R
   - Grava a transação `pagamento_fatura`, paga, ligada ao cartão e à fatura. Ela sai do saldo da conta, mas não entra nos totais de despesa. Depois publica `fatura.paga`.
   - Pagamento parcial deixa o restante na mesma fatura, sem juros.
   - Excluir o pagamento (`DELETE /transacoes/:id`) desfaz: refaz o pago da fatura e devolve as compras a pendentes.
+
+## Parcelamentos e dívidas
+
+Implementado na T-042 (RN-050 a RN-055).
+
+| Rota | O que faz |
+|---|---|
+| `GET /parcelamentos` | Com status e progresso; filtros `tipo` e `status` (o do dia) |
+| `GET /parcelamentos/:id` | O parcelamento e as parcelas |
+| `POST /parcelamentos` | `Idempotency-Key`; grava parcelas e despesas → 201 `{ parcelamento, impacto }` |
+| `POST /parcelamentos/simular` | A tabela sem gravar (RN-052); com `cartaoId`, vencimentos das faturas |
+| `PATCH /parcelamentos/:id` | Nome, categoria e observação; nome e categoria vão para as despesas das parcelas |
+| `DELETE /parcelamentos/:id` | Cancela (RN-054) |
+| `POST /parcelas/:id/pagar` | Parcela de dívida paga, com a despesa dela (RN-053); `contaId` opcional |
+| `POST /parcelas/:id/desfazer` | Volta a parcela e a despesa para pendente |
+
+- **Valores:** `valoresDasParcelas` em `@mony/shared/parcelamentos`.
+  - Sem juros, divide e põe os centavos que sobram na primeira parcela.
+  - Com `taxaJurosMensal` (% ao mês, até 4 casas), usa a Tabela Price em decimal: `valorCentavos` é o financiado, e o total é a soma das parcelas.
+- **Despesas:** cada parcela tem uma despesa pendente, "Nome (k/n)", ligada nos dois sentidos (`parcelas.transacao_id` e `transacoes.parcela_id`). Ela só muda descrição, categoria, observação e anexos por `/transacoes`.
+- **Dívida:** a parcela `k` vence `k − 1` meses depois da primeira, com o ajuste de fim de mês. Conta e forma de pagamento são opcionais; a forma padrão é boleto.
+- **Compra no cartão:**
+  - A parcela `k` cai na fatura da competência da primeira + (k − 1) meses (a primeira é a da compra, RN-031). As faturas que faltam são criadas.
+  - O vencimento da parcela é o da fatura, e a despesa tem a data da compra + (k − 1) meses.
+  - A parcela é paga pelo pagamento da fatura: quitar a fatura marca a parcela e a despesa como pagas, e desfazer o pagamento volta as duas. Pagar parcela de cartão aqui → 409 `PARCELA_PAGA_PELA_FATURA`.
+  - Fatura fechada e quitada recusa a parcela → 409 `TRANSACAO_EM_FATURA_PAGA`, e nada é gravado.
+- **Status (RN-054)** calculado no dia de hoje do usuário: parcela `atrasado` quando venceu sem pagamento; parcelamento `cancelada`, `quitada` (todas pagas), `atrasada` ou `ativa`.
+- **Cancelar (RN-054):**
+  - Tira as parcelas não pagas que ainda são futuras: na dívida, as que vencem depois de hoje; no cartão, as de faturas que ainda não fecharam. Essas parcelas são apagadas e as despesas delas, excluídas logicamente.
+  - As vencidas e as de fatura fechada continuam devidas e podem ser pagas.
 - **Trava:** todo fluxo que mexe em fatura trava o cartão (`FOR UPDATE`) e depois as faturas, sempre em ordem de id. Assim, compras ao mesmo tempo não se perdem e a T-041 segue a mesma ordem.
 - **Status (RN-033):** a resposta calcula o status no "hoje" do usuário com `statusDaFatura`; a coluna é atualizada a cada mudança e pela rotina diária (T-047).
 - **Fatura atual:** a que recebe uma compra feita hoje, com `id: null` enquanto não tem lançamento.

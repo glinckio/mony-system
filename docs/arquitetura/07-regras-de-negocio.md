@@ -82,6 +82,8 @@ Legenda: **(PDF)** está na especificação · **(decisão técnica)** definido 
 - **RN-054 (PDF)** Status do parcelamento: `ativa`, `quitada` (todas pagas), `atrasada` (alguma parcela vencida e não paga), `cancelada` (pelo usuário; parcelas futuras pendentes são excluídas logicamente).
 - **RN-055 (PDF)** Compras parceladas no cartão aparecem em Parcelamentos e nas faturas do cartão. Progresso de quitação em valor e em número de parcelas.
 
+> Implementação (T-042): os valores (divisão e Tabela Price) e os status são funções puras em `@mony/shared/parcelamentos`. Na Price, o saldo é acompanhado em decimal, sem arredondar, e a última parcela fecha a conta, então a diferença nela é de no máximo um centavo por parcela (doc 05, seção Parcelamentos e dívidas).
+
 ## Orçamentos e metas
 
 - **RN-060 (PDF)** Orçamento mensal por categoria de despesa, com opção de repetir todo mês. A rotina do dia 1 copia os orçamentos com `repetir_mensal` para a nova competência.

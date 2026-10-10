@@ -4,6 +4,7 @@ export * from './autenticacao/autenticacao';
 export * from './cartoes/cartoes';
 export * from './categorias/categorias';
 export * from './contas/contas';
+export * from './parcelamentos/parcelamentos';
 export * from './recorrencias/recorrencias';
 export * from './saude/saude';
 export * from './transacoes/transacoes';

@@ -41,7 +41,10 @@ const CAMPOS_FATURA = {
 type LinhaFatura = Prisma.FaturaGetPayload<{ select: typeof CAMPOS_FATURA }>;
 
 /** O que os fluxos de compra no cartão usam dentro da transação de banco. */
-export type TransacaoCartoes = Pick<ClientePrisma, 'cartao' | 'fatura' | 'transacao' | '$queryRaw'>;
+export type TransacaoCartoes = Pick<
+  ClientePrisma,
+  'cartao' | 'fatura' | 'transacao' | 'parcela' | '$queryRaw'
+>;
 
 function dia(data: Date): string {
   return data.toISOString().slice(0, 10);
@@ -264,11 +267,15 @@ export class CartoesRepository {
     await tx.fatura.update({ where: { id: faturaId }, data: dados });
   }
 
-  /** RN-037: as compras da fatura ficam pagas quando ela está quitada, e pendentes se não. */
+  /**
+   * RN-037 e RN-053: as compras da fatura, e as parcelas de cartão que caem nela, ficam pagas
+   * quando ela está quitada, e pendentes se não.
+   */
   async marcarCompras(
     tx: TransacaoCartoes,
     faturaId: string,
     status: 'pago' | 'pendente',
+    agora: Date,
   ): Promise<void> {
     await tx.transacao.updateMany({
       where: {
@@ -280,6 +287,11 @@ export class CartoesRepository {
       },
       data: { status },
     });
+    await tx.parcela.updateMany(
+      status === 'pago'
+        ? { where: { faturaId, status: { not: 'pago' } }, data: { status, pagoEm: agora } }
+        : { where: { faturaId, status: 'pago' }, data: { status, pagoEm: null } },
+    );
   }
 
   /** Grava a transação do pagamento da fatura (natureza `pagamento_fatura`, RN-036). */

@@ -17,6 +17,7 @@ import { CartoesModule } from './modulos/cartoes/cartoes.module';
 import { CategoriasModule } from './modulos/categorias/categorias.module';
 import { ConfigAppModule } from './modulos/config-app/config-app';
 import { ContasModule } from './modulos/contas/contas.module';
+import { ParcelamentosModule } from './modulos/parcelamentos/parcelamentos.module';
 import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
 import { TransacoesModule } from './modulos/transacoes/transacoes.module';
 import { UsuariosModule } from './modulos/usuarios/usuarios.module';
@@ -40,6 +41,7 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     ArquivosModule,
     TransacoesModule,
     RecorrenciasModule,
+    ParcelamentosModule,
   ],
   controllers: [SaudeController],
   providers: [

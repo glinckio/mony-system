@@ -105,7 +105,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-037, T-039 · RN-030 a RN-035, RN-038
 - [x] **T-041** Pagar fatura (total/parcial) com natureza `pagamento_fatura` (PR #24)
   - dep: T-040 · RN-036, RN-037 (padrão do doc; decisão pendente do cliente, ver 15)
-- [ ] **T-042** Parcelamentos e dívidas: geração de parcelas, Tabela Price, simulação, pagar/desfazer
+- [x] **T-042** Parcelamentos e dívidas: geração de parcelas, Tabela Price, simulação, pagar/desfazer (PR #25)
   - dep: T-040 · RN-050 a RN-055
 - [ ] **T-043** Orçamentos e metas (API + app) e rotina de repetir orçamentos
   - dep: T-037 · RN-060 a RN-063

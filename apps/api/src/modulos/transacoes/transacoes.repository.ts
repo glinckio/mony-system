@@ -41,7 +41,7 @@ export interface Posicao {
 /** A transação de banco das gravações; inclui cartão e fatura para a compra no cartão. */
 export type TransacaoBancoTransacoes = Pick<
   ClientePrisma,
-  'transacao' | 'anexo' | 'cartao' | 'fatura' | '$queryRaw'
+  'transacao' | 'anexo' | 'cartao' | 'fatura' | 'parcela' | '$queryRaw'
 >;
 
 type Transacao = TransacaoBancoTransacoes;

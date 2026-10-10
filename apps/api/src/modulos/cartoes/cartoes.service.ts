@@ -7,11 +7,13 @@ import {
   type DetalheFatura,
   type DiasDoCartao,
   FAIXAS_ALERTA_PADRAO,
+  faturaDaCompetencia,
   faturaDaCompra,
   limiteDoCartao,
   type ListaCartoes,
   type ListaFaturas,
   type RespostaPagamentoFatura,
+  somarCompetencias,
   statusDaFatura,
 } from '@mony/shared/cartoes';
 import type { Competencia } from '@mony/shared/datas';
@@ -338,6 +340,70 @@ export class CartoesService {
     return fatura.id;
   }
 
+  /**
+   * RN-051: as faturas das `quantidade` parcelas de uma compra feita em `data`. A primeira é a da
+   * compra (RN-031) e a parcela `k` cai na competência da primeira + (k − 1) meses, criando as
+   * faturas que faltam. Fatura fechada e quitada recusa (RN-046). O cartão precisa estar travado.
+   */
+  async faturasParaParcelas(
+    tx: TransacaoCartoes,
+    usuarioId: string,
+    cartao: CartaoTravado,
+    data: DataCalendario,
+    quantidade: number,
+    hoje: DataCalendario,
+  ): Promise<FaturaGravada[]> {
+    const dias: DiasDoCartao = cartao;
+    const existentes = await this.repositorio.faturasDoCartao(
+      tx,
+      cartao.id,
+      faturaDaCompra(data, dias).competencia,
+    );
+    const destino = faturaDestino(data, dias, existentes);
+    const primeira =
+      'existente' in destino ? destino.existente.competencia : destino.nova.competencia;
+    const porCompetencia = new Map(existentes.map((fatura) => [fatura.competencia, fatura]));
+    const faturas: FaturaGravada[] = [];
+    for (let indice = 0; indice < quantidade; indice += 1) {
+      const competencia = somarCompetencias(primeira, indice);
+      const fatura =
+        porCompetencia.get(competencia) ??
+        (await this.repositorio.criarFatura(
+          tx,
+          usuarioId,
+          cartao.id,
+          faturaDaCompetencia(competencia, dias),
+        ));
+      if (!recebeCompra(fatura, hoje)) {
+        throw new ErroDominio('TRANSACAO_EM_FATURA_PAGA', {
+          mensagem: `A fatura de ${mesEAno(competencia)} deste cartão já foi paga.`,
+          detalhes: { faturaId: fatura.id, competencia },
+        });
+      }
+      faturas.push(fatura);
+    }
+    return faturas;
+  }
+
+  /** Das faturas, as que ainda não fecharam no dia `hoje` (cancelar parcelas, RN-054). */
+  async faturasAbertas(
+    tx: TransacaoCartoes,
+    faturaIds: readonly string[],
+    hoje: DataCalendario,
+  ): Promise<Set<string>> {
+    if (faturaIds.length === 0) return new Set();
+    const faturas = await this.repositorio.faturasPorId(tx, [...new Set(faturaIds)]);
+    return new Set(
+      faturas.filter(({ dataFechamento }) => hoje < dataFechamento).map(({ id }) => id),
+    );
+  }
+
+  /** Dias de fechamento e vencimento do cartão, para simular parcelas (RN-051). */
+  async diasDoCartao(usuarioId: string, cartaoId: string): Promise<DiasDoCartao> {
+    const { diaFechamento, diaVencimento } = await this.exigir(usuarioId, cartaoId);
+    return { diaFechamento, diaVencimento };
+  }
+
   /** RN-046: compra de fatura quitada não muda nem sai. */
   async exigirNaoQuitadas(tx: TransacaoCartoes, faturaIds: readonly string[]): Promise<void> {
     if (faturaIds.length === 0) return;
@@ -362,7 +428,12 @@ export class CartoesService {
         valorPago: pagamentos,
         status: statusDaFatura(situacao, hoje),
       });
-      await this.repositorio.marcarCompras(tx, id, faturaQuitada(situacao) ? 'pago' : 'pendente');
+      await this.repositorio.marcarCompras(
+        tx,
+        id,
+        faturaQuitada(situacao) ? 'pago' : 'pendente',
+        this.clock.agora(),
+      );
     }
   }
 
