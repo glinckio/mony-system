@@ -30,6 +30,10 @@
       "types": "./dist/dinheiro.d.ts",
       "default": "./dist/dinheiro.js"
     },
+    "./contas": {
+      "types": "./dist/contas.d.ts",
+      "default": "./dist/contas.js"
+    },
     "./datas": {
       "types": "./dist/datas.d.ts",
       "default": "./dist/datas.js"

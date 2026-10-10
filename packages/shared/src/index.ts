@@ -2,6 +2,7 @@ export * from './autenticacao.js';
 export * from './cartoes.js';
 export * from './categorias.js';
 export * from './config-app.js';
+export * from './contas.js';
 export * from './datas.js';
 export * from './dinheiro.js';
 export * from './enums.js';

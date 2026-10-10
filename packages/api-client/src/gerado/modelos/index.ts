@@ -7,6 +7,8 @@
  */
 
 export * from './atualizacaoCategoriaDto';
+export * from './atualizacaoContaDto';
+export * from './atualizacaoContaDtoTipo';
 export * from './atualizacaoOnboardingDto';
 export * from './atualizacaoPerfilDto';
 export * from './cadastroDto';
@@ -19,10 +21,17 @@ export * from './conferenciaCodigoDto';
 export * from './configAppDto';
 export * from './configAppDtoFlags';
 export * from './configAppDtoVersaoMinima';
+export * from './contaDto';
+export * from './contaDtoOrigem';
+export * from './contaDtoTipo';
 export * from './excluirCategoriasParams';
 export * from './listaCategoriasDto';
 export * from './listaCategoriasDtoItensItem';
 export * from './listaCategoriasDtoItensItemTipo';
+export * from './listaContasDto';
+export * from './listaContasDtoItensItem';
+export * from './listaContasDtoItensItemOrigem';
+export * from './listaContasDtoItensItemTipo';
 export * from './listarCategoriasParams';
 export * from './listarCategoriasTipo';
 export * from './loginDto';
@@ -30,6 +39,8 @@ export * from './loginDtoDispositivo';
 export * from './loginDtoDispositivoPlataforma';
 export * from './novaCategoriaDto';
 export * from './novaCategoriaDtoTipo';
+export * from './novaContaDto';
+export * from './novaContaDtoTipo';
 export * from './onboardingDto';
 export * from './onboardingDtoEtapasItem';
 export * from './onboardingDtoEtapasItemEtapa';
