@@ -216,7 +216,9 @@ Implementado na T-037 (RN-040 a RN-047).
 - **Recorrência (RN-043):** ocorrência editada à mão fica com `editada_manualmente`.
 - **Totais:** pagamento de fatura e transferência não entram nas despesas (RN-037).
 - **Busca por texto:** `ILIKE` na descrição e na observação, depois do filtro por usuário.
-- **`impacto`** traz `cartao` (`cartaoId`, `percentualUsado`) na compra no cartão; o do orçamento entra na T-043.
+- **`impacto`**:
+  - `cartao` (`cartaoId`, `percentualUsado`) na compra no cartão;
+  - `orcamento` (`categoriaId`, `percentualUsado`) na despesa de categoria com orçamento no mês da data (T-043).
 - **Anexos:**
   - o app envia o arquivo direto ao S3 com a URL assinada; o `content-type` faz parte da assinatura;
   - ao ligar o anexo (`anexoIds`), a API confere que o arquivo chegou, que tem até 10 MB e que é do usuário;
@@ -274,6 +276,31 @@ Implementado na T-040 (RN-030 a RN-035, RN-038, RN-046) e na T-041 (pagamento, R
   - Grava a transação `pagamento_fatura`, paga, ligada ao cartão e à fatura. Ela sai do saldo da conta, mas não entra nos totais de despesa. Depois publica `fatura.paga`.
   - Pagamento parcial deixa o restante na mesma fatura, sem juros.
   - Excluir o pagamento (`DELETE /transacoes/:id`) desfaz: refaz o pago da fatura e devolve as compras a pendentes.
+
+## Orçamentos e metas
+
+Implementado na T-043 (RN-060 a RN-063).
+
+| Rota | O que faz |
+|---|---|
+| `GET /orcamentos?competencia=` | Orçamentos do mês (sem competência, o de hoje) com gasto, restante, percentual, faixa e projeção; e os totais |
+| `PUT /orcamentos` | Cria ou muda o orçamento da categoria na competência (`categoriaId`, `valorLimiteCentavos`, `competencia?`, `repetirMensal?`) |
+| `DELETE /orcamentos/:id` | Tira o orçamento do mês; os seguintes não o recebem |
+| `GET /metas` · `GET /metas/:id` | Metas (abertas primeiro, pelo prazo); o detalhe traz os aportes |
+| `POST /metas` · `PATCH /metas/:id` · `DELETE /metas/:id` | Título, alvo, prazo e `concluida` |
+| `POST /metas/:id/aportes` | `Idempotency-Key`; aporte → `{ meta, aporte, sugerirConclusao }` |
+| `DELETE /metas/:id/aportes/:aporteId` | Tira o aporte e devolve a meta |
+
+- **Gasto (RN-061):** despesas `normal` da categoria com data no mês, pagas e pendentes, sem as excluídas. Pagamento de fatura e transferência ficam de fora; compra no cartão conta na data da compra, e cada parcela no mês da sua despesa.
+- **Projeção:** `projecaoDoMes` em `@mony/shared/orcamentos`. O gasto até hoje segue a média linear até o fim do mês, e o que já está lançado para depois de hoje entra pelo valor certo.
+- **Faixa (RN-062):** até 79% `normal`, de 80% a 99% `atencao`, 100% ou mais `estourado`.
+- **Repetir (RN-060):**
+  - Orçamento novo repete todo mês, salvo `repetirMensal: false`.
+  - A rotina `repetir-orcamentos` roda no dia 1, às 00:15 de São Paulo (`15 0 1 * *`). Ela copia do mês anterior os que repetem, de categorias que ainda existem, e não mexe no que já existe no mês novo.
+- **Metas (RN-063):**
+  - O valor atual é a soma dos aportes, refeita com a meta travada (`FOR UPDATE`).
+  - O aporte não pode ter data futura.
+  - `sugerirConclusao` vem quando o aporte fez a meta chegar ao alvo e ela não está concluída.
 
 ## Parcelamentos e dívidas
 

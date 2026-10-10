@@ -1541,6 +1541,103 @@
         ]
       }
     },
+    "/v1/orcamentos": {
+      "get": {
+        "operationId": "listarOrcamentos",
+        "parameters": [
+          {
+            "name": "competencia",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Orçamentos da competência, com gasto, faixa e projeção (RN-061, RN-062).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaOrcamentosDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "orcamentos"
+        ]
+      },
+      "put": {
+        "operationId": "definirOrcamentos",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinicaoOrcamentoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Orçamento criado ou mudado (RN-060).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrcamentoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "orcamentos"
+        ]
+      }
+    },
+    "/v1/orcamentos/{id}": {
+      "delete": {
+        "operationId": "excluirOrcamentos",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Orçamento tirado; os meses seguintes não o recebem."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "orcamentos"
+        ]
+      }
+    },
     "/v1/recorrencias": {
       "get": {
         "operationId": "listarRecorrencias",
@@ -2029,6 +2126,267 @@
         ],
         "tags": [
           "parcelamentos"
+        ]
+      }
+    },
+    "/v1/metas": {
+      "get": {
+        "operationId": "listarMetas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Abertas primeiro, pelo prazo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaMetasDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "metas"
+        ]
+      },
+      "post": {
+        "operationId": "criarMetas",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovaMetaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "metas"
+        ]
+      }
+    },
+    "/v1/metas/{id}": {
+      "get": {
+        "operationId": "buscarMetas",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A meta e os aportes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalheMetaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "metas"
+        ]
+      },
+      "patch": {
+        "operationId": "atualizarMetas",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizacaoMetaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "metas"
+        ]
+      },
+      "delete": {
+        "operationId": "excluirMetas",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Meta e aportes apagados."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "metas"
+        ]
+      }
+    },
+    "/v1/metas/{id}/aportes": {
+      "post": {
+        "operationId": "aportarMetas",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave única da operação (8 a 255 caracteres). Repetir a chave devolve a mesma resposta sem executar de novo.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovoAporteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Aporte gravado; `sugerirConclusao` quando a meta chegou ao alvo (RN-063).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaAporteDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "metas"
+        ]
+      }
+    },
+    "/v1/metas/{id}/aportes/{aporteId}": {
+      "delete": {
+        "operationId": "excluirAporteMetas",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "aporteId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aporte tirado; a meta com o valor refeito.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "metas"
         ]
       }
     }
@@ -5422,6 +5780,204 @@
           }
         }
       },
+      "ListaOrcamentosDto": {
+        "type": "object",
+        "properties": {
+          "competencia": {
+            "type": "string"
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "categoriaId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "competencia": {
+                  "type": "string"
+                },
+                "valorLimiteCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "repetirMensal": {
+                  "type": "boolean"
+                },
+                "gastoCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "restanteCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "percentualUsado": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "faixa": {
+                  "type": "string",
+                  "enum": [
+                    "normal",
+                    "atencao",
+                    "estourado"
+                  ]
+                },
+                "projecaoCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "categoriaId",
+                "competencia",
+                "valorLimiteCentavos",
+                "repetirMensal",
+                "gastoCentavos",
+                "restanteCentavos",
+                "percentualUsado",
+                "faixa",
+                "projecaoCentavos"
+              ]
+            }
+          },
+          "totais": {
+            "type": "object",
+            "properties": {
+              "valorLimiteCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "gastoCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "restanteCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "valorLimiteCentavos",
+              "gastoCentavos",
+              "restanteCentavos"
+            ]
+          }
+        },
+        "required": [
+          "competencia",
+          "itens",
+          "totais"
+        ]
+      },
+      "DefinicaoOrcamentoDto": {
+        "type": "object",
+        "properties": {
+          "categoriaId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "competencia": {
+            "type": "string"
+          },
+          "valorLimiteCentavos": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000000
+          },
+          "repetirMensal": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "categoriaId",
+          "valorLimiteCentavos"
+        ]
+      },
+      "OrcamentoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "categoriaId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "competencia": {
+            "type": "string"
+          },
+          "valorLimiteCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "repetirMensal": {
+            "type": "boolean"
+          },
+          "gastoCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "restanteCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "percentualUsado": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "faixa": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "atencao",
+              "estourado"
+            ]
+          },
+          "projecaoCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "categoriaId",
+          "competencia",
+          "valorLimiteCentavos",
+          "repetirMensal",
+          "gastoCentavos",
+          "restanteCentavos",
+          "percentualUsado",
+          "faixa",
+          "projecaoCentavos"
+        ]
+      },
       "ListaRecorrenciasDto": {
         "type": "object",
         "properties": {
@@ -7486,6 +8042,362 @@
         "required": [
           "parcela",
           "parcelamento"
+        ]
+      },
+      "ListaMetasDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "titulo": {
+                  "type": "string"
+                },
+                "valorAlvoCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "valorAtualCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "restanteCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "percentual": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "prazo": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "concluida": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "titulo",
+                "valorAlvoCentavos",
+                "valorAtualCentavos",
+                "restanteCentavos",
+                "percentual",
+                "prazo",
+                "concluida"
+              ]
+            }
+          }
+        },
+        "required": [
+          "itens"
+        ]
+      },
+      "DetalheMetaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "valorAlvoCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "valorAtualCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "restanteCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "percentual": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "prazo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "concluida": {
+            "type": "boolean"
+          },
+          "aportes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "valorCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "data": {
+                  "type": "string"
+                },
+                "criadoEm": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "valorCentavos",
+                "data",
+                "criadoEm"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "valorAlvoCentavos",
+          "valorAtualCentavos",
+          "restanteCentavos",
+          "percentual",
+          "prazo",
+          "concluida",
+          "aportes"
+        ]
+      },
+      "NovaMetaDto": {
+        "type": "object",
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "valorAlvoCentavos": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000000
+          },
+          "prazo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "titulo",
+          "valorAlvoCentavos"
+        ]
+      },
+      "MetaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "valorAlvoCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "valorAtualCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "restanteCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "percentual": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "prazo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "concluida": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "valorAlvoCentavos",
+          "valorAtualCentavos",
+          "restanteCentavos",
+          "percentual",
+          "prazo",
+          "concluida"
+        ]
+      },
+      "AtualizacaoMetaDto": {
+        "type": "object",
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "valorAlvoCentavos": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000000
+          },
+          "prazo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "concluida": {
+            "type": "boolean"
+          }
+        }
+      },
+      "NovoAporteDto": {
+        "type": "object",
+        "properties": {
+          "valorCentavos": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000000
+          },
+          "data": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "valorCentavos"
+        ]
+      },
+      "RespostaAporteDto": {
+        "type": "object",
+        "properties": {
+          "meta": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "titulo": {
+                "type": "string"
+              },
+              "valorAlvoCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "valorAtualCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "restanteCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "percentual": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "prazo": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "concluida": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "titulo",
+              "valorAlvoCentavos",
+              "valorAtualCentavos",
+              "restanteCentavos",
+              "percentual",
+              "prazo",
+              "concluida"
+            ]
+          },
+          "aporte": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "valorCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "data": {
+                "type": "string"
+              },
+              "criadoEm": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "id",
+              "valorCentavos",
+              "data",
+              "criadoEm"
+            ]
+          },
+          "sugerirConclusao": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "meta",
+          "aporte",
+          "sugerirConclusao"
         ]
       }
     }

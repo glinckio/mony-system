@@ -74,7 +74,7 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 | Encerrar testes | Diária 01:15 | Testes vencidos → gratuito; avisos do 2º e do último dia (RN-124, RN-126) |
 | Alertas de vencimento e projeção | Diária 09:00 | `fatura_vencimento`, `vencimento_pendente`, `projecao_mes` |
 | Resumo semanal e mensal | Segunda e dia 1, 09:00 | Mensagem da Mony no chat + push |
-| Repetir orçamentos | Dia 1, 00:15 | Copia orçamentos com `repetir_mensal` (RN-060) |
+| Repetir orçamentos | Dia 1, 00:15 | Copia do mês anterior os orçamentos com `repetir_mensal` (RN-060); o mês é o de São Paulo (T-043) |
 | Sincronização Open Finance | A cada 6 h | Além dos webhooks |
 | Aviso de consentimento | Diária | 7 dias antes de vencer (RN-144) |
 | Disparo de lembretes e ligações | A cada minuto | Lembretes com `data_hora` (ou `adiado_ate`) no minuto atual |
