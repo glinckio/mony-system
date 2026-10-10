@@ -153,6 +153,30 @@ export class NotificacoesRepository {
     return count;
   }
 
+  /** Aparelhos ativos do usuário com token de push. */
+  async aparelhosComPush(usuarioId: string): Promise<{ id: string; token: string }[]> {
+    const aparelhos = await this.prisma.cliente.dispositivo.findMany({
+      where: { usuarioId, ativo: true, tokenPush: { not: null } },
+      select: { id: true, tokenPush: true },
+      orderBy: { id: 'asc' },
+    });
+    return aparelhos.flatMap(({ id, tokenPush }) =>
+      tokenPush === null ? [] : [{ id, token: tokenPush }],
+    );
+  }
+
+  /**
+   * Token recusado pelo provedor (doc 09): sai do aparelho, que fica inativo para push até o app
+   * registrar um token novo. Só se o token ainda for o mesmo; diz se desligou.
+   */
+  async desligarPush(dispositivoId: string, token: string): Promise<boolean> {
+    const { count } = await this.prisma.cliente.dispositivo.updateMany({
+      where: { id: dispositivoId, tokenPush: token },
+      data: { tokenPush: null, ativo: false },
+    });
+    return count > 0;
+  }
+
   /** Garante uma linha de preferência por tipo (as que faltam nascem ligadas). */
   async garantirPreferencias(usuarioId: string, tipos: readonly TipoAlerta[]): Promise<void> {
     await this.prisma.cliente.preferenciaAlerta.createMany({

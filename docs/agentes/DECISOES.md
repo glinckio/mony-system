@@ -389,3 +389,15 @@ Contexto: RN-100 a RN-105, doc 09. O push é a T-081 e os avaliadores de cada al
 - **Preferências:** `GET` e `PUT /preferencias-alerta`. Tipo sem linha conta como ligado. Assinatura não desliga (400). Antecedência de 0 a 30 dias.
 
 Reversível: sim.
+
+## 2026-10-10 — T-081 — Push pelo Expo
+Contexto: doc 09 ("Envio de push") e doc 10. O app ainda não tem esqueleto (T-010), então a parte do aparelho foi para a T-088. Decisões:
+- **Fila no meio.** O motor chama `EnvioPush`, que só põe o envio na fila `notificacoes`; o worker manda (`ProcessadorNotificacoes`), com 5 tentativas. O motor e as rotas não esperam o Expo, e uma queda do Expo não perde o alerta, que já está na central.
+- **Um push por aparelho ativo com token.** A mensagem leva `linkInterno`, `notificacaoId` e `tipo` em `dados`, a categoria de ação do tipo e o canal do Android do tipo (`CATEGORIAS_ACAO` e `canalDoPush` no `@mony/shared`, para o app usar os mesmos nomes). O envio agrupado do fim do silêncio abre a central (`mony://notificacoes`).
+- **Token recusado sai, só se ainda for o mesmo.** `DeviceNotRegistered`, no ticket ou no recibo conferido 15 minutos depois (o Expo pede uns 15 minutos e guarda por 24 h), apaga o token e põe `ativo = false`. A troca compara o token, para não apagar um token novo que o aparelho registrou no meio-tempo. O `ativo` volta a `true` quando o app registra de novo (T-033).
+- **Erros.** 4xx do Expo (menos 429) não repete; 429, 5xx e falha de rede repetem com espera exponencial. Outros erros de ticket (`MessageTooBig`, `InvalidCredentials`…) ficam no log, só com o código (a mensagem do Expo pode trazer o token). Depois que o push saiu, uma falha ao tirar token ou ao agendar os recibos só vai para o log: repetir o job mandaria o push de novo.
+- **Dados no Redis.** O job leva título e corpo, que têm valores: fica uma hora depois de enviado, só para segurar o envio repetido (mesmo id), e um dia se falhar. Os e-mails saem na hora porque levam código de acesso; aqui a hora a mais evita push duplicado.
+- **Provedor por ambiente** (`PUSH_PROVEDOR`): `fake` é o padrão e não envia, como o e-mail. O merge não depende das credenciais do FCM e do APNs, que ficaram em `BLOQUEIOS.md`. `EXPO_ACCESS_TOKEN` é opcional: só é exigido se a segurança de push for ligada no EAS.
+- **Texto cortado** em 120 caracteres no título e 900 no corpo, com reticências, para caber no limite de 4 KiB do push com os dados.
+
+Reversível: sim.

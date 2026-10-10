@@ -92,6 +92,15 @@ Avaliação completa na PoC [T-026](../agentes/poc/T-026.md).
 
 Servidor agenda, o provedor liga para o número verificado e fala o texto do lembrete com voz sintética em pt-BR. Webhook de status grava resultado e custo em `ligacoes`. Limitado por plano e por mês (RN-078).
 
+## Push
+
+Expo Push via `PushProvider` (doc 09, "Envio de push"). Como está (T-081):
+
+- **Provedores** (`PUSH_PROVEDOR`): `expo` (nuvem) e `fake` (padrão; não envia e, fora de produção, escreve o título no log do worker). Com `EXPO_ACCESS_TOKEN`, o envio leva o token de acesso, que passa a ser obrigatório quando a segurança de push é ligada no projeto do EAS.
+- **Lotes:** até 100 mensagens por chamada a `/push/send` e até 1000 ids por consulta de recibos (`/push/getReceipts`), com tempo limite de 15 s.
+- **Credenciais das lojas:** a chave do FCM (Android) e a do APNs (iOS) ficam no projeto do EAS, não na API (T-010).
+- **Troca:** o envio direto por FCM HTTP v1 e APNs, se o cliente preferir não depender do Expo, entra como outra implementação do `PushProvider`, sem mexer no motor nem na fila.
+
 ## E-mail transacional
 
 Brevo via `EmailProvider`, com templates versionados: código de recuperação, boas-vindas, recibos/assinatura, link de exportação de dados, confirmação de exclusão de conta.
