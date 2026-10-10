@@ -129,7 +129,7 @@ export class TransacoesService {
     const data = dados.data ?? hoje;
     const { id } = await this.repositorio.emTransacao(async (tx) => {
       const faturaId =
-        cartaoId === null ? null : await this.entrarNaFatura(tx, usuarioId, cartaoId, data);
+        cartaoId === null ? null : await this.entrarNaFatura(tx, usuarioId, cartaoId, data, hoje);
       const criada = await this.repositorio.criar(tx, {
         usuarioId,
         tipo: dados.tipo,
@@ -180,9 +180,12 @@ export class TransacoesService {
     if (travados.length > 0 && atual.origem === 'open_finance') {
       throw new ErroDominio('TRANSACAO_OPEN_FINANCE_BLOQUEADA', { detalhes: { campos: travados } });
     }
-    if (travados.length > 0 && presaAOutroFluxo(atual)) {
+    if (travados.length > 0 && (atual.parcelamentoId !== null || atual.natureza !== 'normal')) {
       throw new ErroDominio('CONFLITO', {
-        mensagem: 'Valor, data e forma de pagamento deste lançamento mudam pelo parcelamento.',
+        mensagem:
+          atual.natureza === 'pagamento_fatura'
+            ? 'Para mudar o pagamento da fatura, exclua o pagamento e pague de novo.'
+            : 'Valor, data e forma de pagamento deste lançamento mudam pelo parcelamento.',
         detalhes: { campos: travados },
       });
     }
@@ -208,7 +211,8 @@ export class TransacoesService {
     if (dados.categoriaId !== undefined || dados.tipo !== undefined) {
       await this.conferirCategoria(usuarioId, dados.categoriaId ?? atual.categoriaId, tipo);
     }
-    if (tipo === 'despesa' && formaPagamento === null) {
+    // RN-041 vale para despesa normal; o pagamento de fatura pode não ter forma.
+    if (tipo === 'despesa' && formaPagamento === null && atual.natureza === 'normal') {
       throw new ErroDominio('REQUISICAO_INVALIDA', {
         mensagem: 'Despesa precisa da forma de pagamento.',
       });
@@ -238,7 +242,7 @@ export class TransacoesService {
         });
         await this.cartoes.exigirNaoQuitadas(tx, atual.faturaId === null ? [] : [atual.faturaId]);
         faturaId =
-          cartaoId === null ? null : await this.entrarNaFatura(tx, usuarioId, cartaoId, data);
+          cartaoId === null ? null : await this.entrarNaFatura(tx, usuarioId, cartaoId, data, hoje);
       }
       await this.repositorio.atualizar(tx, usuarioId, id, {
         ...(dados.tipo === undefined ? {} : { tipo: dados.tipo }),
@@ -327,19 +331,29 @@ export class TransacoesService {
 
   /**
    * RN-046: exclusão lógica. Compras no cartão saem da fatura, que é refeita; se alguma está em
-   * fatura quitada, nada sai.
+   * fatura quitada, nada sai. Excluir um pagamento de fatura desfaz o pagamento (RN-036): o pago
+   * da fatura é refeito e, se ela deixa de estar quitada, as compras voltam a pendentes.
    */
   private async excluirRefazendoFaturas(
     usuarioId: string,
-    transacoes: readonly Pick<TransacaoDoUsuario, 'id' | 'cartaoId' | 'faturaId'>[],
+    transacoes: readonly Pick<TransacaoDoUsuario, 'id' | 'cartaoId' | 'faturaId' | 'natureza'>[],
   ): Promise<number> {
-    const cartaoIds = transacoes.flatMap(({ cartaoId }) => (cartaoId === null ? [] : [cartaoId]));
-    const faturaIds = transacoes.flatMap(({ faturaId }) => (faturaId === null ? [] : [faturaId]));
+    const daFatura = transacoes.filter(({ faturaId }) => faturaId !== null);
+    const compras = daFatura.filter(({ natureza }) => natureza === 'normal');
+    const pagamentos = daFatura.filter(({ natureza }) => natureza === 'pagamento_fatura');
+    const cartoes = (lista: typeof daFatura) =>
+      lista.flatMap(({ cartaoId }) => (cartaoId === null ? [] : [cartaoId]));
+    const faturas = (lista: typeof daFatura) =>
+      lista.flatMap(({ faturaId }) => (faturaId === null ? [] : [faturaId]));
     const hoje = await this.hoje(usuarioId);
     return this.repositorio.emTransacao(async (tx) => {
-      if (faturaIds.length > 0) {
-        await this.cartoes.travarCartoes(tx, usuarioId, { entrada: [], saida: cartaoIds });
-        await this.cartoes.exigirNaoQuitadas(tx, faturaIds);
+      if (daFatura.length > 0) {
+        // Desfazer pagamento volta a ocupar o limite: o cartão precisa existir.
+        await this.cartoes.travarCartoes(tx, usuarioId, {
+          entrada: cartoes(pagamentos),
+          saida: cartoes(compras),
+        });
+        await this.cartoes.exigirNaoQuitadas(tx, faturas(compras));
       }
       const afetadas = await this.repositorio.excluir(
         tx,
@@ -347,7 +361,7 @@ export class TransacoesService {
         transacoes.map(({ id }) => id),
         this.clock.agora(),
       );
-      if (faturaIds.length > 0) await this.cartoes.recalcular(tx, faturaIds, hoje);
+      if (daFatura.length > 0) await this.cartoes.recalcular(tx, faturas(daFatura), hoje);
       return afetadas;
     });
   }
@@ -358,6 +372,7 @@ export class TransacoesService {
     usuarioId: string,
     cartaoId: string,
     data: DataCalendario,
+    hoje: DataCalendario,
   ): Promise<string> {
     const travados = await this.cartoes.travarCartoes(tx, usuarioId, {
       entrada: [cartaoId],
@@ -365,7 +380,7 @@ export class TransacoesService {
     });
     const cartao: CartaoTravado | undefined = travados.get(cartaoId);
     if (!cartao) throw new ErroDominio('NAO_ENCONTRADO', { detalhes: { cartaoId } });
-    return this.cartoes.faturaParaCompra(tx, usuarioId, cartao, data);
+    return this.cartoes.faturaParaCompra(tx, usuarioId, cartao, data, hoje);
   }
 
   /** Efeito no cartão da compra (doc 05); o do orçamento entra na T-043. */
@@ -418,20 +433,21 @@ function exigirSemProblemas(problemas: readonly ProblemaDeCampo[]): void {
   }
 }
 
-/** Parcela (T-042) e pagamento de fatura (T-041) mudam e saem pelos fluxos deles. */
-function presaAOutroFluxo(
-  transacao: Pick<TransacaoDoUsuario, 'parcelamentoId' | 'natureza'>,
-): boolean {
-  return transacao.parcelamentoId !== null || transacao.natureza !== 'normal';
-}
-
+/**
+ * Parcela (T-042) e transferência saem pelos fluxos delas. Pagamento de fatura sai por aqui, e
+ * sair desfaz o pagamento.
+ */
 function exigirSemOutroFluxo(
   transacoes: readonly Pick<TransacaoDoUsuario, 'id' | 'parcelamentoId' | 'natureza'>[],
 ): void {
-  const presas = transacoes.filter(presaAOutroFluxo).map(({ id }) => id);
+  const presas = transacoes
+    .filter(
+      ({ parcelamentoId, natureza }) => parcelamentoId !== null || natureza === 'transferencia',
+    )
+    .map(({ id }) => id);
   if (presas.length > 0) {
     throw new ErroDominio('CONFLITO', {
-      mensagem: 'Parcela e pagamento de fatura saem pelo próprio fluxo.',
+      mensagem: 'Parcela e transferência saem pelo próprio fluxo.',
       detalhes: { ids: presas },
     });
   }

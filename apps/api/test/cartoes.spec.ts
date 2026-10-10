@@ -11,6 +11,7 @@ import {
   type FaturaGravada,
   faturaQuitada,
   paraFatura,
+  recebeCompra,
 } from '../src/modulos/cartoes/dominio/faturas';
 
 const DIAS = { diaFechamento: 3, diaVencimento: 10 };
@@ -91,6 +92,17 @@ describe('fatura quitada (RN-046)', () => {
     [0, 500, true],
   ])('total %i, pago %i → %s', (valorTotal, valorPago, quitada) => {
     expect(faturaQuitada({ valorTotal, valorPago })).toBe(quitada);
+  });
+});
+
+describe('fatura que recebe compra nova (RN-046)', () => {
+  const outubro = { valorTotal: 10_000, valorPago: 10_000, dataFechamento: '2026-10-03' };
+
+  it('fechada e quitada recusa; aberta e paga antes (antecipação) aceita', () => {
+    expect(recebeCompra(outubro, '2026-10-03')).toBe(false);
+    expect(recebeCompra(outubro, '2026-10-02')).toBe(true);
+    expect(recebeCompra({ ...outubro, valorPago: 4_000 }, '2026-10-15')).toBe(true);
+    expect(recebeCompra({ ...outubro, valorTotal: 0, valorPago: 0 }, '2026-10-15')).toBe(true);
   });
 });
 

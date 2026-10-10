@@ -3,6 +3,7 @@ import {
   type Cartao,
   type DadosAtualizacaoCartao,
   type DadosNovoCartao,
+  type DadosPagamentoFatura,
   type DetalheFatura,
   type DiasDoCartao,
   FAIXAS_ALERTA_PADRAO,
@@ -10,15 +11,19 @@ import {
   limiteDoCartao,
   type ListaCartoes,
   type ListaFaturas,
+  type RespostaPagamentoFatura,
   statusDaFatura,
 } from '@mony/shared/cartoes';
+import type { Competencia } from '@mony/shared/datas';
 import { type DataCalendario, dataNoFuso } from '@mony/shared/datas';
 import type { Impacto } from '@mony/shared/transacoes';
 
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
-import { paraResposta } from '../transacoes/transacoes.repository';
+import { BarramentoEventos } from '../../core/eventos/barramento-eventos';
+import { idDeJob } from '../../core/filas/filas';
+import { paraDataDoBanco, paraResposta } from '../transacoes/transacoes.repository';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import {
   type CartaoDoUsuario,
@@ -31,7 +36,11 @@ import {
   type FaturaGravada,
   faturaQuitada,
   paraFatura,
+  recebeCompra,
 } from './dominio/faturas';
+
+/** Evento publicado depois de um pagamento de fatura (alertas: T-080). */
+export const EVENTO_FATURA_PAGA = 'fatura.paga';
 
 /** Campos de cartão do Open Finance que vêm do banco (RN-039). */
 const CAMPOS_DO_BANCO = [
@@ -55,6 +64,7 @@ export class CartoesService {
   constructor(
     private readonly repositorio: CartoesRepository,
     private readonly usuarios: UsuariosService,
+    private readonly eventos: BarramentoEventos,
     private readonly clock: Clock,
   ) {}
 
@@ -188,10 +198,89 @@ export class CartoesService {
     const achada = await this.repositorio.fatura(usuarioId, id);
     if (!achada) throw new ErroDominio('NAO_ENCONTRADO');
     const transacoes = await this.repositorio.transacoesDaFatura(usuarioId, id);
+    const { id: cartaoId, nome, bandeira, final, cor } = achada.cartao;
     return {
       fatura: paraFatura(achada.fatura, await this.hoje(usuarioId)),
-      cartao: achada.cartao,
-      transacoes: transacoes.map(paraResposta),
+      cartao: { id: cartaoId, nome, bandeira, final, cor },
+      transacoes: transacoes.filter(({ natureza }) => natureza === 'normal').map(paraResposta),
+      pagamentos: transacoes
+        .filter(({ natureza }) => natureza === 'pagamento_fatura')
+        .map(paraResposta),
+    };
+  }
+
+  /**
+   * RN-036 e RN-037: registra o pagamento, total ou parcial, como transação `pagamento_fatura`.
+   * Ela sai da conta escolhida, mas não é despesa. O pago da fatura é refeito pela soma dos
+   * pagamentos, e a fatura quitada deixa as compras pagas. Parcial deixa o restante na mesma
+   * fatura, sem juros.
+   */
+  async pagar(
+    contexto: Contexto,
+    faturaId: string,
+    dados: DadosPagamentoFatura,
+  ): Promise<RespostaPagamentoFatura> {
+    const usuarioId = usuarioDoContexto(contexto);
+    const achada = await this.repositorio.fatura(usuarioId, faturaId);
+    if (!achada) throw new ErroDominio('NAO_ENCONTRADO');
+    const hoje = await this.hoje(usuarioId);
+    const data = dados.data ?? hoje;
+    if (data > hoje) {
+      throw new ErroDominio('REQUISICAO_INVALIDA', {
+        mensagem: 'O pagamento não pode ter data futura.',
+        detalhes: { campos: ['data'] },
+      });
+    }
+    const categoriaId = await this.categoriaDoPagamento(usuarioId, dados.categoriaId);
+    if (dados.contaId !== undefined && dados.contaId !== null) {
+      await this.conferirConta(usuarioId, dados.contaId);
+    }
+    const contaId = dados.contaId === undefined ? achada.cartao.contaPagamentoId : dados.contaId;
+
+    const transacaoId = await this.repositorio.emTransacao(async (tx) => {
+      await this.travarCartoes(tx, usuarioId, { entrada: [achada.cartao.id], saida: [] });
+      const { fatura, compras, pagamentos } = await this.repositorio.travarESomar(tx, faturaId);
+      const saldo = Number(compras - pagamentos);
+      if (saldo <= 0) {
+        throw new ErroDominio('CONFLITO', { mensagem: 'Esta fatura não tem saldo a pagar.' });
+      }
+      const valor = dados.valorCentavos ?? saldo;
+      if (valor > saldo) {
+        throw new ErroDominio('REQUISICAO_INVALIDA', {
+          mensagem: 'O valor passa do saldo da fatura.',
+          detalhes: { campos: ['valorCentavos'], saldoCentavos: saldo },
+        });
+      }
+      const id = await this.repositorio.criarPagamento(tx, {
+        usuarioId,
+        tipo: 'despesa',
+        natureza: 'pagamento_fatura',
+        descricao: `Pagamento da fatura ${achada.cartao.nome} (${mesEAno(fatura.competencia)})`,
+        valor: BigInt(valor),
+        data: paraDataDoBanco(data),
+        status: 'pago',
+        formaPagamento: dados.formaPagamento ?? null,
+        origem: contexto.origem === 'mony' ? 'mony' : 'manual',
+        categoriaId,
+        contaId,
+        cartaoId: achada.cartao.id,
+        faturaId,
+      });
+      await this.recalcular(tx, [faturaId], hoje);
+      return id;
+    });
+
+    await this.eventos.publicar(EVENTO_FATURA_PAGA, { faturaId, transacaoId }, contexto, {
+      idUnico: idDeJob('fatura-paga', transacaoId),
+    });
+    const depois = await this.repositorio.fatura(usuarioId, faturaId);
+    const transacao = await this.repositorio.buscarTransacao(usuarioId, transacaoId);
+    if (!depois || !transacao) throw new ErroDominio('NAO_ENCONTRADO');
+    const impacto = await this.impacto(usuarioId, achada.cartao.id);
+    return {
+      fatura: paraFatura(depois.fatura, hoje),
+      transacao: paraResposta(transacao),
+      impacto: impacto === null ? {} : { cartao: impacto },
     };
   }
 
@@ -219,14 +308,15 @@ export class CartoesService {
   }
 
   /**
-   * RN-031: a fatura onde entra a compra de `data`, criada se ainda não existe. Fatura quitada
-   * recusa a compra (RN-046). O cartão precisa estar travado (`travarCartoes`).
+   * RN-031: a fatura onde entra a compra de `data`, criada se ainda não existe. Fatura fechada e
+   * quitada recusa a compra (RN-046). O cartão precisa estar travado (`travarCartoes`).
    */
   async faturaParaCompra(
     tx: TransacaoCartoes,
     usuarioId: string,
     cartao: CartaoTravado,
     data: DataCalendario,
+    hoje: DataCalendario,
   ): Promise<string> {
     const dias: DiasDoCartao = cartao;
     const existentes = await this.repositorio.faturasDoCartao(
@@ -239,7 +329,12 @@ export class CartoesService {
       'existente' in destino
         ? destino.existente
         : await this.repositorio.criarFatura(tx, usuarioId, cartao.id, destino.nova);
-    exigirNaoQuitadas([fatura]);
+    if (!recebeCompra(fatura, hoje)) {
+      throw new ErroDominio('TRANSACAO_EM_FATURA_PAGA', {
+        mensagem: 'A fatura dessa data já foi paga.',
+        detalhes: { faturaId: fatura.id, competencia: fatura.competencia },
+      });
+    }
     return fatura.id;
   }
 
@@ -250,8 +345,9 @@ export class CartoesService {
   }
 
   /**
-   * Refaz total e status das faturas depois que compras entraram, mudaram ou saíram. Trava cada
-   * fatura e soma as compras de novo, em vez de somar a diferença, para nunca acumular erro.
+   * Refaz total, pago e status das faturas depois que compras ou pagamentos entraram, mudaram ou
+   * saíram. Trava cada fatura e soma de novo, em vez de somar a diferença, para nunca acumular
+   * erro. RN-037: fatura quitada deixa as compras pagas; senão, pendentes.
    */
   async recalcular(
     tx: TransacaoCartoes,
@@ -259,11 +355,14 @@ export class CartoesService {
     hoje: DataCalendario,
   ): Promise<void> {
     for (const id of [...new Set(faturaIds)].sort()) {
-      const { fatura, soma } = await this.repositorio.travarESomar(tx, id);
-      await this.repositorio.gravarTotal(tx, id, {
-        valorTotal: soma,
-        status: statusDaFatura({ ...fatura, valorTotal: Number(soma) }, hoje),
+      const { fatura, compras, pagamentos } = await this.repositorio.travarESomar(tx, id);
+      const situacao = { ...fatura, valorTotal: Number(compras), valorPago: Number(pagamentos) };
+      await this.repositorio.gravarTotais(tx, id, {
+        valorTotal: compras,
+        valorPago: pagamentos,
+        status: statusDaFatura(situacao, hoje),
       });
+      await this.repositorio.marcarCompras(tx, id, faturaQuitada(situacao) ? 'pago' : 'pendente');
     }
   }
 
@@ -295,6 +394,34 @@ export class CartoesService {
     return cartao;
   }
 
+  /**
+   * Categoria do pagamento, só para o extrato (RN-037). Sem escolha, a "Contas" padrão; se ela
+   * saiu, a categoria de despesa mais antiga (sempre sobra uma, RN-066).
+   */
+  private async categoriaDoPagamento(
+    usuarioId: string,
+    escolhida: string | undefined,
+  ): Promise<string> {
+    if (escolhida !== undefined) {
+      const categoria = await this.repositorio.categoria(usuarioId, escolhida);
+      if (!categoria)
+        throw new ErroDominio('NAO_ENCONTRADO', { detalhes: { categoriaId: escolhida } });
+      if (categoria.tipo !== 'despesa') {
+        throw new ErroDominio('REQUISICAO_INVALIDA', {
+          mensagem: 'Escolha uma categoria de despesa.',
+          detalhes: { categoriaId: escolhida },
+        });
+      }
+      return escolhida;
+    }
+    const categorias = await this.repositorio.categoriasDeDespesa(usuarioId);
+    const padrao =
+      categorias.find((categoria) => categoria.padrao && categoria.icone === 'contas') ??
+      categorias[0];
+    if (!padrao) throw new ErroDominio('CONFLITO', { mensagem: 'Crie uma categoria de despesa.' });
+    return padrao.id;
+  }
+
   private async conferirConta(usuarioId: string, contaId: string): Promise<void> {
     if (!(await this.repositorio.contaExiste(usuarioId, contaId))) {
       throw new ErroDominio('NAO_ENCONTRADO', { detalhes: { contaPagamentoId: contaId } });
@@ -304,6 +431,11 @@ export class CartoesService {
   private async hoje(usuarioId: string): Promise<DataCalendario> {
     return dataNoFuso(this.clock.agora(), await this.repositorio.fusoDoUsuario(usuarioId));
   }
+}
+
+/** `2026-11-01` → `11/2026`. */
+function mesEAno(competencia: Competencia): string {
+  return `${competencia.slice(5, 7)}/${competencia.slice(0, 4)}`;
 }
 
 function ordenarFaixas(faixas: readonly number[]): number[] {

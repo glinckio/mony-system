@@ -44,11 +44,22 @@ export function faturaDestino<F extends Pick<FaturaGravada, 'competencia' | 'dat
 }
 
 /**
- * Fatura quitada: tem pagamento e o pago cobre o total. Compra nela não entra, não muda e não sai
- * (RN-046), porque o pagamento já baixou as compras (T-041).
+ * Fatura quitada: tem pagamento e o pago cobre o total. As compras dela estão pagas (RN-037) e
+ * não mudam nem saem (RN-046).
  */
 export function faturaQuitada(fatura: Pick<SituacaoFatura, 'valorTotal' | 'valorPago'>): boolean {
   return fatura.valorPago > 0 && fatura.valorPago >= fatura.valorTotal;
+}
+
+/**
+ * Compra nova não entra em fatura fechada e quitada (RN-046). Fatura ainda aberta e já paga
+ * (pagamento antecipado) recebe a compra, que vira saldo a pagar.
+ */
+export function recebeCompra(
+  fatura: Pick<SituacaoFatura, 'valorTotal' | 'valorPago' | 'dataFechamento'>,
+  hoje: DataCalendario,
+): boolean {
+  return !(faturaQuitada(fatura) && hoje >= fatura.dataFechamento);
 }
 
 /** Fatura do banco → contrato da API, com o status do dia `hoje` do usuário (RN-033). */
