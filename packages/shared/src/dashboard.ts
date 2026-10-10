@@ -113,6 +113,8 @@ export const esquemaDashboard = z.object({
   orcamentos: esquemaListaOrcamentos,
   /** RN-024: o checklist some quando não sobra etapa pendente. */
   onboarding: esquemaOnboarding,
+  /** Contador da central de notificações (doc 09). */
+  notificacoesNaoLidas: z.number().int(),
 });
 
 export type ConsultaDashboard = z.infer<typeof esquemaConsultaDashboard>;

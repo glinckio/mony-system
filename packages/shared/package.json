@@ -62,6 +62,10 @@
       "types": "./dist/nfce.d.ts",
       "default": "./dist/nfce.js"
     },
+    "./notificacoes": {
+      "types": "./dist/notificacoes.d.ts",
+      "default": "./dist/notificacoes.js"
+    },
     "./orcamentos": {
       "types": "./dist/orcamentos.d.ts",
       "default": "./dist/orcamentos.js"

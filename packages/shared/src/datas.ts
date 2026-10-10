@@ -158,6 +158,27 @@ export function dataNoFuso(instante: Date, fuso: string = FUSO_PADRAO): DataCale
   return montarData({ ano: valor('year'), mes: valor('month'), dia: valor('day') });
 }
 
+const formatadoresDeHora = new Map<string, Intl.DateTimeFormat>();
+
+/** Hora local `HH:MM` (24 h) de um instante no fuso do usuário (horário de silêncio, RN-101). */
+export function horaNoFuso(instante: Date, fuso: string = FUSO_PADRAO): string {
+  if (Number.isNaN(instante.getTime())) throw new RangeError('instante inválido');
+  let formatador = formatadoresDeHora.get(fuso);
+  if (!formatador) {
+    formatador = new Intl.DateTimeFormat('en-US', {
+      timeZone: fuso,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    });
+    formatadoresDeHora.set(fuso, formatador);
+  }
+  const partes = formatador.formatToParts(instante);
+  const valor = (tipo: Intl.DateTimeFormatPartTypes) =>
+    partes.find((parte) => parte.type === tipo)?.value.padStart(2, '0') ?? '00';
+  return `${valor('hour')}:${valor('minute')}`;
+}
+
 /** Competência de um instante no fuso do usuário (o "mês atual" dele). */
 export function competenciaNoFuso(instante: Date, fuso: string = FUSO_PADRAO): Competencia {
   return competenciaDe(dataNoFuso(instante, fuso));

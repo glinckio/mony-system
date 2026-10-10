@@ -164,7 +164,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 
 ## Fase 3 — Alertas, lembretes e agenda
 
-- [ ] **T-080** Motor de alertas: avaliadores, filtros (preferências, chave única, cota de consultoria, silêncio), central de notificações
+- [x] **T-080** Motor de alertas: avaliadores, filtros (preferências, chave única, cota de consultoria, silêncio), central de notificações (PR #31)
   - dep: T-047 · docs: 09 · RN-100 a RN-105
 - [ ] **T-081** Push: `PushProvider` (Expo Push), registro de token, categorias de ação, deep links
   - dep: T-080, T-033 · docs: 04, 09
