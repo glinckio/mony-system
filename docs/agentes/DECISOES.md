@@ -143,6 +143,7 @@ Contexto: RN-002 e docs 02, 05, 10 e 11. Decisões:
 - **Nonce.** Obrigatório com a Apple: o token traz o SHA-256 do valor que o app gerou, que a API confere. Com o Google é conferido quando o token traz um, porque o SDK nem sempre aceita nonce.
 - **Repetição.** Cada `id_token` vale uma vez: o resumo dele fica marcado no Redis até vencer (`LimiteTentativas.usarUmaVez`). O token só é gasto quando o pedido dá certo. Limite de 20 chamadas por IP a cada 15 minutos.
 - **Testes.** Google e Apple de mentira com um par RSA local (`test/provedor-social-falso.ts`); a conferência é a mesma de produção.
+- **`config-app`.** `flags.loginGoogle` e `flags.loginApple` dizem se o provedor está configurado, para o app esconder o botão de quem não está.
 - **Humano.** Falta criar os clientes OAuth e ativar o Sign in with Apple em nome do cliente (BLOQUEIOS). Por isso o PR fica com `aguardando-humano`.
 
 Reversível: sim.

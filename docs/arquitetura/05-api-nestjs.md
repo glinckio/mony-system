@@ -165,7 +165,7 @@ Implementado na T-033.
 | `POST /me/dispositivos` | `tokenPush` (ou `null`), `modelo` | 204. Grava no aparelho da sessão |
 | `GET /me/onboarding` | — | `concluido`, `etapas` (pendente, concluída ou dispensada), `checklistVisivel` (RN-024), `dicasVistas` |
 | `PATCH /me/onboarding` | `concluido`, `etapas`, `dicasVistas` | O progresso atualizado |
-| `GET /config-app` | — (público) | `versaoMinima` por plataforma, `flags`, `sugestoesChat` |
+| `GET /config-app` | — (público) | `versaoMinima` por plataforma, `flags` (`loginGoogle`, `loginApple`: provedor configurado), `sugestoesChat` |
 
 - **Token de push:** o mesmo token sai de qualquer outro aparelho registrado, porque é do app instalado e não da pessoa. Também sai quando a sessão termina: `sair`, `sair-todos` e reuso de token de renovação.
 - **Onboarding:** as marcas ficam em `dicas_vistas` (`onboarding:<etapa>:concluida`, `onboarding:<etapa>:dispensada`, `dica:<chave>`). Concluída vale mais que dispensada, e nenhuma etapa volta a pendente. Outros módulos marcam etapas com `UsuariosService.concluirEtapa` (ex.: o primeiro lançamento).

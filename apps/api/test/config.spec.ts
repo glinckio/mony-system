@@ -88,6 +88,8 @@ describe('variáveis de ambiente', () => {
     expect(() => validarAmbiente({ ...banco, APP_VERSAO_MINIMA_ANDROID: '1.4' })).toThrow(
       /APP_VERSAO_MINIMA_ANDROID/,
     );
+  });
+
   it('IDs de cliente do login social vêm separados por vírgula', () => {
     expect(
       validarAmbiente({
