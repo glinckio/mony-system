@@ -21,10 +21,11 @@ import { type DataCalendario, dataNoFuso } from '@mony/shared/datas';
 import type { Impacto } from '@mony/shared/transacoes';
 
 import { Clock } from '../../core/clock/clock';
-import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
+import { type Contexto, contextoDoSistema, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { BarramentoEventos } from '../../core/eventos/barramento-eventos';
 import { idDeJob } from '../../core/filas/filas';
+import { Rotina } from '../../core/rotinas/rotinas';
 import { paraDataDoBanco, paraResposta } from '../transacoes/transacoes.repository';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import {
@@ -43,6 +44,15 @@ import {
 
 /** Evento publicado depois de um pagamento de fatura (alertas: T-080). */
 export const EVENTO_FATURA_PAGA = 'fatura.paga';
+
+/** A fatura fechou com valor a pagar (alerta `fatura_fechada`, doc 09). */
+export const EVENTO_FATURA_FECHADA = 'fatura.fechada';
+
+/** A fatura venceu sem o total pago (alerta `fatura_atrasada` com [Paguei], doc 09). */
+export const EVENTO_FATURA_ATRASADA = 'fatura.atrasada';
+
+/** Faturas por lote na rotina. */
+const LOTE_ROTINA = 500;
 
 /** Campos de cartão do Open Finance que vêm do banco (RN-039). */
 const CAMPOS_DO_BANCO = [
@@ -434,6 +444,48 @@ export class CartoesService {
         faturaQuitada(situacao) ? 'pago' : 'pendente',
         this.clock.agora(),
       );
+    }
+  }
+
+  /**
+   * Rotina (doc 09, RN-033): grava as mudanças de status que só dependem do dia, no fuso de cada
+   * usuário: a fatura que fechou e a que venceu sem o total pago. Roda de hora em hora, então
+   * pega a virada do dia em todos os fusos; trocar só se o status ainda é o lido faz rodar de
+   * novo não repetir nada. Cada troca publica o evento dos alertas (T-080).
+   */
+  @Rotina({ nome: 'atualizar-faturas', padrao: '45 * * * *' })
+  async atualizarStatus(agora: Date): Promise<{ fechadas: number; atrasadas: number }> {
+    // O "hoje" mais adiantado do mundo: nenhuma fatura de usuário algum fica de fora.
+    const limite = dataNoFuso(agora, 'Pacific/Kiritimati');
+    const contadores = { fechadas: 0, atrasadas: 0 };
+    let depoisDe: string | null = null;
+    for (;;) {
+      const lote = await this.repositorio.faturasParaAtualizar(limite, depoisDe, LOTE_ROTINA);
+      if (lote.length === 0) return contadores;
+      for (const fatura of lote) {
+        const novo = statusDaFatura(fatura, dataNoFuso(agora, fatura.fuso));
+        if (novo === fatura.status) continue;
+        if (!(await this.repositorio.trocarStatus(fatura.id, fatura.status, novo))) continue;
+        if (fatura.status === 'aberta' && fatura.valorTotal > 0) {
+          contadores.fechadas += 1;
+          await this.eventos.publicar(
+            EVENTO_FATURA_FECHADA,
+            { faturaId: fatura.id },
+            contextoDoSistema(),
+            { idUnico: idDeJob('fatura-fechada', fatura.id) },
+          );
+        }
+        if (novo === 'atrasada') {
+          contadores.atrasadas += 1;
+          await this.eventos.publicar(
+            EVENTO_FATURA_ATRASADA,
+            { faturaId: fatura.id },
+            contextoDoSistema(),
+            { idUnico: idDeJob('fatura-atrasada', fatura.id) },
+          );
+        }
+      }
+      depoisDe = lote.at(-1)?.id ?? null;
     }
   }
 
