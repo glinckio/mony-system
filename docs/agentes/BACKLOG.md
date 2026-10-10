@@ -87,7 +87,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-030 · RN-003
 - [ ] **T-032** 👤 Login social Google e Apple (validação de id_token no servidor)
   - dep: T-030 · RN-002 · requer credenciais Google/Apple
-- [ ] **T-033** Usuário: `GET/PATCH /me`, dispositivos (token push), onboarding, `config-app` com versão mínima
+- [x] **T-033** Usuário: `GET/PATCH /me`, dispositivos (token push), onboarding, `config-app` com versão mínima (PR #17)
   - dep: T-030 · docs: 05
 - [ ] **T-034** App: telas de auth, sessão segura, refresh único concorrente, biometria
   - dep: T-030, T-011 · docs: 04 · RN-005

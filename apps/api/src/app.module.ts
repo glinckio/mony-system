@@ -9,7 +9,10 @@ import { IdempotenciaModule } from './core/idempotencia/idempotencia.module';
 import { LimitesModule } from './core/limites/limite-tentativas';
 import { NucleoModule } from './core/nucleo.module';
 import { SaudeController } from './core/saude/saude.controller';
+import { VersaoAppModule } from './core/versao-app/versao-app';
 import { AutenticacaoModule } from './modulos/autenticacao/autenticacao.module';
+import { ConfigAppModule } from './modulos/config-app/config-app';
+import { UsuariosModule } from './modulos/usuarios/usuarios.module';
 
 /** Módulo raiz da API HTTP. Os módulos de domínio (`modulos/*`) entram aqui. */
 @Module({
@@ -17,9 +20,12 @@ import { AutenticacaoModule } from './modulos/autenticacao/autenticacao.module';
     NucleoModule,
     EventosModule,
     IdempotenciaModule,
+    VersaoAppModule,
     AuthModule,
     LimitesModule,
     AutenticacaoModule,
+    UsuariosModule,
+    ConfigAppModule,
   ],
   controllers: [SaudeController],
   providers: [

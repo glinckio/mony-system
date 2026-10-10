@@ -6,18 +6,30 @@
  * OpenAPI spec version: 1
  */
 
+export * from './atualizacaoOnboardingDto';
+export * from './atualizacaoPerfilDto';
 export * from './cadastroDto';
 export * from './cadastroDtoAceites';
 export * from './cadastroDtoDispositivo';
 export * from './cadastroDtoDispositivoPlataforma';
 export * from './conferenciaCodigoDto';
+export * from './configAppDto';
+export * from './configAppDtoFlags';
+export * from './configAppDtoVersaoMinima';
 export * from './loginDto';
 export * from './loginDtoDispositivo';
 export * from './loginDtoDispositivoPlataforma';
+export * from './onboardingDto';
+export * from './onboardingDtoEtapasItem';
+export * from './onboardingDtoEtapasItemEtapa';
+export * from './onboardingDtoEtapasItemSituacao';
 export * from './pedidoCodigoDto';
+export * from './perfilDto';
+export * from './perfilDtoLoginsSociaisItem';
 export * from './redefinicaoSenhaDto';
 export * from './redefinicaoSenhaDtoDispositivo';
 export * from './redefinicaoSenhaDtoDispositivoPlataforma';
+export * from './registroDispositivoDto';
 export * from './renovacaoDto';
 export * from './saudeDto';
 export * from './sessaoDto';

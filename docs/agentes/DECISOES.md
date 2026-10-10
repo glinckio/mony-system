@@ -112,3 +112,20 @@ Contexto: RN-003, RN-008, docs 05, 10 e 11. Decisões:
 - **Produção sem Brevo.** A API sobe com `EMAIL_PROVEDOR=fake` e avisa no log, sem o conteúdo. Por isso o merge não depende da chave do Brevo, que ficou em `BLOQUEIOS.md`.
 
 Reversível: sim.
+
+## 2026-10-10 — T-033 — Usuário, aparelhos, onboarding e config-app
+Contexto: docs 04 (rede e onboarding), 05, 06, 09 e RN-024. Decisões:
+- **Perfil.** `PATCH /me` muda nome, telefone e fuso. E-mail, senha e foto ficam fora: e-mail precisa de confirmação, senha tem o fluxo da T-031, e foto depende do upload para o S3 (T-037). Telefone novo perde a verificação, porque a ligação de lembrete só vai para número verificado (RN-078). O perfil diz se há senha e quais logins sociais estão ligados, para o app montar a tela de conta.
+- **Token de push.** Fica no aparelho da sessão (`did` do token de acesso), e um token pertence a um aparelho só. Quando outra pessoa entra no mesmo celular e registra o token, ele sai do registro anterior. Encerrar a sessão (`sair`, `sair-todos`, reuso de token de renovação) também apaga o token, para quem saiu não receber notificação.
+- **Onboarding.**
+  - Usa a tabela `dicas_vistas`, sem migração, com marcas por chave.
+  - Etapas provisórias até o design: `primeiro-lancamento`, `cartoes`, `orcamento`, `permissoes`, `tour`. Cada uma fica pendente, concluída ou dispensada; concluída vale mais que dispensada e nada volta a pendente.
+  - O checklist aparece enquanto houver etapa pendente (RN-024). `concluido` é o fim do fluxo inicial (`onboarding_concluido`), que decide se o app abre nas abas (doc 04).
+  - Outros módulos marcam etapas com `UsuariosService.concluirEtapa`.
+- **Versão mínima.**
+  - Guarda global com `X-App-Version` e `X-Platform` → 426 `VERSAO_APP_DESATUALIZADA`. Sem cabeçalho não bloqueia.
+  - As mínimas vêm do ambiente (`APP_VERSAO_MINIMA_IOS`, `APP_VERSAO_MINIMA_ANDROID`, padrão `0.0.0`), até o painel admin editá-las (T-141, doc 13). Mudar exige novo deploy.
+  - `config-app` e o health check respondem a qualquer versão.
+- **`GET /config-app`** é público, porque o app consulta antes do login. `flags` vazio por enquanto. `sugestoesChat` com quatro sugestões provisórias até a Mony (T-060).
+
+Reversível: sim.

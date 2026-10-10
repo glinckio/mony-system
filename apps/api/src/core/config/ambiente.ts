@@ -1,3 +1,4 @@
+import { REGEX_VERSAO_APP } from '@mony/shared/config-app';
 import { z } from 'zod';
 
 /**
@@ -51,6 +52,12 @@ export const esquemaAmbiente = z
     ),
     /** Remetente dos e-mails. Com o Brevo, o domínio precisa estar verificado lá. */
     EMAIL_REMETENTE: z.preprocess(vazioComoAusente, z.email().optional()),
+    /**
+     * Versão mínima do app por plataforma (doc 04). Abaixo dela a API responde 426
+     * `VERSAO_APP_DESATUALIZADA` e o app mostra a atualização obrigatória.
+     */
+    APP_VERSAO_MINIMA_IOS: z.string().regex(REGEX_VERSAO_APP, 'formato 1.2.3').default('0.0.0'),
+    APP_VERSAO_MINIMA_ANDROID: z.string().regex(REGEX_VERSAO_APP, 'formato 1.2.3').default('0.0.0'),
   })
   .superRefine((variaveis, contexto) => {
     if (variaveis.NODE_ENV === 'production' && variaveis.JWT_CHAVE_PRIVADA === undefined) {

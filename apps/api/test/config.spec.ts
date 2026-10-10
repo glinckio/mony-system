@@ -22,6 +22,8 @@ describe('variáveis de ambiente', () => {
       LOG_LEVEL: 'info',
       JWT_ID_CHAVE: 'mony-1',
       EMAIL_PROVEDOR: 'fake',
+      APP_VERSAO_MINIMA_IOS: '0.0.0',
+      APP_VERSAO_MINIMA_ANDROID: '0.0.0',
       ...banco,
     });
     expect(validarAmbiente({ ...banco, ...jwt, PORT: '8080', NODE_ENV: 'production' }).PORT).toBe(
@@ -74,6 +76,15 @@ describe('variáveis de ambiente', () => {
         EMAIL_REMETENTE: 'nao-responda@mony.local',
       }),
     ).toMatchObject({ SMTP_URL: 'smtp://localhost:1025' });
+  });
+
+  it('versão mínima do app no formato 1.2.3', () => {
+    expect(
+      validarAmbiente({ ...banco, APP_VERSAO_MINIMA_IOS: '1.4.0' }).APP_VERSAO_MINIMA_IOS,
+    ).toBe('1.4.0');
+    expect(() => validarAmbiente({ ...banco, APP_VERSAO_MINIMA_ANDROID: '1.4' })).toThrow(
+      /APP_VERSAO_MINIMA_ANDROID/,
+    );
   });
 
   it('exige as URLs do banco e do Redis', () => {

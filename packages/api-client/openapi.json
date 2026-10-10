@@ -236,6 +236,176 @@
           "autenticacao"
         ]
       }
+    },
+    "/v1/me": {
+      "get": {
+        "operationId": "perfilUsuarios",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Perfil de quem está logado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "usuario"
+        ]
+      },
+      "patch": {
+        "operationId": "atualizarPerfilUsuarios",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizacaoPerfilDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil depois da mudança.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "usuario"
+        ]
+      }
+    },
+    "/v1/me/dispositivos": {
+      "post": {
+        "operationId": "registrarDispositivoUsuarios",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroDispositivoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Token de push gravado no aparelho desta sessão."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "usuario"
+        ]
+      }
+    },
+    "/v1/me/onboarding": {
+      "get": {
+        "operationId": "onboardingUsuarios",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Progresso do onboarding e dicas vistas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "usuario"
+        ]
+      },
+      "patch": {
+        "operationId": "atualizarOnboardingUsuarios",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizacaoOnboardingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Progresso depois da mudança.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "usuario"
+        ]
+      }
+    },
+    "/v1/config-app": {
+      "get": {
+        "operationId": "obterConfigApp",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Configuração do app; não exige login.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigAppDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "app"
+        ]
+      }
     }
   },
   "info": {
@@ -564,6 +734,261 @@
           "codigo",
           "senha",
           "dispositivo"
+        ]
+      },
+      "PerfilDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "telefone": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "telefoneVerificado": {
+            "type": "boolean"
+          },
+          "fotoUrl": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "fusoHorario": {
+            "type": "string"
+          },
+          "onboardingConcluido": {
+            "type": "boolean"
+          },
+          "temSenha": {
+            "type": "boolean"
+          },
+          "loginsSociais": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "google",
+                "apple"
+              ]
+            }
+          },
+          "criadoEm": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "email",
+          "telefone",
+          "telefoneVerificado",
+          "fotoUrl",
+          "fusoHorario",
+          "onboardingConcluido",
+          "temSenha",
+          "loginsSociais",
+          "criadoEm"
+        ]
+      },
+      "AtualizacaoPerfilDto": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "telefone": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "fusoHorario": {
+            "type": "string",
+            "maxLength": 64
+          }
+        }
+      },
+      "RegistroDispositivoDto": {
+        "type": "object",
+        "properties": {
+          "tokenPush": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "modelo": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "tokenPush"
+        ]
+      },
+      "OnboardingDto": {
+        "type": "object",
+        "properties": {
+          "concluido": {
+            "type": "boolean"
+          },
+          "etapas": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "etapa": {
+                  "type": "string",
+                  "enum": [
+                    "primeiro-lancamento",
+                    "cartoes",
+                    "orcamento",
+                    "permissoes",
+                    "tour"
+                  ]
+                },
+                "situacao": {
+                  "type": "string",
+                  "enum": [
+                    "pendente",
+                    "concluida",
+                    "dispensada"
+                  ]
+                },
+                "em": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "etapa",
+                "situacao",
+                "em"
+              ]
+            }
+          },
+          "checklistVisivel": {
+            "type": "boolean"
+          },
+          "dicasVistas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "concluido",
+          "etapas",
+          "checklistVisivel",
+          "dicasVistas"
+        ]
+      },
+      "AtualizacaoOnboardingDto": {
+        "type": "object",
+        "properties": {
+          "concluido": {
+            "type": "boolean"
+          },
+          "etapas": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "enum": [
+                "primeiro-lancamento",
+                "cartoes",
+                "orcamento",
+                "permissoes",
+                "tour"
+              ]
+            },
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "concluida",
+                "dispensada"
+              ]
+            }
+          },
+          "dicasVistas": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 80,
+              "pattern": "^[a-z0-9-]+(\\.[a-z0-9-]+)*$"
+            }
+          }
+        }
+      },
+      "ConfigAppDto": {
+        "type": "object",
+        "properties": {
+          "versaoMinima": {
+            "type": "object",
+            "properties": {
+              "ios": {
+                "type": "string",
+                "pattern": "^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}$"
+              },
+              "android": {
+                "type": "string",
+                "pattern": "^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}$"
+              }
+            },
+            "required": [
+              "ios",
+              "android"
+            ]
+          },
+          "flags": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "sugestoesChat": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "versaoMinima",
+          "flags",
+          "sugestoesChat"
         ]
       }
     }
