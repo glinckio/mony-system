@@ -95,3 +95,10 @@ Servidor agenda, o provedor liga para o número verificado e fala o texto do lem
 ## E-mail transacional
 
 Brevo via `EmailProvider`, com templates versionados: código de recuperação, boas-vindas, recibos/assinatura, link de exportação de dados, confirmação de exclusão de conta.
+
+Como está (T-031):
+
+- **Modelos no Git** (`apps/api/src/integracoes/email/modelos/`): cada um é uma função que devolve assunto, HTML (tabela com estilos inline) e texto. O Brevo recebe o conteúdo pronto pela API `POST /v3/smtp/email`, com o nome do modelo como etiqueta. Os templates do painel do Brevo não são usados, para o texto mudar junto com o código e passar por revisão.
+- **Fila `emails`:** a API só enfileira (`EnvioEmails`); o worker envia (`ProcessadorEmails`), com 5 tentativas e espera exponencial. Resposta 4xx do Brevo (endereço ou chave recusados) vai direto para as falhas, sem repetir. O job sai do Redis assim que o envio dá certo, porque leva o conteúdo (o código de recuperação, por exemplo); um job que falhou fica um dia para investigação.
+- **Provedores** (`EMAIL_PROVEDOR`): `brevo` (nuvem, com `BREVO_CHAVE_API` e `EMAIL_REMETENTE` de domínio verificado no Brevo, com SPF e DKIM), `smtp` (desenvolvimento, apontando para o Mailpit do `docker compose`) e `fake` (testes; não envia e, fora de produção, escreve o e-mail no log do worker).
+- **Modelos prontos:** código de recuperação (RN-003).

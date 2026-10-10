@@ -42,7 +42,7 @@ apps/api/
 │     ├─ agenda/        (CalendarProvider → google | microsoft)
 │     ├─ nfce/          (NfceProvider → api-terceiro | sefaz-scraper)
 │     ├─ telefonia/     (VozProvider → twilio)
-│     └─ email/         (EmailProvider → brevo)
+│     └─ email/         (EmailProvider → brevo | smtp | fake; modelos/ com os e-mails)
 ├─ prisma/
 │  ├─ schema.prisma
 │  ├─ migrations/
@@ -102,7 +102,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 
 | Grupo | Rotas |
 |---|---|
-| Autenticação | `POST /auth/cadastro` · `POST /auth/login` · `POST /auth/social` · `POST /auth/renovar` · `POST /auth/sair` · `POST /auth/sair-todos` **(proposta)** · `POST /auth/senha/codigo` · `POST /auth/senha/redefinir` |
+| Autenticação | `POST /auth/cadastro` · `POST /auth/login` · `POST /auth/social` · `POST /auth/renovar` · `POST /auth/sair` · `POST /auth/sair-todos` **(proposta)** · `POST /auth/senha/codigo` · `POST /auth/senha/conferir` **(proposta)** · `POST /auth/senha/redefinir` |
 | Usuário | `GET /me` · `PATCH /me` · `POST /me/dispositivos` · `GET /me/onboarding` · `PATCH /me/onboarding` **(proposta)** · `GET /me/exportar` · `DELETE /me` |
 | App | `GET /config-app` **(proposta)**: versão mínima, flags, sugestões do chat |
 | Planos e assinatura | `GET /planos` · `GET /assinatura` · `GET /assinatura/uso` · `POST /assinatura/checkout` · `POST /assinatura/portal` · `POST /webhooks/stripe` |
@@ -128,7 +128,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 
 ## Autenticação
 
-Implementada na T-030 (RN-001 a RN-008; detalhes de segurança em [11](11-seguranca-e-lgpd.md#autenticação)).
+Implementada na T-030 e na T-031 (RN-001 a RN-008; detalhes de segurança em [11](11-seguranca-e-lgpd.md#autenticação)).
 
 | Rota | Corpo | Resposta |
 |---|---|---|
@@ -137,11 +137,15 @@ Implementada na T-030 (RN-001 a RN-008; detalhes de segurança em [11](11-segura
 | `POST /auth/renovar` | `renovacao` | 200 + sessão nova (o token anterior deixa de valer) |
 | `POST /auth/sair` | `renovacao` | 204 |
 | `POST /auth/sair-todos` | (token de acesso) | 204 |
+| `POST /auth/senha/codigo` | e-mail | 202, exista a conta ou não (RN-003) |
+| `POST /auth/senha/conferir` | e-mail, `codigo` | 204 se o código vale; não gasta o código |
+| `POST /auth/senha/redefinir` | e-mail, `codigo`, senha nova, `dispositivo` | 200 + sessão; as sessões dos outros aparelhos caem |
 
 - **Sessão** (`@mony/shared/autenticacao`, `esquemaSessao`): `usuario`, `tokens` (`acesso`, `acessoExpiraEm`, `renovacao`, `renovacaoExpiraEm`) e `aceitesPendentes` (documentos com versão nova a aceitar, RN-007).
 - **Guarda global:** toda rota exige `Authorization: Bearer <acesso>`, menos as com `@Publico()`. Sem token ou token inválido → 401 `NAO_AUTENTICADO`; token vencido → 401 `TOKEN_EXPIRADO` (o app renova e repete a chamada).
 - **Erros:** `EMAIL_JA_CADASTRADO` (409), `TERMOS_PENDENTES` (403, cadastro com versão antiga), `CREDENCIAIS_INVALIDAS` (401, a mesma para e-mail inexistente e senha errada), `CONTA_BLOQUEADA` (403), `SESSAO_INVALIDA` (401, renovação recusada), `MUITAS_TENTATIVAS` (429, com `detalhes.tenteNovamenteEm`).
 - **Dispositivo:** o app manda um identificador estável do aparelho, gerado na instalação. Há uma sessão por aparelho: login de novo no mesmo aparelho troca a sessão.
+- **Recuperação de senha (RN-003):** código de 6 dígitos por e-mail, válido por 15 minutos, com até 5 tentativas erradas; pedir outro faz o anterior vencer. O fluxo do app é e-mail → código (`conferir`) → senha nova (`redefinir`). Erros: `CODIGO_INVALIDO` (400, inclusive para e-mail sem conta) e `CODIGO_EXPIRADO` (400: vencido, usado, substituído ou com as tentativas esgotadas; o app oferece pedir outro).
 
 ## Guardas e decoradores
 
@@ -166,6 +170,7 @@ Implementada na T-030 (RN-001 a RN-008; detalhes de segurança em [11](11-segura
 |---|---|
 | `eventos-dominio` | Reações a eventos (alertas pós-lançamento, preferências aprendidas) |
 | `notificacoes` | Envio de push, gravação na central, mensagem da Mony |
+| `emails` | E-mails transacionais pelo `EmailProvider` (o job sai do Redis assim que o envio dá certo) |
 | `mony-midia` | Transcrição de áudio, leitura de foto/PDF, NFC-e |
 | `open-finance` | Sincronizações por webhook e periódicas |
 | `webhooks` | Processamento de eventos Stripe e Open Finance |
