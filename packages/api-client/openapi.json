@@ -1186,11 +1186,25 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "recorrencia",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "esta",
+              "type": "string",
+              "enum": [
+                "esta",
+                "proximas",
+                "todas"
+              ]
+            }
           }
         ],
         "responses": {
           "204": {
-            "description": "Lançamento excluído (exclusão lógica, RN-046)."
+            "description": "Lançamento excluído (exclusão lógica, RN-046). Em ocorrência de recorrência, `recorrencia` escolhe só esta, esta e as próximas, ou todas (RN-043)."
           }
         },
         "security": [
@@ -1236,6 +1250,180 @@
         ],
         "tags": [
           "transacoes"
+        ]
+      }
+    },
+    "/v1/recorrencias": {
+      "get": {
+        "operationId": "listarRecorrencias",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Recorrências ativas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaRecorrenciasDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "recorrencias"
+        ]
+      },
+      "post": {
+        "operationId": "criarRecorrencias",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave única da operação (8 a 255 caracteres). Repetir a chave devolve a mesma resposta sem executar de novo.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovaRecorrenciaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Recorrência criada e as ocorrências dos próximos 35 dias.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaRecorrenciaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "recorrencias"
+        ]
+      }
+    },
+    "/v1/recorrencias/{id}": {
+      "get": {
+        "operationId": "buscarRecorrencias",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecorrenciaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "recorrencias"
+        ]
+      },
+      "patch": {
+        "operationId": "atualizarRecorrencias",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizacaoRecorrenciaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recorrência atualizada e as ocorrências geradas agora, se houver.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaRecorrenciaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "recorrencias"
+        ]
+      },
+      "delete": {
+        "operationId": "excluirRecorrencias",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Recorrência parada; ocorrências pendentes de hoje em diante excluídas."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "recorrencias"
         ]
       }
     }
@@ -3145,6 +3333,676 @@
               "type": "string",
               "format": "uuid",
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        }
+      },
+      "ListaRecorrenciasDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "tipo": {
+                  "type": "string",
+                  "enum": [
+                    "receita",
+                    "despesa"
+                  ]
+                },
+                "descricao": {
+                  "type": "string"
+                },
+                "valorCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "categoriaId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "formaPagamento": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "cartao_credito",
+                        "pix",
+                        "debito",
+                        "dinheiro",
+                        "boleto"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "contaId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "frequencia": {
+                  "type": "string",
+                  "enum": [
+                    "semanal",
+                    "mensal",
+                    "anual"
+                  ]
+                },
+                "dia": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "dataInicio": {
+                  "type": "string"
+                },
+                "dataFim": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "proximaGeracao": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "ativa": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "tipo",
+                "descricao",
+                "valorCentavos",
+                "categoriaId",
+                "formaPagamento",
+                "contaId",
+                "frequencia",
+                "dia",
+                "dataInicio",
+                "dataFim",
+                "proximaGeracao",
+                "ativa"
+              ]
+            }
+          }
+        },
+        "required": [
+          "itens"
+        ]
+      },
+      "RecorrenciaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "receita",
+              "despesa"
+            ]
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "valorCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "categoriaId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "formaPagamento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "cartao_credito",
+                  "pix",
+                  "debito",
+                  "dinheiro",
+                  "boleto"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contaId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "frequencia": {
+            "type": "string",
+            "enum": [
+              "semanal",
+              "mensal",
+              "anual"
+            ]
+          },
+          "dia": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "dataInicio": {
+            "type": "string"
+          },
+          "dataFim": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "proximaGeracao": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ativa": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "descricao",
+          "valorCentavos",
+          "categoriaId",
+          "formaPagamento",
+          "contaId",
+          "frequencia",
+          "dia",
+          "dataInicio",
+          "dataFim",
+          "proximaGeracao",
+          "ativa"
+        ]
+      },
+      "NovaRecorrenciaDto": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "receita",
+              "despesa"
+            ]
+          },
+          "descricao": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "valorCentavos": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000000
+          },
+          "categoriaId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "formaPagamento": {
+            "type": "string",
+            "enum": [
+              "cartao_credito",
+              "pix",
+              "debito",
+              "dinheiro",
+              "boleto"
+            ]
+          },
+          "contaId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "frequencia": {
+            "type": "string",
+            "enum": [
+              "semanal",
+              "mensal",
+              "anual"
+            ]
+          },
+          "dia": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 31
+          },
+          "dataInicio": {
+            "type": "string"
+          },
+          "dataFim": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tipo",
+          "descricao",
+          "valorCentavos",
+          "categoriaId",
+          "frequencia",
+          "dataInicio"
+        ]
+      },
+      "RespostaRecorrenciaDto": {
+        "type": "object",
+        "properties": {
+          "recorrencia": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "tipo": {
+                "type": "string",
+                "enum": [
+                  "receita",
+                  "despesa"
+                ]
+              },
+              "descricao": {
+                "type": "string"
+              },
+              "valorCentavos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "categoriaId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "formaPagamento": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "cartao_credito",
+                      "pix",
+                      "debito",
+                      "dinheiro",
+                      "boleto"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "contaId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "frequencia": {
+                "type": "string",
+                "enum": [
+                  "semanal",
+                  "mensal",
+                  "anual"
+                ]
+              },
+              "dia": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "dataInicio": {
+                "type": "string"
+              },
+              "dataFim": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "proximaGeracao": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "ativa": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "tipo",
+              "descricao",
+              "valorCentavos",
+              "categoriaId",
+              "formaPagamento",
+              "contaId",
+              "frequencia",
+              "dia",
+              "dataInicio",
+              "dataFim",
+              "proximaGeracao",
+              "ativa"
+            ]
+          },
+          "ocorrencias": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "tipo": {
+                  "type": "string",
+                  "enum": [
+                    "receita",
+                    "despesa"
+                  ]
+                },
+                "descricao": {
+                  "type": "string"
+                },
+                "valorCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "data": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pago",
+                    "pendente"
+                  ]
+                },
+                "formaPagamento": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "cartao_credito",
+                        "pix",
+                        "debito",
+                        "dinheiro",
+                        "boleto"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "origem": {
+                  "type": "string",
+                  "enum": [
+                    "manual",
+                    "mony",
+                    "open_finance",
+                    "foto"
+                  ]
+                },
+                "natureza": {
+                  "type": "string",
+                  "enum": [
+                    "normal",
+                    "pagamento_fatura",
+                    "transferencia"
+                  ]
+                },
+                "observacao": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "categoriaId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "contaId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "cartaoId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "faturaId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "recorrenciaId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "parcelamentoId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "anexos": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "tipo": {
+                        "type": "string",
+                        "enum": [
+                          "foto",
+                          "pdf",
+                          "comprovante"
+                        ]
+                      },
+                      "tamanho": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "tipo",
+                      "tamanho"
+                    ]
+                  }
+                },
+                "criadoEm": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "atualizadoEm": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "tipo",
+                "descricao",
+                "valorCentavos",
+                "data",
+                "status",
+                "formaPagamento",
+                "origem",
+                "natureza",
+                "observacao",
+                "categoriaId",
+                "contaId",
+                "cartaoId",
+                "faturaId",
+                "recorrenciaId",
+                "parcelamentoId",
+                "anexos",
+                "criadoEm",
+                "atualizadoEm"
+              ]
+            }
+          }
+        },
+        "required": [
+          "recorrencia",
+          "ocorrencias"
+        ]
+      },
+      "AtualizacaoRecorrenciaDto": {
+        "type": "object",
+        "properties": {
+          "descricao": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "valorCentavos": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000000
+          },
+          "categoriaId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "formaPagamento": {
+            "type": "string",
+            "enum": [
+              "cartao_credito",
+              "pix",
+              "debito",
+              "dinheiro",
+              "boleto"
+            ]
+          },
+          "contaId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "frequencia": {
+            "type": "string",
+            "enum": [
+              "semanal",
+              "mensal",
+              "anual"
+            ]
+          },
+          "dia": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 31
+          },
+          "dataFim": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           }
         }

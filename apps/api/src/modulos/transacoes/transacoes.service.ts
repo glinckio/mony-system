@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { dataNoFuso } from '@mony/shared/datas';
+import type { EscopoExclusaoOcorrencia } from '@mony/shared/recorrencias';
 import type { FormaPagamento, TipoTransacao } from '@mony/shared/enums';
 import {
   type ConsultaTransacoes,
@@ -21,9 +22,11 @@ import { ErroDominio } from '../../core/erros/erro-dominio';
 import { BarramentoEventos } from '../../core/eventos/barramento-eventos';
 import { idDeJob } from '../../core/filas/filas';
 import { ArquivosService } from '../arquivos/arquivos.service';
+import { RecorrenciasService } from '../recorrencias/recorrencias.service';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import {
   paraDataDoBanco,
+  paraResposta,
   type Posicao,
   type TransacaoDoUsuario,
   TransacoesRepository,
@@ -45,6 +48,7 @@ export class TransacoesService {
     private readonly repositorio: TransacoesRepository,
     private readonly arquivos: ArquivosService,
     private readonly usuarios: UsuariosService,
+    private readonly recorrencias: RecorrenciasService,
     private readonly eventos: BarramentoEventos,
     private readonly clock: Clock,
   ) {}
@@ -198,11 +202,27 @@ export class TransacoesService {
     return { transacao: paraResposta(await this.exigir(usuarioId, id)), impacto: {} };
   }
 
-  /** RN-046: exclusão lógica. Cartão, parcelas e pagamento de fatura saem pelos fluxos deles. */
-  async excluir(contexto: Contexto, id: string): Promise<void> {
+  /**
+   * RN-046: exclusão lógica. Cartão, parcelas e pagamento de fatura saem pelos fluxos deles. Em
+   * ocorrência de recorrência, o escopo decide se saem também as próximas ou todas (RN-043).
+   */
+  async excluir(
+    contexto: Contexto,
+    id: string,
+    escopo: EscopoExclusaoOcorrencia = 'esta',
+  ): Promise<void> {
     const usuarioId = usuarioDoContexto(contexto);
     const atual = await this.exigir(usuarioId, id);
     exigirSemOutroFluxo([atual]);
+    if (escopo !== 'esta' && atual.recorrenciaId !== null) {
+      await this.recorrencias.excluirOcorrencias(
+        usuarioId,
+        atual.recorrenciaId,
+        atual.data.toISOString().slice(0, 10),
+        escopo,
+      );
+      return;
+    }
     await this.repositorio.emTransacao((tx) =>
       this.repositorio.excluir(tx, usuarioId, [id], this.clock.agora()),
     );
@@ -333,28 +353,4 @@ function lerCursor(cursor: string): Posicao {
     // cai no erro abaixo
   }
   throw new ErroDominio('REQUISICAO_INVALIDA', { mensagem: 'Cursor inválido.' });
-}
-
-function paraResposta(transacao: TransacaoDoUsuario): Transacao {
-  return {
-    id: transacao.id,
-    tipo: transacao.tipo,
-    descricao: transacao.descricao,
-    valorCentavos: Number(transacao.valor),
-    data: transacao.data.toISOString().slice(0, 10),
-    status: transacao.status,
-    formaPagamento: transacao.formaPagamento,
-    origem: transacao.origem,
-    natureza: transacao.natureza,
-    observacao: transacao.observacao,
-    categoriaId: transacao.categoriaId,
-    contaId: transacao.contaId,
-    cartaoId: transacao.cartaoId,
-    faturaId: transacao.faturaId,
-    recorrenciaId: transacao.recorrenciaId,
-    parcelamentoId: transacao.parcelamentoId,
-    anexos: transacao.anexos,
-    criadoEm: transacao.criadoEm.toISOString(),
-    atualizadoEm: transacao.atualizadoEm.toISOString(),
-  };
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { FiltroTransacoes } from '@mony/shared/transacoes';
+import type { FiltroTransacoes, Transacao as RespostaTransacao } from '@mony/shared/transacoes';
 
 import type { ClientePrisma } from '../../core/prisma/cliente';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -43,6 +43,31 @@ type Transacao = Pick<ClientePrisma, 'transacao' | 'anexo'>;
 /** `YYYY-MM-DD` → `Date` à meia-noite UTC, como o Prisma grava colunas `date`. */
 export function paraDataDoBanco(data: string): Date {
   return new Date(`${data}T00:00:00.000Z`);
+}
+
+/** Linha do banco → contrato da API (valor em centavos, data `YYYY-MM-DD`). */
+export function paraResposta(transacao: TransacaoDoUsuario): RespostaTransacao {
+  return {
+    id: transacao.id,
+    tipo: transacao.tipo,
+    descricao: transacao.descricao,
+    valorCentavos: Number(transacao.valor),
+    data: transacao.data.toISOString().slice(0, 10),
+    status: transacao.status,
+    formaPagamento: transacao.formaPagamento,
+    origem: transacao.origem,
+    natureza: transacao.natureza,
+    observacao: transacao.observacao,
+    categoriaId: transacao.categoriaId,
+    contaId: transacao.contaId,
+    cartaoId: transacao.cartaoId,
+    faturaId: transacao.faturaId,
+    recorrenciaId: transacao.recorrenciaId,
+    parcelamentoId: transacao.parcelamentoId,
+    anexos: transacao.anexos,
+    criadoEm: transacao.criadoEm.toISOString(),
+    atualizadoEm: transacao.atualizadoEm.toISOString(),
+  };
 }
 
 /** Acesso ao banco das transações; tudo filtra pelo `usuarioId` (doc 05). */

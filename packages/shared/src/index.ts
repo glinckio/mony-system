@@ -9,5 +9,6 @@ export * from './dinheiro.js';
 export * from './enums.js';
 export * from './erros.js';
 export * from './nfce.js';
+export * from './recorrencias.js';
 export * from './transacoes.js';
 export * from './usuario.js';
