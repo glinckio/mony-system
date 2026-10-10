@@ -272,3 +272,24 @@ Contexto: RN-036 e RN-037, no padrão documentado. As duas estão marcadas "conf
 - **Evento `fatura.paga`** (com `faturaId` e `transacaoId`) para o motor de alertas (T-080), que vai encerrar o aviso de fatura atrasada.
 
 Reversível: sim.
+
+## 2026-10-10 — T-042 — Parcelamentos e dívidas
+Contexto: RN-050 a RN-055, docs 05, 06 e 07. Decisões:
+- **Price com o saldo exato.** O doc 07 pede a conta em decimal, arredondando no fim de cada parcela, com a diferença na última.
+  - Se o saldo também fosse arredondado a cada mês, o erro de meio centavo cresceria com os juros. Em 360 meses a 1%, isso chega a R$ 17 de diferença na última parcela.
+  - Então o saldo segue exato em decimal (`decimal.js`, 200 dígitos), e só juros e parcela saem em centavos. A última amortiza o que falta, e a diferença nela é de no máximo um centavo por parcela.
+  - Amortização menor que um centavo nunca fica negativa.
+  - O teste sorteia 1.500 combinações de valor, prazo (até 480) e taxa (até 15% a.m.), além do extremo de 100% a.m. em 480 meses.
+- **Funções puras no `@mony/shared`** (`valoresDasParcelas`, `tabelaPrice`, `vencimentoDaParcela`, `statusDaParcela`, `statusDoParcelamento`), para o app simular sem chamar a API. `decimal.js` entrou como dependência do `@mony/shared` (já estava no lockfile, pelo Prisma).
+- **Taxa** em % ao mês com até 4 casas (`2.99`), de 0 a 100%. Zero é sem juros. O banco guarda a fração com 6 casas, como no doc 06.
+- **De 2 a 480 parcelas**: uma parcela só é uma despesa pendente comum; 480 meses é o prazo de um financiamento de imóvel.
+- **Despesa de cada parcela:** "Nome (k/n)", pendente, ligada à parcela nos dois sentidos.
+  - Dívida: data = vencimento, conta e forma opcionais (forma padrão boleto, porque despesa precisa de forma, RN-041).
+  - Cartão: data da compra + (k − 1) meses, para cada mês ter a sua parcela no Início. A fatura segue a regra do RN-051: a parcela `k` cai na competência da primeira + (k − 1), e não a fatura da data da despesa. O vencimento da parcela é o da fatura.
+- **Parcela de cartão segue a fatura.** O recálculo da fatura (T-041) também marca as parcelas: quitada → pagas, senão → pendentes. Fatura fechada e quitada recusa a parcela, e nada é gravado.
+- **Status calculado na leitura** (parcela `atrasado`, parcelamento `atrasada`/`quitada`), no "hoje" do usuário, como o das faturas. O banco guarda `cancelada` e o `quitada` das dívidas; as marcações diárias ficam com a T-047.
+- **Cancelar** (`DELETE`, RN-054) tira as parcelas não pagas ainda futuras: na dívida, as que vencem depois de hoje; no cartão, as de faturas ainda abertas. Elas são apagadas e as despesas delas, excluídas logicamente. Assim o parcelamento mostra só o que continua devido. Não há outra forma de apagar parcelamento: lançado por engano hoje, ele cancela inteiro, porque tudo é futuro.
+- **Pagar ou desfazer parcela** já paga, ou já pendente, devolve o estado atual (200), em vez de erro, para o toque duplo do app.
+- **Edição** só de nome, categoria e observação. Nome e categoria vão para as despesas. Valores e datas mudam cancelando e lançando de novo.
+
+Reversível: sim.

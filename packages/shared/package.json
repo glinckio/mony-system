@@ -54,6 +54,10 @@
       "types": "./dist/nfce.d.ts",
       "default": "./dist/nfce.js"
     },
+    "./parcelamentos": {
+      "types": "./dist/parcelamentos.d.ts",
+      "default": "./dist/parcelamentos.js"
+    },
     "./recorrencias": {
       "types": "./dist/recorrencias.d.ts",
       "default": "./dist/recorrencias.js"
@@ -75,6 +79,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "decimal.js": "^10.6.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
