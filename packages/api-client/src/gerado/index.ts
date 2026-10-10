@@ -3,6 +3,7 @@ export * from './arquivos/arquivos';
 export * from './autenticacao/autenticacao';
 export * from './categorias/categorias';
 export * from './contas/contas';
+export * from './recorrencias/recorrencias';
 export * from './saude/saude';
 export * from './transacoes/transacoes';
 export * from './usuario/usuario';

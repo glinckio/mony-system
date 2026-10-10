@@ -23,6 +23,7 @@ import type {
 
 import type {
   AtualizacaoTransacaoDto,
+  ExcluirTransacoesParams,
   ListarTransacoesParams,
   LoteTransacoesDto,
   NovaTransacaoDto,
@@ -622,15 +623,28 @@ export const useAtualizarTransacoes = <TError = unknown, TContext = unknown>(
 > => {
   return useMutation(getAtualizarTransacoesMutationOptions(options), queryClient);
 };
-export const getExcluirTransacoesUrl = (id: string) => {
-  return `/v1/transacoes/${id}`;
+export const getExcluirTransacoesUrl = (id: string, params?: ExcluirTransacoesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/transacoes/${id}?${stringifiedParams}`
+    : `/v1/transacoes/${id}`;
 };
 
 export const excluirTransacoes = async (
   id: string,
+  params?: ExcluirTransacoesParams,
   options?: Parameters<typeof requisicao>[1],
 ): Promise<void> => {
-  return requisicao<void>(getExcluirTransacoesUrl(id), {
+  return requisicao<void>(getExcluirTransacoesUrl(id, params), {
     ...options,
     method: 'DELETE',
   });
@@ -666,9 +680,9 @@ export const getExcluirTransacoesMutationOptions = <
     Awaited<ReturnType<typeof excluirTransacoes>>,
     ExcluirTransacoesMutationVariables
   > = (props) => {
-    const { id } = props ?? {};
+    const { id, params } = props ?? {};
 
-    return excluirTransacoes(id, requestOptions);
+    return excluirTransacoes(id, params, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -679,7 +693,7 @@ export type ExcluirTransacoesMutationResult = NonNullable<
 >;
 
 export type ExcluirTransacoesMutationError = unknown;
-export type ExcluirTransacoesMutationVariables = { id: string };
+export type ExcluirTransacoesMutationVariables = { id: string; params?: ExcluirTransacoesParams };
 
 export const useExcluirTransacoes = <TError = unknown, TContext = unknown>(
   options?: {

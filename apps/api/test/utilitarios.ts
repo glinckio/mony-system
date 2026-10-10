@@ -14,6 +14,7 @@ import {
   ArmazenamentoIdempotenciaMemoria,
 } from '../src/core/idempotencia/armazenamento';
 import { LimiteTentativas, LimiteTentativasMemoria } from '../src/core/limites/limite-tentativas';
+import { ProcessadorRotinas } from '../src/core/rotinas/rotinas';
 import { ProcessadorEmails } from '../src/integracoes/email/processador-emails';
 
 export function criarFilaFalsa() {
@@ -43,6 +44,8 @@ export function semServicosExternos(
     .overrideProvider(ProcessadorEventos)
     .useValue({})
     .overrideProvider(ProcessadorEmails)
+    .useValue({})
+    .overrideProvider(ProcessadorRotinas)
     .useValue({})
     .overrideProvider(ArmazenamentoArquivos)
     .useValue(new ArmazenamentoMemoria())

@@ -64,11 +64,11 @@ Regras de envio: RN-100 a RN-108 em [07](07-regras-de-negocio.md#alertas-e-notif
 
 ## Rotinas agendadas
 
-Todas no processo `worker`, com chave de job idempotente e processamento em lotes por usuário. As rotinas "diárias" rodam por fuso: o agendador dispara de hora em hora e processa os usuários cujo horário local bateu **(decisão técnica; com um único fuso no início, roda uma vez às 06:00 de São Paulo)**.
+Todas no processo `worker`, com chave de job idempotente e processamento em lotes por usuário. Uma rotina é um método com `@Rotina({ nome, padrao })` (`core/rotinas`): o worker acha os métodos na subida, cria um agendador do BullMQ na fila `rotinas` (cron no fuso de São Paulo) e chama o método com o instante do `Clock`. O módulo da rotina entra no `WorkerModule`. As rotinas "diárias" rodam por fuso: o agendador dispara de hora em hora e processa os usuários cujo horário local bateu **(decisão técnica; com um único fuso no início, roda uma vez às 06:00 de São Paulo)**.
 
 | Rotina | Frequência | O que faz |
 |---|---|---|
-| Gerar transações recorrentes | Diária 00:30 | Materializa ocorrências dos próximos 35 dias (RN-043) |
+| Gerar transações recorrentes | De hora em hora, no minuto 30 | Materializa ocorrências dos próximos 35 dias (RN-043), no fuso de cada usuário. Implementada na T-038 |
 | Fechar faturas e calcular valores | Diária 00:45 | Faturas cujo fechamento é hoje → `fechada`, alerta `fatura_fechada` |
 | Marcar atrasos | Diária 01:00 | Parcelas, faturas e dívidas vencidas → `atrasada` |
 | Encerrar testes | Diária 01:15 | Testes vencidos → gratuito; avisos do 2º e do último dia (RN-124, RN-126) |

@@ -35,6 +35,7 @@ import {
   type TotaisTransacoes,
   type Transacao,
 } from '@mony/shared/transacoes';
+import { esquemaExclusaoTransacao } from '@mony/shared/recorrencias';
 import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
@@ -51,6 +52,7 @@ class PaginaTransacoesDto extends createZodDto(esquemaPaginaTransacoes) {}
 class TotaisTransacoesDto extends createZodDto(esquemaTotaisTransacoes) {}
 class LoteTransacoesDto extends createZodDto(esquemaLoteTransacoes) {}
 class ResultadoLoteDto extends createZodDto(esquemaResultadoLote) {}
+class ExclusaoTransacaoDto extends createZodDto(esquemaExclusaoTransacao) {}
 
 /** Rotas de transações (docs/arquitetura/05). */
 @ApiTags('transacoes')
@@ -121,11 +123,15 @@ export class TransacoesController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiNoContentResponse({ description: 'Lançamento excluído (exclusão lógica, RN-046).' })
+  @ApiNoContentResponse({
+    description:
+      'Lançamento excluído (exclusão lógica, RN-046). Em ocorrência de recorrência, `recorrencia` escolhe só esta, esta e as próximas, ou todas (RN-043).',
+  })
   excluir(
     @ContextoAtual() contexto: Contexto,
     @Param('id', ParseUUIDPipe) id: string,
+    @Query() consulta: ExclusaoTransacaoDto,
   ): Promise<void> {
-    return this.transacoes.excluir(contexto, id);
+    return this.transacoes.excluir(contexto, id, consulta.recorrencia);
   }
 }
