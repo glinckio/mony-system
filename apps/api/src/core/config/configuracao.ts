@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { PlataformaDispositivo } from '@mony/shared/enums';
 
 import type { Ambiente } from './ambiente';
 
@@ -53,6 +54,14 @@ export class Configuracao {
   /** Servidor SMTP; definido quando `provedorEmail` é `smtp`. */
   get urlSmtp(): string | undefined {
     return this.config.get('SMTP_URL', { infer: true });
+  }
+
+  /** Versão mínima do app em cada plataforma (`1.2.3`). */
+  get versoesMinimasApp(): Record<PlataformaDispositivo, string> {
+    return {
+      ios: this.config.get('APP_VERSAO_MINIMA_IOS', { infer: true }),
+      android: this.config.get('APP_VERSAO_MINIMA_ANDROID', { infer: true }),
+    };
   }
 
   /** Remetente dos e-mails; obrigatório quando `provedorEmail` é `brevo`. */

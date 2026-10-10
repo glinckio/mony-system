@@ -14,6 +14,10 @@
       "types": "./dist/autenticacao.d.ts",
       "default": "./dist/autenticacao.js"
     },
+    "./config-app": {
+      "types": "./dist/config-app.d.ts",
+      "default": "./dist/config-app.js"
+    },
     "./dinheiro": {
       "types": "./dist/dinheiro.d.ts",
       "default": "./dist/dinheiro.js"
@@ -33,6 +37,10 @@
     "./nfce": {
       "types": "./dist/nfce.d.ts",
       "default": "./dist/nfce.js"
+    },
+    "./usuario": {
+      "types": "./dist/usuario.d.ts",
+      "default": "./dist/usuario.js"
     }
   },
   "scripts": {

@@ -223,34 +223,67 @@ export class AutenticacaoRepository {
     });
   }
 
-  /** RN-004: reuso de token antigo revoga todas as sessões daquele aparelho (a "família"). */
+  /**
+   * RN-004: reuso de token antigo revoga todas as sessões daquele aparelho (a "família"). Ao
+   * encerrar sessões, o aparelho também perde o token de push: quem saiu não recebe mais
+   * notificações (doc 09).
+   */
   async revogarFamilia(
     sessao: { usuarioId: string; dispositivoId: string | null },
     agora: Date,
   ): Promise<void> {
-    await this.prisma.cliente.sessao.updateMany({
-      where: {
-        usuarioId: sessao.usuarioId,
-        revogadaEm: null,
-        ...(sessao.dispositivoId ? { dispositivoId: sessao.dispositivoId } : {}),
-      },
-      data: { revogadaEm: agora },
-    });
+    await this.prisma.cliente.$transaction([
+      this.prisma.cliente.sessao.updateMany({
+        where: {
+          usuarioId: sessao.usuarioId,
+          revogadaEm: null,
+          ...(sessao.dispositivoId ? { dispositivoId: sessao.dispositivoId } : {}),
+        },
+        data: { revogadaEm: agora },
+      }),
+      this.prisma.cliente.dispositivo.updateMany({
+        where: {
+          usuarioId: sessao.usuarioId,
+          ...(sessao.dispositivoId ? { id: sessao.dispositivoId } : {}),
+        },
+        data: { tokenPush: null },
+      }),
+    ]);
   }
 
+  /** Sai deste aparelho: revoga a sessão e apaga o token de push dele. */
   async revogarPorToken(resumoRenovacao: string, agora: Date): Promise<void> {
-    await this.prisma.cliente.sessao.updateMany({
-      where: { refreshTokenHash: resumoRenovacao, revogadaEm: null },
-      data: { revogadaEm: agora },
+    await this.prisma.cliente.$transaction(async (tx) => {
+      const sessao = await tx.sessao.findUnique({
+        where: { refreshTokenHash: resumoRenovacao },
+        select: { dispositivoId: true, revogadaEm: true },
+      });
+      if (!sessao || sessao.revogadaEm !== null) return;
+      await tx.sessao.updateMany({
+        where: { refreshTokenHash: resumoRenovacao, revogadaEm: null },
+        data: { revogadaEm: agora },
+      });
+      if (sessao.dispositivoId) {
+        await tx.dispositivo.update({
+          where: { id: sessao.dispositivoId },
+          data: { tokenPush: null },
+        });
+      }
     });
   }
 
-  /** "Sair de todos os aparelhos" (RN-004). */
+  /** "Sair de todos os aparelhos" (RN-004): nenhum aparelho recebe mais push deste usuário. */
   async revogarDoUsuario(usuarioId: string, agora: Date): Promise<void> {
-    await this.prisma.cliente.sessao.updateMany({
-      where: { usuarioId, revogadaEm: null },
-      data: { revogadaEm: agora },
-    });
+    await this.prisma.cliente.$transaction([
+      this.prisma.cliente.sessao.updateMany({
+        where: { usuarioId, revogadaEm: null },
+        data: { revogadaEm: agora },
+      }),
+      this.prisma.cliente.dispositivo.updateMany({
+        where: { usuarioId },
+        data: { tokenPush: null },
+      }),
+    ]);
   }
 
   aceitesDoUsuario(usuarioId: string) {
