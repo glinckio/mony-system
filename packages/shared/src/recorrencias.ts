@@ -10,7 +10,11 @@ import {
   type FrequenciaRecorrencia,
   TIPOS_TRANSACAO,
 } from './enums.js';
-import { esquemaTransacao, VALOR_MAXIMO_CENTAVOS } from './transacoes.js';
+import {
+  esquemaTransacao,
+  problemasDaCompraNoCartao,
+  VALOR_MAXIMO_CENTAVOS,
+} from './transacoes.js';
 
 /** RN-043: a rotina materializa as ocorrências dos próximos 35 dias. */
 export const HORIZONTE_RECORRENCIA_DIAS = 35;
@@ -110,6 +114,8 @@ export const esquemaRecorrencia = z.object({
   categoriaId: z.uuid(),
   formaPagamento: z.enum(FORMAS_PAGAMENTO).nullable(),
   contaId: z.uuid().nullable(),
+  /** No cartão de crédito, as ocorrências entram nas faturas (T-051). */
+  cartaoId: z.uuid().nullable(),
   frequencia: z.enum(FREQUENCIAS_RECORRENCIA),
   dia: z.number().int(),
   dataInicio: z.string(),
@@ -158,6 +164,8 @@ export const esquemaNovaRecorrencia = z
     categoriaId: campos.categoriaId,
     formaPagamento: campos.formaPagamento.optional(),
     contaId: campos.contaId.optional(),
+    /** Obrigatório no cartão de crédito, e só nele (como na compra, RN-031). */
+    cartaoId: z.uuid().optional(),
     frequencia: campos.frequencia,
     dia: campos.dia.optional(),
     dataInicio: esquemaData,
@@ -172,6 +180,9 @@ export const esquemaNovaRecorrencia = z
         path: ['formaPagamento'],
         message: 'Despesa precisa da forma de pagamento (RN-041)',
       });
+    }
+    for (const { campo, mensagem } of problemasDaCompraNoCartao(dados)) {
+      contexto.addIssue({ code: 'custom', path: [campo], message: mensagem });
     }
     if (dados.dataFim !== undefined && dados.dataFim < dados.dataInicio) {
       contexto.addIssue({
@@ -193,6 +204,8 @@ export const esquemaAtualizacaoRecorrencia = z
     categoriaId: campos.categoriaId.optional(),
     formaPagamento: campos.formaPagamento.optional(),
     contaId: campos.contaId.nullable().optional(),
+    /** Troca o cartão; mudar a forma de pagamento para outra tira a recorrência do cartão. */
+    cartaoId: z.uuid().optional(),
     frequencia: campos.frequencia.optional(),
     dia: campos.dia.optional(),
     dataFim: esquemaData.nullable().optional(),

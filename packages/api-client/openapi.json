@@ -6368,6 +6368,18 @@
                     }
                   ]
                 },
+                "cartaoId": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
                 "frequencia": {
                   "type": "string",
                   "enum": [
@@ -6408,6 +6420,7 @@
                 "categoriaId",
                 "formaPagamento",
                 "contaId",
+                "cartaoId",
                 "frequencia",
                 "dia",
                 "dataInicio",
@@ -6479,6 +6492,18 @@
               }
             ]
           },
+          "cartaoId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "frequencia": {
             "type": "string",
             "enum": [
@@ -6519,6 +6544,7 @@
           "categoriaId",
           "formaPagamento",
           "contaId",
+          "cartaoId",
           "frequencia",
           "dia",
           "dataInicio",
@@ -6563,6 +6589,11 @@
             ]
           },
           "contaId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "cartaoId": {
             "type": "string",
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
@@ -6656,6 +6687,18 @@
                   }
                 ]
               },
+              "cartaoId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
               "frequencia": {
                 "type": "string",
                 "enum": [
@@ -6696,6 +6739,7 @@
               "categoriaId",
               "formaPagamento",
               "contaId",
+              "cartaoId",
               "frequencia",
               "dia",
               "dataInicio",
@@ -6954,6 +6998,11 @@
                 "type": "null"
               }
             ]
+          },
+          "cartaoId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
           "frequencia": {
             "type": "string",

@@ -242,7 +242,14 @@ Implementado na T-038 (RN-043).
 - **Edição:** mudar frequência ou dia refaz as ocorrências livres de hoje em diante. Encurtar a data final tira as livres que passaram dela; estender retoma a geração de onde parou.
 - **"Esta e as próximas":** exclui a ocorrência e as seguintes (pagas ou não) e põe a data final na véspera. **"Todas"** exclui todas e para a recorrência.
 - **Rotina `gerar-recorrencias`:** roda de hora em hora (`30 * * * *`), no fuso de cada usuário (doc 09).
-- **Limites:** sem cartão de crédito até a T-051; começo no máximo um ano atrás.
+- **Limites:** começo no máximo um ano atrás.
+- **No cartão de crédito (T-051):**
+  - `formaPagamento: 'cartao_credito'` com `cartaoId`, sem conta, como na compra.
+  - Cada ocorrência entra na fatura da sua data (RN-031) e as faturas são refeitas; a trava segue a ordem recorrência → cartão → fatura.
+  - Mudar valor, cartão ou forma de pagamento move as ocorrências livres de fatura, uma a uma, sem gerar de novo; a excluída não volta. A editada à mão fica onde está.
+  - "Esta e as próximas" e "todas" deixam a ocorrência paga pela fatura (RN-046).
+  - Cartão excluído para as recorrências dele.
+  - Uma data que já tem ocorrência não ganha outra quando a agenda é refeita.
 
 ## Cartões e faturas
 

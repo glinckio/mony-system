@@ -44,7 +44,7 @@ type LinhaFatura = Prisma.FaturaGetPayload<{ select: typeof CAMPOS_FATURA }>;
 /** O que os fluxos de compra no cartão usam dentro da transação de banco. */
 export type TransacaoCartoes = Pick<
   ClientePrisma,
-  'cartao' | 'fatura' | 'transacao' | 'parcela' | '$queryRaw'
+  'cartao' | 'fatura' | 'transacao' | 'parcela' | 'recorrencia' | '$queryRaw'
 >;
 
 function dia(data: Date): string {
@@ -330,6 +330,11 @@ export class CartoesRepository {
       data: { status: para },
     });
     return count > 0;
+  }
+
+  /** Para as recorrências do cartão que sai: cartão excluído não recebe ocorrência nova. */
+  async pararRecorrencias(tx: TransacaoCartoes, cartaoId: string): Promise<void> {
+    await tx.recorrencia.updateMany({ where: { cartaoId, ativa: true }, data: { ativa: false } });
   }
 
   /** Grava a transação do pagamento da fatura (natureza `pagamento_fatura`, RN-036). */

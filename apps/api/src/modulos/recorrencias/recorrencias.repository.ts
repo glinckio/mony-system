@@ -14,6 +14,7 @@ export const CAMPOS_RECORRENCIA = {
   categoriaId: true,
   formaPagamento: true,
   contaId: true,
+  cartaoId: true,
   frequencia: true,
   dia: true,
   dataInicio: true,
@@ -26,7 +27,17 @@ export type RecorrenciaDoUsuario = Prisma.RecorrenciaGetPayload<{
   select: typeof CAMPOS_RECORRENCIA;
 }>;
 
-export type TransacaoBanco = Pick<ClientePrisma, 'recorrencia' | 'transacao' | '$queryRaw'>;
+/** Inclui cartão, fatura e parcela, que a recorrência no cartão mexe (T-051). */
+export type TransacaoBanco = Pick<
+  ClientePrisma,
+  'recorrencia' | 'transacao' | 'cartao' | 'fatura' | 'parcela' | '$queryRaw'
+>;
+
+/** O que sai de uma exclusão de ocorrências: quantas e as faturas que precisam ser refeitas. */
+export interface OcorrenciasExcluidas {
+  quantidade: number;
+  faturaIds: string[];
+}
 
 /** Ocorrência ainda "da recorrência": pendente e não editada à mão (RN-043). */
 const OCORRENCIA_LIVRE = { status: 'pendente', editadaManualmente: false } as const;
@@ -113,15 +124,15 @@ export class RecorrenciasRepository {
     return tx.recorrencia.update({ where: { id }, data: dados, select: CAMPOS_RECORRENCIA });
   }
 
-  /** Cria as ocorrências das datas, todas pendentes (RN-043). */
+  /** Cria as ocorrências das datas, todas pendentes (RN-043); no cartão, cada uma na sua fatura. */
   async gerarOcorrencias(
     tx: TransacaoBanco,
     recorrencia: RecorrenciaDoUsuario,
-    datas: readonly Date[],
+    ocorrencias: readonly { data: Date; faturaId: string | null }[],
   ): Promise<TransacaoDoUsuario[]> {
-    if (datas.length === 0) return [];
+    if (ocorrencias.length === 0) return [];
     const criadas = await tx.transacao.createManyAndReturn({
-      data: datas.map((data) => ({
+      data: ocorrencias.map(({ data, faturaId }) => ({
         usuarioId: recorrencia.usuarioId,
         recorrenciaId: recorrencia.id,
         categoriaId: recorrencia.categoriaId,
@@ -130,6 +141,8 @@ export class RecorrenciasRepository {
         valor: recorrencia.valor,
         formaPagamento: recorrencia.formaPagamento,
         contaId: recorrencia.contaId,
+        cartaoId: recorrencia.cartaoId,
+        faturaId,
         data,
         status: 'pendente' as const,
       })),
@@ -156,36 +169,86 @@ export class RecorrenciasRepository {
     return count;
   }
 
+  /** As ocorrências livres a partir de `desde`, para mudar o cartão delas uma a uma (T-051). */
+  ocorrenciasLivres(tx: TransacaoBanco, recorrenciaId: string, desde: Date) {
+    return tx.transacao.findMany({
+      where: { recorrenciaId, excluidoEm: null, data: { gte: desde }, ...OCORRENCIA_LIVRE },
+      select: { id: true, data: true, faturaId: true },
+      orderBy: { data: 'asc' },
+    });
+  }
+
+  async moverOcorrencia(
+    tx: TransacaoBanco,
+    id: string,
+    dados: { cartaoId: string | null; faturaId: string | null },
+  ): Promise<void> {
+    await tx.transacao.update({ where: { id }, data: dados });
+  }
+
+  /** Das datas, as que já têm ocorrência (não excluída) da recorrência: não gera de novo. */
+  async datasComOcorrencia(
+    tx: TransacaoBanco,
+    recorrenciaId: string,
+    datas: readonly Date[],
+  ): Promise<Set<string>> {
+    if (datas.length === 0) return new Set();
+    const existentes = await tx.transacao.findMany({
+      where: { recorrenciaId, data: { in: [...datas] } },
+      select: { data: true },
+    });
+    return new Set(existentes.map(({ data }) => data.toISOString().slice(0, 10)));
+  }
+
   /** Exclui (logicamente) as ocorrências livres a partir de `desde`, ou depois de `depoisDe`. */
   async excluirOcorrenciasLivres(
     tx: TransacaoBanco,
     recorrenciaId: string,
     periodo: { desde: Date } | { depoisDe: Date },
     agora: Date,
-  ): Promise<number> {
+  ): Promise<OcorrenciasExcluidas> {
     const data = 'desde' in periodo ? { gte: periodo.desde } : { gt: periodo.depoisDe };
-    const { count } = await tx.transacao.updateMany({
-      where: { recorrenciaId, excluidoEm: null, data, ...OCORRENCIA_LIVRE },
-      data: { excluidoEm: agora },
-    });
-    return count;
+    return this.excluir(tx, { recorrenciaId, excluidoEm: null, data, ...OCORRENCIA_LIVRE }, agora);
   }
 
-  /** "Esta e as próximas" ou "todas": exclui as ocorrências, pagas ou não, a partir de `desde`. */
+  /**
+   * "Esta e as próximas" ou "todas": exclui as ocorrências, pagas ou não, a partir de `desde`.
+   * A paga pela fatura do cartão fica: compra de fatura quitada não sai (RN-046).
+   */
   async excluirOcorrencias(
     tx: TransacaoBanco,
     recorrenciaId: string,
     desde: Date | null,
     agora: Date,
-  ): Promise<number> {
-    const { count } = await tx.transacao.updateMany({
-      where: {
+  ): Promise<OcorrenciasExcluidas> {
+    return this.excluir(
+      tx,
+      {
         recorrenciaId,
         excluidoEm: null,
         ...(desde === null ? {} : { data: { gte: desde } }),
+        NOT: { faturaId: { not: null }, status: 'pago' },
       },
+      agora,
+    );
+  }
+
+  private async excluir(
+    tx: TransacaoBanco,
+    where: Prisma.TransacaoWhereInput,
+    agora: Date,
+  ): Promise<OcorrenciasExcluidas> {
+    const alvos = await tx.transacao.findMany({ where, select: { id: true, faturaId: true } });
+    if (alvos.length === 0) return { quantidade: 0, faturaIds: [] };
+    await tx.transacao.updateMany({
+      where: { id: { in: alvos.map(({ id }) => id) } },
       data: { excluidoEm: agora },
     });
-    return count;
+    return {
+      quantidade: alvos.length,
+      faturaIds: [
+        ...new Set(alvos.flatMap(({ faturaId }) => (faturaId === null ? [] : [faturaId]))),
+      ],
+    };
   }
 }

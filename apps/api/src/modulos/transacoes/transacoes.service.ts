@@ -202,11 +202,6 @@ export class TransacoesService {
         status: dados.status,
       }),
     );
-    if (noCartao && atual.recorrenciaId !== null) {
-      throw new ErroDominio('REQUISICAO_INVALIDA', {
-        mensagem: 'Ocorrência de recorrência ainda não vai para o cartão de crédito.',
-      });
-    }
     if (dados.categoriaId !== undefined || dados.tipo !== undefined) {
       await this.conferirCategoria(usuarioId, dados.categoriaId ?? atual.categoriaId, tipo);
     }
