@@ -44,6 +44,8 @@ Legenda: **(PDF)** está na especificação · **(decisão técnica)** definido 
 
 ## Cartões e faturas
 
+> Implementação (T-039): as regras puras de RN-031 a RN-035 e RN-038 estão em `@mony/shared/cartoes` (`faturaDaCompra`, `faturaDaCompetencia`, `statusDaFatura`, `limiteDoCartao`, `faixaAtingida`), com testes que cobrem todo par de dias de fechamento e vencimento em todas as datas de dez/2027 a mar/2028.
+
 - **RN-030 (PDF)** Cadastro: nome, bandeira, últimos 4 dígitos (opcional), limite total, dia de fechamento, dia de vencimento e cor. Dias entre 1 e 31.
 - **RN-031 (PDF)** Compra no cartão entra na fatura correta pela data de fechamento:
   - Para a data da compra `d`, calcula-se a data de fechamento do ciclo no mês de `d`.

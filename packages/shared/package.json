@@ -18,6 +18,10 @@
       "types": "./dist/categorias.d.ts",
       "default": "./dist/categorias.js"
     },
+    "./cartoes": {
+      "types": "./dist/cartoes.d.ts",
+      "default": "./dist/cartoes.js"
+    },
     "./config-app": {
       "types": "./dist/config-app.d.ts",
       "default": "./dist/config-app.js"

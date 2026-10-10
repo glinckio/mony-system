@@ -144,5 +144,21 @@ Contexto: RN-065, RN-066, doc 05. Decisões:
 - **Lista** sem paginação (`{ itens }`), porque são poucas por usuário.
 - **Formato.** Cor em `#RRGGBB`; ícone como chave (`pet-shop`) que o app mapeia para o design system.
 - **Services com `Contexto`.** Os Services de domínio financeiro recebem o `Contexto` (doc 05), com `usuarioDoContexto` para exigir alguém logado.
+## 2026-10-10 — T-039 — Regras puras de cartão e fatura
+Contexto: RN-031 a RN-035, RN-038 e doc 05 ("cálculos são funções puras em `dominio/`"). Decisões:
+- **Onde ficam.** Em `@mony/shared/cartoes`, e não em `modulos/cartoes/dominio/` da API. São funções sem banco nem relógio, e o app e a Mony também vão precisar delas, por exemplo para mostrar em qual fatura uma compra vai entrar antes de gravar. A API (T-040) chama as mesmas.
+- **RN-031.** O "vencimento no mês seguinte" compara os dias configurados (vencimento ≤ fechamento), não os dias já ajustados ao mês. Assim um cartão que fecha dia 31 e vence dia 8 tem sempre o mesmo intervalo, também em fevereiro. Com o fechamento no dia 30 e o vencimento no 31, em fevereiro os dois caem no último dia; é o único caso em que vencimento e fechamento coincidem.
+- **RN-033.** Valem as regras abaixo; a rotina diária (T-047) só aplica `statusDaFatura` com o "hoje" do fuso do usuário.
+  - Antes do fechamento a fatura é sempre `aberta`, mesmo paga adiantado, porque ainda recebe compras.
+  - Fatura fechada sem compras (total zero) é `paga`, para não aparecer como atrasada.
+  - O vencimento é o último dia sem atraso: `atrasada` só a partir do dia seguinte.
+- **RN-034.** Pagamento a mais não aumenta o limite. O percentual usado é inteiro e arredondado para baixo, e chega a 0 quando o limite total é zero.
+- **Fim de semana.** `venceNoFimDeSemana` só informa (RN-032). Feriados ficam de fora, porque dependem da cidade.
+- **Testes exaustivos.** Os 961 pares de fechamento e vencimento são testados em todas as datas de dez/2027 a mar/2028, que inclui fevereiro bissexto e virada de ano. Confere:
+  - a compra é anterior ao fechamento da fatura dela e não anterior ao da fatura de antes;
+  - a competência é o mês do vencimento;
+  - `faturaDaCompetencia` reconstrói as mesmas datas;
+  - compras mais novas não voltam para faturas mais antigas;
+  - faturas seguidas não pulam nem repetem competência.
 
 Reversível: sim.
