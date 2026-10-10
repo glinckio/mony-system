@@ -9,6 +9,7 @@ export * from './metas/metas';
 export * from './orcamentos/orcamentos';
 export * from './parcelamentos/parcelamentos';
 export * from './recorrencias/recorrencias';
+export * from './relatorios/relatorios';
 export * from './saude/saude';
 export * from './transacoes/transacoes';
 export * from './usuario/usuario';

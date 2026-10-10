@@ -1,0 +1,102 @@
+import { Controller, Get, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  esquemaConsultaRelatorio,
+  esquemaConsultaRelatorioCategorias,
+  esquemaRelatorioAnual,
+  esquemaRelatorioCartoes,
+  esquemaRelatorioCategorias,
+  esquemaRelatorioDiasDaSemana,
+  esquemaRelatorioFormasPagamento,
+  esquemaRelatorioMensal,
+  type RelatorioAnual,
+  type RelatorioCartoes,
+  type RelatorioCategorias,
+  type RelatorioDiasDaSemana,
+  type RelatorioFormasPagamento,
+  type RelatorioMensal,
+} from '@mony/shared/relatorios';
+import { createZodDto } from 'nestjs-zod';
+
+import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
+import { RelatoriosService } from './relatorios.service';
+
+class ConsultaRelatorioDto extends createZodDto(esquemaConsultaRelatorio) {}
+class ConsultaRelatorioCategoriasDto extends createZodDto(esquemaConsultaRelatorioCategorias) {}
+class RelatorioMensalDto extends createZodDto(esquemaRelatorioMensal) {}
+class RelatorioAnualDto extends createZodDto(esquemaRelatorioAnual) {}
+class RelatorioCategoriasDto extends createZodDto(esquemaRelatorioCategorias) {}
+class RelatorioDiasDaSemanaDto extends createZodDto(esquemaRelatorioDiasDaSemana) {}
+class RelatorioCartoesDto extends createZodDto(esquemaRelatorioCartoes) {}
+class RelatorioFormasPagamentoDto extends createZodDto(esquemaRelatorioFormasPagamento) {}
+
+/**
+ * Relatórios (doc 05, `GET /relatorios/:tipo?inicio=&fim=`; RN-150). Uma rota por tipo, para
+ * cada uma ter o seu contrato. Sem período, os últimos 12 meses.
+ */
+@ApiTags('relatorios')
+@ApiBearerAuth()
+@Controller('relatorios')
+export class RelatoriosController {
+  constructor(private readonly relatorios: RelatoriosService) {}
+
+  @Get('mensal')
+  @ApiOkResponse({ type: RelatorioMensalDto, description: 'Receitas × despesas por mês.' })
+  mensal(
+    @ContextoAtual() contexto: Contexto,
+    @Query() consulta: ConsultaRelatorioDto,
+  ): Promise<RelatorioMensal> {
+    return this.relatorios.mensal(contexto, consulta);
+  }
+
+  @Get('anual')
+  @ApiOkResponse({ type: RelatorioAnualDto, description: 'Evolução anual.' })
+  anual(
+    @ContextoAtual() contexto: Contexto,
+    @Query() consulta: ConsultaRelatorioDto,
+  ): Promise<RelatorioAnual> {
+    return this.relatorios.anual(contexto, consulta);
+  }
+
+  @Get('categorias')
+  @ApiOkResponse({
+    type: RelatorioCategoriasDto,
+    description: 'Despesas ou receitas por categoria.',
+  })
+  categorias(
+    @ContextoAtual() contexto: Contexto,
+    @Query() consulta: ConsultaRelatorioCategoriasDto,
+  ): Promise<RelatorioCategorias> {
+    return this.relatorios.categorias(contexto, consulta);
+  }
+
+  @Get('dias-da-semana')
+  @ApiOkResponse({ type: RelatorioDiasDaSemanaDto, description: 'Despesas por dia da semana.' })
+  diasDaSemana(
+    @ContextoAtual() contexto: Contexto,
+    @Query() consulta: ConsultaRelatorioDto,
+  ): Promise<RelatorioDiasDaSemana> {
+    return this.relatorios.diasDaSemana(contexto, consulta);
+  }
+
+  @Get('cartoes')
+  @ApiOkResponse({ type: RelatorioCartoesDto, description: 'Despesas por cartão de crédito.' })
+  cartoes(
+    @ContextoAtual() contexto: Contexto,
+    @Query() consulta: ConsultaRelatorioDto,
+  ): Promise<RelatorioCartoes> {
+    return this.relatorios.cartoes(contexto, consulta);
+  }
+
+  @Get('formas-pagamento')
+  @ApiOkResponse({
+    type: RelatorioFormasPagamentoDto,
+    description: 'Despesas por forma de pagamento.',
+  })
+  formasPagamento(
+    @ContextoAtual() contexto: Contexto,
+    @Query() consulta: ConsultaRelatorioDto,
+  ): Promise<RelatorioFormasPagamento> {
+    return this.relatorios.formasPagamento(contexto, consulta);
+  }
+}

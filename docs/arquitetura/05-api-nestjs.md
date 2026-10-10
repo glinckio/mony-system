@@ -293,6 +293,24 @@ Implementado na T-044 (RN-020 a RN-024). `GET /dashboard?periodo=mes_atual|mes_a
 - **`orcamentos`:** os de `GET /orcamentos` no mês em que o período começa.
 - **`onboarding` (RN-024):** o de `GET /me/onboarding`.
 
+## Relatórios
+
+Implementado na T-048 (RN-150), sem exportação (RN-151 fica na tarefa de exportação). `GET /relatorios/:tipo?inicio=&fim=` tem uma rota por tipo, cada uma com o seu contrato. Sem período, vale os últimos 12 meses, com o atual inteiro; o período vai até 5 anos.
+
+| Rota | O que traz |
+|---|---|
+| `GET /relatorios/mensal` | Receitas × despesas por mês, com saldo e saldo acumulado; todos os meses do período |
+| `GET /relatorios/anual` | Evolução anual: receitas × despesas por ano |
+| `GET /relatorios/categorias?tipo=despesa\|receita` | Por categoria (nome, cor e ícone), com percentual e quantidade, da maior para a menor |
+| `GET /relatorios/dias-da-semana` | Despesas por dia da semana (0 = domingo), sempre os sete |
+| `GET /relatorios/cartoes` | Despesas no cartão por cartão, parcelas incluídas |
+| `GET /relatorios/formas-pagamento` | Despesas por forma de pagamento |
+
+- Contam lançamentos pagos e pendentes, sem os excluídos, só de natureza `normal`: pagamento de fatura e transferência não são receita nem despesa (RN-037).
+- Categoria e cartão excluídos ainda aparecem com o nome.
+- As somas por mês, ano e dia da semana são SQL (`$queryRaw`), com `excluido_em IS NULL` escrito à mão; as outras são `groupBy` do Prisma.
+- O histórico de preços da NFC-e entra com a T-066, e o limite do plano gratuito (só o mês atual, RN-120) com a T-100.
+
 ## Orçamentos e metas
 
 Implementado na T-043 (RN-060 a RN-063).

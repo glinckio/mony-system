@@ -118,7 +118,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - As dependências do app (T-011, T-034) entraram na T-047: sem elas a tarefa parecia livre, mas não há app onde fazê-la.
 - [x] **T-047** Rotinas diárias de faturas e atrasos (fechar faturas, marcar atrasadas) (PR #28)
   - dep: T-041, T-042 · docs: 09 (Rotinas)
-- [ ] **T-048** Relatórios (API + telas), sem exportação
+- [x] **T-048** Relatórios (API + telas), sem exportação (PR #29; telas na T-054, histórico de preços da NFC-e na T-066)
   - dep: T-044 · RN-150
 
 - [ ] **T-049** Telas de categorias e contas no app (lista, criar, editar, excluir escolhendo para onde mover os lançamentos)
@@ -135,6 +135,9 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-053** Tela Início no app (seletor de período, resumo, próximos vencimentos, cartões, orçamentos, checklist e modo privacidade)
   - dep: T-044, T-011, T-034 · docs: 04 · RN-020 a RN-024
   - Separada da T-044 pelo mesmo motivo da T-049. O modo privacidade (RN-022) fica só no aparelho.
+- [ ] **T-054** Telas de relatórios no app (mensal, anual, por categoria, dia da semana, cartão e forma de pagamento)
+  - dep: T-048, T-011, T-034 · docs: 04 · RN-150
+  - Separada da T-048 pelo mesmo motivo da T-049.
 
 ## Fase 2 — Mony
 
