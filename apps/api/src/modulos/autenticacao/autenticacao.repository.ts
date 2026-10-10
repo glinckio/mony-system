@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { DadosDispositivo } from '@mony/shared/autenticacao';
-import type { DocumentoAceite } from '@mony/shared/enums';
+import type { DocumentoAceite, ProvedorLoginSocial } from '@mony/shared/enums';
 
 import { aplicarPadroesDoUsuario } from '../../core/dados-iniciais/padroes';
 import type { ClientePrisma } from '../../core/prisma/cliente';
@@ -29,12 +29,16 @@ export interface NovaConta {
   nome: string;
   email: string;
   telefone: string;
-  senhaHash: string;
+  /** `null` para conta criada pelo login social (RN-002). */
+  senhaHash: string | null;
   aceites: Record<DocumentoAceite, string>;
   ip: string;
   testeInicio: Date;
   testeFim: Date;
+  loginSocial?: { provedor: ProvedorLoginSocial; idExterno: string };
 }
+
+export type ResultadoVinculo = 'vinculado' | 'ja-vinculado' | 'de-outra-conta';
 
 /** O que a abertura de sessão usa do cliente ou de uma transação do Prisma. */
 type ClienteSessao = Pick<ClientePrisma, 'dispositivo' | 'sessao'>;
@@ -48,9 +52,10 @@ export class AutenticacaoRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * RN-001, RN-006, RN-007: cria o usuário, grava os aceites, abre o teste grátis, aplica os
-   * padrões (categorias, alertas, apps) e já abre a sessão do aparelho, tudo numa transação.
-   * Devolve `null` se o e-mail já existe.
+   * RN-001, RN-006, RN-007: cria o usuário (e o vínculo do login social, se veio por ele), grava
+   * os aceites, abre o teste grátis, aplica os padrões (categorias, alertas, apps) e já abre a
+   * sessão do aparelho, tudo numa transação. Devolve `null` se o e-mail ou o login social já
+   * existem.
    */
   async criarConta(
     conta: NovaConta,
@@ -79,6 +84,9 @@ export class AutenticacaoRepository {
             ip: conta.ip,
           })),
         });
+        if (conta.loginSocial) {
+          await tx.loginSocial.create({ data: { usuarioId: usuario.id, ...conta.loginSocial } });
+        }
         await tx.assinatura.create({
           data: {
             usuarioId: usuario.id,
@@ -100,6 +108,41 @@ export class AutenticacaoRepository {
     } catch (erro) {
       if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === 'P2002') {
         return null;
+      }
+      throw erro;
+    }
+  }
+
+  /** RN-002: o usuário dono deste login do Google ou da Apple, se já houver vínculo. */
+  async buscarPorLoginSocial(
+    provedor: ProvedorLoginSocial,
+    idExterno: string,
+  ): Promise<UsuarioDaSessao | null> {
+    const vinculo = await this.prisma.cliente.loginSocial.findUnique({
+      where: { provedor_idExterno: { provedor, idExterno } },
+      select: { usuario: { select: CAMPOS_USUARIO } },
+    });
+    return vinculo?.usuario ?? null;
+  }
+
+  /** RN-002: liga o login social à conta de quem já provou ser o dono (senha ou código). */
+  async vincularLoginSocial(
+    usuarioId: string,
+    provedor: ProvedorLoginSocial,
+    idExterno: string,
+  ): Promise<ResultadoVinculo> {
+    const existente = await this.prisma.cliente.loginSocial.findUnique({
+      where: { provedor_idExterno: { provedor, idExterno } },
+      select: { usuarioId: true },
+    });
+    if (existente) return existente.usuarioId === usuarioId ? 'ja-vinculado' : 'de-outra-conta';
+    try {
+      await this.prisma.cliente.loginSocial.create({ data: { usuarioId, provedor, idExterno } });
+      return 'vinculado';
+    } catch (erro) {
+      // Outro pedido vinculou ao mesmo tempo: confere de quem ficou.
+      if (erro instanceof Prisma.PrismaClientKnownRequestError && erro.code === 'P2002') {
+        return this.vincularLoginSocial(usuarioId, provedor, idExterno);
       }
       throw erro;
     }

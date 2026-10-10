@@ -84,6 +84,66 @@
         ]
       }
     },
+    "/v1/auth/social": {
+      "post": {
+        "operationId": "entrarComLoginSocialAutenticacao",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginSocialDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sessão aberta com Google ou Apple (conta criada se for o primeiro acesso). VINCULO_SOCIAL_PENDENTE: o e-mail já tem conta; CADASTRO_INCOMPLETO: faltam dados em detalhes.faltando.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
+    "/v1/auth/social/vincular": {
+      "post": {
+        "operationId": "vincularLoginSocialAutenticacao",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VinculoSocialDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Login do Google ou da Apple ligado à conta atual."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "autenticacao"
+        ]
+      }
+    },
     "/v1/auth/renovar": {
       "post": {
         "operationId": "renovarAutenticacao",
@@ -2620,6 +2680,112 @@
           "email",
           "senha",
           "dispositivo"
+        ]
+      },
+      "LoginSocialDto": {
+        "type": "object",
+        "properties": {
+          "provedor": {
+            "type": "string",
+            "enum": [
+              "google",
+              "apple"
+            ]
+          },
+          "idToken": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 8000
+          },
+          "nonce": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 200
+          },
+          "nome": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "telefone": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "aceites": {
+            "type": "object",
+            "properties": {
+              "termos": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              },
+              "privacidade": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              }
+            },
+            "required": [
+              "termos",
+              "privacidade"
+            ]
+          },
+          "dispositivo": {
+            "type": "object",
+            "properties": {
+              "identificador": {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 200
+              },
+              "plataforma": {
+                "type": "string",
+                "enum": [
+                  "ios",
+                  "android"
+                ]
+              },
+              "modelo": {
+                "type": "string",
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "identificador",
+              "plataforma"
+            ]
+          }
+        },
+        "required": [
+          "provedor",
+          "idToken",
+          "dispositivo"
+        ]
+      },
+      "VinculoSocialDto": {
+        "type": "object",
+        "properties": {
+          "provedor": {
+            "type": "string",
+            "enum": [
+              "google",
+              "apple"
+            ]
+          },
+          "idToken": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 8000
+          },
+          "nonce": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "provedor",
+          "idToken"
         ]
       },
       "RenovacaoDto": {

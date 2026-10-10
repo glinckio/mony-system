@@ -39,6 +39,7 @@ apps/api/
 │     ├─ open-finance/  (OpenFinanceProvider → pluggy | belvo | klavi)
 │     ├─ pagamentos/    (BillingProvider → stripe)
 │     ├─ push/          (PushProvider → expo-push | fcm+apns)
+│     ├─ login-social/  (VerificadorLoginSocial: id_token do Google e da Apple)
 │     ├─ agenda/        (CalendarProvider → google | microsoft)
 │     ├─ nfce/          (NfceProvider → api-terceiro | sefaz-scraper)
 │     ├─ telefonia/     (VozProvider → twilio)
@@ -102,7 +103,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 
 | Grupo | Rotas |
 |---|---|
-| Autenticação | `POST /auth/cadastro` · `POST /auth/login` · `POST /auth/social` · `POST /auth/renovar` · `POST /auth/sair` · `POST /auth/sair-todos` **(proposta)** · `POST /auth/senha/codigo` · `POST /auth/senha/conferir` **(proposta)** · `POST /auth/senha/redefinir` |
+| Autenticação | `POST /auth/cadastro` · `POST /auth/login` · `POST /auth/social` · `POST /auth/social/vincular` **(proposta)** · `POST /auth/renovar` · `POST /auth/sair` · `POST /auth/sair-todos` **(proposta)** · `POST /auth/senha/codigo` · `POST /auth/senha/conferir` **(proposta)** · `POST /auth/senha/redefinir` |
 | Usuário | `GET /me` · `PATCH /me` · `POST /me/dispositivos` · `GET /me/onboarding` · `PATCH /me/onboarding` **(proposta)** · `GET /me/exportar` · `DELETE /me` |
 | App | `GET /config-app` **(proposta)**: versão mínima, flags, sugestões do chat |
 | Planos e assinatura | `GET /planos` · `GET /assinatura` · `GET /assinatura/uso` · `POST /assinatura/checkout` · `POST /assinatura/portal` · `POST /webhooks/stripe` |
@@ -128,12 +129,14 @@ Base do PDF, com os complementos marcados **(proposta)**.
 
 ## Autenticação
 
-Implementada na T-030 e na T-031 (RN-001 a RN-008; detalhes de segurança em [11](11-seguranca-e-lgpd.md#autenticação)).
+Implementada nas T-030, T-031 e T-032 (RN-001 a RN-008; detalhes de segurança em [11](11-seguranca-e-lgpd.md#autenticação)).
 
 | Rota | Corpo | Resposta |
 |---|---|---|
 | `POST /auth/cadastro` | nome, e-mail, telefone, senha, `aceites` (versões dos termos e da privacidade), `dispositivo` | 201 + sessão |
 | `POST /auth/login` | e-mail, senha, `dispositivo` | 200 + sessão |
+| `POST /auth/social` | `provedor` (`google`, `apple`), `idToken`, `nonce`, `dispositivo`; na conta nova, `nome`, `telefone` e `aceites` | 200 + sessão (cria a conta no primeiro acesso) |
+| `POST /auth/social/vincular` | `provedor`, `idToken`, `nonce` (com o token de acesso) | 204 |
 | `POST /auth/renovar` | `renovacao` | 200 + sessão nova (o token anterior deixa de valer) |
 | `POST /auth/sair` | `renovacao` | 204 |
 | `POST /auth/sair-todos` | (token de acesso) | 204 |
@@ -145,6 +148,10 @@ Implementada na T-030 e na T-031 (RN-001 a RN-008; detalhes de segurança em [11
 - **Guarda global:** toda rota exige `Authorization: Bearer <acesso>`, menos as com `@Publico()`. Sem token ou token inválido → 401 `NAO_AUTENTICADO`; token vencido → 401 `TOKEN_EXPIRADO` (o app renova e repete a chamada).
 - **Erros:** `EMAIL_JA_CADASTRADO` (409), `TERMOS_PENDENTES` (403, cadastro com versão antiga), `CREDENCIAIS_INVALIDAS` (401, a mesma para e-mail inexistente e senha errada), `CONTA_BLOQUEADA` (403), `SESSAO_INVALIDA` (401, renovação recusada), `MUITAS_TENTATIVAS` (429, com `detalhes.tenteNovamenteEm`).
 - **Dispositivo:** o app manda um identificador estável do aparelho, gerado na instalação. Há uma sessão por aparelho: login de novo no mesmo aparelho troca a sessão.
+- **Login social (RN-002):** o `id_token` do Google ou da Apple é conferido no servidor e vale uma vez só. O app segue pelo código de erro:
+  - `CADASTRO_INCOMPLETO` (422, `detalhes.faltando` com `nome`, `telefone` ou `aceites`): o app pede os dados e chama de novo com o mesmo token.
+  - `VINCULO_SOCIAL_PENDENTE` (409, `detalhes.email`): o e-mail já tem conta. A pessoa entra com a senha (ou recupera pelo código) e o app chama `social/vincular` com o mesmo token.
+  - Provedor sem ID de cliente configurado: 503 `SERVICO_INDISPONIVEL`.
 - **Recuperação de senha (RN-003):** código de 6 dígitos por e-mail, válido por 15 minutos, com até 5 tentativas erradas; pedir outro faz o anterior vencer. O fluxo do app é e-mail → código (`conferir`) → senha nova (`redefinir`). Erros: `CODIGO_INVALIDO` (400, inclusive para e-mail sem conta) e `CODIGO_EXPIRADO` (400: vencido, usado, substituído ou com as tentativas esgotadas; o app oferece pedir outro).
 
 ## Usuário e app
@@ -158,7 +165,7 @@ Implementado na T-033.
 | `POST /me/dispositivos` | `tokenPush` (ou `null`), `modelo` | 204. Grava no aparelho da sessão |
 | `GET /me/onboarding` | — | `concluido`, `etapas` (pendente, concluída ou dispensada), `checklistVisivel` (RN-024), `dicasVistas` |
 | `PATCH /me/onboarding` | `concluido`, `etapas`, `dicasVistas` | O progresso atualizado |
-| `GET /config-app` | — (público) | `versaoMinima` por plataforma, `flags`, `sugestoesChat` |
+| `GET /config-app` | — (público) | `versaoMinima` por plataforma, `flags` (`loginGoogle`, `loginApple`: provedor configurado), `sugestoesChat` |
 
 - **Token de push:** o mesmo token sai de qualquer outro aparelho registrado, porque é do app instalado e não da pessoa. Também sai quando a sessão termina: `sair`, `sair-todos` e reuso de token de renovação.
 - **Onboarding:** as marcas ficam em `dicas_vistas` (`onboarding:<etapa>:concluida`, `onboarding:<etapa>:dispensada`, `dica:<chave>`). Concluída vale mais que dispensada, e nenhuma etapa volta a pendente. Outros módulos marcam etapas com `UsuariosService.concluirEtapa` (ex.: o primeiro lançamento).

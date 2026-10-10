@@ -11,6 +11,17 @@ function vazioComoAusente(valor: unknown): unknown {
   return typeof valor === 'string' && valor.trim() === '' ? undefined : valor;
 }
 
+/** `a, b,c` → `['a', 'b', 'c']`; ausente ou vazio → `[]`. */
+const listaPorVirgula = z
+  .string()
+  .optional()
+  .transform((valor) =>
+    (valor ?? '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item !== ''),
+  );
+
 export const esquemaAmbiente = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -66,6 +77,13 @@ export const esquemaAmbiente = z
      */
     APP_VERSAO_MINIMA_IOS: z.string().regex(REGEX_VERSAO_APP, 'formato 1.2.3').default('0.0.0'),
     APP_VERSAO_MINIMA_ANDROID: z.string().regex(REGEX_VERSAO_APP, 'formato 1.2.3').default('0.0.0'),
+    /**
+     * Login social (RN-002): IDs de cliente OAuth aceitos como audiência do `id_token`, separados
+     * por vírgula. Google: os do app iOS, do app Android e o web. Apple: o bundle id do app (e o
+     * Services ID, se houver login pela web). Vazio desliga o provedor.
+     */
+    GOOGLE_CLIENT_IDS: listaPorVirgula,
+    APPLE_CLIENT_IDS: listaPorVirgula,
   })
   .superRefine((variaveis, contexto) => {
     if (variaveis.NODE_ENV === 'production' && variaveis.JWT_CHAVE_PRIVADA === undefined) {

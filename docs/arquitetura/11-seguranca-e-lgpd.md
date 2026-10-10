@@ -14,7 +14,7 @@ O app guarda dados financeiros e acessa contas bancárias. Segurança e LGPD sã
 | Recuperação de senha | Código de 6 dígitos com gerador criptográfico, guardado com o mesmo Argon2id das senhas (só um milhão de valores; o hash lento atrasa quem ler o banco). 15 minutos, uso único, 5 tentativas erradas por código, e o pedido de outro código invalida o anterior (RN-003). A resposta do pedido é igual exista a conta ou não. A senha nova encerra as sessões de todos os aparelhos. O e-mail passa pela fila, que guarda o código só até o envio |
 | Limite de tentativas | Contadores por e-mail (resumo SHA-256) e por IP no Redis, janela fixa de 15 minutos (`core/limites`, RN-008), separados para login, pedido de código e conferência de código. Login com sucesso zera o contador do e-mail; código certo zera o da conferência; senha redefinida zera o do login. Limite geral por IP (`@nestjs/throttler` ou WAF) fica para o hardening (T-144) |
 | Posse do recurso | Repositories sempre filtram `usuario_id`; testes de acesso cruzado por rota |
-| Login social | Validar `id_token` do Google e da Apple no servidor (assinatura, `aud`, `iss`, `nonce`) |
+| Login social | Validar `id_token` do Google e da Apple no servidor (assinatura, `aud`, `iss`, `nonce`; ver [10](10-integracoes.md#login-social)). Token de uso único. Login social com e-mail de conta existente só vincula depois do login com senha ou código (RN-002). Conta nova exige e-mail confirmado no provedor |
 | Admin | Login separado, 2FA TOTP obrigatório, sessão curta, IP allowlist opcional |
 
 ## Dados e infraestrutura

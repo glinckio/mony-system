@@ -64,7 +64,7 @@ pnpm --filter api dev:worker   # worker (filas e rotinas)
 - Erros sempre em `{ "erro": { "codigo", "mensagem", "detalhes" } }`, com os códigos de `@mony/shared/erros`.
 - Arquivos (anexos): com o `.env` do exemplo, vão para o S3 local do `docker compose` (SeaweedFS, bucket `mony-local`). Sem `S3_BUCKET`, as rotas de arquivo respondem 503.
 - E-mails: a API põe na fila `emails` e o worker envia. Com o `.env` do exemplo (`EMAIL_PROVEDOR=smtp`), eles chegam ao Mailpit (`http://localhost:8025`); o worker precisa estar rodando. O código de recuperação de senha (`POST /v1/auth/senha/codigo`) aparece lá.
-- Autenticação: `POST /v1/auth/cadastro` e `/v1/auth/login` devolvem os tokens; as demais rotas pedem `Authorization: Bearer <acesso>` (detalhes no [doc 05](docs/arquitetura/05-api-nestjs.md#autenticação)). Sem `JWT_CHAVE_PRIVADA` no `.env`, a API gera uma chave temporária a cada subida (os tokens caem ao reiniciar); produção exige a chave.
+- Autenticação: `POST /v1/auth/cadastro` e `/v1/auth/login` devolvem os tokens; as demais rotas pedem `Authorization: Bearer <acesso>` (detalhes no [doc 05](docs/arquitetura/05-api-nestjs.md#autenticação)). Sem `JWT_CHAVE_PRIVADA` no `.env`, a API gera uma chave temporária a cada subida (os tokens caem ao reiniciar); produção exige a chave. Login com Google e Apple (`POST /v1/auth/social`) só funciona com `GOOGLE_CLIENT_IDS` e `APPLE_CLIENT_IDS` preenchidos; sem eles responde 503.
 
 ## Banco de dados
 

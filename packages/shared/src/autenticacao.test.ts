@@ -4,6 +4,7 @@ import {
   esquemaCadastro,
   esquemaConferenciaCodigo,
   esquemaLogin,
+  esquemaLoginSocial,
   esquemaRedefinicaoSenha,
   normalizarEmail,
   normalizarTelefoneBr,
@@ -107,5 +108,31 @@ describe('recuperação de senha', () => {
     expect(esquemaRedefinicaoSenha.safeParse({ ...redefinicao, senha: '1234567' }).success).toBe(
       false,
     );
+  });
+});
+
+describe('login social', () => {
+  const base = {
+    provedor: 'apple',
+    idToken: 'eyJhbGciOiJSUzI1NiJ9.corpo.assinatura',
+    dispositivo: { identificador: 'aparelho-0001', plataforma: 'ios' },
+  };
+
+  it('RN-002 só o token e o aparelho bastam para quem já tem conta', () => {
+    expect(esquemaLoginSocial.safeParse(base).success).toBe(true);
+    expect(esquemaLoginSocial.safeParse({ ...base, provedor: 'facebook' }).success).toBe(false);
+  });
+
+  it('RN-001 dados da conta nova seguem as regras do cadastro', () => {
+    expect(
+      esquemaLoginSocial.safeParse({
+        ...base,
+        nome: 'Ana',
+        telefone: '(11) 98765-4321',
+        aceites: { ...VERSOES_DOCUMENTOS },
+      }).success,
+    ).toBe(true);
+    expect(esquemaLoginSocial.safeParse({ ...base, telefone: '123' }).success).toBe(false);
+    expect(esquemaLoginSocial.safeParse({ ...base, nome: '  ' }).success).toBe(false);
   });
 });

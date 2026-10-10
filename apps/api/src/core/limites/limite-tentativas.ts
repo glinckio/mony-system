@@ -14,7 +14,7 @@ export interface RegraTentativas {
 /**
  * Contador de tentativas por janela fixa (RN-008: login, recuperação de senha e código). Cada
  * chamada conta uma tentativa em todas as regras; se alguma passou do máximo, lança
- * `MUITAS_TENTATIVAS` com o instante em que a janela acaba.
+ * `MUITAS_TENTATIVAS` com o instante em que a janela acaba. Também marca credenciais de uso único.
  */
 export abstract class LimiteTentativas {
   constructor(protected readonly clock: Clock) {}
@@ -42,6 +42,12 @@ export abstract class LimiteTentativas {
   /** Zera a contagem (ex.: login com sucesso zera as falhas do e-mail). */
   abstract zerar(chave: string): Promise<void>;
 
+  /**
+   * Marca a chave como usada por `segundos`. Devolve `true` só na primeira vez: serve para
+   * aceitar uma credencial uma única vez (ex.: o `id_token` do login social contra repetição).
+   */
+  abstract usarUmaVez(chave: string, segundos: number): Promise<boolean>;
+
   /** Soma uma tentativa em cada chave e devolve a contagem e o tempo que falta na janela. */
   protected abstract contar(
     chaves: string[],
@@ -61,6 +67,11 @@ export class LimiteTentativasRedis extends LimiteTentativas {
 
   async zerar(chave: string): Promise<void> {
     await this.redis.del(`tentativas:${chave}`);
+  }
+
+  async usarUmaVez(chave: string, segundos: number): Promise<boolean> {
+    const resposta = await this.redis.set(`uso-unico:${chave}`, '1', 'EX', segundos, 'NX');
+    return resposta === 'OK';
   }
 
   protected async contar(
@@ -84,10 +95,19 @@ export class LimiteTentativasRedis extends LimiteTentativas {
 /** Contadores em memória, para testes unitários. Usa o `Clock` para a janela. */
 export class LimiteTentativasMemoria extends LimiteTentativas {
   private readonly contadores = new Map<string, { tentativas: number; expiraEm: number }>();
+  private readonly usados = new Map<string, number>();
 
   zerar(chave: string): Promise<void> {
     this.contadores.delete(chave);
     return Promise.resolve();
+  }
+
+  usarUmaVez(chave: string, segundos: number): Promise<boolean> {
+    const agora = this.clock.agora().getTime();
+    const expiraEm = this.usados.get(chave);
+    if (expiraEm !== undefined && expiraEm > agora) return Promise.resolve(false);
+    this.usados.set(chave, agora + segundos * 1000);
+    return Promise.resolve(true);
   }
 
   protected contar(

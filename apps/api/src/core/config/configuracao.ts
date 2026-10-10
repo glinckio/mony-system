@@ -78,6 +78,16 @@ export class Configuracao {
     };
   }
 
+  /** IDs de cliente OAuth aceitos no `id_token` do Google (vazio: login com Google desligado). */
+  get clientesGoogle(): string[] {
+    return this.config.get('GOOGLE_CLIENT_IDS', { infer: true });
+  }
+
+  /** Bundle id e Services ID aceitos no `id_token` da Apple (vazio: desligado). */
+  get clientesApple(): string[] {
+    return this.config.get('APPLE_CLIENT_IDS', { infer: true });
+  }
+
   /** Remetente dos e-mails; obrigatório quando `provedorEmail` é `brevo`. */
   get remetenteEmail(): string | undefined {
     return this.config.get('EMAIL_REMETENTE', { infer: true });

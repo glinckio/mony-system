@@ -25,6 +25,8 @@ describe('variáveis de ambiente', () => {
       APP_VERSAO_MINIMA_IOS: '0.0.0',
       APP_VERSAO_MINIMA_ANDROID: '0.0.0',
       AWS_REGION: 'sa-east-1',
+      GOOGLE_CLIENT_IDS: [],
+      APPLE_CLIENT_IDS: [],
       ...banco,
     });
     expect(validarAmbiente({ ...banco, ...jwt, PORT: '8080', NODE_ENV: 'production' }).PORT).toBe(
@@ -86,6 +88,20 @@ describe('variáveis de ambiente', () => {
     expect(() => validarAmbiente({ ...banco, APP_VERSAO_MINIMA_ANDROID: '1.4' })).toThrow(
       /APP_VERSAO_MINIMA_ANDROID/,
     );
+  });
+
+  it('IDs de cliente do login social vêm separados por vírgula', () => {
+    expect(
+      validarAmbiente({
+        ...banco,
+        GOOGLE_CLIENT_IDS: ' ios.apps.googleusercontent.com, web.apps.googleusercontent.com ,',
+        APPLE_CLIENT_IDS: 'br.com.monitorizze',
+      }),
+    ).toMatchObject({
+      GOOGLE_CLIENT_IDS: ['ios.apps.googleusercontent.com', 'web.apps.googleusercontent.com'],
+      APPLE_CLIENT_IDS: ['br.com.monitorizze'],
+    });
+    expect(validarAmbiente({ ...banco, GOOGLE_CLIENT_IDS: '' }).GOOGLE_CLIENT_IDS).toEqual([]);
   });
 
   it('exige as URLs do banco e do Redis', () => {

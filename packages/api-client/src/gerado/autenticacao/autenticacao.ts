@@ -17,10 +17,12 @@ import type {
   CadastroDto,
   ConferenciaCodigoDto,
   LoginDto,
+  LoginSocialDto,
   PedidoCodigoDto,
   RedefinicaoSenhaDto,
   RenovacaoDto,
   SessaoDto,
+  VinculoSocialDto,
 } from '../modelos';
 
 import { requisicao } from '../../requisicao';
@@ -224,6 +226,206 @@ export const useEntrarAutenticacao = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   return useMutation(getEntrarAutenticacaoMutationOptions(options), queryClient);
+};
+export const getEntrarComLoginSocialAutenticacaoUrl = () => {
+  return `/v1/auth/social`;
+};
+
+export const entrarComLoginSocialAutenticacao = async (
+  loginSocialDto: LoginSocialDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<SessaoDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<SessaoDto>(getEntrarComLoginSocialAutenticacaoUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(loginSocialDto),
+  });
+};
+
+export const getEntrarComLoginSocialAutenticacaoMutationKey = () =>
+  ['entrarComLoginSocialAutenticacao'] as const;
+
+export const getEntrarComLoginSocialAutenticacaoMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof entrarComLoginSocialAutenticacao>>,
+    TError,
+    EntrarComLoginSocialAutenticacaoMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof entrarComLoginSocialAutenticacao>>,
+  TError,
+  EntrarComLoginSocialAutenticacaoMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEntrarComLoginSocialAutenticacaoMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof entrarComLoginSocialAutenticacao>>,
+    EntrarComLoginSocialAutenticacaoMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return entrarComLoginSocialAutenticacao(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EntrarComLoginSocialAutenticacaoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof entrarComLoginSocialAutenticacao>>
+>;
+export type EntrarComLoginSocialAutenticacaoMutationBody = LoginSocialDto;
+export type EntrarComLoginSocialAutenticacaoMutationError = unknown;
+export type EntrarComLoginSocialAutenticacaoMutationVariables = { data: LoginSocialDto };
+
+export const useEntrarComLoginSocialAutenticacao = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof entrarComLoginSocialAutenticacao>>,
+      TError,
+      EntrarComLoginSocialAutenticacaoMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof entrarComLoginSocialAutenticacao>>,
+  TError,
+  EntrarComLoginSocialAutenticacaoMutationVariables,
+  TContext
+> => {
+  return useMutation(getEntrarComLoginSocialAutenticacaoMutationOptions(options), queryClient);
+};
+export const getVincularLoginSocialAutenticacaoUrl = () => {
+  return `/v1/auth/social/vincular`;
+};
+
+export const vincularLoginSocialAutenticacao = async (
+  vinculoSocialDto: VinculoSocialDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<void> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<void>(getVincularLoginSocialAutenticacaoUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(vinculoSocialDto),
+  });
+};
+
+export const getVincularLoginSocialAutenticacaoMutationKey = () =>
+  ['vincularLoginSocialAutenticacao'] as const;
+
+export const getVincularLoginSocialAutenticacaoMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof vincularLoginSocialAutenticacao>>,
+    TError,
+    VincularLoginSocialAutenticacaoMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof vincularLoginSocialAutenticacao>>,
+  TError,
+  VincularLoginSocialAutenticacaoMutationVariables,
+  TContext
+> => {
+  const mutationKey = getVincularLoginSocialAutenticacaoMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof vincularLoginSocialAutenticacao>>,
+    VincularLoginSocialAutenticacaoMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return vincularLoginSocialAutenticacao(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VincularLoginSocialAutenticacaoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof vincularLoginSocialAutenticacao>>
+>;
+export type VincularLoginSocialAutenticacaoMutationBody = VinculoSocialDto;
+export type VincularLoginSocialAutenticacaoMutationError = unknown;
+export type VincularLoginSocialAutenticacaoMutationVariables = { data: VinculoSocialDto };
+
+export const useVincularLoginSocialAutenticacao = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof vincularLoginSocialAutenticacao>>,
+      TError,
+      VincularLoginSocialAutenticacaoMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof vincularLoginSocialAutenticacao>>,
+  TError,
+  VincularLoginSocialAutenticacaoMutationVariables,
+  TContext
+> => {
+  return useMutation(getVincularLoginSocialAutenticacaoMutationOptions(options), queryClient);
 };
 export const getRenovarAutenticacaoUrl = () => {
   return `/v1/auth/renovar`;
