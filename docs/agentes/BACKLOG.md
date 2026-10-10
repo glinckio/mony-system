@@ -85,7 +85,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-008 · docs: 05, 11 · RN-001, RN-004, RN-007, RN-008
 - [x] **T-031** Recuperação de senha por código de 6 dígitos + e-mail (EmailProvider com fake e Brevo) (PR #15)
   - dep: T-030 · RN-003
-- [ ] **T-032** 👤 Login social Google e Apple (validação de id_token no servidor)
+- [x] **T-032** 👤 Login social Google e Apple (validação de id_token no servidor) (PR #16)
   - dep: T-030 · RN-002 · requer credenciais Google/Apple
 - [x] **T-033** Usuário: `GET/PATCH /me`, dispositivos (token push), onboarding, `config-app` com versão mínima (PR #17)
   - dep: T-030 · docs: 05
