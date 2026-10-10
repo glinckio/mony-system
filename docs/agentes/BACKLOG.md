@@ -91,7 +91,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-030 · docs: 05
 - [ ] **T-034** App: telas de auth, sessão segura, refresh único concorrente, biometria
   - dep: T-030, T-011 · docs: 04 · RN-005
-- [ ] **T-035** Categorias (API + app), incluindo exclusão com mover lançamentos
+- [x] **T-035** Categorias (API + app), incluindo exclusão com mover lançamentos (PR #18; telas na T-049)
   - dep: T-030 · RN-065, RN-066
 - [ ] **T-036** Contas (API + app)
   - dep: T-030 · docs: 06
@@ -119,6 +119,10 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-041, T-042 · docs: 09 (Rotinas)
 - [ ] **T-048** Relatórios (API + telas), sem exportação
   - dep: T-044 · RN-150
+
+- [ ] **T-049** Telas de categorias e contas no app (lista, criar, editar, excluir escolhendo para onde mover os lançamentos)
+  - dep: T-035, T-036, T-011, T-034 · docs: 04 · RN-065, RN-066
+  - Separada da T-035 e da T-036: as telas dependem do esqueleto do app (T-010), do design system (T-011) e da sessão no app (T-034), que ainda não existiam.
 
 ## Fase 2 — Mony
 

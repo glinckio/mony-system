@@ -164,6 +164,21 @@ Implementado na T-033.
 - **Onboarding:** as marcas ficam em `dicas_vistas` (`onboarding:<etapa>:concluida`, `onboarding:<etapa>:dispensada`, `dica:<chave>`). Concluída vale mais que dispensada, e nenhuma etapa volta a pendente. Outros módulos marcam etapas com `UsuariosService.concluirEtapa` (ex.: o primeiro lançamento).
 - **Versão mínima:** uma guarda global compara `X-App-Version` com a mínima da plataforma (`X-Platform`). Abaixo dela responde 426 `VERSAO_APP_DESATUALIZADA`, com `detalhes.versaoMinima`. Sem os cabeçalhos não bloqueia (admin, ferramentas). `GET /config-app` e o health check respondem a qualquer versão (`@LiberadaParaVersaoAntiga()`). As mínimas vêm de `APP_VERSAO_MINIMA_IOS` e `APP_VERSAO_MINIMA_ANDROID`; a edição pelo painel admin fica para a T-141.
 
+## Categorias
+
+Implementado na T-035 (RN-065, RN-066).
+
+- `GET /categorias?tipo=` → `{ itens }`, ordenado por tipo e nome. São poucas por usuário, então não há paginação.
+- `POST /categorias` com `nome`, `tipo`, `cor` (`#RRGGBB`) e `icone` (chave do ícone) → 201. `PATCH /categorias/:id` muda nome, cor e ícone; o tipo não muda.
+- **Nome único** por usuário e tipo, sem diferença de maiúsculas nem de espaços (acento conta) → 409 `CATEGORIA_DUPLICADA`. Categoria excluída libera o nome.
+- **`DELETE /categorias/:id?mover_para=`** (RN-066):
+  - transações (inclusive as excluídas), recorrências, parcelamentos e preferências aprendidas vão para a categoria escolhida, que precisa ser do mesmo tipo;
+  - os orçamentos da categoria são apagados e ela fica com `excluido_em`;
+  - sem lançamentos, `mover_para` é dispensável; com lançamentos e sem destino → 400 com `detalhes.lancamentos`;
+  - a última categoria de um tipo não sai: 409 `ULTIMA_CATEGORIA_DO_TIPO`.
+- Criar, editar e excluir travam as categorias do usuário naquele tipo (`SELECT … FOR UPDATE`), para dois pedidos ao mesmo tempo não criarem nomes repetidos nem apagarem as duas últimas.
+- O `CategoriasService` recebe o `Contexto`; a Mony vai usá-lo na T-062.
+
 ## Guardas e decoradores
 
 | Decorador | Função |
