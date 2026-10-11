@@ -46,7 +46,7 @@ Alternativa equivalente em Google Cloud (Cloud Run + Cloud SQL + Memorystore + G
 | Gatilho | Jobs |
 |---|---|
 | PR | `lint`, `typecheck`, testes unitários e de integração (Testcontainers), checagem de migração Prisma, geração do cliente OpenAPI sem diff, avaliação da Mony se `modulos/mony/**` mudou |
-| Merge em `main` | Build da imagem Docker → ECR (tag do commit e tag `staging`) → tarefa avulsa com `prisma migrate deploy && prisma db seed` → deploy dos serviços `api` e `worker` com circuit breaker (`deploy-staging.yml`); EAS Update no canal `staging` (T-016) |
+| Merge em `main` | Build da imagem Docker → ECR (tag do commit e tag `staging`) → tarefa avulsa com `prisma migrate deploy && prisma db seed` → deploy dos serviços `api` e `worker` com circuit breaker (`deploy-staging.yml`); EAS Update no canal `staging` quando o app muda (`eas-update-staging.yml`, T-016) |
 | Tag `api-vX.Y.Z` | Deploy da API em produção com aprovação manual |
 | Tag `mobile-vX.Y.Z` | `eas build --profile production` + `eas submit` (App Store Connect e Play Console) |
 | Correção só de JS | `eas update --channel production` (respeitando `runtimeVersion` por fingerprint) |
@@ -65,6 +65,7 @@ Migrações: sempre compatíveis com a versão anterior (expandir → migrar →
 
 - TestFlight e teste interno do Play para homologação (do PDF).
 - OTA (EAS Update) só para JS/assets, dentro das regras das lojas. Mudança nativa = novo binário.
+- Staging: todo merge que mexe no app publica no canal `staging` (`eas update --environment preview`, com as variáveis do ambiente `preview` do EAS). Produção: `eas update --channel production` à mão, para correção só de JS.
 - Atualização do SDK do Expo: pelo menos uma vez por ano, em branch própria, com regressão completa.
 
 ## Monitoramento (do PDF)

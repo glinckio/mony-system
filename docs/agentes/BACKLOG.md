@@ -59,7 +59,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
   - 👤 Conta AWS e credenciais do CI. O agente escreve o Terraform e o workflow; o humano aplica.
 - [ ] **T-015** 👤 Domínio e HTTPS de staging: Route 53, certificado do ACM no ALB (`certificado_arn`), admin em S3 + CloudFront
   - dep: T-013, T-012 · docs: 12, 13 · requer o domínio do cliente (doc 15, pergunta 16)
-- [ ] **T-016** 👤 EAS Update no canal `staging` a cada merge na `main`
+- [x] **T-016** 👤 EAS Update no canal `staging` a cada merge na `main` (PR #37)
   - dep: T-010, T-013 · docs: 12 · requer o projeto no EAS e o `EXPO_TOKEN` no GitHub
 - [ ] **T-017** 👤 Tokens e ícones do design do cliente no lugar dos provisórios (e modo escuro, se o design trouxer)
   - dep: T-011 · docs: 04 (Design system) · 👤 design do cliente
