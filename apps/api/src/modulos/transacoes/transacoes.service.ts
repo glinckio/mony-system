@@ -41,6 +41,19 @@ import {
 /** Evento publicado depois que um lançamento é gravado (alertas, preferências: T-080, T-063). */
 export const EVENTO_TRANSACAO_REGISTRADA = 'transacao.registrada';
 
+/** Evento publicado quando um lançamento muda no que os alertas olham (T-082). */
+export const EVENTO_TRANSACAO_ALTERADA = 'transacao.alterada';
+
+/** Campos que mudam limite do cartão, orçamento ou gasto fora do padrão (doc 09). */
+const CAMPOS_DOS_ALERTAS = new Set([
+  'tipo',
+  'valorCentavos',
+  'data',
+  'categoriaId',
+  'formaPagamento',
+  'cartaoId',
+]);
+
 /**
  * Campos que mudam em qualquer lançamento: do banco, de parcelamento, pagamento de fatura e
  * compra em fatura quitada. Os outros mexem em valor, data ou fatura.
@@ -259,6 +272,11 @@ export class TransacoesService {
         await this.cartoes.recalcular(tx, tocadas, hoje);
       }
     });
+    if (campos.some((campo) => CAMPOS_DOS_ALERTAS.has(campo))) {
+      await this.eventos.publicar(EVENTO_TRANSACAO_ALTERADA, { transacaoId: id }, contexto, {
+        idUnico: idDeJob('transacao-alterada', id, this.clock.agora().getTime()),
+      });
+    }
     return this.comImpacto(usuarioId, await this.exigir(usuarioId, id));
   }
 

@@ -9,6 +9,7 @@ import {
   FAIXAS_ALERTA_PADRAO,
   faturaDaCompetencia,
   faturaDaCompra,
+  type LimiteCartao,
   limiteDoCartao,
   type ListaCartoes,
   type ListaFaturas,
@@ -500,12 +501,28 @@ export class CartoesService {
     usuarioId: string,
     cartaoId: string,
   ): Promise<NonNullable<Impacto['cartao']> | null> {
+    const situacao = await this.situacaoDoLimite(usuarioId, cartaoId);
+    return situacao ? { cartaoId, percentualUsado: situacao.limite.percentualUsado } : null;
+  }
+
+  /** O limite de agora, com o nome, os dias e as faixas de alerta do cartão (RN-034, RN-038). */
+  async situacaoDoLimite(
+    usuarioId: string,
+    cartaoId: string,
+  ): Promise<{
+    nome: string;
+    dias: DiasDoCartao;
+    faixasAlerta: number[];
+    limite: LimiteCartao;
+  } | null> {
     const cartao = await this.repositorio.buscar(usuarioId, cartaoId);
     if (!cartao) return null;
     const faturas = await this.repositorio.faturasDosCartoes(usuarioId, [cartaoId]);
     return {
-      cartaoId,
-      percentualUsado: limiteDoCartao(Number(cartao.limiteTotal), faturas).percentualUsado,
+      nome: cartao.nome,
+      dias: { diaFechamento: cartao.diaFechamento, diaVencimento: cartao.diaVencimento },
+      faixasAlerta: cartao.faixasAlerta,
+      limite: limiteDoCartao(Number(cartao.limiteTotal), faturas),
     };
   }
 

@@ -8,6 +8,7 @@ import { NucleoModule } from './core/nucleo.module';
 import { ProcessadorRotinas } from './core/rotinas/rotinas';
 import { EmailModule } from './integracoes/email/email.module';
 import { ProcessadorEmails } from './integracoes/email/processador-emails';
+import { AlertasModule } from './modulos/alertas/alertas.module';
 import { CartoesModule } from './modulos/cartoes/cartoes.module';
 import { PushModule } from './integracoes/push/push.module';
 import { NotificacoesModule } from './modulos/notificacoes/notificacoes.module';
@@ -34,6 +35,7 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     ParcelamentosModule,
     NotificacoesModule,
     PushModule,
+    AlertasModule,
   ],
   providers: [ProcessadorEventos, ProcessadorEmails, ProcessadorRotinas, ProcessadorNotificacoes],
 })

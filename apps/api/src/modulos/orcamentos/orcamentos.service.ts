@@ -105,12 +105,25 @@ export class OrcamentosService {
     categoriaId: string,
     data: DataCalendario,
   ): Promise<NonNullable<Impacto['orcamento']> | null> {
-    const competencia = competenciaDe(data);
+    const situacao = await this.situacao(usuarioId, categoriaId, competenciaDe(data));
+    return situacao ? { categoriaId, percentualUsado: situacao.percentualUsado } : null;
+  }
+
+  /** O orçamento da categoria na competência, com gasto e percentual; sem orçamento, `null`. */
+  async situacao(
+    usuarioId: string,
+    categoriaId: string,
+    competencia: Competencia,
+  ): Promise<Orcamento | null> {
     const orcamento = await this.repositorio.buscarDaCategoria(usuarioId, categoriaId, competencia);
     if (!orcamento) return null;
-    const hoje = await this.hoje(usuarioId);
-    const [resposta] = await this.comGasto(usuarioId, competencia, [orcamento], hoje);
-    return resposta ? { categoriaId, percentualUsado: resposta.percentualUsado } : null;
+    const [resposta] = await this.comGasto(
+      usuarioId,
+      competencia,
+      [orcamento],
+      await this.hoje(usuarioId),
+    );
+    return resposta ?? null;
   }
 
   /**

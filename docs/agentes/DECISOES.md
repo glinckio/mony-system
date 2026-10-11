@@ -401,3 +401,24 @@ Contexto: doc 09 ("Envio de push") e doc 10. O app ainda não tem esqueleto (T-0
 - **Texto cortado** em 120 caracteres no título e 900 no corpo, com reticências, para caber no limite de 4 KiB do push com os dados.
 
 Reversível: sim.
+
+## 2026-10-10 — T-082 — Avaliadores dos alertas de dinheiro
+Contexto: doc 09 (tipos de alerta e rotinas), RN-038, RN-062, RN-102, RN-106 a RN-108. Decisões:
+- **Avaliadores só no worker** (`modulos/alertas`, importado pelo `WorkerModule`). Reagem aos eventos que já existiam (`transacao.registrada`, `parcelamento.registrado`, `fatura.fechada`, `fatura.atrasada`) e a um novo, `transacao.alterada`, que o `PATCH /transacoes/:id` publica quando muda tipo, valor, data, categoria, forma ou cartão (o doc 09 pede "transação criada/editada").
+- **Repetição é com o motor.** Os avaliadores propõem sempre que a condição vale; a chave única (RN-102) segura o que já saiu. Por isso rodar o evento ou a rotina de novo não repete aviso.
+- **Só a maior faixa atingida** (limite e orçamento): uma compra que leva o cartão de 40% a 85% avisa 80%, não 50% e 80% juntos.
+- **Ciclo do limite pela competência** da fatura aberta hoje (`limite:<cartão>:2026-11:80`), em vez do id da fatura do exemplo do doc 07: é o mesmo ciclo (uma fatura por cartão e competência) e não depende de a fatura já existir no banco.
+- **Orçamento só do mês de hoje.** Lançamento com data de outro mês muda o orçamento daquele mês, mas não avisa: o aviso é sobre o mês que o usuário está vivendo.
+- **RN-106:** média das despesas da categoria (pagas e pendentes, cartão e parcelas inclusive) nos 90 dias até a data do lançamento, sem ele. Só se avalia lançamento dos últimos 7 dias. Parâmetros em `PARAMETROS_FORA_DO_PADRAO` até o admin existir.
+- **RN-107, a fórmula em números do sistema:**
+  - saldo atual = soma das contas (saldo inicial + pago);
+  - despesas pendentes do mês = contas pendentes sem cartão + parcelas de dívida + saldo das faturas que vencem no mês (a compra no cartão sai da conta pela fatura);
+  - gasto variável = despesas pagas fora do cartão, sem recorrência e sem parcelamento, nos 30 dias antes de hoje, em média diária, vezes os dias que faltam no mês;
+  - sem conta cadastrada, não há saldo e não há alerta;
+  - "uma vez por semana" = semana ISO (`projecao:2026-W42`).
+- **RN-108:** o aviso de antes sai no primeiro dia em que faltam de 1 a X dias (chave `…:<X>`), e o do dia no vencimento (`…:0`). Conta lançada já dentro do prazo também é avisada, e um dia sem rotina não perde o aviso. Antecedência 0 é só no dia. Itens: faturas com saldo, parcelas de dívida e contas pendentes (despesas sem cartão e sem parcelamento), como os próximos vencimentos do Início.
+- **Rotina por fuso:** `alertas-diarios` roda de hora em hora (minuto 5) e avalia os usuários ativos em cujo fuso são 09:00, em lotes, com erro por usuário só no log.
+- **Fora do escopo:** lançamentos em lote (Mony) e ocorrências de recorrência não publicam evento; entram nos avisos de vencimento, e o limite e o orçamento são reavaliados na próxima despesa. `parcela.atrasada` não tem tipo próprio no doc 09 e continua sem alerta.
+- **Textos** em `modulos/alertas/textos.ts`, curtos e sem julgamento (RN-091). "Fatura do cartão <nome>", para não errar o gênero do nome do cartão.
+
+Reversível: sim.
