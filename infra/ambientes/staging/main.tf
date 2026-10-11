@@ -25,20 +25,39 @@ terraform {
   }
 }
 
+locals {
+  etiquetas = {
+    Projeto    = "mony"
+    Ambiente   = "staging"
+    Gerenciado = "terraform"
+  }
+}
+
 provider "aws" {
   region = "sa-east-1"
 
   default_tags {
-    tags = {
-      Projeto    = "mony"
-      Ambiente   = "staging"
-      Gerenciado = "terraform"
-    }
+    tags = local.etiquetas
+  }
+}
+
+# Certificado do CloudFront (admin): o CloudFront só aceita certificado da us-east-1.
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+
+  default_tags {
+    tags = local.etiquetas
   }
 }
 
 module "ambiente" {
   source = "../../modulos/ambiente"
+
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
 
   ambiente           = "staging"
   repositorio_github = "glinckio/mony-system"
@@ -46,8 +65,10 @@ module "ambiente" {
   cidr_vpc     = "10.20.0.0/16"
   nat_por_zona = false
 
-  # Preencher quando o domínio existir (T-015); até lá, o ALB atende só HTTP.
-  certificado_arn = null
+  # Domínio de staging (ex.: "staging.monitorizze.com.br"), quando o cliente tiver o domínio
+  # (doc 15, pergunta 16). Até lá, a API atende só HTTP no endereço do ALB. Passo a passo no
+  # infra/README.md ("Domínio e HTTPS").
+  dominio = null
 
   banco_classe      = "db.t4g.micro"
   banco_multi_az    = false

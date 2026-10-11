@@ -150,6 +150,13 @@ jobs:
           done
           exit $falhou
 
+      - name: Testes do Terraform
+        # Plano do módulo do ambiente com a AWS simulada (mock_provider), com e sem domínio. Nada
+        # é criado na AWS.
+        run: |
+          terraform -chdir=infra/modulos/ambiente init -backend=false -input=false -no-color > /dev/null
+          terraform -chdir=infra/modulos/ambiente test -no-color
+
       - name: Imagem da API compila
         run: |
           set -o pipefail

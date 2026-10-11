@@ -57,7 +57,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
 - [x] **T-013** Terraform de staging (VPC, ECS api e worker, RDS, ElastiCache, S3, Secrets Manager, ALB) e deploy de staging no merge (PR #12)
   - dep: T-006, T-004 · docs: 12
   - 👤 Conta AWS e credenciais do CI. O agente escreve o Terraform e o workflow; o humano aplica.
-- [ ] **T-015** 👤 Domínio e HTTPS de staging: Route 53, certificado do ACM no ALB (`certificado_arn`), admin em S3 + CloudFront
+- [x] **T-015** 👤 Domínio e HTTPS de staging: Route 53, certificado do ACM no ALB (`certificado_arn`), admin em S3 + CloudFront (PR #36)
   - dep: T-013, T-012 · docs: 12, 13 · requer o domínio do cliente (doc 15, pergunta 16)
 - [x] **T-016** 👤 EAS Update no canal `staging` a cada merge na `main` (PR #37)
   - dep: T-010, T-013 · docs: 12 · requer o projeto no EAS e o `EXPO_TOKEN` no GitHub

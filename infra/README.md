@@ -5,7 +5,8 @@ AWS em `sa-east-1` (São Paulo), como descrito em [docs/arquitetura/12](../docs/
 ```
 infra/
 ├─ bootstrap/             # Uma vez por conta: bucket do estado do Terraform e provedor OIDC do GitHub
-├─ modulos/ambiente/      # Um ambiente completo: rede, RDS, Valkey, S3, segredos, ECR, ALB, ECS, papel de deploy
+├─ modulos/ambiente/      # Um ambiente completo: rede, RDS, Valkey, S3, segredos, ECR, ALB, ECS, admin, domínio, papel de deploy
+│  └─ tests/              # terraform test com a AWS simulada
 └─ ambientes/staging/     # Staging: chama o módulo com tamanhos mínimos
 ```
 
@@ -20,7 +21,9 @@ O que o ambiente cria:
 | Arquivos | S3 privado, criptografado, só TLS; `exportacoes/` expira em 7 dias |
 | Segredos | Secrets Manager: `mony/<ambiente>/infra` (`DATABASE_URL`, escrita pelo Terraform) e `mony/<ambiente>/app` (chaves da aplicação, preenchidas à mão) |
 | Imagem | ECR `mony-<ambiente>-api`, com análise de vulnerabilidades |
-| Deploy | Papel que o GitHub Actions assume por OIDC, só pelo job do ambiente (`environment: staging`) |
+| Admin | Bucket privado + CloudFront. O CloudFront também repassa `/v1/*` para o ALB: o painel chama a API no próprio domínio, sem CORS |
+| Domínio (com `dominio`) | Zona no Route 53, certificados do ACM validados por DNS, `api.<dominio>` (ALB em HTTPS) e `admin.<dominio>` (CloudFront) |
+| Deploy | Papel que o GitHub Actions assume por OIDC, só pelo job do ambiente (`environment: staging`): API (ECR e ECS) e admin (bucket e invalidação do CloudFront) |
 
 A senha do banco é gerada no `apply` e vai direto para o RDS e para o Secrets Manager: ela não fica no estado do Terraform (argumentos *write-only*). Para trocar a senha, aumente `versao_senha_banco` no módulo.
 
@@ -63,7 +66,7 @@ Na raiz do repositório:
 terraform -chdir=infra/ambientes/staging output -raw comandos_github | sh
 ```
 
-Isso grava as variáveis `STAGING_*` do repositório (região, papel de deploy, ECR, cluster, sub-redes etc.). Sem elas, o workflow [Deploy de staging](../.github/workflows/deploy-staging.yml) fica parado.
+Isso grava as variáveis `STAGING_*` do repositório (região, papel de deploy, ECR, cluster, sub-redes, bucket e CloudFront do admin etc.). Sem elas, os workflows [Deploy de staging](../.github/workflows/deploy-staging.yml) e [Deploy do admin em staging](../.github/workflows/deploy-admin-staging.yml) ficam parados.
 
 ### 4. Chaves da aplicação
 
@@ -91,6 +94,13 @@ gh run watch
 
 O workflow publica a imagem da API no ECR (tags do commit e `staging`), roda `prisma migrate deploy && prisma db seed` numa tarefa avulsa e faz o deploy dos serviços `api` e `worker`. Antes desse primeiro deploy os serviços ficam tentando subir sem imagem; é esperado.
 
+O painel admin vai no workflow dele:
+
+```bash
+gh workflow run deploy-admin-staging.yml
+terraform -chdir=infra/ambientes/staging output -raw endereco_admin   # abra no navegador
+```
+
 Depois, todo merge na `main` que mexe na API faz o mesmo.
 
 ```bash
@@ -101,10 +111,34 @@ curl "$(terraform -chdir=infra/ambientes/staging output -raw endereco_api)/v1/he
 
 - **Logs:** CloudWatch, grupos `/mony/staging/api` e `/mony/staging/worker` (30 dias).
 - **Chaves da aplicação** (JWT, Stripe, provedor de IA): no segredo `mony/staging/app`, em JSON (passo 4). A tarefa que passar a usar uma chave inclui a leitura dela no `infra/modulos/ambiente/ecs.tf`. Depois de mudar o segredo, um novo deploy (`gh workflow run deploy-staging.yml`) faz as tarefas lerem o valor novo.
-- **HTTPS:** até existir o domínio, o ALB atende só HTTP. Com o certificado do ACM, preencha `certificado_arn` em `ambientes/staging/main.tf` (T-015).
+- **HTTPS:** até existir o domínio, o ALB atende só HTTP e o admin fica no endereço do CloudFront (`https://<id>.cloudfront.net`). Veja "Domínio e HTTPS" abaixo.
 - **Custos:** os itens fixos são o NAT gateway, o ALB, o RDS, o ElastiCache e as tarefas do Fargate, mesmo sem uso. Estime na [calculadora da AWS](https://calculator.aws/) antes de aplicar.
 - **Apagar o ambiente:** mude `banco_protecao_exclusao` para `false`, `terraform apply`, depois `terraform destroy`. O RDS deixa um snapshot final.
 
+## Domínio e HTTPS
+
+Quando o cliente tiver o domínio (doc 15, pergunta 16), staging usa um subdomínio dele, com zona própria no Route 53 (ex.: `staging.monitorizze.com.br`). Assim o DNS do domínio principal continua onde está (Registro.br ou outro).
+
+1. Em `ambientes/staging/main.tf`, preencha `dominio = "staging.<domínio do cliente>"`.
+2. Crie só a zona e veja os servidores de nome dela:
+
+   ```bash
+   cd infra/ambientes/staging
+   terraform apply -target=module.ambiente.aws_route53_zone.principal
+   terraform output servidores_dns
+   ```
+
+3. No DNS do domínio principal, crie um registro **NS** para `staging` com esses quatro servidores. Confira com `dig NS staging.<domínio> +short`.
+4. Aplique o resto: `terraform apply`. O ACM valida os certificados pelo DNS (alguns minutos depois da delegação; o `apply` espera). A API passa a responder em `https://api.<dominio>` (o HTTP redireciona) e o admin em `https://admin.<dominio>`.
+5. Para o app de preview apontar para a API nova, use `EXPO_PUBLIC_API_URL=https://api.<dominio>` no perfil `preview` do EAS.
+
+O certificado do admin fica na `us-east-1`, porque o CloudFront só aceita certificado de lá; por isso o ambiente usa também o provider `aws.us_east_1`.
+
 ## CI
 
-O job **Infra** do CI roda `terraform fmt -check`, `terraform validate` (sem tocar na AWS) e compila e sobe a imagem da API em todo PR.
+O job **Infra** do CI roda em todo PR:
+
+- `terraform fmt -check`;
+- `terraform validate`, sem tocar na AWS;
+- `terraform test` do módulo (`modulos/ambiente/tests`), com a AWS simulada: o plano com e sem domínio;
+- o build da imagem da API.

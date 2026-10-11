@@ -19,7 +19,7 @@ apps/admin/
 └─ vite.config.ts            # Plugins (router, React, Tailwind), proxy /v1 em desenvolvimento, Vitest
 ```
 
-O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa `/v1` para a API local; em produção, `VITE_API_URL` aponta para a API (CORS ou mesmo domínio, definido com a infraestrutura).
+O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa `/v1` para a API local. Na nuvem (T-015), o CloudFront do admin faz o mesmo: serve o build do bucket e repassa `/v1/*` para o ALB da API. Por isso o build usa `VITE_API_URL` vazio e a API não precisa de CORS. Deploy pelo workflow `deploy-admin-staging.yml`.
 
 ## Acesso
 

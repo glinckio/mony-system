@@ -3,6 +3,16 @@ output "endereco_api" {
   value       = module.ambiente.endereco_api
 }
 
+output "endereco_admin" {
+  description = "Endereço do painel admin de staging."
+  value       = module.ambiente.endereco_admin
+}
+
+output "servidores_dns" {
+  description = "Servidores de nome da zona de staging (delegar a partir do domínio pai)."
+  value       = module.ambiente.servidores_dns
+}
+
 output "repositorio_imagem" {
   description = "Repositório ECR da imagem da API."
   value       = module.ambiente.repositorio_imagem
