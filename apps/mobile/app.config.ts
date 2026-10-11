@@ -78,6 +78,8 @@ function texto(valor: string | undefined): string | undefined {
   return valor === undefined || valor.trim() === '' ? undefined : valor.trim();
 }
 
+const PEDIDO_FACE_ID = 'Use o Face ID para desbloquear o Mony neste aparelho.';
+
 export function criarConfigApp(base: ConfigContext['config'], variaveis: Variaveis): ExpoConfig {
   const ambiente = texto(variaveis.APP_ENV) ?? 'development';
   if (!ehAmbiente(ambiente)) {
@@ -122,6 +124,11 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
     },
     plugins: [
       'expo-router',
+      // Texto do pedido de Face ID no iOS (RN-005: a biometria só libera a sessão guardada).
+      ['expo-local-authentication', { faceIDPermission: PEDIDO_FACE_ID }],
+      // O cofre fica fora do backup do Android: a chave do Keystore não vai junto, e o valor
+      // restaurado em outro aparelho não abriria.
+      ['expo-secure-store', { faceIDPermission: PEDIDO_FACE_ID, configureAndroidBackup: true }],
       // Envio de source maps no build do EAS: precisa de SENTRY_AUTH_TOKEN (segredo no EAS) ou
       // SENTRY_DISABLE_AUTO_UPLOAD=true.
       [

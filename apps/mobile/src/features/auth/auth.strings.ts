@@ -1,7 +1,51 @@
 export const textosAuth = {
+  campos: {
+    nome: 'Nome',
+    email: 'E-mail',
+    telefone: 'Celular com DDD',
+    senha: 'Senha',
+    senhaNova: 'Senha nova',
+    codigo: 'Código de 6 dígitos',
+  },
+  validacao: {
+    nome: 'Informe seu nome.',
+    email: 'Informe um e-mail válido.',
+    telefone: 'Informe um celular com DDD, ex.: (11) 98765-4321.',
+    senha: 'A senha precisa ter pelo menos 8 caracteres.',
+    senhaLogin: 'Informe sua senha.',
+    codigo: 'O código tem 6 números.',
+    aceite: 'Para criar a conta, aceite os termos de uso e a política de privacidade.',
+  },
+  ajudaSenha: 'Pelo menos 8 caracteres.',
+  semConexao: 'Não foi possível falar com o servidor. Confira a conexão e tente de novo.',
   login: {
     titulo: 'Entrar',
-    // Atalho que só existe em build de desenvolvimento, até o login de verdade (T-030).
-    entrarSemConta: 'Ver o app sem entrar (desenvolvimento)',
+    entrar: 'Entrar',
+    esqueci: 'Esqueci minha senha',
+    criarConta: 'Criar conta',
+  },
+  cadastro: {
+    titulo: 'Criar conta',
+    aceite: 'Li e aceito os termos de uso e a política de privacidade.',
+    criar: 'Criar conta',
+    jaTenho: 'Já tenho conta',
+  },
+  recuperar: {
+    titulo: 'Recuperar senha',
+    explicacao:
+      'Enviamos um código de 6 dígitos para o seu e-mail, se ele tiver uma conta no Mony.',
+    pedido: 'Informe o e-mail da sua conta. Vamos mandar um código para você criar uma senha nova.',
+    enviarCodigo: 'Enviar código',
+    redefinir: 'Salvar senha nova e entrar',
+    reenviar: 'Mandar outro código',
+    voltar: 'Voltar para o login',
+  },
+  bloqueio: {
+    titulo: 'Mony bloqueado',
+    explicacao: 'Use a biometria do aparelho para continuar.',
+    desbloquear: 'Desbloquear',
+    motivo: 'Desbloquear o Mony',
+    cancelar: 'Cancelar',
+    entrarDeNovo: 'Entrar com e-mail e senha',
   },
 };

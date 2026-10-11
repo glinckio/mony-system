@@ -42,7 +42,7 @@ describe('navegação pela sessão', () => {
     }
   });
 
-  it('cada aba abre a sua tela', () => {
+  it('cada aba abre a sua tela', async () => {
     entrar(true);
     const app = renderRouter(ROTAS, { initialUrl: '/' });
     const caminhos = ['/', '/transacoes', '/mony', '/cartoes', '/mais'];
@@ -51,6 +51,8 @@ describe('navegação pela sessão', () => {
       expect(app.getPathname()).toBe(caminhos[indice] ?? '');
       expect(screen.getByRole('header', { name: aba })).toBeOnTheScreen();
     });
+    // A aba Mais confere a biometria do aparelho ao abrir.
+    expect(await screen.findByLabelText('Desbloquear com biometria')).toBeOnTheScreen();
   });
 
   it('ao sair, volta para o login', () => {
@@ -61,12 +63,6 @@ describe('navegação pela sessão', () => {
       useSessao.getState().encerrar();
     });
     expect(screen.getByRole('header', { name: 'Entrar' })).toBeOnTheScreen();
-  });
-
-  it('em desenvolvimento, o atalho do login abre as abas', () => {
-    renderRouter(ROTAS, { initialUrl: '/' });
-    fireEvent.press(screen.getByRole('button', { name: 'Ver o app sem entrar (desenvolvimento)' }));
-    expect(screen.getByRole('header', { name: 'Início' })).toBeOnTheScreen();
   });
 
   it('rota inexistente mostra a tela de não encontrada', () => {
