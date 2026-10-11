@@ -132,6 +132,14 @@ Pedir ao cliente junto com as telas: estados vazios, de carregamento e de erro; 
 
 Componente `Valor` concentra a formatação de dinheiro e o **modo privacidade** (oculta valores em todo o app com um toque, RN-022).
 
+**Como está (T-011), com tokens provisórios até o design do cliente chegar (T-017):**
+
+- **Tokens** em `src/ui/tokens.ts`: cores com nome de uso (`fundo`, `superficie`, `texto-suave`, `primaria`, `receita`, `despesa`, as faixas `normal`/`atencao`/`estourado`…), espaços em pt, raios, tipografia (`legenda` a `destaque`), pesos, sombras e o toque mínimo de 44 pt. As cores de texto têm contraste AA, conferido em teste.
+- **NativeWind 4** (Tailwind 3): o `tailwind.config.js` lê os tokens e **troca** o tema do Tailwind, então classe fora dos tokens (`bg-blue-500`, `p-7`) não existe. O `global.css` entra no `_layout.tsx` raiz; o Metro compila o CSS.
+- **Componentes** (`@/ui`): `Texto`, `Botao`, `BotaoIcone`, `Campo`, `Valor` e `BotaoPrivacidade`, `Card`, `Chip`, `BarraProgresso` (cor pela faixa da RN-062), `Vazio`, `Erro` e `Skeleton`. Todos com rótulo e papel para o leitor de tela. `BottomSheet` e `Toast` entram com a primeira tela que precisar deles.
+- **Modo privacidade:** store `usePrivacidade`, guardado no AsyncStorage do aparelho.
+- **Ícones** provisórios: Ionicons (`@expo/vector-icons`).
+
 ## Onboarding
 
 Rotas em `(onboarding)` seguindo o PDF: boas-vindas (2–3 telas), primeiro lançamento guiado no chat, cartões (opcional), orçamento inicial, permissões uma a uma, tour pulável. O progresso fica no servidor (`GET/PATCH /v1/me/onboarding`) para o **checklist de primeiros passos** no Início. Dicas contextuais na primeira visita a cada tela usam um registro de "dicas vistas" no servidor (para sobreviver a reinstalação).
