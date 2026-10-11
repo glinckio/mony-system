@@ -10,7 +10,10 @@ export interface PropsChip {
   testID?: string;
 }
 
-/** Opção que liga e desliga (filtros, período, categoria). */
+/**
+ * Opção que liga e desliga (filtros, período, categoria): pílula de vidro, clara quando escolhida.
+ * Tem 32 pt de altura e alcança os 44 pt de toque pelo `hitSlop`.
+ */
 export function Chip({ rotulo, selecionado = false, aoPressionar, testID }: PropsChip) {
   return (
     <Pressable
@@ -18,13 +21,14 @@ export function Chip({ rotulo, selecionado = false, aoPressionar, testID }: Prop
       accessibilityLabel={rotulo}
       accessibilityState={{ selected: selecionado }}
       onPress={aoPressionar}
+      hitSlop={6}
       testID={testID}
       className={juntarClasses(
-        'min-h-toque justify-center rounded-total border px-4',
-        selecionado ? 'border-primaria bg-primaria-suave' : 'border-borda bg-superficie',
+        'h-8 justify-center rounded-total px-4',
+        selecionado ? 'bg-claro' : 'border border-vidro bg-vidro',
       )}
     >
-      <Texto variante="corpo-sm" cor={selecionado ? 'primaria' : 'texto'} className="font-medio">
+      <Texto variante="corpo-sm" cor={selecionado ? 'inverso' : 'texto'} className="font-forte">
         {rotulo}
       </Texto>
     </Pressable>

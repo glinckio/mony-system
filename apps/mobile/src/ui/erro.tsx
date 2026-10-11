@@ -29,7 +29,7 @@ export function Erro({ mensagem, aoTentarDeNovo }: PropsErro) {
       {aoTentarDeNovo ? (
         <Botao
           variante="secundaria"
-          icone="refresh"
+          icone="refresh-cw"
           titulo={t('ui.erro.tentarDeNovo')}
           aoPressionar={aoTentarDeNovo}
         />

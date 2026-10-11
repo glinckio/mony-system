@@ -1,6 +1,8 @@
 import { Tabs } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { BarraAbas } from '@/ui/barra-abas';
+
 /** Barra inferior: Início, Transações, Mony, Cartões, Mais (docs/arquitetura/04). */
 export default function LayoutAbas() {
   const { t } = useTranslation();
@@ -10,8 +12,7 @@ export default function LayoutAbas() {
     tabBarAccessibilityLabel: titulo,
   });
   return (
-    // Ícones vêm do design do cliente (T-011); até lá, só o nome da aba.
-    <Tabs screenOptions={{ headerShown: false, tabBarIconStyle: { display: 'none' } }}>
+    <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <BarraAbas {...props} />}>
       <Tabs.Screen name="index" options={aba(t('inicio.titulo'))} />
       <Tabs.Screen name="transacoes" options={aba(t('transacoes.titulo'))} />
       <Tabs.Screen name="mony" options={aba(t('mony.titulo'))} />

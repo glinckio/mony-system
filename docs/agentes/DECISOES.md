@@ -514,3 +514,35 @@ Contexto: doc 12 (Route 53 + ACM; admin em S3 + CloudFront) e doc 13. O cliente 
 - **Fora daqui:** `app.<dominio>` (universal links) entra com o deep link do app; WAF na frente do ALB, com o hardening (T-144).
 
 Reversível: sim.
+
+## 2026-10-11 — Humano — Credenciais do cliente só no fim do projeto
+Contexto: muitas tarefas 👤 esperam conta ou chave do cliente (Stripe, Open Finance, OAuth, push, e-mail, AWS). O humano vai pedir esses dados ao cliente só no fim do projeto e pediu para seguir sem eles. Decisões:
+- **Tarefas que precisam de credencial são feitas com os provedores falsos e testes.** O passo de ligar a chave real fica descrito no BLOQUEIOS, para o fim do projeto.
+- O PR dessas tarefas continua com `aguardando-humano`, para o humano mergear, como pede o CLAUDE.md para 👤.
+
+Reversível: sim.
+
+## 2026-10-11 — T-017 — Design do cliente no app
+Contexto: o cliente mandou as telas em PDF (`docs/design/telas-app.pdf`), com o app e o painel administrativo. O humano confirmou: **sem modo claro**, e o logo do PDF vale até chegar o arquivo original. Decisões:
+- **Tokens medidos nos pixels das telas.** Elas são imagens de 390 × 844 pt em 2×.
+  - O app é escuro: fundo em degradê de ciano para marinho, cards marinho, texto claro e azul `#3D8BFF` como cor principal. O verde provisório saiu.
+  - Elementos de "vidro" (branco a 16%) para botões secundários, chips e círculos de ícone sobre o degradê.
+  - Os nomes continuam por uso. Entram `vidro`, `claro`, `link`, `texto-fraco`, `balao-usuario` e as versões `-suave` de receita, atenção e perigo.
+- **O topo do degradê é claro** (contraste 2:1 com texto branco). Lá só vão títulos grandes e em negrito, como no design. O teste de contraste confere o texto sobre o `fundo` e a `superficie`.
+- **Botões e chips em pílula.**
+  - O botão principal é claro com texto escuro. O azul cheio fica para o botão do microfone e a aba da Mony.
+  - Botões de texto têm 50 pt de altura.
+  - Chips têm 32 pt e chegam aos 44 pt de toque pelo `hitSlop`.
+- **Lucide no lugar do Ionicons**, porque é o traço do design. Cada ícone é importado pelo caminho dele, porque o Metro não descarta o resto do pacote. No Jest, um `moduleNameMapper` aponta para a versão CommonJS. O `@expo/vector-icons` saiu.
+- **Barra de abas própria** (`BarraAbas`, no `tabBar` das abas): pílula flutuante sobre o fim do degradê, aba atual em vidro e a Mony num círculo azul no meio. As abas têm papel `tab` e estado selecionado.
+- **`Tela`** é a moldura das telas: degradê do `expo-linear-gradient` e área segura. As classes vão numa `View` interna, porque o `SafeAreaView` usa o padding para a área segura.
+- **Tema escuro da navegação** nas cores do app, para não aparecer fundo branco entre telas. Também entram `backgroundColor` e `userInterfaceStyle: 'dark'` no `app.config`.
+- **Logo provisório** recortado da capa do PDF (1080 px): ícone do iOS (branco com a marca), ícone adaptativo e monocromático do Android, splash (bloco branco sobre `#0A2133`) e o bloco do login.
+- **Telas existentes no visual novo:** login com o logo e a chamada do design; cadastro, recuperação, bloqueio, Mony e Mais com `Tela`. O balão da pessoa no chat passa a ser azul-escuro com texto claro.
+  - Os botões de Apple e Google continuam na T-055.
+  - A grade da aba Mais e o Perfil foram para uma tarefa nova, a T-057.
+  - O "3 dias grátis, sem cartão" do login fica para a T-101, quando o teste grátis existir.
+- **Conferido em tela** com um export web temporário (Playwright, 390 × 844). Ele não foi para o repositório: o app é só iOS e Android.
+
+Reversível: sim.
+

@@ -66,7 +66,7 @@ export function BotaoPrivacidade() {
   const alternar = usePrivacidade((estado) => estado.alternar);
   return (
     <BotaoIcone
-      icone={oculto ? 'eye-off-outline' : 'eye-outline'}
+      icone={oculto ? 'eye-off' : 'eye'}
       rotulo={oculto ? t('ui.mostrarValores') : t('ui.ocultarValores')}
       aoPressionar={alternar}
     />

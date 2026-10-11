@@ -1,5 +1,6 @@
 /** Textos dos componentes base (`src/ui`). */
 export const textosUi = {
+  logo: 'Monitorizze',
   valorOculto: 'Valor oculto',
   mostrarValores: 'Mostrar valores',
   ocultarValores: 'Ocultar valores',

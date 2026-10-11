@@ -27,10 +27,11 @@ export function Campo({ rotulo, erro, ajuda, ref, editable = true, ...props }: P
         accessibilityHint={temErro ? erro : ajuda}
         accessibilityState={{ disabled: !editable }}
         editable={editable}
-        placeholderTextColor={cores['texto-suave']}
+        placeholderTextColor={cores['texto-fraco']}
+        selectionColor={cores.primaria}
         className={juntarClasses(
-          'min-h-toque rounded-md border bg-superficie px-3 text-corpo text-texto',
-          temErro ? 'border-perigo' : 'border-borda',
+          'min-h-botao rounded-md border bg-superficie-alta px-4 text-corpo text-texto',
+          temErro ? 'border-perigo' : 'border-transparente',
           !editable && 'opacity-50',
         )}
         {...props}

@@ -9,17 +9,29 @@ const CLASSES_VARIANTE: Record<VarianteTexto, string> = {
   corpo: 'text-corpo',
   titulo: 'text-titulo font-forte',
   'titulo-lg': 'text-titulo-lg font-negrito',
+  'titulo-xl': 'text-titulo-xl font-negrito',
   destaque: 'text-destaque font-negrito',
 };
 
 export type CorTexto =
-  'texto' | 'suave' | 'inverso' | 'primaria' | 'receita' | 'despesa' | 'atencao' | 'perigo';
+  | 'texto'
+  | 'suave'
+  | 'fraco'
+  | 'inverso'
+  | 'primaria'
+  | 'link'
+  | 'receita'
+  | 'despesa'
+  | 'atencao'
+  | 'perigo';
 
 const CLASSES_COR: Record<CorTexto, string> = {
   texto: 'text-texto',
   suave: 'text-texto-suave',
+  fraco: 'text-texto-fraco',
   inverso: 'text-texto-inverso',
   primaria: 'text-primaria',
+  link: 'text-link',
   receita: 'text-receita',
   despesa: 'text-despesa',
   atencao: 'text-atencao',

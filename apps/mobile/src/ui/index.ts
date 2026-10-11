@@ -8,9 +8,20 @@ export { Card } from './card';
 export { Chip, type PropsChip } from './chip';
 export { juntarClasses } from './classes';
 export { Erro, type PropsErro } from './erro';
-export type { NomeIcone } from './icone';
+export { Icone, type NomeIcone, type PropsIcone } from './icone';
+export { Logo, type PropsLogo } from './logo';
 export { Skeleton, type PropsSkeleton } from './skeleton';
+export { type PropsTela, Tela } from './tela';
 export { type CorTexto, type PropsTexto, Texto } from './texto';
-export { cores, espacos, raios, sombras, tipografia, TOQUE_MINIMO } from './tokens';
+export {
+  ALTURA_BOTAO,
+  cores,
+  degradeFundo,
+  espacos,
+  raios,
+  sombras,
+  tipografia,
+  TOQUE_MINIMO,
+} from './tokens';
 export { BotaoPrivacidade, type PropsValor, type TipoValor, Valor, VALOR_OCULTO } from './valor';
 export { Vazio, type PropsVazio } from './vazio';

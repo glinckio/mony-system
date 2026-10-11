@@ -1,7 +1,7 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable } from 'react-native';
 
-import type { NomeIcone } from './icone';
+import { juntarClasses } from './classes';
+import { Icone, type NomeIcone } from './icone';
 import { type Cor, cores } from './tokens';
 
 export interface PropsBotaoIcone {
@@ -10,6 +10,8 @@ export interface PropsBotaoIcone {
   rotulo: string;
   aoPressionar: () => void;
   cor?: Cor;
+  /** Círculo de vidro, como o "+" e o calendário do design; sem ele, só o ícone. */
+  comFundo?: boolean;
   testID?: string;
 }
 
@@ -19,6 +21,7 @@ export function BotaoIcone({
   rotulo,
   aoPressionar,
   cor = 'texto',
+  comFundo = false,
   testID,
 }: PropsBotaoIcone) {
   return (
@@ -27,9 +30,12 @@ export function BotaoIcone({
       accessibilityLabel={rotulo}
       onPress={aoPressionar}
       testID={testID}
-      className="min-h-toque min-w-toque items-center justify-center rounded-total active:bg-superficie-alta"
+      className={juntarClasses(
+        'min-h-toque min-w-toque items-center justify-center rounded-total active:opacity-70',
+        comFundo && 'border border-vidro bg-vidro',
+      )}
     >
-      <Ionicons name={icone} size={24} color={cores[cor]} />
+      <Icone nome={icone} tamanho={22} cor={cores[cor]} />
     </Pressable>
   );
 }

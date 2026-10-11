@@ -216,7 +216,9 @@ describe('autenticação no app (T-034)', () => {
       api({ '/v1/auth/renovar': () => erro(401, 'SESSAO_INVALIDA', 'Sessão inválida.') });
       useSessao.setState({ estado: 'iniciando', usuario: null, tokenAcesso: null });
       renderRouter(ROTAS, { initialUrl: '/' });
-      expect(await screen.findByRole('header', { name: 'Entrar' }, ESPERA)).toBeOnTheScreen();
+      expect(
+        await screen.findByRole('header', { name: 'Seu dinheiro numa conversa' }, ESPERA),
+      ).toBeOnTheScreen();
       expect(await cofre.lerRenovacao()).toBeNull();
     },
     TEMPO_LIMITE_MS,
@@ -232,14 +234,18 @@ describe('autenticação no app (T-034)', () => {
       });
       useSessao.setState({ estado: 'iniciando' });
       const { unmount } = renderRouter(ROTAS, { initialUrl: '/' });
-      expect(await screen.findByRole('header', { name: 'Entrar' }, ESPERA)).toBeOnTheScreen();
+      expect(
+        await screen.findByRole('header', { name: 'Seu dinheiro numa conversa' }, ESPERA),
+      ).toBeOnTheScreen();
       expect(await cofre.lerRenovacao()).toBe('renovacao-guardada-0123456789');
       unmount();
 
       api({ '/v1/auth/renovar': () => erro(503, 'INDISPONIVEL', 'Tente de novo.') });
       useSessao.setState({ estado: 'iniciando' });
       renderRouter(ROTAS, { initialUrl: '/' });
-      expect(await screen.findByRole('header', { name: 'Entrar' }, ESPERA)).toBeOnTheScreen();
+      expect(
+        await screen.findByRole('header', { name: 'Seu dinheiro numa conversa' }, ESPERA),
+      ).toBeOnTheScreen();
       expect(await cofre.lerRenovacao()).toBe('renovacao-guardada-0123456789');
     },
     TEMPO_LIMITE_MS,
@@ -256,7 +262,9 @@ describe('autenticação no app (T-034)', () => {
       useSessao.setState({ estado: 'iniciando' });
       renderRouter(ROTAS, { initialUrl: '/' });
 
-      expect(await screen.findByRole('header', { name: 'Entrar' }, ESPERA)).toBeOnTheScreen();
+      expect(
+        await screen.findByRole('header', { name: 'Seu dinheiro numa conversa' }, ESPERA),
+      ).toBeOnTheScreen();
       expect(pedidos).toEqual([]);
       expect(guardados.has('mony.renovacao')).toBe(false);
     },
@@ -307,7 +315,9 @@ describe('autenticação no app (T-034)', () => {
       expect(autenticar).toHaveBeenCalled();
 
       fireEvent.press(screen.getByRole('button', { name: 'Sair deste aparelho' }));
-      expect(await screen.findByRole('header', { name: 'Entrar' }, ESPERA)).toBeOnTheScreen();
+      expect(
+        await screen.findByRole('header', { name: 'Seu dinheiro numa conversa' }, ESPERA),
+      ).toBeOnTheScreen();
       expect(pedidos.map(({ rota, corpo }) => [rota, corpo])).toEqual([
         ['/v1/auth/sair', { renovacao: 'renovacao-guardada-0123456789' }],
       ]);

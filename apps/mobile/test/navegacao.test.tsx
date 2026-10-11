@@ -21,7 +21,7 @@ describe('navegação pela sessão', () => {
 
   it('sem sessão abre o login, mesmo pedindo outra rota', () => {
     const app = renderRouter(ROTAS, { initialUrl: '/cartoes' });
-    expect(screen.getByRole('header', { name: 'Entrar' })).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Seu dinheiro numa conversa' })).toBeOnTheScreen();
     expect(app.getSegments()).toEqual(['(auth)']);
   });
 
@@ -38,7 +38,7 @@ describe('navegação pela sessão', () => {
     expect(screen.getByRole('header', { name: 'Início' })).toBeOnTheScreen();
     expect(app.getPathname()).toBe('/');
     for (const aba of ABAS) {
-      expect(screen.getByRole('button', { name: aba })).toBeOnTheScreen();
+      expect(screen.getByRole('tab', { name: aba })).toBeOnTheScreen();
     }
   });
 
@@ -47,8 +47,9 @@ describe('navegação pela sessão', () => {
     const app = renderRouter(ROTAS, { initialUrl: '/' });
     const caminhos = ['/', '/transacoes', '/mony', '/cartoes', '/mais'];
     ABAS.forEach((aba, indice) => {
-      fireEvent.press(screen.getByRole('button', { name: aba }));
+      fireEvent.press(screen.getByRole('tab', { name: aba }));
       expect(app.getPathname()).toBe(caminhos[indice] ?? '');
+      expect(screen.getByRole('tab', { name: aba })).toBeSelected();
       expect(screen.getByRole('header', { name: aba })).toBeOnTheScreen();
     });
     // A aba Mais confere a biometria do aparelho ao abrir.
@@ -62,7 +63,7 @@ describe('navegação pela sessão', () => {
     act(() => {
       useSessao.getState().encerrar();
     });
-    expect(screen.getByRole('header', { name: 'Entrar' })).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: 'Seu dinheiro numa conversa' })).toBeOnTheScreen();
   });
 
   it('rota inexistente mostra a tela de não encontrada', () => {

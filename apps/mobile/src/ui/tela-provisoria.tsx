@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Tela } from './tela';
 import { Texto } from './texto';
 
 /**
@@ -11,12 +11,12 @@ import { Texto } from './texto';
 export function TelaProvisoria({ titulo, children }: { titulo: string; children?: ReactNode }) {
   const { t } = useTranslation();
   return (
-    <SafeAreaView className="flex-1 gap-3 bg-fundo p-6">
+    <Tela className="gap-3 p-6">
       <Texto variante="titulo-lg" accessibilityRole="header">
         {titulo}
       </Texto>
       <Texto cor="suave">{t('comum.emConstrucao')}</Texto>
       {children}
-    </SafeAreaView>
+    </Tela>
   );
 }

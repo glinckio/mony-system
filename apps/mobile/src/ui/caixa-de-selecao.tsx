@@ -1,7 +1,7 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, View } from 'react-native';
 
 import { juntarClasses } from './classes';
+import { Icone } from './icone';
 import { Texto } from './texto';
 import { cores } from './tokens';
 
@@ -30,11 +30,11 @@ export function CaixaDeSelecao({ rotulo, marcada, aoMudar, erro, testID }: Props
         <View
           className={juntarClasses(
             'items-center justify-center rounded-sm border',
-            marcada ? 'border-primaria bg-primaria' : 'border-borda bg-superficie',
+            marcada ? 'border-primaria bg-primaria' : 'border-texto-fraco bg-transparente',
           )}
           style={{ width: 24, height: 24 }}
         >
-          {marcada ? <Ionicons name="checkmark" size={18} color={cores['texto-inverso']} /> : null}
+          {marcada ? <Icone nome="check" tamanho={16} espessura={3} cor={cores.texto} /> : null}
         </View>
         <Texto variante="corpo-sm" className="flex-1">
           {rotulo}

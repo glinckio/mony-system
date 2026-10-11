@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Switch, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { biometriaDisponivel, confirmarBiometria } from '@/lib/auth/biometria';
 import { cofre } from '@/lib/auth/cofre';
 import { sair } from '@/lib/auth/sessao';
-import { Botao, Card, Texto } from '@/ui';
+import { Botao, Card, Tela, Texto } from '@/ui';
 import { cores } from '@/ui/tokens';
 
 /** Aba Mais. Por enquanto: biometria (RN-005) e sair deste aparelho. */
@@ -35,7 +34,7 @@ export default function TelaMais() {
   }
 
   return (
-    <SafeAreaView className="flex-1 gap-4 bg-fundo p-4" edges={['top']}>
+    <Tela className="gap-4 p-3">
       <Texto variante="titulo-lg" accessibilityRole="header">
         {t('mais.titulo')}
       </Texto>
@@ -61,7 +60,7 @@ export default function TelaMais() {
         ) : null}
         <Botao
           variante="secundaria"
-          icone="log-out-outline"
+          icone="log-out"
           titulo={t('mais.sair')}
           carregando={saindo}
           aoPressionar={() => {
@@ -72,6 +71,6 @@ export default function TelaMais() {
           }}
         />
       </Card>
-    </SafeAreaView>
+    </Tela>
   );
 }

@@ -1,32 +1,36 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { ActivityIndicator, Pressable } from 'react-native';
 
 import { juntarClasses } from './classes';
-import type { NomeIcone } from './icone';
+import { Icone, type NomeIcone } from './icone';
 import { type CorTexto, Texto } from './texto';
 import { cores } from './tokens';
 
 export type VarianteBotao = 'primaria' | 'secundaria' | 'fantasma' | 'perigo';
 
+/**
+ * Variantes do design: `primaria` é o botão claro ("Continuar", "Concluir"); `secundaria`, o de
+ * vidro sobre o degradê ("Continuar com Google", "Adicionar orçamento"); `fantasma`, o link
+ * ("Configurar depois"); `perigo`, a ação que apaga ou bloqueia.
+ */
 const FUNDO: Record<VarianteBotao, string> = {
-  primaria: 'bg-primaria active:bg-primaria-forte',
-  secundaria: 'border border-borda bg-superficie active:bg-superficie-alta',
-  fantasma: 'bg-transparente active:bg-superficie-alta',
-  perigo: 'bg-perigo active:opacity-80',
+  primaria: 'bg-claro',
+  secundaria: 'border border-vidro bg-vidro',
+  fantasma: 'bg-transparente',
+  perigo: 'bg-perigo-suave',
 };
 
 const COR_TEXTO: Record<VarianteBotao, CorTexto> = {
   primaria: 'inverso',
   secundaria: 'texto',
-  fantasma: 'primaria',
-  perigo: 'inverso',
+  fantasma: 'link',
+  perigo: 'perigo',
 };
 
 const COR_ICONE: Record<VarianteBotao, string> = {
   primaria: cores['texto-inverso'],
   secundaria: cores.texto,
-  fantasma: cores.primaria,
-  perigo: cores['texto-inverso'],
+  fantasma: cores.link,
+  perigo: cores.perigo,
 };
 
 export interface PropsBotao {
@@ -41,7 +45,7 @@ export interface PropsBotao {
   testID?: string;
 }
 
-/** Botão com área de toque de 44 pt; carregando ou desabilitado, não responde. */
+/** Botão em pílula, de 50 pt de altura; carregando ou desabilitado, não responde. */
 export function Botao({
   titulo,
   aoPressionar,
@@ -62,7 +66,7 @@ export function Botao({
       onPress={aoPressionar}
       testID={testID}
       className={juntarClasses(
-        'min-h-toque flex-row items-center justify-center gap-2 rounded-md px-4',
+        'min-h-botao flex-row items-center justify-center gap-2 rounded-total px-5 active:opacity-80',
         FUNDO[variante],
         larguraTotal && 'self-stretch',
         inativo && 'opacity-50',
@@ -71,7 +75,7 @@ export function Botao({
       {carregando ? (
         <ActivityIndicator color={COR_ICONE[variante]} />
       ) : icone ? (
-        <Ionicons name={icone} size={20} color={COR_ICONE[variante]} />
+        <Icone nome={icone} tamanho={18} cor={COR_ICONE[variante]} />
       ) : null}
       <Texto cor={COR_TEXTO[variante]} className="font-forte">
         {titulo}

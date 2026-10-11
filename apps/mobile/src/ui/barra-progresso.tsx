@@ -37,7 +37,7 @@ export function BarraProgresso({ percentual, rotulo }: PropsBarraProgresso) {
         now: preenchido,
         text: t('ui.progresso', { percentual: String(percentual) }),
       }}
-      className="h-2 overflow-hidden rounded-total bg-superficie-alta"
+      className="h-1.5 overflow-hidden rounded-total bg-vidro"
     >
       <View
         testID={`barra-${faixa}`}

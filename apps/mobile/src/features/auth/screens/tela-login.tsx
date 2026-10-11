@@ -5,11 +5,12 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { View } from 'react-native';
 
 import { dadosDoAparelho } from '@/lib/auth/aparelho';
 import { comecarSessao } from '@/lib/auth/sessao';
 import { CampoControlado, mensagemDeErro } from '@/lib/formularios';
-import { Botao } from '@/ui';
+import { Botao, Texto } from '@/ui';
 
 import { ErroDoFormulario, TelaFormulario } from './tela-formulario';
 
@@ -36,7 +37,23 @@ export default function TelaLogin() {
   });
 
   return (
-    <TelaFormulario titulo={t('auth.login.titulo')}>
+    <TelaFormulario
+      titulo={t('auth.login.titulo')}
+      subtitulo={t('auth.login.subtitulo')}
+      chamada
+      rodape={
+        <View className="flex-row items-center">
+          <Texto cor="suave">{t('auth.login.novoPorAqui')}</Texto>
+          <Botao
+            variante="fantasma"
+            titulo={t('auth.login.criarConta')}
+            aoPressionar={() => {
+              router.push('/cadastro');
+            }}
+          />
+        </View>
+      }
+    >
       <CampoControlado
         controle={formulario.control}
         nome="email"
@@ -70,13 +87,6 @@ export default function TelaLogin() {
         titulo={t('auth.login.esqueci')}
         aoPressionar={() => {
           router.push('/recuperar-senha');
-        }}
-      />
-      <Botao
-        variante="secundaria"
-        titulo={t('auth.login.criarConta')}
-        aoPressionar={() => {
-          router.push('/cadastro');
         }}
       />
     </TelaFormulario>

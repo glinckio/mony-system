@@ -19,9 +19,11 @@ export const textosAuth = {
   ajudaSenha: 'Pelo menos 8 caracteres.',
   semConexao: 'Não foi possível falar com o servidor. Confira a conexão e tente de novo.',
   login: {
-    titulo: 'Entrar',
+    titulo: 'Seu dinheiro numa conversa',
+    subtitulo: 'Entre para falar com a Mony.',
     entrar: 'Entrar',
     esqueci: 'Esqueci minha senha',
+    novoPorAqui: 'Novo por aqui?',
     criarConta: 'Criar conta',
   },
   cadastro: {

@@ -8,6 +8,7 @@ Fonte da verdade das tarefas. Protocolo de uso em [CLAUDE.md](../../CLAUDE.md).
 - `docs:` arquivos de `docs/arquitetura/` a ler antes de começar.
 - 👤 precisa de ação humana (conta, pagamento, aprovação, decisão do cliente). O agente prepara tudo o que puder e não mergeia sozinho se a tarefa depender disso para funcionar (ver CLAUDE.md, seção 6).
 - Critério de aceite comum a todas: testes passando, lint e typecheck verdes, docs atualizados se algo mudou.
+- Telas do app e do painel seguem o design do cliente: `docs/design/telas-app.pdf`, com o índice e os tokens em `docs/design/README.md`.
 
 Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências estiverem `[x]`.
 
@@ -61,7 +62,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
   - dep: T-013, T-012 · docs: 12, 13 · requer o domínio do cliente (doc 15, pergunta 16)
 - [x] **T-016** 👤 EAS Update no canal `staging` a cada merge na `main` (PR #37)
   - dep: T-010, T-013 · docs: 12 · requer o projeto no EAS e o `EXPO_TOKEN` no GitHub
-- [ ] **T-017** 👤 Tokens e ícones do design do cliente no lugar dos provisórios (e modo escuro, se o design trouxer)
+- [x] **T-017** 👤 Tokens e ícones do design do cliente no lugar dos provisórios (e modo escuro, se o design trouxer) (PR #40; só escuro; logo provisório do PDF)
   - dep: T-011 · docs: 04 (Design system) · 👤 design do cliente
   - Só `src/ui/tokens.ts` e os ícones mudam: os componentes e as telas já usam só os tokens.
 
@@ -144,13 +145,16 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Separada da T-044 pelo mesmo motivo da T-049. O modo privacidade (RN-022) fica só no aparelho.
 - [ ] **T-054** Telas de relatórios no app (mensal, anual, por categoria, dia da semana, cartão e forma de pagamento)
   - dep: T-048, T-011, T-034 · docs: 04 · RN-150
+  - Separada da T-048 pelo mesmo motivo da T-049.
 - [ ] **T-055** 👤 Botões de entrar com Google e com Apple no app (`POST /v1/auth/social` com o `id_token`)
   - dep: T-032, T-034 · docs: 04 · RN-002 · requer os clientes OAuth (BLOQUEIOS, T-032) e build de desenvolvimento no aparelho
   - Separada da T-034: sem os clientes OAuth do cliente, não há como testar o login social de ponta a ponta.
 - [ ] **T-056** Tela de atualização obrigatória no app (426 `VERSAO_APP_DESATUALIZADA` e `versaoMinima` do `GET /v1/config-app`), com link para a loja
   - dep: T-033, T-034 · docs: 04
   - Separada da T-034: a sessão já manda a versão do app, mas a tela de atualização não estava em nenhuma tarefa.
-  - Separada da T-048 pelo mesmo motivo da T-049.
+- [ ] **T-057** Telas Mais (grade de atalhos) e Perfil no app: dados pessoais, assinatura, biometria, alertas, permissões, rever tutorial, exportar dados, sair e excluir conta
+  - dep: T-033, T-034, T-017 · docs: 04, `docs/design` (página 9)
+  - O design trouxe as duas telas, que não estavam em nenhuma tarefa. Exportar e excluir conta só abrem o fluxo da T-140, e as preferências de alerta são da T-087.
 
 ## Fase 2 — Mony
 
