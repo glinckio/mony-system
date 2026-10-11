@@ -74,6 +74,12 @@ Regras de cache:
 - Mutações simples (marcar item de lista, marcar lembrete feito) são otimistas.
 - **Modo offline (decisão técnica):** leitura do cache persistido (`@tanstack/query-async-storage-persister`) quando sem rede; escrita offline **não** entra no lançamento inicial, porque limites de plano e regras de fatura são do servidor. O app mostra estado "sem conexão" e bloqueia gravação. Alarmes locais continuam tocando sem internet (exigência do PDF).
 
+**Como está (T-045):**
+
+- `invalidarDadosFinanceiros` (`src/lib/api/invalidar.ts`) marca como velhas as consultas de transações, Início, cartões, faturas, orçamentos, contas, relatórios, recorrências e parcelamentos, pela rota no começo da chave. A mutação não espera a resposta: a tela volta na hora e a lista se atualiza depois. A consulta do lançamento excluído fica velha sem ser buscada (seria 404).
+- Consulta repete até 2 vezes sem rede, em 5xx e em 429; 4xx vai direto para a tela (`deveRepetirConsulta`).
+- O "agora" vem de `src/lib/relogio.ts` (os testes fixam a data) e o "hoje" é o do fuso do perfil (`useHoje`, `GET /v1/me`), o mesmo da API.
+
 ## Rede e autenticação
 
 - Cliente gerado pelo Orval usa uma instância HTTP com:
@@ -166,12 +172,30 @@ Componente `Valor` concentra a formatação de dinheiro e o **modo privacidade**
   - `Valor` e `BotaoPrivacidade`;
   - `Card`, `BarraProgresso` (cor pela faixa da RN-062);
   - `Vazio`, `Erro`, `Skeleton`;
-  - `BarraAbas`: pílula flutuante, com a aba atual em vidro e a Mony no meio.
+  - `BarraAbas`: pílula flutuante, com a aba atual em vidro e a Mony no meio;
+  - da T-045: `Folha` (bottom sheet sobre `Modal`, com véu, X e voltar do Android), `Etiqueta` ("Pendente", "Atrasada"), `CampoBusca` (pílula com lupa e X), `CampoValor` (só dígitos: "1050" vira R$ 10,50), `Valor` com `comSinal` e `Chip` desabilitado.
 
-  `BottomSheet` e `Toast` entram com a primeira tela que precisar deles.
+  `Toast` entra com a primeira tela que precisar dele. O ícone da categoria (`IconeCategoria`, em `src/features/categorias`) liga a chave do ícone das categorias padrão a um ícone do Lucide; a cor é a da categoria, escolhida pelo usuário.
 - **Ícones:** Lucide (`lucide-react-native` com `react-native-svg`), importados um a um pelo caminho (`lucide-react-native/icons/<nome>`) para o bundle levar só os usados. A lista fica em `src/ui/icone.tsx`.
 - **Logo, ícone e splash** provisórios, tirados do PDF, em `assets/images/`. O cliente ainda vai mandar o arquivo original.
 - **Modo privacidade:** store `usePrivacidade`, guardado no AsyncStorage do aparelho.
+
+## Aba Transações (T-045)
+
+Telas em `src/features/transacoes`, no design da página 4 (`docs/design`):
+
+- **Lista** (`/transacoes`): mês com setas, busca (350 ms depois da última letra), botão de filtros, totais do filtro (receitas, despesas, saldo, de `GET /transacoes/totais`), chips Todas, Despesas, Receitas e Pendentes, e a lista por dia ("Hoje, 9 de outubro"), 30 por página pelo cursor.
+  - O item mostra o ícone e a cor da categoria, a descrição e a linha de detalhes: categoria, cartão (ou forma de pagamento, ou conta), "todo mês" da recorrência e a origem ("via Mony", "do banco"). Receita vem com "+" em verde; pendente ganha a etiqueta.
+  - A folha de filtros combina tipo, situação, categoria, forma de pagamento, cartão, conta e origem (RN-047). Os chips só acendem nas combinações deles; o resto conta no botão ("Filtros, 2 ativos").
+- **Seleção múltipla:** segurar um item começa; tocar marca e desmarca. Mudar categoria (só com itens do mesmo tipo) e excluir vão por `POST /transacoes/lote`, tudo ou nada (RN-044); a mensagem da API aparece na folha.
+- **Formulário** (`/transacoes/nova` e `/transacoes/<id>`, também pelo link `mony://transacoes/<id>`):
+  - tipo, valor, descrição, data (`DD/MM/AAAA` com Hoje e Ontem), categoria do tipo, forma de pagamento, cartão (na compra no cartão) ou conta, "já foi pago" e observação;
+  - validado pelos esquemas `esquemaNovaTransacao` e `esquemaAtualizacaoTransacao` do `@mony/shared`; a edição manda só o que mudou;
+  - "já foi pago" mostra o status padrão da RN-042 e só vai para a API se a pessoa mexer; compra no cartão não tem conta nem status;
+  - lançamento do banco, parcela, pagamento de fatura, transferência e compra em fatura paga só mudam descrição, categoria e observação (`motivoDaTrava`, espelho do doc 05);
+  - a `Idempotency-Key` é uma por formulário;
+  - excluir pede confirmação, e na ocorrência de recorrência pergunta só esta, esta e as próximas, ou todas (RN-043). Parcela, transferência e compra em fatura paga não têm o botão.
+- **Ainda não:** anexos e recorrência no formulário (tarefas próprias no BACKLOG). O tipo das respostas da lista e do lançamento vem do `@mony/shared`, porque o contrato gerado tipa `string | null` de topo como `string[]` (tarefa própria no BACKLOG).
 
 ## Onboarding
 

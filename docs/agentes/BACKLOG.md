@@ -65,6 +65,10 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
 - [x] **T-017** 👤 Tokens e ícones do design do cliente no lugar dos provisórios (e modo escuro, se o design trouxer) (PR #40; só escuro; logo provisório do PDF)
   - dep: T-011 · docs: 04 (Design system) · 👤 design do cliente
   - Só `src/ui/tokens.ts` e os ícones mudam: os componentes e as telas já usam só os tokens.
+- [ ] **T-018** Contrato OpenAPI: campos `string | null` de topo saem como `string[]`
+  - dep: T-009 · docs: 02, 05
+  - O `nestjs-zod` gera `type: ['string', 'null']` (JSON Schema 2020-12) para `z.string().nullable()` sem formato, e o `@nestjs/swagger` lê o `type` em lista como array. Exemplos no `openapi.json`: `PaginaTransacoesDto.proximoCursor`, `TransacaoDto.observacao`, `PerfilDto.telefone`, `CartaoDto.bandeira`.
+  - Aceite: esses campos saem `string | null` no contrato e no cliente gerado; teste que falha se um campo `nullable` virar array; o app tira as conversões `as unknown as` de `src/features/transacoes/hooks/use-transacoes.ts`.
 
 ### Provas de conceito (PoC)
 
@@ -119,7 +123,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-037 · RN-060 a RN-063
 - [x] **T-044** Dashboard (`GET /dashboard` em uma chamada) e tela Início (PR #27; tela na T-053)
   - dep: T-041, T-042, T-043 · RN-020 a RN-024
-- [ ] **T-045** Tela Transações no app (lista por dia, filtros, criação/edição, seleção múltipla)
+- [x] **T-045** Tela Transações no app (lista por dia, filtros, criação/edição, seleção múltipla) (PR #41; anexos na T-058, recorrência na T-059)
   - dep: T-037, T-034
 - [ ] **T-046** Onboarding no app com checklist e dicas contextuais
   - dep: T-044, T-011, T-034 · docs: 04 (Onboarding)
@@ -155,6 +159,12 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-057** Telas Mais (grade de atalhos) e Perfil no app: dados pessoais, assinatura, biometria, alertas, permissões, rever tutorial, exportar dados, sair e excluir conta
   - dep: T-033, T-034, T-017 · docs: 04, `docs/design` (página 9)
   - O design trouxe as duas telas, que não estavam em nenhuma tarefa. Exportar e excluir conta só abrem o fluxo da T-140, e as preferências de alerta são da T-087.
+- [ ] **T-058** Anexos no formulário do lançamento no app (foto, PDF ou comprovante: `POST /arquivos`, envio direto ao S3 e `anexoIds`)
+  - dep: T-045 · docs: 04, 05 (Transações e arquivos) · RN-040
+  - Separada da T-045: precisa do `expo-image-picker` e do `expo-document-picker`, módulos nativos que pedem novo build de desenvolvimento.
+- [ ] **T-059** Recorrência no app: "repetir" no formulário do lançamento (`POST /recorrencias`), editar e parar a recorrência
+  - dep: T-045, T-038, T-051 · docs: 04, 05 (Recorrências) · RN-043
+  - Separada da T-045: a lista já mostra "todo mês" e a exclusão pergunta o escopo, mas criar e editar a recorrência usam outras rotas.
 
 ## Fase 2 — Mony
 
