@@ -1,6 +1,16 @@
 output "endereco_api" {
-  description = "Endereço público do ALB (até existir o domínio)."
-  value       = "${local.https ? "https" : "http"}://${aws_lb.api.dns_name}"
+  description = "Endereço público da API: https://api.<dominio>, ou o ALB em HTTP até existir o domínio."
+  value       = local.https ? "https://${local.dominio_api}" : "http://${aws_lb.api.dns_name}"
+}
+
+output "endereco_admin" {
+  description = "Endereço do painel admin: https://admin.<dominio>, ou o do CloudFront até existir o domínio."
+  value       = "https://${local.https ? local.dominio_admin : aws_cloudfront_distribution.admin.domain_name}"
+}
+
+output "servidores_dns" {
+  description = "Servidores de nome da zona do domínio: entram como registros NS no DNS do domínio pai."
+  value       = one(aws_route53_zone.principal[*].name_servers)
 }
 
 output "repositorio_imagem" {
@@ -29,6 +39,8 @@ locals {
     "${upper(var.ambiente)}_SUBREDES"         = join(",", aws_subnet.privada[*].id)
     "${upper(var.ambiente)}_GRUPO_API"        = aws_security_group.api.id
     "${upper(var.ambiente)}_LOG_API"          = aws_cloudwatch_log_group.api.name
+    "${upper(var.ambiente)}_ADMIN_BUCKET"     = aws_s3_bucket.admin.bucket
+    "${upper(var.ambiente)}_ADMIN_CLOUDFRONT" = aws_cloudfront_distribution.admin.id
   }
 }
 

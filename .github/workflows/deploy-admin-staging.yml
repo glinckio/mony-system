@@ -1,0 +1,86 @@
+# Deploy do painel admin em staging a cada merge na main que mexe nele (docs/arquitetura/12 e 13):
+# build estático do Vite → bucket do admin → invalidação do CloudFront. Só roda depois que a infra
+# existir e as variáveis STAGING_* estiverem no repositório (infra/README.md). Sem elas, o job é
+# pulado.
+name: Deploy do admin em staging
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/admin/**
+      - packages/api-client/**
+      - packages/shared/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - turbo.json
+      - .github/workflows/deploy-admin-staging.yml
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-admin-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: Admin em staging
+    if: vars.STAGING_ADMIN_BUCKET != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # O papel da AWS só aceita jobs deste ambiente (infra/modulos/ambiente/deploy.tf).
+    environment: staging
+    env:
+      HUSKY: '0'
+      TURBO_TELEMETRY_DISABLED: '1'
+      BUCKET: ${{ vars.STAGING_ADMIN_BUCKET }}
+      DISTRIBUICAO: ${{ vars.STAGING_ADMIN_CLOUDFRONT }}
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+
+      - name: Instalar pnpm (versão do packageManager) com cache do store
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - name: Instalar Node (versão do .nvmrc)
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Build do painel
+        # VITE_API_URL vazio: o painel chama /v1 no próprio domínio, e o CloudFront repassa para a
+        # API (infra/modulos/ambiente/admin.tf).
+        env:
+          VITE_API_URL: ''
+        run: pnpm turbo run build --filter=admin
+
+      - name: Entrar na AWS (OIDC, sem chave guardada)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.STAGING_AWS_PAPEL_DEPLOY }}
+          aws-region: ${{ vars.STAGING_AWS_REGIAO }}
+
+      - name: Publicar no bucket
+        # O que está em assets/ tem hash no nome: cache longo. O resto (index.html, favicon) é
+        # revalidado a cada acesso, para a versão nova aparecer logo depois do deploy.
+        run: |
+          aws s3 sync apps/admin/dist/assets "s3://$BUCKET/assets" --delete \
+            --cache-control 'public, max-age=31536000, immutable'
+          aws s3 sync apps/admin/dist "s3://$BUCKET" --delete --exclude 'assets/*' \
+            --cache-control 'no-cache'
+
+      - name: Limpar o cache do CloudFront
+        run: |
+          id=$(aws cloudfront create-invalidation --distribution-id "$DISTRIBUICAO" \
+            --paths '/*' --query 'Invalidation.Id' --output text)
+          aws cloudfront wait invalidation-completed --distribution-id "$DISTRIBUICAO" --id "$id"
+          echo "::notice title=Admin de staging atualizado::Versão ${GITHUB_SHA::7} no ar."

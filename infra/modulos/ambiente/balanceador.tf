@@ -1,5 +1,5 @@
-# ALB público na frente da API. Com certificado: HTTPS (TLS 1.2+) e HTTP redirecionando para HTTPS.
-# Sem certificado (antes do domínio existir): só HTTP, para testes de staging.
+# ALB público na frente da API. Com domínio: HTTPS (TLS 1.2+) com o certificado de api.<dominio>
+# e HTTP redirecionando para HTTPS. Sem domínio: só HTTP, para testes de staging.
 
 resource "aws_lb" "api" {
   name               = "${local.nome}-api"
@@ -69,7 +69,7 @@ resource "aws_lb_listener" "https" {
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = var.certificado_arn
+  certificate_arn   = one(aws_acm_certificate_validation.api[*].certificate_arn)
 
   default_action {
     type             = "forward"

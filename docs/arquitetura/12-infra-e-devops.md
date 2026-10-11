@@ -35,8 +35,8 @@ flowchart TB
 | Banco | RDS PostgreSQL Multi-AZ | Backups 30 dias, PITR, criptografia KMS |
 | Cache/filas | ElastiCache **Valkey 8** (compatível com Redis; cluster mode off, réplica em produção) | `maxmemory-policy noeviction` para o BullMQ. O ElastiCache não tem AOF nas versões atuais: a durabilidade vem da réplica Multi-AZ e do snapshot diário |
 | Arquivos | S3 privado + ciclo de vida | Exportações expiram em 7 dias; mídias conforme RN-162 |
-| Admin | S3 + CloudFront | Build estático |
-| DNS e certificados | Route 53 + ACM | `api.<dominio>`, `admin.<dominio>`, `app.<dominio>` (universal links) |
+| Admin | S3 + CloudFront | Build estático. O CloudFront repassa `/v1/*` para o ALB, então o painel chama a API no próprio domínio, sem CORS (T-015) |
+| DNS e certificados | Route 53 + ACM | `api.<dominio>`, `admin.<dominio>`, `app.<dominio>` (universal links). Cada ambiente tem zona própria (staging: subdomínio delegado, ex.: `staging.<dominio>`); o certificado do admin fica na `us-east-1`, exigência do CloudFront. `app.<dominio>` entra com os universal links |
 | Infra como código | Terraform em `infra/` | `bootstrap/` (estado e OIDC do GitHub, uma vez por conta), módulo `modulos/ambiente` e uma pasta por ambiente em `ambientes/`, cada uma com o próprio estado. Ver [infra/README.md](../../infra/README.md) |
 
 Alternativa equivalente em Google Cloud (Cloud Run + Cloud SQL + Memorystore + GCS) aceita pelo PDF; o desenho não muda.
@@ -46,7 +46,7 @@ Alternativa equivalente em Google Cloud (Cloud Run + Cloud SQL + Memorystore + G
 | Gatilho | Jobs |
 |---|---|
 | PR | `lint`, `typecheck`, testes unitários e de integração (Testcontainers), checagem de migração Prisma, geração do cliente OpenAPI sem diff, avaliação da Mony se `modulos/mony/**` mudou |
-| Merge em `main` | Build da imagem Docker → ECR (tag do commit e tag `staging`) → tarefa avulsa com `prisma migrate deploy && prisma db seed` → deploy dos serviços `api` e `worker` com circuit breaker (`deploy-staging.yml`); EAS Update no canal `staging` quando o app muda (`eas-update-staging.yml`, T-016) |
+| Merge em `main` | Build da imagem Docker → ECR (tag do commit e tag `staging`) → tarefa avulsa com `prisma migrate deploy && prisma db seed` → deploy dos serviços `api` e `worker` com circuit breaker (`deploy-staging.yml`); build do admin → bucket → invalidação do CloudFront quando o admin muda (`deploy-admin-staging.yml`); EAS Update no canal `staging` quando o app muda (`eas-update-staging.yml`, T-016) |
 | Tag `api-vX.Y.Z` | Deploy da API em produção com aprovação manual |
 | Tag `mobile-vX.Y.Z` | `eas build --profile production` + `eas submit` (App Store Connect e Play Console) |
 | Correção só de JS | `eas update --channel production` (respeitando `runtimeVersion` por fingerprint) |

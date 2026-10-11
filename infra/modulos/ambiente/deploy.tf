@@ -106,6 +106,27 @@ data "aws_iam_policy_document" "deploy" {
     actions   = ["logs:GetLogEvents"]
     resources = ["${aws_cloudwatch_log_group.api.arn}:log-stream:*"]
   }
+
+  statement {
+    sid       = "ListaBucketDoAdmin"
+    actions   = ["s3:ListBucket"]
+    resources = [aws_s3_bucket.admin.arn]
+  }
+
+  statement {
+    sid = "PublicaAdmin"
+    actions = [
+      "s3:DeleteObject",
+      "s3:PutObject",
+    ]
+    resources = ["${aws_s3_bucket.admin.arn}/*"]
+  }
+
+  statement {
+    sid       = "InvalidaCacheDoAdmin"
+    actions   = ["cloudfront:CreateInvalidation"]
+    resources = [aws_cloudfront_distribution.admin.arn]
+  }
 }
 
 resource "aws_iam_role_policy" "deploy" {

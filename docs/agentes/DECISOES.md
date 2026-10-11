@@ -497,3 +497,20 @@ Contexto: doc 04 (Rede e autenticação), RN-004 e RN-005. A API de sessão já 
 - **Fora daqui:** botões do Google e da Apple (T-055, nova, 👤: dependem dos clientes OAuth) e tela de atualização obrigatória (T-056, nova). O atalho de desenvolvimento do login saiu: os testes entram pelo formulário com a API simulada.
 
 Reversível: sim.
+
+## 2026-10-11 — T-015 — Domínio, HTTPS e admin na nuvem
+Contexto: doc 12 (Route 53 + ACM; admin em S3 + CloudFront) e doc 13. O cliente ainda não tem domínio (doc 15, pergunta 16), então o Terraform fica pronto para receber um. Decisões:
+- **Uma variável, `dominio`, no lugar de `certificado_arn`.** Com ela, o módulo cria a zona no Route 53, os certificados do ACM validados por DNS e os nomes `api.<dominio>` (ALB) e `admin.<dominio>` (CloudFront). Sem ela, tudo continua como na T-013 (API em HTTP no endereço do ALB) e o admin fica no endereço do CloudFront.
+- **Zona própria por ambiente.** Staging usa um subdomínio delegado (ex.: `staging.monitorizze.com.br`), para não mexer no DNS do domínio principal, que pode estar no Registro.br. A delegação é um registro NS feito à mão; por isso o primeiro `apply` é só da zona (infra/README.md).
+- **Admin no mesmo domínio da API, pelo CloudFront.** O CloudFront serve o build do bucket e repassa `/v1/*` para o ALB, sem cache e com todos os cabeçalhos menos o `Host`. O painel usa `VITE_API_URL` vazio, como em desenvolvimento, e a API continua sem CORS.
+- **Rotas do painel por CloudFront Function**, só no comportamento do painel (caminho sem extensão vai para o `index.html`). A página de erro da distribuição trocaria também as respostas 403 e 404 da API.
+- **CloudFront:**
+  - `PriceClass_All`, a única classe com pontos de presença na América do Sul;
+  - política de cabeçalhos de segurança gerenciada pela AWS;
+  - bucket privado lido só pelo CloudFront (OAC) e só por TLS.
+- **Certificado do admin na `us-east-1`** (exigência do CloudFront): o módulo pede um provider `aws.us_east_1`, que o ambiente de staging passa.
+- **Deploy do admin** num workflow próprio (`deploy-admin-staging.yml`), só quando o admin ou os pacotes dele mudam, com o mesmo papel OIDC do deploy da API (que ganhou permissão no bucket e na invalidação). O que está em `assets/` (com hash no nome) tem cache de um ano; o resto é revalidado a cada acesso.
+- **`terraform test` no CI** com a AWS simulada (`mock_provider`): o plano do módulo com e sem domínio e a recusa de domínio malformado. Sem credenciais, é o que dá para conferir antes do `apply`.
+- **Fora daqui:** `app.<dominio>` (universal links) entra com o deep link do app; WAF na frente do ALB, com o hardening (T-144).
+
+Reversível: sim.

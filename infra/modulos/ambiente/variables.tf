@@ -32,12 +32,17 @@ variable "nat_por_zona" {
   default     = false
 }
 
-# HTTPS
+# Domínio e HTTPS
 
-variable "certificado_arn" {
-  description = "Certificado do ACM para o ALB. Sem ele, o ALB só atende HTTP (provisório, até existir o domínio)."
+variable "dominio" {
+  description = "Domínio do ambiente (ex.: staging.monitorizze.com.br). Cria a zona no Route 53, os certificados e os nomes api.<dominio> e admin.<dominio>. Sem ele, a API fica só em HTTP no endereço do ALB e o admin no endereço do CloudFront."
   type        = string
   default     = null
+
+  validation {
+    condition     = var.dominio == null || can(regex("^([a-z0-9-]+\\.)+[a-z]{2,}$", var.dominio))
+    error_message = "Use só o domínio, em minúsculas, sem protocolo nem barra (ex.: staging.monitorizze.com.br)."
+  }
 }
 
 # Banco (RDS PostgreSQL)
