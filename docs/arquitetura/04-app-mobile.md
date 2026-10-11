@@ -140,20 +140,38 @@ O cliente vai entregar as telas. Fluxo para receber o design:
 1. **Tokens primeiro.** Cores, tipografia, espaçamentos, raios, sombras e ícones viram `src/ui/tokens.ts` e o `tailwind.config.js` do NativeWind. Nenhum componente usa cor ou tamanho fora dos tokens.
 2. **Componentes base** em `src/ui/` (Botão, Campo, Valor monetário com modo privacidade, Card, Chip, Barra de progresso por faixa, BottomSheet, Toast, Vazio, Erro, Skeleton) antes das telas.
 3. **Telas** montadas só com componentes base + componentes de feature.
-4. Modo claro/escuro se o design trouxer os dois.
+4. Modo claro/escuro se o design trouxer os dois. (O design veio só escuro.)
 5. Se o design vier no Figma, exportar tokens (ex.: Tokens Studio) para não copiar valor à mão.
 
 Pedir ao cliente junto com as telas: estados vazios, de carregamento e de erro; tela de sem conexão; versões das telas de permissão; ícone e splash; ícones de categoria e bandeiras de cartão.
 
 Componente `Valor` concentra a formatação de dinheiro e o **modo privacidade** (oculta valores em todo o app com um toque, RN-022).
 
-**Como está (T-011), com tokens provisórios até o design do cliente chegar (T-017):**
+**Como está (T-017), com o design do cliente** (`docs/design/telas-app.pdf` e o resumo em `docs/design/README.md`):
 
-- **Tokens** em `src/ui/tokens.ts`: cores com nome de uso (`fundo`, `superficie`, `texto-suave`, `primaria`, `receita`, `despesa`, as faixas `normal`/`atencao`/`estourado`…), espaços em pt, raios, tipografia (`legenda` a `destaque`), pesos, sombras e o toque mínimo de 44 pt. As cores de texto têm contraste AA, conferido em teste.
-- **NativeWind 4** (Tailwind 3): o `tailwind.config.js` lê os tokens e **troca** o tema do Tailwind, então classe fora dos tokens (`bg-blue-500`, `p-7`) não existe. O `global.css` entra no `_layout.tsx` raiz; o Metro compila o CSS.
-- **Componentes** (`@/ui`): `Texto`, `Botao`, `BotaoIcone`, `Campo`, `Valor` e `BotaoPrivacidade`, `Card`, `Chip`, `BarraProgresso` (cor pela faixa da RN-062), `Vazio`, `Erro` e `Skeleton`. Todos com rótulo e papel para o leitor de tela. `BottomSheet` e `Toast` entram com a primeira tela que precisar deles.
+- **Tokens** em `src/ui/tokens.ts`, medidos nas telas do cliente.
+  - Cores com nome de uso: `fundo`, `superficie`, `superficie-alta`, `vidro`, `texto`, `texto-suave`, `texto-fraco`, `claro`, `primaria`, `link`, `receita`, `despesa`, `balao-usuario` e as faixas `normal`/`atencao`/`estourado`.
+  - O degradê do fundo (`degradeFundo`).
+  - Espaços em pt e raios: cards de 22 pt, botões e chips em pílula.
+  - Tipografia de `legenda` a `destaque`, pesos e sombras.
+  - Toque mínimo de 44 pt e botão de 50 pt.
+  - As cores de texto têm contraste AA sobre `fundo` e `superficie`, conferido em teste.
+- **Só modo escuro** (decisão do cliente): `userInterfaceStyle: 'dark'`, tema escuro da navegação nas cores do app e barra de status clara.
+- **NativeWind 4** (Tailwind 3): o `tailwind.config.js` lê os tokens e **troca** o tema do Tailwind, então classe fora dos tokens (`bg-blue-500`, `p-7`) não existe. O `global.css` entra no `_layout.tsx` raiz, e o Metro compila o CSS.
+- **Componentes** (`@/ui`), todos com rótulo e papel para o leitor de tela:
+  - `Tela` (degradê e área segura);
+  - `Texto`, `Icone`, `Logo`;
+  - `Botao` (`primaria` clara, `secundaria` de vidro, `fantasma` como link, `perigo`) e `BotaoIcone` (com ou sem círculo de vidro);
+  - `Campo`, `CaixaDeSelecao`, `Chip`;
+  - `Valor` e `BotaoPrivacidade`;
+  - `Card`, `BarraProgresso` (cor pela faixa da RN-062);
+  - `Vazio`, `Erro`, `Skeleton`;
+  - `BarraAbas`: pílula flutuante, com a aba atual em vidro e a Mony no meio.
+
+  `BottomSheet` e `Toast` entram com a primeira tela que precisar deles.
+- **Ícones:** Lucide (`lucide-react-native` com `react-native-svg`), importados um a um pelo caminho (`lucide-react-native/icons/<nome>`) para o bundle levar só os usados. A lista fica em `src/ui/icone.tsx`.
+- **Logo, ícone e splash** provisórios, tirados do PDF, em `assets/images/`. O cliente ainda vai mandar o arquivo original.
 - **Modo privacidade:** store `usePrivacidade`, guardado no AsyncStorage do aparelho.
-- **Ícones** provisórios: Ionicons (`@expo/vector-icons`).
 
 ## Onboarding
 

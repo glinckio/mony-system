@@ -78,6 +78,9 @@ function texto(valor: string | undefined): string | undefined {
   return valor === undefined || valor.trim() === '' ? undefined : valor.trim();
 }
 
+/** Fundo do app (o fim do degradê), também na splash e atrás das telas. */
+const COR_FUNDO = '#0A2133';
+
 const PEDIDO_FACE_ID = 'Use o Face ID para desbloquear o Mony neste aparelho.';
 
 export function criarConfigApp(base: ConfigContext['config'], variaveis: Variaveis): ExpoConfig {
@@ -108,8 +111,11 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
     scheme: dados.esquema,
     platforms: ['ios', 'android'],
     orientation: 'portrait',
-    // Claro até o design do cliente dizer se há modo escuro (docs/arquitetura/04).
-    userInterfaceStyle: 'light',
+    // O design do cliente é só escuro (T-017).
+    userInterfaceStyle: 'dark',
+    // Ícone e splash provisórios, tirados do PDF das telas até o cliente mandar o logo original.
+    icon: './assets/images/icone.png',
+    backgroundColor: COR_FUNDO,
     // O EAS Update só entrega JS compatível com o binário instalado (docs/arquitetura/03).
     runtimeVersion: { policy: 'fingerprint' },
     updates: idProjeto
@@ -121,9 +127,18 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
     },
     android: {
       package: dados.identificador,
+      adaptiveIcon: {
+        foregroundImage: './assets/images/icone-android.png',
+        monochromeImage: './assets/images/icone-android-mono.png',
+        backgroundColor: '#FFFFFF',
+      },
     },
     plugins: [
       'expo-router',
+      [
+        'expo-splash-screen',
+        { image: './assets/images/logo-bloco.png', imageWidth: 96, backgroundColor: COR_FUNDO },
+      ],
       // Texto do pedido de Face ID no iOS (RN-005: a biometria só libera a sessão guardada).
       ['expo-local-authentication', { faceIDPermission: PEDIDO_FACE_ID }],
       // O cofre fica fora do backup do Android: a chave do Keystore não vai junto, e o valor

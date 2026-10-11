@@ -3,10 +3,9 @@ import type { EventoMony, OpcaoBotao } from '@mony/shared/mony';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { chaveDoToque, enviarMensagemMony } from '@/lib/mony/conversa';
-import { Botao, Campo, Chip, juntarClasses, Texto } from '@/ui';
+import { Botao, Campo, Chip, juntarClasses, Tela, Texto } from '@/ui';
 
 interface Mensagem {
   id: string;
@@ -104,7 +103,7 @@ export default function TelaMony() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-fundo" edges={['top']}>
+    <Tela degrade={false}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -127,7 +126,7 @@ export default function TelaMony() {
             />
           ))}
         </ScrollView>
-        <View className="flex-row items-end gap-2 border-t border-borda bg-superficie p-3">
+        <View className="flex-row items-end gap-2 bg-fundo p-3">
           <View className="flex-1">
             <Campo
               rotulo={t('mony.campo')}
@@ -146,7 +145,7 @@ export default function TelaMony() {
           />
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Tela>
   );
 }
 
@@ -165,13 +164,13 @@ function Balao({
       <View
         style={{ maxWidth: '85%' }}
         className={juntarClasses(
-          'rounded-lg px-4 py-3',
-          minha && 'bg-primaria',
-          !minha && !mensagem.erro && 'border border-borda bg-superficie',
+          'rounded-md px-4 py-3',
+          minha && 'bg-balao-usuario',
+          !minha && !mensagem.erro && 'bg-superficie-alta',
           mensagem.erro && 'bg-perigo-suave',
         )}
       >
-        <Texto cor={minha ? 'inverso' : mensagem.erro ? 'perigo' : escrevendo ? 'suave' : 'texto'}>
+        <Texto cor={minha ? 'texto' : mensagem.erro ? 'perigo' : escrevendo ? 'suave' : 'texto'}>
           {escrevendo ? t('mony.escrevendo') : mensagem.texto}
         </Texto>
       </View>

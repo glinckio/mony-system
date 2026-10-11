@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { cores, espacos, temaTailwind, TOQUE_MINIMO } from '@/ui/tokens';
+import { cores, degradeFundo, espacos, temaTailwind, TOQUE_MINIMO } from '@/ui/tokens';
 
 /** Contraste WCAG entre duas cores `#RRGGBB`. */
 function contraste(a: string, b: string): number {
@@ -16,17 +16,31 @@ function contraste(a: string, b: string): number {
 }
 
 describe('tokens', () => {
-  it.each(['texto', 'texto-suave', 'primaria', 'receita', 'despesa', 'atencao', 'perigo'] as const)(
-    'texto em %s tem contraste AA sobre fundo e superfície',
-    (cor) => {
-      expect(contraste(cores[cor], cores.superficie)).toBeGreaterThanOrEqual(4.5);
-      expect(contraste(cores[cor], cores.fundo)).toBeGreaterThanOrEqual(4.5);
-    },
-  );
+  it.each([
+    'texto',
+    'texto-suave',
+    'texto-fraco',
+    'primaria',
+    'link',
+    'receita',
+    'despesa',
+    'atencao',
+    'perigo',
+  ] as const)('texto em %s tem contraste AA sobre fundo e superfície', (cor) => {
+    expect(contraste(cores[cor], cores.superficie)).toBeGreaterThanOrEqual(4.5);
+    expect(contraste(cores[cor], cores.fundo)).toBeGreaterThanOrEqual(4.5);
+  });
 
-  it('texto inverso tem contraste AA sobre os botões cheios', () => {
-    expect(contraste(cores['texto-inverso'], cores.primaria)).toBeGreaterThanOrEqual(4.5);
-    expect(contraste(cores['texto-inverso'], cores.perigo)).toBeGreaterThanOrEqual(4.5);
+  it('texto dos botões cheios e do balão da pessoa tem contraste AA', () => {
+    expect(contraste(cores['texto-inverso'], cores.claro)).toBeGreaterThanOrEqual(4.5);
+    expect(contraste(cores.texto, cores['primaria-forte'])).toBeGreaterThanOrEqual(4.5);
+    expect(contraste(cores.texto, cores['balao-usuario'])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('o degradê do fundo termina na cor do fundo', () => {
+    expect(degradeFundo.cores).toHaveLength(degradeFundo.posicoes.length);
+    expect(degradeFundo.cores.at(-1)).toBe(cores.fundo);
+    expect(degradeFundo.posicoes.at(-1)).toBe(1);
   });
 
   it('o tema do Tailwind sai só dos tokens, em pt', () => {
@@ -36,7 +50,7 @@ describe('tokens', () => {
         Object.entries(espacos).map(([chave, valor]) => [chave, `${String(valor)}px`]),
       ),
     );
-    expect(temaTailwind.fontSize.corpo).toEqual(['16px', { lineHeight: '22px' }]);
+    expect(temaTailwind.fontSize.corpo).toEqual(['15px', { lineHeight: '20px' }]);
     expect(temaTailwind.minHeight.toque).toBe(`${String(TOQUE_MINIMO)}px`);
   });
 });

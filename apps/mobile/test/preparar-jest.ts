@@ -15,13 +15,6 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
-// Fontes dos ícones como já carregadas: sem isso o ícone se atualiza depois do teste.
-jest.mock('expo-font', () => ({
-  ...jest.requireActual<object>('expo-font'),
-  isLoaded: () => true,
-  loadAsync: () => Promise.resolve(),
-}));
-
 // Cofre do aparelho (Keychain/Keystore) em memória; `cofreFalso` limpa entre testes.
 jest.mock('expo-secure-store', () => {
   const guardados = new Map<string, string>();

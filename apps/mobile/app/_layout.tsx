@@ -3,7 +3,7 @@ import '../global.css';
 import * as Sentry from '@sentry/react-native';
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, StatusBar, View } from 'react-native';
 
 import TelaBloqueio from '@/features/auth/screens/tela-bloqueio';
 import { destinoDaSessao } from '@/lib/auth/destino';
@@ -30,19 +30,22 @@ function LayoutRaiz() {
   if (estado === 'iniciando') {
     return (
       <View className="flex-1 items-center justify-center bg-fundo">
-        <ActivityIndicator color={cores.primaria} />
+        <StatusBar barStyle="light-content" />
+        <ActivityIndicator color={cores.texto} />
       </View>
     );
   }
   if (estado === 'bloqueada') {
     return (
       <Provedores>
+        <StatusBar barStyle="light-content" />
         <TelaBloqueio />
       </Provedores>
     );
   }
   return (
     <Provedores>
+      <StatusBar barStyle="light-content" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Protected guard={destino === 'auth'}>
           <Stack.Screen name="(auth)" />

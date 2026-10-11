@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { confirmarBiometria } from '@/lib/auth/biometria';
 import { desbloquearSessao, sair } from '@/lib/auth/sessao';
-import { Botao, Texto } from '@/ui';
+import { Botao, Logo, Tela, Texto } from '@/ui';
 
 /**
  * Abertura com a biometria ligada (RN-005): só ela libera o token de renovação guardado. Quem
@@ -39,14 +38,15 @@ export default function TelaBloqueio() {
   }
 
   return (
-    <SafeAreaView className="flex-1 justify-center gap-4 bg-fundo p-6">
+    <Tela bordas={['top', 'bottom']} className="justify-center gap-4 p-6">
+      <Logo />
       <Texto variante="titulo-lg" accessibilityRole="header">
         {t('auth.bloqueio.titulo')}
       </Texto>
       <Texto cor="suave">{t('auth.bloqueio.explicacao')}</Texto>
       <Botao
         titulo={t('auth.bloqueio.desbloquear')}
-        icone="finger-print"
+        icone="fingerprint-pattern"
         aoPressionar={desbloquear}
         carregando={ocupada}
         larguraTotal
@@ -56,6 +56,6 @@ export default function TelaBloqueio() {
         titulo={t('auth.bloqueio.entrarDeNovo')}
         aoPressionar={() => void sair()}
       />
-    </SafeAreaView>
+    </Tela>
   );
 }
