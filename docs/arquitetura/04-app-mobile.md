@@ -96,6 +96,7 @@ Regras de cache:
   - "Sair deste aparelho" (aba Mais) revoga a renovação na API e apaga o cofre, mesmo sem rede.
 - **Telas** em `(auth)`: login, cadastro (com o aceite dos termos e da política nas versões de `VERSOES_DOCUMENTOS`) e recuperação de senha (código de 6 dígitos e senha nova, que já entra no app). Formulários com React Hook Form e os esquemas Zod do `@mony/shared/autenticacao`; o erro da API aparece com a mensagem do catálogo.
 - **Biometria** (RN-005): ligada na aba Mais, depois de uma confirmação. Na abertura, a tela de bloqueio pede a biometria e só então renova. Quem desiste entra de novo com e-mail e senha. O texto do Face ID vem do plugin do `expo-local-authentication`.
+- **Chat da Mony:** o SSE pelo `expo/fetch` manda os mesmos cabeçalhos e, em 401, espera a mesma renovação única e tenta de novo uma vez.
 - **Ainda não:** botões do Google e da Apple (T-055) e tela de atualização obrigatória (T-056). Sem rede na abertura, o app mostra o login, e a renovação guardada vale na próxima abertura.
 
 ## Chat da Mony

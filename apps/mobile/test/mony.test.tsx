@@ -5,6 +5,8 @@ import { fetch as fetchExpo } from 'expo/fetch';
 
 import TelaMony from '@/features/mony/screens/tela-mony';
 import '@/i18n';
+import { configurarApi } from '@/lib/api/cliente';
+import { cofre } from '@/lib/auth/cofre';
 import { useSessao } from '@/stores/sessao';
 
 jest.mock('expo/fetch', () => ({ fetch: jest.fn() }));
@@ -137,7 +139,69 @@ describe('chat da Mony (PoC T-020)', () => {
       expect(screen.getByRole('button', { name: 'Pix' })).toBeOnTheScreen();
       const [, pedidoAcao] = fetchApi.mock.calls[0] ?? [];
       expect(corpoJson(pedidoAcao)).toEqual({ acao: MERCADO });
-      expect(new Headers(pedidoAcao?.headers).get('idempotency-key')).toMatch(/^mony-/);
+      expect(new Headers(pedidoAcao?.headers).get('idempotency-key')).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+      );
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'token vencido no SSE: renova uma vez e manda de novo com o token novo (T-034)',
+    async () => {
+      configurarApi('http://localhost:3000');
+      await cofre.gravarRenovacao('renovacao-guardada-0123456789');
+      const recusa = {
+        ok: false,
+        status: 401,
+        body: null,
+        json: () =>
+          Promise.resolve({
+            erro: { codigo: 'TOKEN_EXPIRADO', mensagem: 'Sua sessão expirou.', detalhes: null },
+          }),
+      };
+      fetchStreaming.mockResolvedValueOnce(recusa).mockResolvedValueOnce(
+        respostaSse([
+          { tipo: 'texto.delta', texto: 'Oi, Ana!' },
+          { tipo: 'fim', mensagemId: '0199a000-0000-7000-8000-000000000009' },
+        ]),
+      );
+      const fetchApi = jest.fn<typeof fetch>(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              usuario: {
+                id: '0199a000-0000-7000-8000-000000000001',
+                nome: 'Ana',
+                email: 'ana@exemplo.com',
+                telefone: null,
+                onboardingConcluido: true,
+              },
+              tokens: {
+                acesso: 'token-2',
+                acessoExpiraEm: '2026-10-15T15:15:00.000Z',
+                renovacao: 'renovacao-girada-0123456789',
+                renovacaoExpiraEm: '2026-11-14T15:00:00.000Z',
+              },
+              aceitesPendentes: [],
+            }),
+            { status: 200 },
+          ),
+        ),
+      );
+      globalThis.fetch = fetchApi;
+
+      render(<TelaMony />);
+      fireEvent.changeText(screen.getByLabelText('Mensagem para a Mony'), 'oi');
+      fireEvent.press(screen.getByRole('button', { name: 'Enviar' }));
+
+      expect(await screen.findByText('Oi, Ana!', {}, ESPERA)).toBeOnTheScreen();
+      expect(fetchApi).toHaveBeenCalledTimes(1);
+      expect(fetchApi.mock.calls[0]?.[0]).toBe('http://localhost:3000/v1/auth/renovar');
+      const cabecalhos = fetchStreaming.mock.calls.map(([, opcoes]) => opcoes.headers);
+      expect(cabecalhos[0]).toMatchObject({ authorization: 'Bearer token-1', 'x-platform': 'ios' });
+      expect(cabecalhos[1]).toMatchObject({ authorization: 'Bearer token-2' });
+      expect(await cofre.lerRenovacao()).toBe('renovacao-girada-0123456789');
     },
     TEMPO_LIMITE_MS,
   );
