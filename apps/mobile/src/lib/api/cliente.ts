@@ -2,11 +2,21 @@ import { configurarCliente } from '@mony/api-client';
 import { focusManager, QueryClient } from '@tanstack/react-query';
 import { AppState } from 'react-native';
 
+import { cabecalhosDoApp } from '@/lib/auth/aparelho';
+import { renovarSessao } from '@/lib/auth/sessao';
 import { useSessao } from '@/stores/sessao';
 
-/** Aponta o cliente gerado (`@mony/api-client`) para a API do ambiente e para o token da sessão. */
+/**
+ * Aponta o cliente gerado (`@mony/api-client`) para a API do ambiente, com o token da sessão, os
+ * cabeçalhos do app e a renovação única quando o token vence (doc 04).
+ */
 export function configurarApi(urlApi: string): void {
-  configurarCliente({ urlBase: urlApi, obterToken: () => useSessao.getState().tokenAcesso });
+  configurarCliente({
+    urlBase: urlApi,
+    obterToken: () => useSessao.getState().tokenAcesso,
+    cabecalhos: cabecalhosDoApp,
+    renovarSessao,
+  });
 }
 
 export function criarClienteConsultas(): QueryClient {

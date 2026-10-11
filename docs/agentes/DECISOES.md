@@ -486,3 +486,14 @@ Contexto: doc 08 e doc 04 (chat em SSE lido pelo `expo/fetch`, "gastei 10" com b
 - **👤 pendente:** validar no aparelho (depende do login, T-034) e com a chave da Anthropic. Por isso a tarefa vai para o humano (`aguardando-humano`), como as outras 👤.
 
 Reversível: sim.
+
+## 2026-10-11 — T-034 — Autenticação no app
+Contexto: doc 04 (Rede e autenticação), RN-004 e RN-005. A API de sessão já existia (T-030 a T-033). Decisões:
+- **Renovação dentro do cliente gerado** (`requisicao` do `@mony/api-client`), e não num interceptor do app. O app só informa `renovarSessao` e `cabecalhos` no `configurarCliente`. Assim o `expo/fetch` da Mony usa a mesma renovação única (`renovarSessaoUmaVez`), e o admin pode usar quando precisar. As rotas `/v1/auth/…` nunca disparam renovação.
+- **Só a recusa da API apaga a sessão** (400, 401, 403). Sem rede, 5xx, 426 (versão antiga) e 429 mantêm a renovação guardada, para não deslogar quem abriu o app sem conexão ou com versão antiga.
+- **Restauração uma vez só**, mesmo se a raiz montar de novo: duas renovações com o mesmo token seriam reuso (RN-004) e derrubariam a família de tokens. Cofre ilegível (Keystore após restaurar backup) vai para o login, e o erro vai para o Sentry. O cofre fica fora do backup do Android pelo plugin do `expo-secure-store`.
+- **Biometria como portão local** (RN-005): a escolha fica no cofre; com ela ligada, a abertura mostra a tela de bloqueio e só renova depois da confirmação. Ligar pede a biometria uma vez, para conferir que o sensor funciona. Quem desiste entra de novo (a sessão do aparelho é revogada).
+- **Formulários com React Hook Form** e os mesmos esquemas Zod da API (`@mony/shared/autenticacao`), com `CampoControlado` em `src/lib/formularios.tsx`. Erro da API aparece com a mensagem do catálogo, e o resto como "sem conexão".
+- **Fora daqui:** botões do Google e da Apple (T-055, nova, 👤: dependem dos clientes OAuth) e tela de atualização obrigatória (T-056, nova). O atalho de desenvolvimento do login saiu: os testes entram pelo formulário com a API simulada.
+
+Reversível: sim.

@@ -74,3 +74,78 @@ describe('requisicao', () => {
     expect(erro).toMatchObject({ status: 502, codigo: undefined });
   });
 });
+
+describe('cabeçalhos e renovação da sessão (doc 04)', () => {
+  it('manda os cabeçalhos do app sem sobrescrever os da chamada', async () => {
+    configurarCliente({
+      urlBase: 'https://api.teste',
+      cabecalhos: () => ({ 'x-app-version': '1.2.3', 'x-platform': 'ios', 'idempotency-key': 'x' }),
+    });
+    fetchFalso.mockResolvedValue(responder(200, {}));
+    await requisicao('/v1/teste', { headers: { 'idempotency-key': 'da-chamada' } });
+    const cabecalhos = new Headers(fetchFalso.mock.calls[0]?.[1]?.headers);
+    expect(cabecalhos.get('x-app-version')).toBe('1.2.3');
+    expect(cabecalhos.get('x-platform')).toBe('ios');
+    expect(cabecalhos.get('idempotency-key')).toBe('da-chamada');
+  });
+
+  it('três 401 ao mesmo tempo: uma renovação só e as três repetidas com o token novo', async () => {
+    let token = 'velho';
+    let liberar: (renovou: boolean) => void = () => undefined;
+    const renovarSessao = vi.fn(
+      () =>
+        new Promise<boolean>((resolver) => {
+          liberar = (renovou) => {
+            token = 'novo';
+            resolver(renovou);
+          };
+        }),
+    );
+    configurarCliente({ urlBase: 'https://api.teste', obterToken: () => token, renovarSessao });
+    fetchFalso.mockImplementation((_url, opcoes) =>
+      Promise.resolve(
+        new Headers(opcoes?.headers).get('authorization') === 'Bearer novo'
+          ? responder(200, { ok: true })
+          : responder(401, {
+              erro: { codigo: 'TOKEN_EXPIRADO', mensagem: 'Expirou', detalhes: null },
+            }),
+      ),
+    );
+
+    const pedidos = Promise.all([1, 2, 3].map((n) => requisicao(`/v1/teste/${String(n)}`)));
+    await vi.waitFor(() => {
+      expect(fetchFalso).toHaveBeenCalledTimes(3);
+    });
+    liberar(true);
+
+    await expect(pedidos).resolves.toEqual([{ ok: true }, { ok: true }, { ok: true }]);
+    expect(renovarSessao).toHaveBeenCalledTimes(1);
+    expect(fetchFalso).toHaveBeenCalledTimes(6);
+  });
+
+  it('renovação recusada (ou que falha) devolve o 401; sem token ou em /v1/auth não tenta renovar', async () => {
+    const renovarSessao = vi.fn(() => Promise.resolve(false));
+    configurarCliente({ urlBase: 'https://api.teste', obterToken: () => 't', renovarSessao });
+    fetchFalso.mockImplementation(() =>
+      Promise.resolve(
+        responder(401, { erro: { codigo: 'TOKEN_EXPIRADO', mensagem: 'Expirou', detalhes: null } }),
+      ),
+    );
+    await expect(requisicao('/v1/teste')).rejects.toMatchObject({
+      status: 401,
+      codigo: 'TOKEN_EXPIRADO',
+    });
+    expect(fetchFalso).toHaveBeenCalledTimes(1);
+
+    renovarSessao.mockRejectedValueOnce(new Error('sem rede'));
+    await expect(requisicao('/v1/teste')).rejects.toBeInstanceOf(ErroApi);
+
+    renovarSessao.mockClear();
+    await expect(requisicao('/v1/auth/renovar', { method: 'POST' })).rejects.toBeInstanceOf(
+      ErroApi,
+    );
+    configurarCliente({ urlBase: 'https://api.teste', renovarSessao });
+    await expect(requisicao('/v1/teste', { method: 'POST' })).rejects.toBeInstanceOf(ErroApi);
+    expect(renovarSessao).not.toHaveBeenCalled();
+  });
+});

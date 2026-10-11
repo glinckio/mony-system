@@ -2,6 +2,7 @@
 export { BarraProgresso, type PropsBarraProgresso } from './barra-progresso';
 export { Botao, type PropsBotao, type VarianteBotao } from './botao';
 export { BotaoIcone, type PropsBotaoIcone } from './botao-icone';
+export { CaixaDeSelecao, type PropsCaixaDeSelecao } from './caixa-de-selecao';
 export { Campo, type PropsCampo } from './campo';
 export { Card } from './card';
 export { Chip, type PropsChip } from './chip';

@@ -96,7 +96,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-030 · RN-002 · requer credenciais Google/Apple
 - [x] **T-033** Usuário: `GET/PATCH /me`, dispositivos (token push), onboarding, `config-app` com versão mínima (PR #17)
   - dep: T-030 · docs: 05
-- [ ] **T-034** App: telas de auth, sessão segura, refresh único concorrente, biometria
+- [x] **T-034** App: telas de auth, sessão segura, refresh único concorrente, biometria (PR #39; botões do Google e da Apple na T-055, atualização obrigatória na T-056)
   - dep: T-030, T-011 · docs: 04 · RN-005
 - [x] **T-035** Categorias (API + app), incluindo exclusão com mover lançamentos (PR #18; telas na T-049)
   - dep: T-030 · RN-065, RN-066
@@ -144,6 +144,12 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Separada da T-044 pelo mesmo motivo da T-049. O modo privacidade (RN-022) fica só no aparelho.
 - [ ] **T-054** Telas de relatórios no app (mensal, anual, por categoria, dia da semana, cartão e forma de pagamento)
   - dep: T-048, T-011, T-034 · docs: 04 · RN-150
+- [ ] **T-055** 👤 Botões de entrar com Google e com Apple no app (`POST /v1/auth/social` com o `id_token`)
+  - dep: T-032, T-034 · docs: 04 · RN-002 · requer os clientes OAuth (BLOQUEIOS, T-032) e build de desenvolvimento no aparelho
+  - Separada da T-034: sem os clientes OAuth do cliente, não há como testar o login social de ponta a ponta.
+- [ ] **T-056** Tela de atualização obrigatória no app (426 `VERSAO_APP_DESATUALIZADA` e `versaoMinima` do `GET /v1/config-app`), com link para a loja
+  - dep: T-033, T-034 · docs: 04
+  - Separada da T-034: a sessão já manda a versão do app, mas a tela de atualização não estava em nenhuma tarefa.
   - Separada da T-048 pelo mesmo motivo da T-049.
 
 ## Fase 2 — Mony

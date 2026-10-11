@@ -85,6 +85,20 @@ Regras de cache:
 - Biometria (`expo-local-authentication`) **só libera o refresh guardado**; não substitui autenticação no servidor (RN-005).
 - Versão mínima: `GET /v1/config-app` retorna `versaoMinima`. Abaixo dela, tela de atualização obrigatória.
 
+**Como está (T-034):**
+
+- **Cliente** (`@mony/api-client`, `requisicao`): manda o token, os cabeçalhos do app (`cabecalhos`) e, em 401 de requisição feita com token, chama `renovarSessaoUmaVez()` e repete a requisição uma vez. Requisições recusadas ao mesmo tempo esperam a mesma renovação. As rotas `/v1/auth/…` nunca disparam renovação; sem isso, um 401 da própria renovação travaria a fila.
+- **Cofre** (`src/lib/auth/cofre.ts`, `expo-secure-store` com `AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY`): token de renovação, identificador do aparelho (UUID gerado na primeira abertura) e a escolha da biometria. O plugin do `expo-secure-store` tira o cofre do backup do Android.
+- **Sessão** (`src/lib/auth/sessao.ts` e store `useSessao` com `estado`):
+  - `iniciando`: na abertura, procura a renovação guardada. Sem renovação, vai para o login. Com biometria ligada, `bloqueada`. Senão, renova e fica `pronta`.
+  - A renovação recusada (400, 401, 403) sai do aparelho. Sem rede, 5xx, 426 ou 429, o token fica para a próxima abertura.
+  - A restauração roda uma vez só: duas renovações com o mesmo token seriam reuso (RN-004). Cofre ilegível vai para o login, e o erro vai para o Sentry.
+  - "Sair deste aparelho" (aba Mais) revoga a renovação na API e apaga o cofre, mesmo sem rede.
+- **Telas** em `(auth)`: login, cadastro (com o aceite dos termos e da política nas versões de `VERSOES_DOCUMENTOS`) e recuperação de senha (código de 6 dígitos e senha nova, que já entra no app). Formulários com React Hook Form e os esquemas Zod do `@mony/shared/autenticacao`; o erro da API aparece com a mensagem do catálogo.
+- **Biometria** (RN-005): ligada na aba Mais, depois de uma confirmação. Na abertura, a tela de bloqueio pede a biometria e só então renova. Quem desiste entra de novo com e-mail e senha. O texto do Face ID vem do plugin do `expo-local-authentication`.
+- **Chat da Mony:** o SSE pelo `expo/fetch` manda os mesmos cabeçalhos e, em 401, espera a mesma renovação única e tenta de novo uma vez.
+- **Ainda não:** botões do Google e da Apple (T-055) e tela de atualização obrigatória (T-056). Sem rede na abertura, o app mostra o login, e a renovação guardada vale na próxima abertura.
+
 ## Chat da Mony
 
 - Envio por `POST /v1/mony/mensagens` com resposta em **SSE** lida com `expo/fetch` (streaming de texto e eventos de componente).
