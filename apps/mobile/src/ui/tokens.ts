@@ -50,6 +50,8 @@ export const cores = {
   'perigo-suave': 'rgba(255, 138, 127, 0.16)',
   /** Ponto de notificação não lida. */
   alerta: '#FF8A3D',
+  /** Véu escuro atrás das folhas (bottom sheet). */
+  veu: 'rgba(0, 0, 0, 0.56)',
 } as const;
 
 export type Cor = keyof typeof cores;

@@ -11,4 +11,6 @@ export const textosUi = {
     tentarDeNovo: 'Tentar de novo',
   },
   progresso: '{{percentual}}% usado',
+  fechar: 'Fechar',
+  limparBusca: 'Limpar busca',
 };

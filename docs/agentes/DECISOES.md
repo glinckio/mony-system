@@ -546,3 +546,33 @@ Contexto: o cliente mandou as telas em PDF (`docs/design/telas-app.pdf`), com o 
 
 Reversível: sim.
 
+
+## 2026-10-11 — Humano — T-045 antes da T-022
+Contexto: pela regra de prioridade a próxima tarefa livre era a T-022 (a T-014 segue esperando: o `nestjs-zod` 5.5.0 aceita Nest só até o 11). Nenhum dos dois ambientes do agente baixa o SDK do Android, então o Kotlin da PoC nem seria compilado. Decisão do humano: fazer a T-045 (tela de Transações), que dá para testar por completo. A T-022 continua a próxima da fila para quem tiver o SDK do Android ou um aparelho. Reversível: sim.
+
+## 2026-10-11 — Ambiente — GitHub pelo shell do computador e trabalho na nuvem
+Contexto: nesta sessão o token do GitHub do contêiner da nuvem estava vencido, e o shell Linux ligado ao computador do humano tinha só 2,5 GB livres, sem Docker. Decisões:
+- **`gh` no shell do computador** (`$HOME/tools`), com login pelo código do `github.com/login/device`, e um clone leve (`--filter=blob:none`) em `$HOME/work`, só para push e PR.
+- **Código, testes e build no contêiner da nuvem**, com Node 24 e o binário nativo do pnpm 12 (o `pnpm` sem shebang dá "Exec format error" quando o Turbo o chama).
+- **Transporte por `git bundle`**: o contêiner grava o bundle com nome único (o mesmo nome reaproveitava o arquivo antigo) e o copia para `.turbo/cowork/` na pasta do humano, que o Git ignora; a ferramenta não grava dentro de `.git`. O clone do computador busca o bundle e faz o push.
+- **Pasta do humano**: `git fetch` ali deixa arquivos `.lock` sem a permissão de apagar; sem ela, não rodar Git na pasta (só atualizar a `main` no fim, com a permissão).
+Reversível: sim.
+
+## 2026-10-11 — T-045 — Aba Transações no app
+Contexto: primeira tela do app com dados da API, seguindo a página 4 do design. Decisões:
+- **Período é sempre um mês**, com setas, como no design. Os chips (Todas, Despesas, Receitas, Pendentes) trocam só tipo e situação; o resto da RN-047 fica na folha de filtros. A busca espera 350 ms depois da última letra.
+- **Lista paginada** com `useInfiniteQuery` e o `listarTransacoes` gerado, 30 por página, chave começando por `/v1/transacoes` para a invalidação por prefixo. Agrupada por dia na ordem da API; o dia cortado entre páginas continua no mesmo grupo.
+- **Datas e nomes de mês sem `Intl`** (o Intl do Hermes varia por plataforma; ver T-003): "Hoje, 9 de outubro" sai do calendário em texto e dos nomes no i18n. **Sem chaves de plural do i18next**: o Hermes pode não ter `Intl.PluralRules`, então "1 selecionado" e "2 selecionados" são chaves separadas.
+- **Formulário**:
+  - valor digitado só em dígitos ("1050" → R$ 10,50), sem vírgula e sem ponto flutuante;
+  - data em `DD/MM/AAAA` com Hoje e Ontem, sem o seletor nativo de data: um módulo nativo novo mudaria o runtime do EAS Update (T-016) e pediria build novo;
+  - validação com `esquemaNovaTransacao` e `esquemaAtualizacaoTransacao` do `@mony/shared` num `resolver` próprio do React Hook Form, e mensagens por campo no i18n;
+  - "já foi pago" mostra o padrão da RN-042 (`statusPadrao`) e só manda `status` se a pessoa mexer, para a regra continuar no servidor;
+  - travas espelhadas do doc 05 em `motivoDaTrava` (do banco, parcela, pagamento de fatura, transferência e compra em fatura paga, que o app reconhece por cartão + pago);
+  - uma `Idempotency-Key` por formulário montado: tentar de novo depois de falha não duplica.
+- **Seleção múltipla** começa segurando um item. Mudar categoria só oferece categorias do tipo dos selecionados e avisa quando há receita e despesa juntas (a API recusaria).
+- **Voltar** do formulário usa `router.dismissTo('/transacoes')`: aberto direto pelo link, `router.back()` levava ao Início.
+- **Cache**: as mutações não esperam a invalidação (a tela volta na hora); a consulta do lançamento excluído fica velha sem ser buscada. Consultas não repetem em 4xx (`deveRepetirConsulta`), para "não encontrado" aparecer sem as duas esperas.
+- **Contrato**: o cliente gerado tipa `string | null` de topo como `string[]` (`proximoCursor`, `observacao`). A tela converte as respostas da lista e do lançamento para os tipos do `@mony/shared`; a correção na geração virou a T-018.
+- **Fora daqui**: anexos (T-058, módulos nativos) e criar ou editar recorrência no formulário (T-059).
+Reversível: sim.

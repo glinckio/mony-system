@@ -1,9 +1,9 @@
 import { afterAll, afterEach, describe, expect, it, jest } from '@jest/globals';
-import { useVerificarSaude } from '@mony/api-client';
+import { ErroApi, useVerificarSaude } from '@mony/api-client';
 import { renderHook, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
-import { configurarApi, criarClienteConsultas } from '@/lib/api/cliente';
+import { configurarApi, criarClienteConsultas, deveRepetirConsulta } from '@/lib/api/cliente';
 import { Provedores } from '@/lib/provedores';
 import { useSessao } from '@/stores/sessao';
 
@@ -41,5 +41,15 @@ describe('cliente da API no app', () => {
     const [url, opcoes] = fetchFalso.mock.calls[0] ?? [];
     expect(url).toBe('http://api.teste/v1/health');
     expect(new Headers(opcoes?.headers).get('authorization')).toBe('Bearer token-1');
+  });
+
+  it('repete a consulta sem rede, em 5xx e 429, mas não em 4xx', () => {
+    const erro = (status: number) => new ErroApi(status, undefined);
+    expect(deveRepetirConsulta(0, new TypeError('Network request failed'))).toBe(true);
+    expect(deveRepetirConsulta(0, erro(503))).toBe(true);
+    expect(deveRepetirConsulta(1, erro(429))).toBe(true);
+    expect(deveRepetirConsulta(0, erro(404))).toBe(false);
+    expect(deveRepetirConsulta(0, erro(400))).toBe(false);
+    expect(deveRepetirConsulta(2, erro(503))).toBe(false);
   });
 });
