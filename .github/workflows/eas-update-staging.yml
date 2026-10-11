@@ -1,0 +1,79 @@
+# EAS Update no canal `staging` a cada merge na main que mexe no app (docs/arquitetura/12): os
+# builds de preview (canal staging) recebem o JS novo sem passar pela loja. Só entrega para o
+# binário com a mesma `runtimeVersion` (fingerprint); mudança nativa pede build novo no EAS.
+#
+# Só roda depois de existir o projeto no EAS: variáveis EAS_PROJECT_ID e EXPO_OWNER e o segredo
+# EXPO_TOKEN no repositório (docs/agentes/BLOQUEIOS.md, T-016). Sem elas, o job é pulado.
+name: EAS Update em staging
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/mobile/**
+      - packages/api-client/**
+      - packages/shared/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .github/workflows/eas-update-staging.yml
+  workflow_dispatch:
+
+concurrency:
+  group: eas-update-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  atualizar:
+    name: App em staging (EAS Update)
+    if: vars.EAS_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HUSKY: '0'
+      TURBO_TELEMETRY_DISABLED: '1'
+      EXPO_NO_TELEMETRY: '1'
+      # O app.config.ts lê estes valores: o mesmo ambiente do perfil preview do eas.json.
+      APP_ENV: preview
+      EAS_PROJECT_ID: ${{ vars.EAS_PROJECT_ID }}
+      EXPO_OWNER: ${{ vars.EXPO_OWNER }}
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+
+      - name: Instalar pnpm (versão do packageManager) com cache do store
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - name: Instalar Node (versão do .nvmrc)
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Compilar os pacotes do monorepo que o app usa
+        run: pnpm turbo run build --filter=mobile^...
+
+      - name: Instalar o EAS CLI e entrar na conta Expo
+        uses: expo/expo-github-action@v9
+        with:
+          eas-version: 24.12.1
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Publicar no canal staging
+        # `--environment preview` traz as variáveis do EAS desse ambiente (EXPO_PUBLIC_API_URL,
+        # EXPO_PUBLIC_SENTRY_DSN), as mesmas do build de preview.
+        working-directory: apps/mobile
+        env:
+          MENSAGEM: ${{ github.event.head_commit.message || 'Publicação manual' }}
+        run: |
+          titulo=$(printf '%s' "$MENSAGEM" | head -n 1 | cut -c1-200)
+          eas update --channel staging --environment preview --non-interactive \
+            --message "$titulo (${GITHUB_SHA::7})"
+          echo "::notice title=App de staging atualizado::$titulo"

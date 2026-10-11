@@ -121,6 +121,16 @@ eas build --profile development --platform android   # dev client para instalar 
 
 Antes do primeiro build de `preview` ou `production`: defina `EXPO_PUBLIC_API_URL` (e `EXPO_PUBLIC_SENTRY_DSN`, se houver) nas variáveis do ambiente correspondente no EAS, e `SENTRY_AUTH_TOKEN` como segredo para o envio de source maps (ou `SENTRY_DISABLE_AUTO_UPLOAD=true`).
 
+**EAS Update em staging:** a cada merge na `main` que mexe no app, o workflow [EAS Update em staging](.github/workflows/eas-update-staging.yml) publica o JS novo no canal `staging`, e os builds de `preview` o recebem ao abrir. Para ligar, uma vez, na raiz do repositório:
+
+```bash
+gh variable set EAS_PROJECT_ID --body '<projectId do eas init>'
+gh variable set EXPO_OWNER --body '<conta Expo do cliente>'
+gh secret set EXPO_TOKEN        # token de robô criado em expo.dev → Account settings → Access tokens
+```
+
+O update só chega ao binário com a mesma `runtimeVersion` (fingerprint do que é nativo): mudança nativa pede um build novo de `preview`.
+
 ## Painel admin (`apps/admin`)
 
 React 19 + Vite 8, TanStack Router (rotas por arquivo) e TanStack Query, com shadcn/ui sobre Tailwind 4. Usa o mesmo `@mony/api-client` do app.

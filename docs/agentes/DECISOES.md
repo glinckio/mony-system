@@ -464,3 +464,12 @@ Contexto: doc 04 (Design system) e o aceite da T-011 (tokens num arquivo, Native
 - **Testes:** o `global.css` vira módulo vazio no Jest, e as fontes dos ícones são dadas como carregadas, para o ícone não se atualizar depois do teste. O `expo export` do CI prova que o Metro compila o CSS com os tokens.
 
 Reversível: sim.
+
+## 2026-10-11 — T-016 — EAS Update em staging
+Contexto: doc 12 (merge na `main` → EAS Update no canal `staging`). O projeto no EAS ainda não existe (BLOQUEIOS, T-010). Decisões:
+- **Workflow próprio** (`eas-update-staging.yml`), disparado só quando o app ou os pacotes que ele usa mudam, como os deploys da API e do admin. Fica parado até existir a variável `EAS_PROJECT_ID` no repositório, do mesmo jeito que os deploys esperam as `STAGING_*`.
+- **Mesmo ambiente do build de preview.** O job define `APP_ENV=preview` e passa `--environment preview`, que traz as variáveis do EAS desse ambiente (`EXPO_PUBLIC_API_URL`, DSN do Sentry). Assim a configuração, e com ela a `runtimeVersion` por fingerprint, é a mesma do binário, e o update só chega a quem pode recebê-lo.
+- **EAS CLI 24.12.1 fixo** (o `eas.json` pede ao menos 24.12.0), pela `expo/expo-github-action@v9`, com token de robô da conta Expo. A mensagem do update é a primeira linha do commit, passada por variável de ambiente, e não interpolada no shell.
+- **Fora daqui:** source maps do Sentry para os updates entram com o monitoramento (T-142). Produção continua manual (`eas update --channel production`), só para correção de JS.
+
+Reversível: sim.
