@@ -1,0 +1,4 @@
+/* Entrada do NativeWind (Tailwind 3). Os valores vêm de src/ui/tokens.ts, via tailwind.config.js. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
