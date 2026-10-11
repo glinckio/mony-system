@@ -60,6 +60,10 @@ export const CATALOGO_ERROS = {
     status: 409,
     mensagem: 'Entre com sua senha ou código por e-mail para vincular este login.',
   },
+  CADASTRO_INCOMPLETO: {
+    status: 422,
+    mensagem: 'Complete o cadastro para continuar.',
+  },
   CODIGO_INVALIDO: { status: 400, mensagem: 'Código inválido.' },
   CODIGO_EXPIRADO: { status: 400, mensagem: 'Este código expirou. Peça um novo.' },
   TERMOS_PENDENTES: {

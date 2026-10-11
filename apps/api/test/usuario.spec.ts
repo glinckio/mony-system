@@ -134,7 +134,7 @@ describe('rotas', () => {
     expect(resposta.statusCode).toBe(200);
     expect(resposta.json()).toEqual({
       versaoMinima: { ios: '0.0.0', android: '0.0.0' },
-      flags: {},
+      flags: { loginGoogle: false, loginApple: false },
       sugestoesChat: [...SUGESTOES_CHAT_PADRAO],
     });
   });

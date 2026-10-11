@@ -53,6 +53,16 @@ sequenceDiagram
 - **Portal do cliente** para trocar plano, cartão e cancelar (`POST /assinatura/portal`).
 - **Regras das lojas no Brasil:** o PDF registra que o iOS (desde 26.5) permite processador próprio ou link externo com comissão da Apple, e que o Android permite link externo, com faturamento alternativo previsto para 2027. **Revalidar as regras e taxas antes de publicar.** A interface `BillingProvider` já prevê "loja" como origem alternativa do status, sem implementação inicial.
 
+## Login social
+
+Google e Apple (RN-002). O app usa os SDKs do doc 02 e manda o `id_token` à API, que confere tudo no servidor (`integracoes/login-social`, T-032):
+
+- **Assinatura** pelas chaves públicas do provedor: `https://www.googleapis.com/oauth2/v3/certs` e `https://appleid.apple.com/auth/keys`. As chaves ficam em cache e são buscadas de novo quando aparece um `kid` desconhecido. Só RS256.
+- **Emissor, audiência e validade.** A audiência vem de `GOOGLE_CLIENT_IDS` (IDs de cliente iOS, Android e web) e de `APPLE_CLIENT_IDS` (bundle id e, se houver login pela web, o Services ID). A lista vazia desliga o provedor. A tolerância de relógio é de 60 s.
+- **Nonce.** O app gera um valor aleatório por login. A Apple recebe o SHA-256 dele e o devolve no token; a API confere contra o valor que o app manda. Com a Apple é obrigatório; com o Google, vale quando o token traz o nonce.
+- **Uso único.** O resumo do token fica marcado no Redis até ele vencer, contra repetição.
+- **Sem segredo no servidor:** os IDs de cliente são públicos. O que pede conta do cliente é criar os clientes OAuth no Google Cloud e ativar o Sign in with Apple no App ID.
+
 ## Agenda
 
 - **Google e Outlook:** OAuth no servidor (`POST /agendas/conectar` devolve URL de consentimento; callback grava tokens criptografados). Escopos mínimos de leitura/escrita de eventos. O Google exige **verificação do app** para escopos de agenda ao público: iniciar o processo cedo (Fase 0/1), porque leva semanas.

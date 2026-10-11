@@ -127,6 +127,24 @@ Contexto: docs 04 (rede e onboarding), 05, 06, 09 e RN-024. Decisões:
   - As mínimas vêm do ambiente (`APP_VERSAO_MINIMA_IOS`, `APP_VERSAO_MINIMA_ANDROID`, padrão `0.0.0`), até o painel admin editá-las (T-141, doc 13). Mudar exige novo deploy.
   - `config-app` e o health check respondem a qualquer versão.
 - **`GET /config-app`** é público, porque o app consulta antes do login. `flags` vazio por enquanto. `sugestoesChat` com quatro sugestões provisórias até a Mony (T-060).
+## 2026-10-10 — T-032 — Login social Google e Apple
+Contexto: RN-002 e docs 02, 05, 10 e 11. Decisões:
+- **Rotas.**
+  - `POST /v1/auth/social` (pública) entra ou cria a conta.
+  - `POST /v1/auth/social/vincular` (logada) liga o Google ou a Apple à conta atual. É uma proposta nossa; o doc 05 previa só `/auth/social`.
+  - O app segue pelos códigos de erro: `CADASTRO_INCOMPLETO` (novo, 422, com `detalhes.faltando`) e `VINCULO_SOCIAL_PENDENTE` (409). Nos dois casos chama de novo com o mesmo token.
+- **RN-002 (vínculo).** E-mail de conta existente não entra direto: a pessoa entra com a senha ou recupera pelo código (T-031) e depois vincula. Assim ninguém toma a conta de outro criando um login social com o mesmo e-mail. Conta nova exige e-mail confirmado no provedor. O vínculo aceita qualquer conta Google ou Apple da pessoa logada; uma já ligada a outro usuário dá `CONFLITO`.
+- **Conta nova** segue o cadastro: nome, telefone e aceites obrigatórios (RN-001, RN-007), sem senha (`senha_hash` nulo), com teste de 3 dias e padrões (RN-006).
+  - O nome vem do token (Google) ou do app (a Apple só o entrega ao app, no primeiro login).
+  - Telefone obrigatório também aqui, porque a RN-001 não faz exceção. **Confirmar com o cliente** se o login social pode pular o telefone.
+- **Conferência do token** com `jose`:
+  - chaves remotas do provedor, só RS256, emissor, audiência pelos IDs de cliente do ambiente (`GOOGLE_CLIENT_IDS`, `APPLE_CLIENT_IDS`) e validade com 60 s de tolerância;
+  - provedor sem ID configurado → 503; chaves fora do ar → 503; token ruim → 401 `CREDENCIAIS_INVALIDAS`.
+- **Nonce.** Obrigatório com a Apple: o token traz o SHA-256 do valor que o app gerou, que a API confere. Com o Google é conferido quando o token traz um, porque o SDK nem sempre aceita nonce.
+- **Repetição.** Cada `id_token` vale uma vez: o resumo dele fica marcado no Redis até vencer (`LimiteTentativas.usarUmaVez`). O token só é gasto quando o pedido dá certo. Limite de 20 chamadas por IP a cada 15 minutos.
+- **Testes.** Google e Apple de mentira com um par RSA local (`test/provedor-social-falso.ts`); a conferência é a mesma de produção.
+- **`config-app`.** `flags.loginGoogle` e `flags.loginApple` dizem se o provedor está configurado, para o app esconder o botão de quem não está.
+- **Humano.** Falta criar os clientes OAuth e ativar o Sign in with Apple em nome do cliente (BLOQUEIOS). Por isso o PR fica com `aguardando-humano`.
 
 Reversível: sim.
 

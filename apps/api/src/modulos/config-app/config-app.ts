@@ -20,7 +20,11 @@ export class ConfigAppService {
   obter(): ConfigApp {
     return {
       versaoMinima: this.config.versoesMinimasApp,
-      flags: {},
+      // O app só mostra os botões de login social com os IDs de cliente configurados (T-032).
+      flags: {
+        loginGoogle: this.config.clientesGoogle.length > 0,
+        loginApple: this.config.clientesApple.length > 0,
+      },
       sugestoesChat: [...SUGESTOES_CHAT_PADRAO],
     };
   }
