@@ -11,6 +11,7 @@ export * from './dinheiro.js';
 export * from './enums.js';
 export * from './erros.js';
 export * from './metas.js';
+export * from './mony.js';
 export * from './nfce.js';
 export * from './notificacoes.js';
 export * from './orcamentos.js';
