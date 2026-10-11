@@ -52,6 +52,13 @@ Regras de envio: RN-100 a RN-108 em [07](07-regras-de-negocio.md#alertas-e-notif
 - Tokens inválidos devolvidos nos recibos desativam o `dispositivo`.
 - O app grava o token em `POST /v1/me/dispositivos` (T-033). Um token pertence a um aparelho só: registrar num usuário tira de outro, e sair (do aparelho ou de todos) apaga o token.
 - Payload sempre com `linkInterno` e `categoria` (para os botões de ação).
+- **Como está (T-081):**
+  - O motor chama `EnvioPush`, que põe o envio na fila `notificacoes` com id único (`push-<notificação>-<quantidade>`). O worker (`ProcessadorNotificacoes`) manda uma mensagem para cada aparelho ativo do usuário com token, com 5 tentativas.
+  - Mensagem de uma notificação: título e corpo dela; `dados` com `linkInterno`, `notificacaoId` e `tipo`; categoria de ação pelo tipo (`CATEGORIAS_ACAO` em `@mony/shared/notificacoes`: `fatura_atrasada` e `lembrete`); canal do Android pelo tipo (`canalDoPush`: `lembretes`, `novidades` ou `alertas`, os canais do doc 04). Título até 120 caracteres e corpo até 900, para caber nos 4 KiB do push.
+  - Envio agrupado (fim do silêncio com mais de 3): "Você tem N alertas", com os títulos no corpo e `linkInterno` `mony://notificacoes` (a central), sem categoria, no canal `alertas`.
+  - `DeviceNotRegistered` no ticket tira o token na hora; os tickets aceitos voltam à fila para conferir os recibos 15 minutos depois (o Expo guarda por 24 h), e o mesmo erro no recibo tira o token. Tirar o token é `token_push = null` e `ativo = false`, só se o token ainda for o mesmo (o aparelho pode ter registrado outro). O app registra de novo ao abrir, e o registro volta `ativo = true`.
+  - Resposta 4xx do Expo (menos 429) vai direto para as falhas; 429, 5xx e falha de rede tentam de novo.
+  - O job leva título e corpo: fica no Redis uma hora depois de enviado (para segurar o envio repetido) e um dia se falhar.
 - Push silencioso (`content-available`) para o app reagendar alarmes locais quando um lembrete com canal alarme muda.
 
 ## Canais de lembrete (do PDF)

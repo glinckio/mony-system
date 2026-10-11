@@ -9,7 +9,9 @@ import { ProcessadorRotinas } from './core/rotinas/rotinas';
 import { EmailModule } from './integracoes/email/email.module';
 import { ProcessadorEmails } from './integracoes/email/processador-emails';
 import { CartoesModule } from './modulos/cartoes/cartoes.module';
+import { PushModule } from './integracoes/push/push.module';
 import { NotificacoesModule } from './modulos/notificacoes/notificacoes.module';
+import { ProcessadorNotificacoes } from './modulos/notificacoes/processador-notificacoes';
 import { OrcamentosModule } from './modulos/orcamentos/orcamentos.module';
 import { ParcelamentosModule } from './modulos/parcelamentos/parcelamentos.module';
 import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
@@ -31,7 +33,8 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     CartoesModule,
     ParcelamentosModule,
     NotificacoesModule,
+    PushModule,
   ],
-  providers: [ProcessadorEventos, ProcessadorEmails, ProcessadorRotinas],
+  providers: [ProcessadorEventos, ProcessadorEmails, ProcessadorRotinas, ProcessadorNotificacoes],
 })
 export class WorkerModule {}

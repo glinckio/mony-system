@@ -53,6 +53,12 @@ export const esquemaAmbiente = z
     /** Remetente dos e-mails. Com o Brevo, o domínio precisa estar verificado lá. */
     EMAIL_REMETENTE: z.preprocess(vazioComoAusente, z.email().optional()),
     /**
+     * Push (docs/arquitetura/10): `expo` em nuvem; `fake` não envia (fora de produção escreve no
+     * log do worker). `EXPO_ACCESS_TOKEN` só quando a segurança de push estiver ligada no EAS.
+     */
+    PUSH_PROVEDOR: z.enum(['fake', 'expo']).default('fake'),
+    EXPO_ACCESS_TOKEN: z.preprocess(vazioComoAusente, z.string().optional()),
+    /**
      * Arquivos (anexos, áudios, exportações) no S3 privado, só por URL assinada (doc 11). Sem
      * bucket, o envio de arquivos fica desligado. `S3_ENDPOINT` só para S3 compatível local
      * (SeaweedFS do `docker compose`); na AWS fica vazio e as credenciais vêm do papel da tarefa.

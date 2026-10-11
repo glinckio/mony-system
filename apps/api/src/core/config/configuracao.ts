@@ -56,6 +56,15 @@ export class Configuracao {
     return this.config.get('SMTP_URL', { infer: true });
   }
 
+  get provedorPush(): Ambiente['PUSH_PROVEDOR'] {
+    return this.config.get('PUSH_PROVEDOR', { infer: true });
+  }
+
+  /** Token de acesso do Expo, quando a segurança de push está ligada no EAS. */
+  get tokenAcessoExpo(): string | undefined {
+    return this.config.get('EXPO_ACCESS_TOKEN', { infer: true });
+  }
+
   /** Bucket dos arquivos; `undefined` desliga o envio de arquivos. */
   get bucketArquivos(): string | undefined {
     return this.config.get('S3_BUCKET', { infer: true });

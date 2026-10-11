@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { horaNoFuso } from './datas.js';
 import {
+  CATEGORIAS_ACAO,
+  canalDoPush,
   esquemaAtualizacaoPreferenciasAlerta,
   esquemaConsultaNotificacoes,
   noSilencio,
@@ -31,6 +33,19 @@ describe('horário de silêncio (RN-101)', () => {
     expect(horaNoFuso(instante, 'America/Sao_Paulo')).toBe('22:30');
     expect(horaNoFuso(instante, 'UTC')).toBe('01:30');
     expect(horaNoFuso(new Date('2026-10-15T03:00:00Z'), 'America/Sao_Paulo')).toBe('00:00');
+  });
+});
+
+describe('push (doc 04 e 09)', () => {
+  it('canal do Android por tipo: lembretes e novidades têm o seu, o resto é alerta', () => {
+    expect(canalDoPush('lembrete')).toBe('lembretes');
+    expect(canalDoPush('novidade')).toBe('novidades');
+    expect(canalDoPush('fatura_atrasada')).toBe('alertas');
+    expect(canalDoPush('assinatura')).toBe('alertas');
+  });
+
+  it('categorias de ação: só fatura atrasada e lembrete têm botões', () => {
+    expect(Object.keys(CATEGORIAS_ACAO).sort()).toEqual(['fatura_atrasada', 'lembrete']);
   });
 });
 

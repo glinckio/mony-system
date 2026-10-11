@@ -16,6 +16,7 @@ import {
 import { LimiteTentativas, LimiteTentativasMemoria } from '../src/core/limites/limite-tentativas';
 import { ProcessadorRotinas } from '../src/core/rotinas/rotinas';
 import { ProcessadorEmails } from '../src/integracoes/email/processador-emails';
+import { ProcessadorNotificacoes } from '../src/modulos/notificacoes/processador-notificacoes';
 
 export function criarFilaFalsa() {
   return {
@@ -46,6 +47,8 @@ export function semServicosExternos(
     .overrideProvider(ProcessadorEmails)
     .useValue({})
     .overrideProvider(ProcessadorRotinas)
+    .useValue({})
+    .overrideProvider(ProcessadorNotificacoes)
     .useValue({})
     .overrideProvider(ArmazenamentoArquivos)
     .useValue(new ArmazenamentoMemoria())

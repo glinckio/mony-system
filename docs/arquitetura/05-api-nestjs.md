@@ -38,7 +38,7 @@ apps/api/
 │     ├─ ia/            (LlmProvider, TranscricaoProvider)
 │     ├─ open-finance/  (OpenFinanceProvider → pluggy | belvo | klavi)
 │     ├─ pagamentos/    (BillingProvider → stripe)
-│     ├─ push/          (PushProvider → expo-push | fcm+apns)
+│     ├─ push/          (PushProvider → expo | fake)
 │     ├─ agenda/        (CalendarProvider → google | microsoft)
 │     ├─ nfce/          (NfceProvider → api-terceiro | sefaz-scraper)
 │     ├─ telefonia/     (VozProvider → twilio)
@@ -302,7 +302,7 @@ Implementado na T-044 (RN-020 a RN-024). `GET /dashboard?periodo=mes_atual|mes_a
 
 ## Notificações e preferências de alerta
 
-Implementado na T-080 (RN-100 a RN-105; motor no doc 09). O push entra na T-081 e os avaliadores de cada alerta na T-082.
+Implementado na T-080 (RN-100 a RN-105; motor no doc 09) e na T-081 (push). Os avaliadores de cada alerta entram na T-082.
 
 | Rota | O que faz |
 |---|---|
@@ -319,7 +319,7 @@ Implementado na T-080 (RN-100 a RN-105; motor no doc 09). O push entra na T-081 
   2. cota de 3 alertas de consultoria por dia do usuário;
   3. chave única (`ON CONFLICT DO NOTHING`);
   4. horário de silêncio: o não urgente fica gravado sem `enviadaEm`.
-- **Envio:** o que passa vai para a central e para `EnvioNotificacoes`, que por enquanto só registra no log; o push entra na T-081.
+- **Envio:** o que passa vai para a central e para `EnvioNotificacoes` (`EnvioPush`), que põe o envio na fila `notificacoes`; o worker manda o push (doc 09, "Envio de push").
 
 ## Relatórios
 
@@ -422,7 +422,7 @@ Implementado na T-042 (RN-050 a RN-055).
 | Fila | Uso |
 |---|---|
 | `eventos-dominio` | Reações a eventos (alertas pós-lançamento, preferências aprendidas) |
-| `notificacoes` | Envio de push, gravação na central, mensagem da Mony |
+| `notificacoes` | Envio de push (`enviar-push`) e conferência dos recibos 15 minutos depois (`conferir-recibos`); depois, mensagem da Mony |
 | `emails` | E-mails transacionais pelo `EmailProvider` (o job sai do Redis assim que o envio dá certo) |
 | `mony-midia` | Transcrição de áudio, leitura de foto/PDF, NFC-e |
 | `open-finance` | Sincronizações por webhook e periódicas |

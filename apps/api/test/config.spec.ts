@@ -22,6 +22,7 @@ describe('variáveis de ambiente', () => {
       LOG_LEVEL: 'info',
       JWT_ID_CHAVE: 'mony-1',
       EMAIL_PROVEDOR: 'fake',
+      PUSH_PROVEDOR: 'fake',
       APP_VERSAO_MINIMA_IOS: '0.0.0',
       APP_VERSAO_MINIMA_ANDROID: '0.0.0',
       AWS_REGION: 'sa-east-1',

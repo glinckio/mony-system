@@ -18,6 +18,29 @@ export const COTA_CONSULTORIA_DIARIA = 3;
 /** RN-101: com mais de 3 alertas adiados, o fim do silêncio manda um só, agrupado. */
 export const MAXIMO_SEM_AGRUPAR = 3;
 
+/**
+ * Doc 09: categoria de ação do push, que o app registra com os botões. `fatura_atrasada` tem
+ * [Paguei]; `lembrete` tem [Feito] e [Adiar]. Os outros tipos abrem só o `linkInterno`.
+ */
+export const CATEGORIAS_ACAO: Readonly<Partial<Record<TipoAlerta, string>>> = {
+  fatura_atrasada: 'fatura_atrasada',
+  lembrete: 'lembrete',
+};
+
+/**
+ * Doc 04: canais de notificação do Android, criados pelo app. O canal `alarmes` é só dos alarmes
+ * locais; o push usa os outros três.
+ */
+export const CANAIS_ANDROID = ['alertas', 'lembretes', 'alarmes', 'novidades'] as const;
+export type CanalAndroid = (typeof CANAIS_ANDROID)[number];
+
+/** O canal do Android de cada tipo de push: lembretes e novidades têm o seu; o resto é alerta. */
+export function canalDoPush(tipo: TipoAlerta): CanalAndroid {
+  if (tipo === 'lembrete') return 'lembretes';
+  if (tipo === 'novidade') return 'novidades';
+  return 'alertas';
+}
+
 /** Hora local `HH:MM`, de 00:00 a 23:59. */
 export const REGEX_HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 
