@@ -16,7 +16,7 @@ apps/mobile/
 │  ├─ (onboarding)/              # boas-vindas, primeiro-lancamento, cartoes, orcamento, permissoes, tour
 │  ├─ (tabs)/
 │  │  ├─ _layout.tsx             # Barra inferior: Início, Transações, Mony, Cartões, Mais
-│  │  ├─ inicio.tsx
+│  │  ├─ index.tsx               # Início (rota `/`, a primeira tela de quem está logado)
 │  │  ├─ transacoes/
 │  │  ├─ mony.tsx
 │  │  ├─ cartoes/
@@ -44,9 +44,12 @@ apps/mobile/
 │  └─ i18n/
 ├─ plugins/                      # Config plugins próprios (permissões, entitlements)
 ├─ assets/
-├─ app.config.ts                 # Config dinâmica por ambiente
-└─ eas.json
+├─ test/                         # Testes que cruzam o app (navegação, app.config); fora de app/
+├─ app.config.ts                 # Config dinâmica por ambiente (APP_ENV)
+└─ eas.json                      # Perfis development, preview e production
 ```
+
+`app.config.ts` é compilado sozinho pelo Expo: ele só importa pacotes, nunca arquivos locais. O que o app precisa ler em execução (ambiente, URL da API, DSN do Sentry) vai em `extra` e é validado por `src/lib/ambiente.ts`. Testes do app ficam em `test/` ou ao lado do código em `src/` (`*.test.ts(x)`), nunca em `app/`, que o Expo Router lê como rotas.
 
 As rotas em `app/` ficam finas: só importam a `screen` da feature. Isso mantém a navegação trocável e as telas testáveis.
 
