@@ -1,4 +1,4 @@
-import { configurarCliente } from '@mony/api-client';
+import { configurarCliente, ErroApi } from '@mony/api-client';
 import { focusManager, QueryClient } from '@tanstack/react-query';
 import { AppState } from 'react-native';
 
@@ -19,10 +19,23 @@ export function configurarApi(urlApi: string): void {
   });
 }
 
+/** Tentativas extras de uma consulta que falhou. */
+const TENTATIVAS_EXTRAS = 2;
+
+/**
+ * Repete a consulta só quando tentar de novo pode dar certo: sem rede, 5xx ou 429. Um 4xx (não
+ * encontrado, sem permissão, filtro inválido) vai direto para a tela, sem esperar as repetições.
+ */
+export function deveRepetirConsulta(falhas: number, erro: unknown): boolean {
+  if (falhas >= TENTATIVAS_EXTRAS) return false;
+  if (erro instanceof ErroApi) return erro.status >= 500 || erro.status === 429;
+  return true;
+}
+
 export function criarClienteConsultas(): QueryClient {
   return new QueryClient({
     defaultOptions: {
-      queries: { staleTime: 30_000, retry: 2 },
+      queries: { staleTime: 30_000, retry: deveRepetirConsulta },
       // Mutação não repete sozinha: quem cria dado financeiro repete com a mesma Idempotency-Key.
       mutations: { retry: 0 },
     },

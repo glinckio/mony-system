@@ -129,6 +129,7 @@ export const textosTransacoes = {
     cartao: 'Cartão',
     conta: 'Conta',
     nenhumaConta: 'Nenhuma',
+    nenhumaForma: 'Não informar',
     pago: 'Já foi pago',
     pagoAjuda: 'Sem mexer aqui, vale o padrão: Pix, débito e dinheiro até hoje ficam pagos.',
     recebido: 'Já foi recebido',

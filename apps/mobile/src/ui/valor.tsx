@@ -26,6 +26,8 @@ export interface PropsValor {
   tipo?: TipoValor;
   /** `false` só para valor que não é do usuário (ex.: preço de plano). */
   ocultavel?: boolean;
+  /** Mostra "+" no valor positivo, como a receita na lista ("+R$ 6.200,00"). */
+  comSinal?: boolean;
   className?: string;
   testID?: string;
 }
@@ -39,13 +41,15 @@ export function Valor({
   variante = 'corpo',
   tipo = 'neutro',
   ocultavel = true,
+  comSinal = false,
   className,
   testID,
 }: PropsValor) {
   const { t } = useTranslation();
   const privacidade = usePrivacidade((estado) => estado.ocultarValores);
   const oculto = ocultavel && privacidade;
-  const texto = oculto ? VALOR_OCULTO : formatarCentavos(centavos);
+  const sinal = comSinal && centavos > 0 ? '+' : '';
+  const texto = oculto ? VALOR_OCULTO : `${sinal}${formatarCentavos(centavos)}`;
   return (
     <Texto
       variante={variante}
