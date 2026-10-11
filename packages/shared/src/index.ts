@@ -1,3 +1,4 @@
+export * from './alertas.js';
 export * from './arquivos.js';
 export * from './autenticacao.js';
 export * from './cartoes.js';

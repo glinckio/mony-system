@@ -10,6 +10,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./alertas": {
+      "types": "./dist/alertas.d.ts",
+      "default": "./dist/alertas.js"
+    },
     "./arquivos": {
       "types": "./dist/arquivos.d.ts",
       "default": "./dist/arquivos.js"

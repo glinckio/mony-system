@@ -209,7 +209,7 @@ Implementado na T-037 (RN-040 a RN-047).
   - a categoria precisa ser do usuário e do mesmo tipo;
   - despesa exige forma de pagamento (RN-041);
   - o primeiro lançamento conclui a etapa `primeiro-lancamento` do onboarding;
-  - depois de gravar sai o evento `transacao.registrada`, para alertas e preferências (T-080, T-063).
+  - depois de gravar sai o evento `transacao.registrada`, para alertas e preferências (T-080, T-063); o `PATCH` que muda tipo, valor, data, categoria, forma ou cartão publica `transacao.alterada`, para os alertas (T-082).
 - **Compra no cartão** (`cartao_credito`, T-040) leva `cartaoId` e entra na fatura certa (ver "Cartões e faturas" abaixo).
 - **Parcela e pagamento de fatura** só mudam categoria, descrição, observação e anexos por aqui. A parcela sai pelo parcelamento (T-042). O pagamento de fatura sai por `DELETE /transacoes/:id`, o que desfaz o pagamento (T-041).
 - **Open Finance (RN-045):** valor, data e os demais campos travados dão 409 `TRANSACAO_OPEN_FINANCE_BLOQUEADA`.
@@ -302,7 +302,7 @@ Implementado na T-044 (RN-020 a RN-024). `GET /dashboard?periodo=mes_atual|mes_a
 
 ## Notificações e preferências de alerta
 
-Implementado na T-080 (RN-100 a RN-105; motor no doc 09) e na T-081 (push). Os avaliadores de cada alerta entram na T-082.
+Implementado na T-080 (RN-100 a RN-105; motor no doc 09), na T-081 (push) e na T-082 (avaliadores dos alertas de cartão, fatura, orçamento, vencimentos, gasto fora do padrão e projeção; doc 09).
 
 | Rota | O que faz |
 |---|---|

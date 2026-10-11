@@ -168,7 +168,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-047 · docs: 09 · RN-100 a RN-105
 - [x] **T-081** Push: `PushProvider` (Expo Push), registro de token, categorias de ação, deep links (PR #32; no app na T-088)
   - dep: T-080, T-033 · docs: 04, 09
-- [ ] **T-082** Alertas de cartão, fatura, orçamento, vencimentos, fora do padrão e projeção
+- [x] **T-082** Alertas de cartão, fatura, orçamento, vencimentos, fora do padrão e projeção (PR #33)
   - dep: T-080 · RN-106, RN-107, RN-108
 - [ ] **T-083** Resumos semanal e mensal no chat
   - dep: T-080, T-062
@@ -179,7 +179,8 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-086** Ferramentas da Mony: lembretes, compromissos, agenda, `ajuda_app`
   - dep: T-084, T-062
 - [ ] **T-087** Preferências de alerta e horário de silêncio no app; central de notificações
-  - dep: T-081
+  - dep: T-081, T-011, T-034 · docs: 04
+  - Tela do app: depende do design system (T-011) e da sessão no app (T-034), como a T-049.
 - [ ] **T-088** Push no app: permissão, registro do token (`POST /me/dispositivos` ao abrir e ao trocar), canais do Android, categorias de ação ([Paguei], [Feito], [Adiar]) e abrir o `linkInterno` ao tocar
   - dep: T-081, T-010, T-034 · docs: 04, 09
   - Separada da T-081 pelo mesmo motivo da T-049. Os canais (`CANAIS_ANDROID`) precisam existir antes do primeiro push: o Android não mostra push de canal que o app não criou.

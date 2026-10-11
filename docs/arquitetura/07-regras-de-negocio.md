@@ -141,6 +141,11 @@ Legenda: **(PDF)** está na especificação · **(decisão técnica)** definido 
 - **RN-107 (PDF)** Projeção do mês negativa: rotina diária calcula saldo projetado = saldo atual + receitas pendentes do mês − despesas pendentes do mês − (média diária de gasto variável × dias restantes). Alerta se < 0, no máximo uma vez por semana **(decisão técnica: frequência)**.
 - **RN-108 (PDF)** Vencimentos: X dias antes (preferência do usuário, padrão 3 **(decisão técnica)**) e no dia.
 
+> Implementação (T-082): as regras puras de RN-106 a RN-108 estão em `@mony/shared/alertas` (`foraDoPadrao`, `saldoProjetadoDoMes`, `semanaIso`, `marcoDoVencimento`); os avaliadores, no doc 09. Decisões técnicas da T-082:
+> - **RN-106:** a média é das despesas da categoria nos 90 dias até a data do lançamento, sem ele; só se avalia lançamento dos últimos 7 dias.
+> - **RN-107:** saldo atual = soma das contas (saldo inicial + o que já foi pago, entrando ou saindo). Despesas pendentes do mês = contas pendentes sem cartão + parcelas de dívida + o saldo das faturas que vencem no mês. Gasto variável = despesas pagas fora do cartão, sem recorrência e sem parcelamento, nos 30 dias antes de hoje. Sem conta cadastrada, não há projeção. "Uma vez por semana" é a semana ISO (segunda a domingo).
+> - **RN-108:** o aviso de antes sai no primeiro dia dentro do prazo (não só no X-ésimo dia), uma vez por item.
+
 ## Planos, teste e limites
 
 - **RN-120 (PDF)** Limites do plano gratuito (padrões editáveis no admin):
