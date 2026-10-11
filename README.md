@@ -65,6 +65,7 @@ pnpm --filter api dev:worker   # worker (filas e rotinas)
 - Arquivos (anexos): com o `.env` do exemplo, vão para o S3 local do `docker compose` (SeaweedFS, bucket `mony-local`). Sem `S3_BUCKET`, as rotas de arquivo respondem 503.
 - E-mails: a API põe na fila `emails` e o worker envia. Com o `.env` do exemplo (`EMAIL_PROVEDOR=smtp`), eles chegam ao Mailpit (`http://localhost:8025`); o worker precisa estar rodando. O código de recuperação de senha (`POST /v1/auth/senha/codigo`) aparece lá.
 - Push: o motor de alertas põe na fila `notificacoes` e o worker envia pelo Expo. Com o `.env` do exemplo (`PUSH_PROVEDOR=fake`), nada sai do computador: o worker escreve no log o título de cada push.
+- Mony: `POST /v1/mony/mensagens` responde em SSE (teste com `curl -N -H "authorization: Bearer <acesso>" -H 'content-type: application/json' -d '{"texto":"gastei 10"}' http://localhost:3000/v1/mony/mensagens`). Com o `.env` do exemplo (`IA_PROVEDOR=fake`), o que não for gasto recebe um texto fixo; com `IA_PROVEDOR=anthropic` e `ANTHROPIC_CHAVE_API`, o Claude responde.
 - Autenticação: `POST /v1/auth/cadastro` e `/v1/auth/login` devolvem os tokens; as demais rotas pedem `Authorization: Bearer <acesso>` (detalhes no [doc 05](docs/arquitetura/05-api-nestjs.md#autenticação)). Sem `JWT_CHAVE_PRIVADA` no `.env`, a API gera uma chave temporária a cada subida (os tokens caem ao reiniciar); produção exige a chave. Login com Google e Apple (`POST /v1/auth/social`) só funciona com `GOOGLE_CLIENT_IDS` e `APPLE_CLIENT_IDS` preenchidos; sem eles responde 503.
 
 ## Banco de dados

@@ -34,6 +34,14 @@ sequenceDiagram
   Orq->>Orq: grava mensagens, logs_ia, preferências aprendidas
 ```
 
+**Como está (PoC T-020, [relatório](../agentes/poc/T-020.md)):**
+
+- `POST /mony/mensagens` responde em SSE: `texto.delta`, `componente`, `erro`, `fim`.
+- "gastei 10" segue por regra até gravar a despesa, por botões em `POST /mony/acoes`.
+- O resto vai ao `LlmProvider` em streaming (`fake` ou `anthropic`, por `IA_PROVEDOR`).
+- Contrato e leitor SSE em `@mony/shared/mony`.
+- Orquestrador com ferramentas, rascunhos, histórico e `logs_ia` vêm na T-060 a T-062.
+
 ## Componentes do módulo
 
 ```

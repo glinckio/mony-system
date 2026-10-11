@@ -69,7 +69,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
 
 Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limitações e recomendação, e atualiza os docs de arquitetura afetados.
 
-- [ ] **T-020** PoC Mony: fluxo "gastei 10" com botões e streaming SSE lido por `expo/fetch`
+- [x] **T-020** PoC Mony: fluxo "gastei 10" com botões e streaming SSE lido por `expo/fetch` (PR #38; validar no aparelho e com a chave da IA, ver o relatório)
   - dep: T-008, T-010 · docs: 08 · 👤 chave do provedor de IA
 - [ ] **T-021** 👤 PoC Screen Time (iOS): módulo `mony-app-usage` com FamilyControls/DeviceActivity
   - dep: T-010 · docs: 10 (Detecção de apps de compra) · requer entitlement da Apple e aparelho físico

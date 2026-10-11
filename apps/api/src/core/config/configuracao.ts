@@ -56,6 +56,19 @@ export class Configuracao {
     return this.config.get('SMTP_URL', { infer: true });
   }
 
+  get provedorIa(): Ambiente['IA_PROVEDOR'] {
+    return this.config.get('IA_PROVEDOR', { infer: true });
+  }
+
+  /** Chave da API da Anthropic; obrigatória com `IA_PROVEDOR=anthropic`. */
+  get chaveAnthropic(): string | undefined {
+    return this.config.get('ANTHROPIC_CHAVE_API', { infer: true });
+  }
+
+  get modeloIa(): string {
+    return this.config.get('IA_MODELO', { infer: true });
+  }
+
   get provedorPush(): Ambiente['PUSH_PROVEDOR'] {
     return this.config.get('PUSH_PROVEDOR', { infer: true });
   }

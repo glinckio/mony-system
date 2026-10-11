@@ -70,6 +70,13 @@ export const esquemaAmbiente = z
     PUSH_PROVEDOR: z.enum(['fake', 'expo']).default('fake'),
     EXPO_ACCESS_TOKEN: z.preprocess(vazioComoAusente, z.string().optional()),
     /**
+     * Modelo da Mony (doc 08): `anthropic` em nuvem, com `ANTHROPIC_CHAVE_API`; `fake` responde um
+     * texto fixo, em pedaços, sem chamar ninguém (desenvolvimento e testes).
+     */
+    IA_PROVEDOR: z.enum(['fake', 'anthropic']).default('fake'),
+    ANTHROPIC_CHAVE_API: z.preprocess(vazioComoAusente, z.string().optional()),
+    IA_MODELO: z.string().min(1).default('claude-sonnet-5-5'),
+    /**
      * Arquivos (anexos, áudios, exportações) no S3 privado, só por URL assinada (doc 11). Sem
      * bucket, o envio de arquivos fica desligado. `S3_ENDPOINT` só para S3 compatível local
      * (SeaweedFS do `docker compose`); na AWS fica vazio e as credenciais vêm do papel da tarefa.
@@ -112,6 +119,13 @@ export const esquemaAmbiente = z
           message: `obrigatória com EMAIL_PROVEDOR=${variaveis.EMAIL_PROVEDOR}`,
         });
       }
+    }
+    if (variaveis.IA_PROVEDOR === 'anthropic' && variaveis.ANTHROPIC_CHAVE_API === undefined) {
+      contexto.addIssue({
+        code: 'custom',
+        path: ['ANTHROPIC_CHAVE_API'],
+        message: 'obrigatória com IA_PROVEDOR=anthropic',
+      });
     }
   });
 

@@ -66,6 +66,10 @@
       "types": "./dist/nfce.d.ts",
       "default": "./dist/nfce.js"
     },
+    "./mony": {
+      "types": "./dist/mony.d.ts",
+      "default": "./dist/mony.js"
+    },
     "./notificacoes": {
       "types": "./dist/notificacoes.d.ts",
       "default": "./dist/notificacoes.js"

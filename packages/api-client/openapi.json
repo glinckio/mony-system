@@ -1872,6 +1872,52 @@
         ]
       }
     },
+    "/v1/mony/acoes": {
+      "post": {
+        "operationId": "agirMony",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave única da operação (8 a 255 caracteres). Repetir a chave devolve a mesma resposta sem executar de novo.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoAcaoMonyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaAcaoMonyDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "mony"
+        ]
+      }
+    },
     "/v1/parcelamentos": {
       "get": {
         "operationId": "listarParcelamentos",
@@ -7391,6 +7437,153 @@
             }
           }
         }
+      },
+      "PedidoAcaoMonyDto": {
+        "type": "object",
+        "properties": {
+          "acao": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "etapa": {
+                    "type": "string",
+                    "const": "categoria"
+                  },
+                  "valorCentavos": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100000000000
+                  },
+                  "categoriaId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "required": [
+                  "etapa",
+                  "valorCentavos",
+                  "categoriaId"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "etapa": {
+                    "type": "string",
+                    "const": "forma"
+                  },
+                  "valorCentavos": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100000000000
+                  },
+                  "categoriaId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "formaPagamento": {
+                    "type": "string",
+                    "enum": [
+                      "cartao_credito",
+                      "pix",
+                      "debito",
+                      "dinheiro",
+                      "boleto"
+                    ]
+                  }
+                },
+                "required": [
+                  "etapa",
+                  "valorCentavos",
+                  "categoriaId",
+                  "formaPagamento"
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "acao"
+        ]
+      },
+      "RespostaAcaoMonyDto": {
+        "type": "object",
+        "properties": {
+          "texto": {
+            "type": "string"
+          },
+          "componente": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "tipo": {
+                        "type": "string",
+                        "const": "botoes"
+                      },
+                      "opcoes": {
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "rotulo": {
+                              "type": "string"
+                            },
+                            "acao": {
+                              "type": "object",
+                              "propertyNames": {
+                                "type": "string"
+                              },
+                              "additionalProperties": {}
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "rotulo",
+                            "acao"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "tipo",
+                      "opcoes"
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "transacaoId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "texto",
+          "componente",
+          "transacaoId"
+        ]
       },
       "ListaParcelamentosDto": {
         "type": "object",

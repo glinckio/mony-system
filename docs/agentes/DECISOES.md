@@ -473,3 +473,16 @@ Contexto: doc 12 (merge na `main` → EAS Update no canal `staging`). O projeto 
 - **Fora daqui:** source maps do Sentry para os updates entram com o monitoramento (T-142). Produção continua manual (`eas update --channel production`), só para correção de JS.
 
 Reversível: sim.
+
+## 2026-10-11 — T-020 — PoC da Mony
+Contexto: doc 08 e doc 04 (chat em SSE lido pelo `expo/fetch`, "gastei 10" com botões). Sem chave do provedor de IA nem login no app ainda. Decisões:
+- **SSE escrito direto no socket** (`reply.hijack()` no Fastify). Cabeçalhos contra buffer (`no-transform`, `x-accel-buffering: no`), *ping* a cada 15 s (o ALB corta conexão parada em 120 s) e cancelamento do modelo quando o app fecha a conexão. Erro antes do streaming continua em JSON com o código do catálogo; erro no meio vira evento `erro`.
+- **A rota SSE fica fora do OpenAPI**: o cliente gerado lê JSON. O contrato dos eventos fica no `@mony/shared/mony`, usado pela API e pelo app, com o mesmo `LeitorSse`, que também lê o streaming da Anthropic.
+- **"gastei 10" por regra, sem modelo** (RN-080, RN-084): valor pelo texto, depois botões de categoria e de forma de pagamento.
+  - Na PoC, o estado vai no próprio botão (`acao`) e o servidor valida tudo de novo. A T-061 troca por `rascunhos_lancamento` e pelo `{ mensagemId, acaoId, payload }` do doc 04.
+  - Descrição da despesa = nome da categoria, até a T-061 extrair o estabelecimento.
+- **`LlmProvider`** com `LlmFake` (padrão; um pedaço a cada 40 ms fora dos testes, para o streaming aparecer) e `LlmAnthropic` (Messages API por `fetch`, sem SDK). Configurado por `IA_PROVEDOR` e `ANTHROPIC_CHAVE_API`, com `IA_MODELO` padrão `claude-sonnet-5-5` (doc 08, a confirmar com o cliente).
+- **App:** o `expo/fetch` só na rota de streaming; as outras chamadas continuam no cliente gerado (`agirMony`). Toque em botão com chave de idempotência.
+- **👤 pendente:** validar no aparelho (depende do login, T-034) e com a chave da Anthropic. Por isso a tarefa vai para o humano (`aguardando-humano`), como as outras 👤.
+
+Reversível: sim.
