@@ -1,6 +1,11 @@
 import { ErroApi, renovarSessaoUmaVez } from '@mony/api-client';
 import { ehRespostaErro } from '@mony/shared/erros';
-import { type EventoMony, eventoMonyDoSse, LeitorSse } from '@mony/shared/mony';
+import {
+  type DadosMensagemMony,
+  type EventoMony,
+  eventoMonyDoSse,
+  LeitorSse,
+} from '@mony/shared/mony';
 import { randomUUID } from 'expo-crypto';
 import { fetch } from 'expo/fetch';
 
@@ -10,7 +15,7 @@ import { aoErroDaApi } from '@/lib/versao';
 import { useSessao } from '@/stores/sessao';
 
 /** Abre o SSE com o token da sessão e os cabeçalhos do app, como o cliente gerado. */
-async function abrirConversa(texto: string, sinal?: AbortSignal) {
+async function abrirConversa(mensagem: DadosMensagemMony, sinal?: AbortSignal) {
   const token = useSessao.getState().tokenAcesso;
   const resposta = await fetch(`${configApp.urlApi}/v1/mony/mensagens`, {
     method: 'POST',
@@ -20,27 +25,28 @@ async function abrirConversa(texto: string, sinal?: AbortSignal) {
       'content-type': 'application/json',
       ...(token ? { authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ texto }),
+    body: JSON.stringify(mensagem),
     ...(sinal ? { signal: sinal } : {}),
   });
   return { resposta, comToken: Boolean(token) };
 }
 
 /**
- * Envia a mensagem à Mony e chama `aoEvento` a cada evento do SSE, assim que ele chega (doc 04).
+ * Envia a mensagem à Mony (o texto, ou o `arquivoId` do áudio já enviado, T-064) e chama `aoEvento`
+ * a cada evento do SSE, assim que ele chega (doc 04).
  * O `fetch` do `expo/fetch` lê o corpo em streaming; o `fetch` global do React Native só entrega o
  * corpo inteiro no fim. Token vencido: espera a renovação única do cliente gerado e tenta de novo,
  * uma vez. Erro antes do streaming (sessão, validação) vira `ErroApi`, como no cliente gerado.
  */
 export async function enviarMensagemMony(
-  texto: string,
+  mensagem: DadosMensagemMony,
   aoEvento: (evento: EventoMony) => void,
   sinal?: AbortSignal,
 ): Promise<void> {
-  const primeira = await abrirConversa(texto, sinal);
+  const primeira = await abrirConversa(mensagem, sinal);
   let resposta = primeira.resposta;
   if (resposta.status === 401 && primeira.comToken && (await renovarSessaoUmaVez())) {
-    resposta = (await abrirConversa(texto, sinal)).resposta;
+    resposta = (await abrirConversa(mensagem, sinal)).resposta;
   }
   if (!resposta.ok || !resposta.body) {
     const corpo: unknown = await resposta.json().catch(() => undefined);

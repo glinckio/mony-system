@@ -36,7 +36,8 @@ sequenceDiagram
 
 **Como está (T-060; a PoC foi a T-020, [relatório](../agentes/poc/T-020.md)):**
 
-- `POST /mony/mensagens` responde em SSE: `texto.delta`, `componente`, `erro`, `fim` (com o id da resposta gravada). Contrato e leitor SSE em `@mony/shared/mony`.
+- `POST /mony/mensagens` recebe `{ texto }` ou `{ arquivoId }` (áudio, T-064) e responde em SSE: `transcricao` (o texto do áudio), `texto.delta`, `componente`, `erro`, `fim` (com o id da resposta gravada). Contrato e leitor SSE em `@mony/shared/mony`.
+- Áudio (T-064): o app envia o arquivo em `POST /arquivos` com tipo `audio` e manda o `arquivoId`. O orquestrador confere que o áudio é do usuário, está no S3 e não foi usado (senão, evento `erro` sem gravar nada), grava a mensagem `tipo audio` com o anexo, transcreve pelo `TranscricaoProvider` dentro da própria requisição (tempo limite de 60 s), grava o texto na mensagem, manda o evento `transcricao` e segue o fluxo normal com esse texto. Cada transcrição grava um `logs_ia` (`ferramenta = transcricao`, tokens 0). Falha: evento `erro` com "Não consegui entender o áudio agora…"; áudio sem fala: "Não ouvi nada no áudio…". O reenvio com a mesma `Idempotency-Key` transcreve de novo.
 - `MonyOrquestrador` grava a mensagem, tenta o `RoteadorRegras` (rascunho do lançamento, com botões em `POST /mony/acoes`) e, sem regra, chama o `LlmProvider` (`fake` ou `anthropic`, por `IA_PROVEDOR`) com o prompt local (`prompts/sistema.ts`), o contexto do usuário, o histórico e as ferramentas. Pedido de ferramenta → executa → devolve o resultado ao modelo, até 5 chamadas por mensagem.
 - Ferramentas registradas: as de finanças (T-062a e T-062b, ver "Ferramentas").
 - Rascunhos de lançamento (T-061): ver "Rascunhos e perguntas com botões".
@@ -155,7 +156,7 @@ Por mensagem (do PDF): data de hoje (no fuso do usuário), nome, categorias, car
 
 | Entrada | Processamento | Fila |
 |---|---|---|
-| Áudio | `TranscricaoProvider` → texto, depois fluxo normal | `mony-midia` |
+| Áudio | `TranscricaoProvider` → texto, depois fluxo normal | Na própria requisição (T-064): o texto sai antes da resposta |
 | Foto/print | Modelo com visão + ferramenta `ler_documento` → JSON validado por Zod (estabelecimento, data, itens, total, forma de pagamento) | `mony-midia` |
 | PDF de fatura/extrato | Envio do PDF ao modelo (o provedor recomendado aceita PDF direto) ou extração de texto antes; saída: lista de lançamentos candidatos em `importacoes_documento` | `mony-midia` |
 | QR Code NFC-e | `NfceService` consulta a nota; falhou → pede foto do cupom | `mony-midia` |
@@ -164,8 +165,8 @@ Mídias pesadas são processadas na fila; o chat mostra "lendo seu documento…"
 
 ## Provedor de IA
 
-- Interface `LlmProvider { modelo; conversar({ sistema, mensagens, ferramentas, sinal }): AsyncIterable<EventoLlm> }` (eventos `texto`, `ferramenta` e `fim` com tokens e motivo da parada) e `TranscricaoProvider { transcrever(arquivo): Promise<string> }`. O `LlmFake` responde um roteiro, para os testes.
-- Recomendação inicial **(confirmar com cliente)**: Anthropic Claude, `claude-sonnet-5-5` para conversa, visão e PDF, e `claude-haiku-5-5` para tarefas simples (classificação de intenção, sugestão de categoria). Transcrição num provedor de fala dedicado.
+- Interface `LlmProvider { modelo; conversar({ sistema, mensagens, ferramentas, sinal }): AsyncIterable<EventoLlm> }` (eventos `texto`, `ferramenta` e `fim` com tokens e motivo da parada) e `TranscricaoProvider { modelo; transcrever({ url, tipoConteudo, sinal }): Promise<{ texto, duracaoSegundos }> }` (recebe a URL de leitura assinada do S3). O `LlmFake` e o `TranscricaoFake` respondem um roteiro, para os testes.
+- Recomendação inicial **(confirmar com cliente)**: Anthropic Claude, `claude-sonnet-5-5` para conversa, visão e PDF, e `claude-haiku-5-5` para tarefas simples (classificação de intenção, sugestão de categoria). Transcrição num provedor de fala dedicado: Deepgram (`nova-3`, pt-BR, pontuação), por `TRANSCRICAO_PROVEDOR` **(confirmar com cliente)**.
 - Contrato com o provedor deve garantir que os dados não são usados para treino (exigência LGPD do PDF).
 - Timeout por chamada, até 2 retentativas com backoff em erro transitório, e mensagem de erro amigável com [Tentar de novo] (RN-087).
 

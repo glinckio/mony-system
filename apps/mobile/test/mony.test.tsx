@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { type EventoMony, formatarEventoSse } from '@mony/shared/mony';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import * as ExpoAudio from 'expo-audio';
 import { fetch as fetchExpo } from 'expo/fetch';
 
 import TelaMony from '@/features/mony/screens/tela-mony';
@@ -16,6 +17,17 @@ jest.mock('@/features/onboarding/components/dica', () => ({ Dica: () => null }))
 const fetchStreaming = fetchExpo as unknown as jest.Mock<
   (url: string, opcoes: RequestInit) => Promise<unknown>
 >;
+
+/** O gravador falso de `preparar-jest` (T-064). */
+const audio = ExpoAudio as unknown as {
+  requestRecordingPermissionsAsync: jest.Mock<() => Promise<{ granted: boolean }>>;
+  __gravador: {
+    record: jest.Mock;
+    stop: jest.Mock;
+    simularDuracao: (segundos: number) => void;
+    reiniciar: () => void;
+  };
+};
 
 /** Resposta do `expo/fetch` com o corpo SSE entregue em pedaços, um por leitura. */
 function respostaSse(eventos: EventoMony[], tamanho = 9) {
@@ -67,6 +79,8 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
   afterEach(() => {
     globalThis.fetch = fetchOriginal;
     fetchStreaming.mockReset();
+    audio.__gravador.reiniciar();
+    audio.__gravador.record.mockClear();
     useSessao.getState().encerrar();
   });
 
@@ -321,4 +335,132 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
     },
     TEMPO_LIMITE_MS,
   );
+
+  describe('mensagem de voz (T-064)', () => {
+    const AUDIO = '0199a000-0000-7000-8000-0000000000b1';
+
+    /** `POST /arquivos`, o arquivo gravado no aparelho e o envio ao S3. */
+    function api() {
+      const pedidos: { metodo: string; url: string; corpo: unknown }[] = [];
+      globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
+        const endereco = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
+        if (endereco.startsWith('file://')) {
+          return Promise.resolve(new Response(new Uint8Array(48_000), { status: 200 }));
+        }
+        pedidos.push({
+          metodo: opcoes?.method ?? 'GET',
+          url: endereco,
+          corpo: typeof opcoes?.body === 'string' ? JSON.parse(opcoes.body) : opcoes?.body,
+        });
+        if (endereco.endsWith('/v1/arquivos')) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                id: AUDIO,
+                metodo: 'PUT',
+                url: 'https://s3.exemplo.test/envio/audio',
+                cabecalhos: { 'content-type': 'audio/mp4' },
+                expiraEm: '2026-10-15T15:05:00.000Z',
+              }),
+              { status: 201 },
+            ),
+          );
+        }
+        return Promise.resolve(new Response(null, { status: 200 }));
+      });
+      return pedidos;
+    }
+
+    const respostaDoAudio = () =>
+      respostaSse([
+        { tipo: 'transcricao', texto: 'gastei 10 no mercado' },
+        { tipo: 'texto.delta', texto: 'Anotei R$ 10,00. Como você pagou?' },
+        { tipo: 'fim', mensagemId: '0199a000-0000-7000-8000-000000000009' },
+      ]);
+
+    it(
+      'grava, envia o áudio ao S3 e o id à Mony, e mostra o que ela entendeu',
+      async () => {
+        const pedidos = api();
+        fetchStreaming.mockResolvedValue(respostaDoAudio());
+
+        render(<TelaMony />);
+        fireEvent.press(screen.getByRole('button', { name: 'Gravar áudio' }));
+        expect(await screen.findByText('Gravando 0:00', {}, ESPERA)).toBeOnTheScreen();
+        act(() => {
+          audio.__gravador.simularDuracao(7);
+        });
+        expect(screen.getByText('Gravando 0:07')).toBeOnTheScreen();
+        fireEvent.press(screen.getByRole('button', { name: 'Enviar áudio' }));
+
+        expect(await screen.findByText('gastei 10 no mercado', {}, ESPERA)).toBeOnTheScreen();
+        expect(
+          await screen.findByText('Anotei R$ 10,00. Como você pagou?', {}, ESPERA),
+        ).toBeOnTheScreen();
+        expect(audio.__gravador.stop).toHaveBeenCalled();
+        expect(pedidos[0]).toEqual({
+          metodo: 'POST',
+          url: 'http://localhost:3000/v1/arquivos',
+          corpo: { tipo: 'audio', tipoConteudo: 'audio/mp4', tamanho: 48_000 },
+        });
+        expect(pedidos[1]).toMatchObject({
+          metodo: 'PUT',
+          url: 'https://s3.exemplo.test/envio/audio',
+        });
+        expect(corpoJson(fetchStreaming.mock.calls[0]?.[1])).toEqual({ arquivoId: AUDIO });
+        // De volta ao campo, com o microfone.
+        expect(screen.getByRole('button', { name: 'Gravar áudio' })).toBeOnTheScreen();
+      },
+      TEMPO_LIMITE_MS,
+    );
+
+    it(
+      'sem a permissão do microfone, a Mony avisa e não grava',
+      async () => {
+        audio.requestRecordingPermissionsAsync.mockResolvedValueOnce({ granted: false });
+
+        render(<TelaMony />);
+        fireEvent.press(screen.getByRole('button', { name: 'Gravar áudio' }));
+
+        expect(
+          await screen.findByText(
+            'Para falar com a Mony, permita o microfone nos Ajustes do aparelho.',
+            {},
+            ESPERA,
+          ),
+        ).toBeOnTheScreen();
+        expect(audio.__gravador.record).not.toHaveBeenCalled();
+        expect(fetchStreaming).not.toHaveBeenCalled();
+      },
+      TEMPO_LIMITE_MS,
+    );
+
+    it(
+      'cancelar descarta a gravação; no limite de 10 minutos, o áudio vai sozinho',
+      async () => {
+        api();
+        fetchStreaming.mockResolvedValue(respostaDoAudio());
+
+        render(<TelaMony />);
+        fireEvent.press(screen.getByRole('button', { name: 'Gravar áudio' }));
+        await screen.findByText('Gravando 0:00', {}, ESPERA);
+        fireEvent.press(screen.getByRole('button', { name: 'Cancelar gravação' }));
+        expect(
+          await screen.findByRole('button', { name: 'Gravar áudio' }, ESPERA),
+        ).toBeOnTheScreen();
+        expect(fetchStreaming).not.toHaveBeenCalled();
+
+        fireEvent.press(screen.getByRole('button', { name: 'Gravar áudio' }));
+        await screen.findByText('Gravando 0:00', {}, ESPERA);
+        act(() => {
+          audio.__gravador.simularDuracao(600);
+        });
+
+        expect(await screen.findByText('gastei 10 no mercado', {}, ESPERA)).toBeOnTheScreen();
+        expect(fetchStreaming).toHaveBeenCalledTimes(1);
+        expect(corpoJson(fetchStreaming.mock.calls[0]?.[1])).toEqual({ arquivoId: AUDIO });
+      },
+      TEMPO_LIMITE_MS,
+    );
+  });
 });

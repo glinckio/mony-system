@@ -761,3 +761,14 @@ Contexto: `preferencias_aprendidas` tem uma linha por estabelecimento (único us
 - **Ordem dos botões (RN-081)**: a preferida na frente, inclusive a categoria que não está entre as 4 mais usadas (ela entra e a quarta sai); formas e cartões também. Nada é preenchido sozinho: a pessoa ainda toca (RN-080 pergunta o que o texto não disse).
 - **Contexto do modelo**: os 10 hábitos com mais confirmações.
 Reversível: sim.
+
+## 2026-10-12 — T-064 — Áudio na Mony
+Contexto: o doc 08 manda o áudio pelo `TranscricaoProvider` na fila `mony-midia` e o ADR-005 deixa o provedor em aberto. Decisões:
+- **Deepgram** (`nova-3`, pre-recorded por URL, pt-BR com pontuação) **(confirmar com cliente)**: a API manda a URL de leitura assinada do S3 (15 min) e a Deepgram baixa o arquivo, sem o áudio passar pela API. Alternativas atrás da mesma interface: AWS Transcribe (assíncrono, mais lento para chat), OpenAI. `TRANSCRICAO_PROVEDOR=fake` é o padrão (desenvolvimento e testes).
+- **Transcrição dentro da requisição do SSE**, não na fila `mony-midia`: um áudio de chat leva poucos segundos e a pessoa espera a resposta com a conexão aberta; a fila fica para foto, PDF e NFC-e (T-065, T-066). Tempo limite de 60 s.
+- **O áudio é um anexo `tipo audio`** (novo valor no enum), enviado pelo mesmo `POST /arquivos`; o `tipoConteudo` agora precisa combinar com o `tipo` (foto só imagem, PDF só PDF, áudio só áudio). Áudio não vira anexo de lançamento.
+- **Áudio inválido** (de outra pessoa, que não chegou ao S3 ou já usado em outra mensagem) responde o evento `erro` no SSE, sem gravar nada, em vez de status HTTP: a checagem do reenvio com a mesma `Idempotency-Key` precisa da mensagem já gravada.
+- **Duração**: o app para sozinho em 10 minutos (doc 11); a API confere só o tamanho (10 MB). A `duracaoSegundos` do provedor ainda não é gravada (custo por minuto entra no admin, T-141).
+- **`logs_ia` da transcrição**: `ferramenta = transcricao`, tokens 0, modelo do provedor.
+- **App**: gravação AAC mono a 64 kbps (10 minutos ≈ 4,8 MB). O `expo-image-picker` tinha `microphonePermission: false`, que bloqueia o `RECORD_AUDIO` no Android; agora usa o mesmo texto do `expo-audio`. Áudio em segundo plano desligado.
+Reversível: sim (`TRANSCRICAO_PROVEDOR`; o enum `audio` fica).

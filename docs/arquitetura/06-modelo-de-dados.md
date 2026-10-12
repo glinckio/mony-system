@@ -65,7 +65,7 @@ erDiagram
 | `recorrencias` | frequencia, dia, data_fim, proxima_geracao | usuarios, categorias |
 | `parcelamentos` | nome, tipo (`compra_cartao`,`divida`), valor_total, total_parcelas, taxa_juros, data_inicio, status | usuarios, categorias, cartoes |
 | `parcelas` | numero, valor, vencimento, status (`pendente`,`pago`,`atrasado`), pago_em | parcelamentos, transacoes, faturas |
-| `anexos` | tipo (`foto`,`pdf`,`comprovante`), arquivo_url, tamanho | transacoes ou mensagens |
+| `anexos` | tipo (`foto`,`pdf`,`comprovante`,`audio`), arquivo_url, tamanho | transacoes ou mensagens (o áudio só em mensagem, T-064) |
 | `nfce_notas` | chave_acesso (única por usuário), emitente, cnpj, data, total, uf | usuarios, transacoes |
 | `nfce_itens` | descricao, quantidade, unidade, valor_unitario, valor_total | nfce_notas |
 

@@ -9,7 +9,7 @@ Regra geral (do PDF): cada integração fica num módulo isolado em `apps/api/sr
 | Agenda | `CalendarProvider` | Google Calendar API, Microsoft Graph; no aparelho EventKit/CalendarContract via `expo-calendar` | Contas de teste |
 | Apps de compra | módulo nativo `mony-app-usage` | Screen Time (iOS), UsageStatsManager (Android) | Aparelhos reais |
 | NFC-e | `NfceProvider` | API de terceiros que padronize as Sefaz (avaliar) ou leitor próprio por UF | Cupons reais de teste |
-| IA | `LlmProvider`, `TranscricaoProvider` | Ver [08](08-mony-agente-ia.md#provedor-de-ia). `IA_PROVEDOR`: `anthropic` (Messages API em streaming, `ANTHROPIC_CHAVE_API`, `IA_MODELO`) ou `fake` (PoC T-020) | Mesmo provedor, chave separada |
+| IA | `LlmProvider`, `TranscricaoProvider` | Ver [08](08-mony-agente-ia.md#provedor-de-ia). `IA_PROVEDOR`: `anthropic` (Messages API em streaming, `ANTHROPIC_CHAVE_API`, `IA_MODELO`) ou `fake` (PoC T-020). `TRANSCRICAO_PROVEDOR`: `deepgram` (pre-recorded por URL, `DEEPGRAM_CHAVE_API`, `TRANSCRICAO_MODELO`, padrão `nova-3`) ou `fake` (T-064) | Mesmo provedor, chave separada |
 | Push | `PushProvider` | Expo Push (FCM/APNs) | Builds de teste |
 | Voz | `VozProvider` | Twilio (ou equivalente) | Números de teste |
 | E-mail | `EmailProvider` | Brevo (já usado hoje) | Conta de teste |

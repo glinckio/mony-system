@@ -98,7 +98,7 @@ Schemas Zod em `@mony/shared` validam a entrada na API (`nestjs-zod`), geram o O
 
 ### ADR-005 — Provedor de IA atrás de uma interface
 
-A Mony usa uma interface `LlmProvider` (chat com ferramentas, visão, PDF, streaming) e outra `TranscricaoProvider` (áudio → texto). Recomendação inicial **(decisão técnica, confirmar com cliente)**: Anthropic Claude (`claude-sonnet-5-5` para conversa, leitura de imagem e PDF; `claude-haiku-5-5` para classificações simples e baratas). Transcrição em um provedor de fala dedicado (avaliar AWS Transcribe, Deepgram ou OpenAI) porque o modelo de conversa não recebe áudio. Detalhes em [08](08-mony-agente-ia.md).
+A Mony usa uma interface `LlmProvider` (chat com ferramentas, visão, PDF, streaming) e outra `TranscricaoProvider` (áudio → texto). Recomendação inicial **(decisão técnica, confirmar com cliente)**: Anthropic Claude (`claude-sonnet-5-5` para conversa, leitura de imagem e PDF; `claude-haiku-5-5` para classificações simples e baratas). Transcrição em um provedor de fala dedicado porque o modelo de conversa não recebe áudio: Deepgram na T-064 **(confirmar com cliente)**; AWS Transcribe e OpenAI ficam como alternativas atrás da mesma interface. Detalhes em [08](08-mony-agente-ia.md).
 
 ### ADR-006 — Open Finance via agregador, atrás de interface
 
