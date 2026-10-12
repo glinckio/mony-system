@@ -629,3 +629,15 @@ Contexto: o Zod 4 escreve `z.string().nullable()` como `type: ['string', 'null']
 - **Testes** (`test/openapi.spec.ts`): o contrato com um DTO de teste (texto, número, uuid, opcional, lista, lista ou nulo, aninhado), os campos que saíam errados, todos os DTOs criados sem tipo em lista e um que falha quando o `createZodDto` puro passar a acertar (aí o `criarDto` pode sair).
 - **App**: as respostas do cliente gerado entram sem conversão (transações, cartões, metas).
 Reversível: sim.
+
+## 2026-10-12 — T-053 — Início no app
+Contexto: o design (página 3) mostra o topo, o saldo, quatro atalhos, o checklist e os cartões; as RN-020 a RN-024 pedem também o resumo, o período, os próximos vencimentos e os orçamentos. Decisões:
+- **Uma chamada** (`GET /dashboard`); o checklist continua com o `GET /me/onboarding` dele (a mesma consulta que o "Dispensar" muda na hora), e as categorias dos orçamentos vêm do cache de `GET /categorias`.
+- **Abaixo do que o design mostra**: resumo, próximos vencimentos (até cinco) e orçamentos do mês (total e as três categorias mais perto de estourar). Cartões e orçamentos só aparecem quando existem; o checklist já convida a cadastrar.
+- **Topo**: iniciais → aba Mais (perfil, até a T-057); "Pesquisar" → Transações; calendário → período (RN-021); sino só avisa até a central (T-087), sem botão que não faz nada.
+- **Atalhos**: Lançar, Orçamentos e Metas no lugar de Ler nota (T-066), Lista e Lembrete (T-084), que ainda não têm tela.
+- **Período** com rótulos curtos ("Este mês", "Mês passado", "Escolher") para caber nas três abas; ao trocar, a tela mantém o anterior até o novo chegar (`keepPreviousData`).
+- **Título "Início" só para o leitor de tela** (recortado em 1 pt): o design não tem título visível.
+- **Conferido em tela** (export web temporário, Playwright, 390 × 844, API falsa), fora do repositório. A conferência achou classes com valor fora dos tokens (`h-14`, `h-11`, `h-px`), que o Tailwind ignora sem aviso: viraram tamanhos do tema, e o teste que pega isso é a T-148. Orçamentos e metas (T-052) também foram conferidos e estão como o design.
+- `Segmentado` com menos respiro lateral (`px-2`), para "Mês passado" caber.
+Reversível: sim.
