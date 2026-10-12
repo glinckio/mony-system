@@ -6,6 +6,7 @@
 import { z } from 'zod';
 
 import { AUTORES_MENSAGEM, FORMAS_PAGAMENTO, TIPOS_MENSAGEM, TIPOS_TRANSACAO } from './enums.js';
+import { FAIXAS_ORCAMENTO } from './orcamentos.js';
 import { CAMPOS_RASCUNHO } from './rascunhos.js';
 import { VALOR_MAXIMO_CENTAVOS } from './transacoes.js';
 
@@ -14,6 +15,35 @@ export const esquemaOpcaoBotao = z.object({
   id: z.string(),
   rotulo: z.string(),
   acao: z.record(z.string(), z.unknown()),
+});
+
+/**
+ * RN-089: o efeito do lançamento gravado no orçamento da categoria (no mês da data) e no limite do
+ * cartão, com a frase que a Mony diz. Sem orçamento nem cartão, não há impacto.
+ */
+export const esquemaImpactoLancamento = z.object({
+  orcamento: z
+    .object({
+      categoria: z.string(),
+      /** AAAA-MM-01. */
+      competencia: z.string(),
+      percentualUsado: z.number().int(),
+      /** Negativo quando passou do orçamento. */
+      restanteCentavos: z.number().int(),
+      faixa: z.enum(FAIXAS_ORCAMENTO),
+    })
+    .nullable(),
+  cartao: z
+    .object({
+      cartao: z.string(),
+      percentualUsado: z.number().int(),
+      /** Negativo quando passou do limite. */
+      disponivelCentavos: z.number().int(),
+      faixa: z.enum(FAIXAS_ORCAMENTO),
+    })
+    .nullable(),
+  /** A frase pronta (RN-091: direta e sem julgamento). */
+  comentario: z.string(),
 });
 
 /** RN-082: o que a Mony gravou, no cartão de resumo. */
@@ -33,6 +63,8 @@ export const esquemaResumoLancamento = z.object({
   /** Parcelas da compra; `null` à vista. */
   parcelas: z.number().int().nullable(),
   valorParcelaCentavos: z.number().int().nullable(),
+  /** RN-089: só no lançamento que acabou de ser gravado (T-067). */
+  impacto: esquemaImpactoLancamento.nullable().optional(),
 });
 
 /**
@@ -64,6 +96,7 @@ export const esquemaEventoMony = z.discriminatedUnion('tipo', [
 export type OpcaoBotao = z.infer<typeof esquemaOpcaoBotao>;
 export type ComponenteMony = z.infer<typeof esquemaComponenteMony>;
 export type ResumoLancamento = z.infer<typeof esquemaResumoLancamento>;
+export type ImpactoLancamento = z.infer<typeof esquemaImpactoLancamento>;
 export type EventoMony = z.infer<typeof esquemaEventoMony>;
 export type TipoEventoMony = EventoMony['tipo'];
 

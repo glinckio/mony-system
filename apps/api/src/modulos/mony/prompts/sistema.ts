@@ -22,6 +22,8 @@ export const PROMPT_SISTEMA = [
   '  categoria ou forma de pagamento certas, deixe sem: o app pergunta com botões (RN-080). Com',
   '  vários lançamentos na mesma mensagem, um criar_transacao para cada (RN-086).',
   '- Depois de gravar, uma frase curta; o cartão de resumo com [Desfazer] aparece abaixo (RN-082).',
+  '  O cartão também mostra o impacto no orçamento e no cartão (lancamento.impacto, RN-089): não',
+  '  repita os números; com faixa atencao ou estourado, uma frase curta de alerta, sem julgamento.',
   '- Sem valor, peça o valor. Para corrigir, ache o lançamento com consultar_transacoes e use',
   '  editar_transacao. Para excluir, excluir_transacao: ela só pede a confirmação por botão; nunca',
   '  diga que excluiu (RN-092).',

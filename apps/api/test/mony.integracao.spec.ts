@@ -1411,4 +1411,64 @@ describe.runIf(ativo)('integração: Mony', () => {
       '- Hábitos (estabelecimento → categoria, forma ou cartão): cinema → Lazer, Pix.',
     );
   });
+
+  it('RN-089 depois de gravar, o resumo traz o impacto no orçamento da categoria e no limite do cartão', async () => {
+    const usuario = await usuarioNovo();
+    const mercado = await prisma.categoria.findFirstOrThrow({
+      where: { usuarioId: usuario.usuarioId, nome: 'Mercado', tipo: 'despesa' },
+    });
+    const orcamento = await app.inject({
+      method: 'PUT',
+      url: '/v1/orcamentos',
+      headers: { authorization: `Bearer ${usuario.acesso}` },
+      payload: { categoriaId: mercado.id, competencia: '2026-10-01', valorLimiteCentavos: 10_000 },
+    });
+    expect(orcamento.statusCode, orcamento.body).toBe(200);
+    await cartaoNovo(usuario, 'Nubank');
+    const resumo = (eventos: EventoMony[]) => {
+      const evento = eventos.find(
+        (item) => item.tipo === 'componente' && item.componente.tipo === 'resumo',
+      );
+      return evento?.tipo === 'componente' && evento.componente.tipo === 'resumo'
+        ? evento.componente.lancamento
+        : undefined;
+    };
+
+    const normal = await conversar(usuario, 'gastei 50 no mercado no pix');
+    expect(resumo(normal.eventos)?.impacto).toEqual({
+      orcamento: {
+        categoria: 'Mercado',
+        competencia: '2026-10-01',
+        percentualUsado: 50,
+        restanteCentavos: 5_000,
+        faixa: 'normal',
+      },
+      cartao: null,
+      comentario: `Mercado: 50% do orçamento de outubro, faltam ${formatarCentavos(5_000)}.`,
+    });
+
+    const noCartao = await conversar(usuario, 'gastei 35 no mercado no nubank à vista');
+    const impacto = resumo(noCartao.eventos)?.impacto;
+    expect(impacto?.orcamento).toMatchObject({ percentualUsado: 85, faixa: 'atencao' });
+    expect(impacto?.cartao).toEqual({
+      cartao: 'Nubank',
+      percentualUsado: 0,
+      disponivelCentavos: 496_500,
+      faixa: 'normal',
+    });
+    expect(impacto?.comentario).toBe(
+      `Atenção: Mercado já usou 85% do orçamento de outubro; faltam ${formatarCentavos(1_500)}. Nubank: 0% do limite usado, ${formatarCentavos(496_500)} disponíveis.`,
+    );
+
+    const estourou = await conversar(usuario, 'gastei 30 no mercado no pix');
+    expect(resumo(estourou.eventos)?.impacto?.comentario).toBe(
+      `Mercado passou ${formatarCentavos(1_500)} do orçamento de outubro (115%).`,
+    );
+
+    // Sem orçamento na categoria e sem cartão, não há o que comentar.
+    const semImpacto = await conversar(usuario, 'gastei 10 em lazer no pix');
+    expect(resumo(semImpacto.eventos)).toBeDefined();
+    expect(resumo(semImpacto.eventos)?.impacto).toBeUndefined();
+    expect(modelo.pedidos).toEqual([]);
+  });
 });
