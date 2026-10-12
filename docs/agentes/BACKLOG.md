@@ -168,7 +168,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-147** Metas: quanto foi guardado no mês (total e por meta) no `GET /metas` e, no app, o "+ R$ 450 este mês" e a "Dica da Mony" da tela de metas ("Guardando R$ 450 por mês, sua reserva fica completa em 19 meses") (PR #54)
   - dep: T-043, T-052 · docs: 04, 05 (Orçamentos e metas) · RN-063
   - Achada na T-052: o design (página 5) mostra os dois, mas a lista de metas não traz os aportes. A conta do ritmo fica na API, como as outras.
-- [ ] **T-148** Teste que falha quando uma classe do Tailwind usa valor fora dos tokens (ex.: `h-14`, `w-px`) no app
+- [x] **T-148** Teste que falha quando uma classe do Tailwind usa valor fora dos tokens (ex.: `h-14`, `w-px`) no app (PR #55)
   - dep: T-011 · docs: 04 (Design system)
   - Achada na T-053: o tema troca a escala pelos tokens, e uma classe com valor que não existe some sem aviso (os círculos dos atalhos ficaram sem tamanho). Só apareceu na conferência visual.
 

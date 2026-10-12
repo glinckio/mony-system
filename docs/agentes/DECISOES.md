@@ -710,3 +710,9 @@ Contexto: o design (página 5) mostra "+ R$ 450 este mês" e a dica "Guardando R
 - **Meses para completar**: para cima (8.600 / 450 = 19,1 → 20; o design arredonda para baixo). **Necessário até o prazo**: o restante dividido pelos meses do mês de hoje ao do prazo, os dois inclusos, para cima; prazo vencido não tem conta.
 - **A dica no app**: a primeira meta aberta, na ordem da API (pelo prazo), que tem conta. Em vez do "Com R$ 600, em 15" do design (valor sem critério), a segunda frase diz quanto guardar por mês para chegar no prazo, e só aparece quando o ritmo não chega.
 Reversível: sim, `ritmoDaMeta` em `@mony/shared/metas` e `dicaDasMetas` no app.
+
+## 2026-10-12 — T-148 — Teste de classes fora dos tokens
+Contexto: o tema do Tailwind troca a escala pelos tokens, e classe com valor fora deles some sem aviso (achado da T-053). Decisões:
+- **Comparação com o Tailwind de fábrica**: o teste junta toda palavra dos textos do código (`app/` e `src/`, lidos pelo compilador do TypeScript: literais e partes fixas de template) e acusa a que gera CSS no Tailwind de fábrica (com o mesmo preset do NativeWind) e não no tema do app. Palavra que não é classe em nenhum dos dois (texto comum, rótulo) não conta, então não precisa de lista de exceções. Não pega erro de digitação (`bg-superfice`), que não é classe em nenhum dos dois.
+- Usa APIs internas do Tailwind 3.4 (`createContext`, `generateRules`), seguras porque a versão é fixa no `package.json`; na troca para o Tailwind 4 o teste precisa mudar junto.
+Reversível: sim.

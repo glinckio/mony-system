@@ -166,7 +166,7 @@ Componente `Valor` concentra a formatação de dinheiro e o **modo privacidade**
   - Toque mínimo de 44 pt e botão de 50 pt.
   - As cores de texto têm contraste AA sobre `fundo` e `superficie`, conferido em teste.
 - **Só modo escuro** (decisão do cliente): `userInterfaceStyle: 'dark'`, tema escuro da navegação nas cores do app e barra de status clara.
-- **NativeWind 4** (Tailwind 3): o `tailwind.config.js` lê os tokens e **troca** o tema do Tailwind, então classe fora dos tokens (`bg-blue-500`, `p-7`) não existe. O `global.css` entra no `_layout.tsx` raiz, e o Metro compila o CSS.
+- **NativeWind 4** (Tailwind 3): o `tailwind.config.js` lê os tokens e **troca** o tema do Tailwind, então classe fora dos tokens (`bg-blue-500`, `p-7`) não existe e some sem aviso. O teste `test/classes-tailwind.test.ts` (T-148) lê os textos do código de `app/` e `src/` e falha quando uma palavra é classe no Tailwind de fábrica e não no tema do app; tamanho fora da escala vai em `style`. O `global.css` entra no `_layout.tsx` raiz, e o Metro compila o CSS.
 - **Componentes** (`@/ui`), todos com rótulo e papel para o leitor de tela:
   - `Tela` (degradê e área segura);
   - `Texto`, `Icone`, `Logo`;
