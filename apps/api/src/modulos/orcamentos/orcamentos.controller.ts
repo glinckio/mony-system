@@ -19,15 +19,15 @@ import {
   type ListaOrcamentos,
   type Orcamento,
 } from '@mony/shared/orcamentos';
-import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
+import { criarDto } from '../../core/openapi/dto';
 import { OrcamentosService } from './orcamentos.service';
 
-class OrcamentoDto extends createZodDto(esquemaOrcamento) {}
-class ListaOrcamentosDto extends createZodDto(esquemaListaOrcamentos) {}
-class ConsultaOrcamentosDto extends createZodDto(esquemaConsultaOrcamentos) {}
-class DefinicaoOrcamentoDto extends createZodDto(esquemaDefinicaoOrcamento) {}
+class OrcamentoDto extends criarDto(esquemaOrcamento) {}
+class ListaOrcamentosDto extends criarDto(esquemaListaOrcamentos) {}
+class ConsultaOrcamentosDto extends criarDto(esquemaConsultaOrcamentos) {}
+class DefinicaoOrcamentoDto extends criarDto(esquemaDefinicaoOrcamento) {}
 
 /** Rotas de orçamentos (doc 05; RN-060 a RN-062). */
 @ApiTags('orcamentos')

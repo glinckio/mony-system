@@ -31,7 +31,7 @@ export interface RecorrenciaDto {
    */
   dia: number;
   dataInicio: string;
-  dataFim: string[];
-  proximaGeracao: string[];
+  dataFim: string | null;
+  proximaGeracao: string | null;
   ativa: boolean;
 }

@@ -1,6 +1,5 @@
 import {
   aportarMetas,
-  type AtualizacaoMetaDto,
   atualizarMetas,
   buscarMetas,
   criarMetas,
@@ -10,20 +9,8 @@ import {
   getListarMetasQueryKey,
   listarMetas,
 } from '@mony/api-client';
-import type {
-  DadosAtualizacaoMeta,
-  DadosNovaMeta,
-  DadosNovoAporte,
-  DetalheMeta,
-  Meta,
-} from '@mony/shared/metas';
+import type { DadosAtualizacaoMeta, DadosNovaMeta, DadosNovoAporte } from '@mony/shared/metas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-
-/*
- * O contrato gerado tipa o `prazo` de topo (`MetaDto`, `DetalheMetaDto` e o corpo da edição,
- * `AtualizacaoMetaDto`) como `string[]` (T-018): essas respostas e o corpo usam o tipo do
- * `@mony/shared`. Na lista e na resposta do aporte o campo está aninhado e vem certo.
- */
 
 /** Metas abertas primeiro, pelo prazo (RN-063). */
 export function useMetas() {
@@ -37,7 +24,7 @@ export function useMetas() {
 export function useMeta(id: string) {
   return useQuery({
     queryKey: getBuscarMetasQueryKey(id),
-    queryFn: async ({ signal }) => (await buscarMetas(id, { signal })) as unknown as DetalheMeta,
+    queryFn: async ({ signal }) => await buscarMetas(id, { signal }),
   });
 }
 
@@ -58,7 +45,7 @@ function useAoMudar() {
 export function useCriarMeta() {
   const aoMudar = useAoMudar();
   return useMutation({
-    mutationFn: async (dados: DadosNovaMeta) => (await criarMetas(dados)) as unknown as Meta,
+    mutationFn: (dados: DadosNovaMeta) => criarMetas(dados),
     onSuccess: aoMudar,
   });
 }
@@ -68,7 +55,7 @@ export function useAtualizarMeta() {
   const aoMudar = useAoMudar();
   return useMutation({
     mutationFn: async ({ id, dados }: { id: string; dados: DadosAtualizacaoMeta }) =>
-      (await atualizarMetas(id, dados as unknown as AtualizacaoMetaDto)) as unknown as Meta,
+      atualizarMetas(id, dados),
     onSuccess: aoMudar,
   });
 }
@@ -108,8 +95,8 @@ export function useAportar() {
 export function useExcluirAporte() {
   const aoMudar = useAoMudar();
   return useMutation({
-    mutationFn: async ({ id, aporteId }: { id: string; aporteId: string }) =>
-      (await excluirAporteMetas(id, aporteId)) as unknown as Meta,
+    mutationFn: ({ id, aporteId }: { id: string; aporteId: string }) =>
+      excluirAporteMetas(id, aporteId),
     onSuccess: aoMudar,
   });
 }

@@ -22,17 +22,17 @@ import {
   type PreferenciasAlerta,
 } from '@mony/shared/notificacoes';
 import { esquemaResultadoLote, type ResultadoLote } from '@mony/shared/transacoes';
-import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
+import { criarDto } from '../../core/openapi/dto';
 import { NotificacoesService } from './notificacoes.service';
 
-class NotificacaoDto extends createZodDto(esquemaNotificacao) {}
-class PaginaNotificacoesDto extends createZodDto(esquemaPaginaNotificacoes) {}
-class ConsultaNotificacoesDto extends createZodDto(esquemaConsultaNotificacoes) {}
-class PreferenciasAlertaDto extends createZodDto(esquemaPreferenciasAlerta) {}
-class AtualizacaoPreferenciasAlertaDto extends createZodDto(esquemaAtualizacaoPreferenciasAlerta) {}
-class ResultadoLoteDto extends createZodDto(esquemaResultadoLote) {}
+class NotificacaoDto extends criarDto(esquemaNotificacao) {}
+class PaginaNotificacoesDto extends criarDto(esquemaPaginaNotificacoes) {}
+class ConsultaNotificacoesDto extends criarDto(esquemaConsultaNotificacoes) {}
+class PreferenciasAlertaDto extends criarDto(esquemaPreferenciasAlerta) {}
+class AtualizacaoPreferenciasAlertaDto extends criarDto(esquemaAtualizacaoPreferenciasAlerta) {}
+class ResultadoLoteDto extends criarDto(esquemaResultadoLote) {}
 
 /** Central de notificações (doc 09). */
 @ApiTags('notificacoes')

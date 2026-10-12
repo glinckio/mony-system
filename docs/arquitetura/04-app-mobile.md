@@ -198,7 +198,7 @@ Telas em `src/features/transacoes`, no design da página 4 (`docs/design`):
   - lançamento do banco, parcela, pagamento de fatura, transferência e compra em fatura paga só mudam descrição, categoria e observação (`motivoDaTrava`, espelho do doc 05);
   - a `Idempotency-Key` é uma por formulário;
   - excluir pede confirmação, e na ocorrência de recorrência pergunta só esta, esta e as próximas, ou todas (RN-043). Parcela, transferência e compra em fatura paga não têm o botão.
-- **Ainda não:** anexos e recorrência no formulário (tarefas próprias no BACKLOG). O tipo das respostas da lista e do lançamento vem do `@mony/shared`, porque o contrato gerado tipa `string | null` de topo como `string[]` (tarefa própria no BACKLOG).
+- **Ainda não:** anexos e recorrência no formulário (tarefas próprias no BACKLOG).
 
 ## Categorias e contas (T-049)
 
@@ -220,7 +220,6 @@ Telas em `src/features/cartoes`, no design da página 4 (`docs/design`), nas rot
 - **Pagar a fatura** (RN-036): folha com o valor começando no que falta pagar (menor é parcial e avisa que o resto fica na fatura; maior não vai), a data até hoje, a conta de pagamento do cartão já escolhida e a forma (opcional). Uma `Idempotency-Key` por abertura da folha.
 - **Faturas** (`/cartoes/<id>/faturas`): todas, da mais nova para a mais antiga, com total e situação. **Fatura** (`/cartoes/<id>/faturas/<id>`, também pelo link): total, pago, saldo, as compras (abrem o lançamento) e os pagamentos.
 - **Cadastro e edição** (`/cartoes/novo`, `/cartoes/<id>/editar`): nome, bandeira, últimos 4 dígitos, limite, dias de fechamento e vencimento (RN-030), 10 cores, faixas de aviso (50, 70, 80, 90 e 100%, RN-038) e conta de pagamento, validados pelo `esquemaNovoCartao`; a edição manda só o que mudou. Cartão do banco (Open Finance) só muda nome, cor, avisos e conta. Excluir pede confirmação e mostra a recusa da API quando há fatura em aberto.
-- **Contrato**: criar e editar devolvem o cartão sozinho, cujo tipo gerado tem `bandeira` e `final` como `string[]` (T-018); o app usa o tipo do `@mony/shared`.
 
 ## Orçamentos e metas (T-052)
 
@@ -236,7 +235,6 @@ Telas em `src/features/orcamentos` e `src/features/metas`, no design da página 
   - **A meta** (`/metas/<id>`): guardado, falta, prazo, os aportes (cada um pode sair, com confirmação), "Guardar" e "Marcar como concluída" ou "Reabrir meta".
   - **Cadastro e edição** (`/metas/nova`, `/metas/<id>/editar`): nome, valor alvo e prazo opcional (`DD/MM/AAAA`), validados pelo `esquemaNovaMeta`; a edição manda só o que mudou, e apagar o prazo manda `prazo: null`. Excluir pede confirmação.
 - **Ainda não** (tarefa própria no BACKLOG): o "+ R$ 450 este mês" e a "Dica da Mony" da tela de metas, que pedem à API o quanto foi guardado no mês.
-- **Contrato**: o `prazo` de topo da meta sozinha (detalhe, criar, editar e o corpo da edição) vem tipado como `string[]` no cliente gerado (T-018); o app usa os tipos do `@mony/shared`.
 
 ## Onboarding
 

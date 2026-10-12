@@ -30,19 +30,19 @@ import {
   type Meta,
   type RespostaAporte,
 } from '@mony/shared/metas';
-import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
+import { criarDto } from '../../core/openapi/dto';
 import { MetasService } from './metas.service';
 
-class MetaDto extends createZodDto(esquemaMeta) {}
-class DetalheMetaDto extends createZodDto(esquemaDetalheMeta) {}
-class ListaMetasDto extends createZodDto(esquemaListaMetas) {}
-class NovaMetaDto extends createZodDto(esquemaNovaMeta) {}
-class AtualizacaoMetaDto extends createZodDto(esquemaAtualizacaoMeta) {}
-class NovoAporteDto extends createZodDto(esquemaNovoAporte) {}
-class RespostaAporteDto extends createZodDto(esquemaRespostaAporte) {}
+class MetaDto extends criarDto(esquemaMeta) {}
+class DetalheMetaDto extends criarDto(esquemaDetalheMeta) {}
+class ListaMetasDto extends criarDto(esquemaListaMetas) {}
+class NovaMetaDto extends criarDto(esquemaNovaMeta) {}
+class AtualizacaoMetaDto extends criarDto(esquemaAtualizacaoMeta) {}
+class NovoAporteDto extends criarDto(esquemaNovoAporte) {}
+class RespostaAporteDto extends criarDto(esquemaRespostaAporte) {}
 
 /** Rotas de metas de economia (doc 05; RN-063). */
 @ApiTags('metas')

@@ -11,7 +11,6 @@ import {
   pagarFaturas,
 } from '@mony/api-client';
 import type {
-  Cartao,
   DadosAtualizacaoCartao,
   DadosNovoCartao,
   DadosPagamentoFatura,
@@ -19,12 +18,6 @@ import type {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { invalidarDadosFinanceiros } from '@/lib/api/invalidar';
-
-/*
- * O contrato gerado tipa `bandeira` e `final` do cartão sozinho (`CartaoDto`, campos de topo) como
- * `string[]` (T-018): a resposta de criar e de atualizar usa o tipo do `@mony/shared`. Na lista e
- * nas faturas os mesmos campos estão aninhados e vêm certos.
- */
 
 /** Cartões com limite usado, disponível, percentual e a fatura atual (RN-034). */
 export function useCartoes() {
@@ -61,7 +54,7 @@ function useAoMudar() {
 export function useCriarCartao() {
   const aoMudar = useAoMudar();
   return useMutation({
-    mutationFn: async (dados: DadosNovoCartao) => (await criarCartoes(dados)) as unknown as Cartao,
+    mutationFn: (dados: DadosNovoCartao) => criarCartoes(dados),
     onSuccess: aoMudar,
   });
 }
@@ -69,8 +62,8 @@ export function useCriarCartao() {
 export function useAtualizarCartao() {
   const aoMudar = useAoMudar();
   return useMutation({
-    mutationFn: async ({ id, dados }: { id: string; dados: DadosAtualizacaoCartao }) =>
-      (await atualizarCartoes(id, dados)) as unknown as Cartao,
+    mutationFn: ({ id, dados }: { id: string; dados: DadosAtualizacaoCartao }) =>
+      atualizarCartoes(id, dados),
     onSuccess: aoMudar,
   });
 }

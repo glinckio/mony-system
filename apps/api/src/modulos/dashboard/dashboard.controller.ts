@@ -1,13 +1,13 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { type Dashboard, esquemaConsultaDashboard, esquemaDashboard } from '@mony/shared/dashboard';
-import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
+import { criarDto } from '../../core/openapi/dto';
 import { DashboardService } from './dashboard.service';
 
-class DashboardDto extends createZodDto(esquemaDashboard) {}
-class ConsultaDashboardDto extends createZodDto(esquemaConsultaDashboard) {}
+class DashboardDto extends criarDto(esquemaDashboard) {}
+class ConsultaDashboardDto extends criarDto(esquemaConsultaDashboard) {}
 
 /** Início em uma chamada (doc 04 e 05; RN-020 a RN-024). */
 @ApiTags('dashboard')

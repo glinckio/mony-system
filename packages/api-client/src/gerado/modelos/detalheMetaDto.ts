@@ -31,7 +31,7 @@ export interface DetalheMetaDto {
    * @maximum 9007199254740991
    */
   percentual: number;
-  prazo: string[];
+  prazo: string | null;
   concluida: boolean;
   aportes: DetalheMetaDtoAportesItem[];
 }

@@ -31,5 +31,5 @@ export interface AtualizacaoRecorrenciaDto {
    * @maximum 31
    */
   dia?: number;
-  dataFim?: string[];
+  dataFim?: string | null;
 }

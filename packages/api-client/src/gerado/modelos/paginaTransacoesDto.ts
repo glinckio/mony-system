@@ -9,5 +9,5 @@ import type { PaginaTransacoesDtoItensItem } from './paginaTransacoesDtoItensIte
 
 export interface PaginaTransacoesDto {
   itens: PaginaTransacoesDtoItensItem[];
-  proximoCursor: string[];
+  proximoCursor: string | null;
 }

@@ -28,17 +28,17 @@ import {
   esquemaNovaCategoria,
   type ListaCategorias,
 } from '@mony/shared/categorias';
-import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
+import { criarDto } from '../../core/openapi/dto';
 import { CategoriasService } from './categorias.service';
 
-class CategoriaDto extends createZodDto(esquemaCategoria) {}
-class ListaCategoriasDto extends createZodDto(esquemaListaCategorias) {}
-class FiltroCategoriasDto extends createZodDto(esquemaFiltroCategorias) {}
-class NovaCategoriaDto extends createZodDto(esquemaNovaCategoria) {}
-class AtualizacaoCategoriaDto extends createZodDto(esquemaAtualizacaoCategoria) {}
-class ExclusaoCategoriaDto extends createZodDto(esquemaExclusaoCategoria) {}
+class CategoriaDto extends criarDto(esquemaCategoria) {}
+class ListaCategoriasDto extends criarDto(esquemaListaCategorias) {}
+class FiltroCategoriasDto extends criarDto(esquemaFiltroCategorias) {}
+class NovaCategoriaDto extends criarDto(esquemaNovaCategoria) {}
+class AtualizacaoCategoriaDto extends criarDto(esquemaAtualizacaoCategoria) {}
+class ExclusaoCategoriaDto extends criarDto(esquemaExclusaoCategoria) {}
 
 /** Rotas de categorias (docs/arquitetura/05). */
 @ApiTags('categorias')

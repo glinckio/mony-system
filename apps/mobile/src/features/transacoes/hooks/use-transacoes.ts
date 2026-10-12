@@ -26,17 +26,11 @@ import {
 /** Lançamentos por página da lista (a API aceita até 100). */
 export const TAMANHO_PAGINA = 30;
 
-/*
- * O contrato gerado tipa os campos `string | null` de topo como `string[]` (`proximoCursor`,
- * `observacao`; ver T-018 no BACKLOG). A lista e o lançamento usam os tipos do `@mony/shared`, que
- * são os que a API valida e manda.
- */
-
 async function paginaDeTransacoes(
   consulta: Partial<ConsultaTransacoes>,
   signal: AbortSignal,
 ): Promise<PaginaTransacoes> {
-  return (await listarTransacoes(consulta, { signal })) as unknown as PaginaTransacoes;
+  return await listarTransacoes(consulta, { signal });
 }
 
 /** Chave da lista paginada: começa pela rota, para a invalidação por prefixo pegar. */
@@ -84,7 +78,7 @@ export function useTransacao(id: string) {
   const daLista = procurarNasListas(cliente, id);
   return useQuery({
     queryKey: getBuscarTransacoesQueryKey(id),
-    queryFn: async ({ signal }) => (await buscarTransacoes(id, { signal })) as unknown as Transacao,
+    queryFn: async ({ signal }) => await buscarTransacoes(id, { signal }),
     initialData: daLista?.transacao,
     initialDataUpdatedAt: daLista?.atualizadoEm,
   });

@@ -621,3 +621,11 @@ Contexto: o design (página 5) traz as telas de orçamentos e de metas; a folha 
 - **Componentes**: `SeletorMes` saiu de transações para `src/ui`; `AnelProgresso` aceita cor e conteúdo no meio; `BarraProgresso`, uma cor fixa; `Botao`, `compacto` e `rotulo`; `Etiqueta`, o alinhamento; `useTextoDoValor` dá o valor (ou o oculto) para frases.
 - **API rodando nesta sessão**: Postgres 16 e Redis locais, e o Prisma gerado sem baixar engines (`PRISMA_SCHEMA_ENGINE_BINARY` apontando para um arquivo vazio, só para o `generate`; as migrações aplicadas com `psql`). Os 312 testes da API, com os de integração, passaram aqui.
 Reversível: sim.
+
+## 2026-10-12 — T-018 — Campos que aceitam nulo no contrato
+Contexto: o Zod 4 escreve `z.string().nullable()` como `type: ['string', 'null']`; o `nestjs-zod` passa isso ao `@nestjs/swagger` como metadado do campo, e o swagger lê `type` em lista como "lista de" (`string[]`). Só os campos de topo: os aninhados não passam pelo swagger. O `nestjs-zod` 5.5 (o mais novo) ainda faz assim. Decisões:
+- **`criarDto`** (`src/core/openapi/dto.ts`) no lugar do `createZodDto`: o mesmo DTO, com o metadado do campo trocado por `anyOf: [{ type: 'string' }, { type: 'null' }]`, a forma que o Zod já usa para os outros campos que aceitam nulo (uuid, enum). O ESLint barra o `createZodDto` em `src/`.
+- **Alternativas**: pós-processar o `openapi.json` (não dá: depois do swagger, um `string[]` de verdade e um nulo perdido ficam iguais) e `nullable: true` (é do OpenAPI 3.0; o documento é 3.1).
+- **Testes** (`test/openapi.spec.ts`): o contrato com um DTO de teste (texto, número, uuid, opcional, lista, lista ou nulo, aninhado), os campos que saíam errados, todos os DTOs criados sem tipo em lista e um que falha quando o `createZodDto` puro passar a acertar (aí o `criarDto` pode sair).
+- **App**: as respostas do cliente gerado entram sem conversão (transações, cartões, metas).
+Reversível: sim.

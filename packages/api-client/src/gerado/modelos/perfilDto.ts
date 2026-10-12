@@ -12,9 +12,9 @@ export interface PerfilDto {
   id: string;
   nome: string;
   email: string;
-  telefone: string[];
+  telefone: string | null;
   telefoneVerificado: boolean;
-  fotoUrl: string[];
+  fotoUrl: string | null;
   fusoHorario: string;
   onboardingConcluido: boolean;
   temSenha: boolean;
