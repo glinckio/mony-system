@@ -137,6 +137,11 @@ export const esquemaConsultaConversa = z.object({
 export const esquemaPaginaConversa = z.object({
   itens: z.array(esquemaMensagemConversa),
   proximoCursor: z.string().nullable(),
+  /**
+   * Atalhos acima do campo (doc 04, T-069): frases que a pessoa toca para mandar. Só na primeira
+   * página sem busca; nas outras, vazio.
+   */
+  sugestoes: z.array(z.string()),
 });
 
 export type MensagemConversa = z.infer<typeof esquemaMensagemConversa>;

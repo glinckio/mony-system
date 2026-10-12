@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { type ComponenteMony, type EventoMony, formatarEventoSse } from '@mony/shared/mony';
+import {
+  type ComponenteMony,
+  type EventoMony,
+  formatarEventoSse,
+  type PaginaConversa,
+} from '@mony/shared/mony';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import * as ExpoAudio from 'expo-audio';
 import * as ImagePicker from 'expo-image-picker';
@@ -74,18 +80,51 @@ function respostaSse(eventos: EventoMony[], tamanho = 9) {
   };
 }
 
-/** A tela com a área segura (a folha de anexo usa). */
+/** A tela com a área segura (as folhas usam) e as consultas (o histórico, T-069). */
+let consultas: QueryClient | null = null;
+
 function renderizar() {
+  // Sem coleta por tempo: o timer de 5 min seguraria o Jest depois do último teste.
+  consultas = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   return render(
-    <SafeAreaProvider
-      initialMetrics={{
-        frame: { x: 0, y: 0, width: 390, height: 844 },
-        insets: { top: 0, left: 0, right: 0, bottom: 0 },
-      }}
-    >
-      <TelaMony />
-    </SafeAreaProvider>,
+    <QueryClientProvider client={consultas}>
+      <SafeAreaProvider
+        initialMetrics={{
+          frame: { x: 0, y: 0, width: 390, height: 844 },
+          insets: { top: 0, left: 0, right: 0, bottom: 0 },
+        }}
+      >
+        <TelaMony />
+      </SafeAreaProvider>
+    </QueryClientProvider>,
   );
+}
+
+type Pagina = Pick<PaginaConversa, 'proximoCursor' | 'sugestoes'> & {
+  itens: Partial<PaginaConversa['itens'][number]>[];
+};
+const PAGINA_VAZIA: Pagina = { itens: [], proximoCursor: null, sugestoes: [] };
+
+/**
+ * `GET /mony/conversa` responde pelo `historico` (a consulta da URL); o resto vai a `resto`. Os
+ * testes de antes da T-069 abrem com o histórico vazio.
+ */
+function comHistorico(
+  resto?: typeof fetch,
+  historico: (consulta: URLSearchParams) => Pagina = () => PAGINA_VAZIA,
+) {
+  return jest.fn<typeof fetch>((url, opcoes) => {
+    const endereco = new URL(
+      typeof url === 'string' ? url : url instanceof URL ? url.href : url.url,
+      'http://localhost',
+    );
+    if (endereco.pathname === '/v1/mony/conversa') {
+      return Promise.resolve(
+        new Response(JSON.stringify(historico(endereco.searchParams)), { status: 200 }),
+      );
+    }
+    return resto ? resto(url, opcoes) : Promise.resolve(new Response(null, { status: 404 }));
+  });
 }
 
 function corpoJson(opcoes: RequestInit | undefined): unknown {
@@ -110,9 +149,11 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
 
   beforeEach(() => {
     useSessao.getState().iniciar({ id: 'u1', nome: 'Ana', onboardingConcluido: true }, 'token-1');
+    globalThis.fetch = comHistorico();
   });
 
   afterEach(() => {
+    consultas?.clear();
     globalThis.fetch = fetchOriginal;
     fetchStreaming.mockReset();
     audio.__gravador.reiniciar();
@@ -170,7 +211,7 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
           ),
         ),
       );
-      globalThis.fetch = fetchApi;
+      globalThis.fetch = comHistorico(fetchApi);
 
       renderizar();
       fireEvent.changeText(screen.getByLabelText('Mensagem para a Mony'), 'gastei 10');
@@ -249,7 +290,7 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
           ),
         ),
       );
-      globalThis.fetch = fetchApi;
+      globalThis.fetch = comHistorico(fetchApi);
 
       renderizar();
       fireEvent.changeText(screen.getByLabelText('Mensagem para a Mony'), 'oi');
@@ -351,7 +392,7 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
           ),
         ),
       );
-      globalThis.fetch = fetchApi;
+      globalThis.fetch = comHistorico(fetchApi);
 
       renderizar();
       fireEvent.changeText(screen.getByLabelText('Mensagem para a Mony'), 'comprei um fone');
@@ -392,7 +433,7 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
     /** `POST /arquivos`, o arquivo gravado no aparelho e o envio ao S3. */
     function api() {
       const pedidos: { metodo: string; url: string; corpo: unknown }[] = [];
-      globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
+      globalThis.fetch = comHistorico((url, opcoes) => {
         const endereco = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
         if (endereco.startsWith('file://')) {
           return Promise.resolve(new Response(new Uint8Array(48_000), { status: 200 }));
@@ -553,7 +594,7 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
     /** `POST /arquivos`, a foto no aparelho, o S3 e as ações da Mony. */
     function api() {
       const pedidos: { metodo: string; url: string; corpo: unknown }[] = [];
-      globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
+      globalThis.fetch = comHistorico((url, opcoes) => {
         const endereco = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
         if (endereco.startsWith('file://')) {
           return Promise.resolve(new Response(new Uint8Array(250_000), { status: 200 }));
@@ -677,6 +718,142 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
           ),
         ).toBeOnTheScreen();
         expect(fetchStreaming).not.toHaveBeenCalled();
+      },
+      TEMPO_LIMITE_MS,
+    );
+  });
+
+  describe('histórico, atalhos e busca (T-069)', () => {
+    const ID = (final: string) => `0199a000-0000-7000-8000-${final.padStart(12, '0')}`;
+    const mensagem = (
+      id: string,
+      autor: 'usuario' | 'mony',
+      conteudo: string | null,
+      extra: Partial<PaginaConversa['itens'][number]> = {},
+    ) => ({
+      id: ID(id),
+      autor,
+      tipo: 'texto' as const,
+      conteudo,
+      componentes: [],
+      criadoEm: '2026-10-14T12:00:00.000Z',
+      ...extra,
+    });
+
+    /** Da mais nova para a mais antiga, como a API manda. */
+    function historico(consulta: URLSearchParams): Pagina {
+      if (consulta.get('texto') !== null) {
+        return {
+          itens: [mensagem('b1', 'usuario', 'fui ao mercado')],
+          proximoCursor: null,
+          sugestoes: [],
+        };
+      }
+      if (consulta.get('cursor') === 'pagina-2') {
+        return {
+          itens: [mensagem('a1', 'mony', 'Bem-vinda de volta!')],
+          proximoCursor: null,
+          sugestoes: [],
+        };
+      }
+      return {
+        itens: [
+          mensagem('a4', 'mony', 'Anotei R$ 10,00. Em qual categoria?', {
+            componentes: [
+              {
+                tipo: 'botoes',
+                opcoes: [{ id: 'mercado', rotulo: 'Mercado', acao: MERCADO }],
+              },
+            ],
+          }),
+          mensagem('a3', 'usuario', 'gastei 10'),
+          mensagem('a2', 'usuario', null, { tipo: 'audio' }),
+        ],
+        proximoCursor: 'pagina-2',
+        sugestoes: ['Quanto gastei este mês?', 'Como está a fatura do Nubank?'],
+      };
+    }
+
+    function api() {
+      const pedidos: { url: string; corpo: unknown }[] = [];
+      const resto = jest.fn<typeof fetch>((url, opcoes) => {
+        pedidos.push({
+          url: typeof url === 'string' ? url : url instanceof URL ? url.href : url.url,
+          corpo: corpoJson(opcoes),
+        });
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ texto: 'Como você pagou?', componente: null, transacaoId: null }),
+            { status: 200 },
+          ),
+        );
+      });
+      const comTudo = comHistorico(resto, historico);
+      globalThis.fetch = comTudo;
+      return { pedidos, comTudo };
+    }
+
+    it(
+      'RN-084 abre com o histórico, os botões dele respondem, e as mais antigas chegam ao subir',
+      async () => {
+        const { pedidos, comTudo } = api();
+        renderizar();
+
+        expect(
+          await screen.findByText('Anotei R$ 10,00. Em qual categoria?', {}, ESPERA),
+        ).toBeOnTheScreen();
+        expect(screen.getByText('gastei 10')).toBeOnTheScreen();
+        // A mensagem de voz do histórico aparece com o rótulo do arquivo.
+        expect(screen.getByText('Áudio')).toBeOnTheScreen();
+        const [url] = comTudo.mock.calls[0] ?? [];
+        expect(url).toBe('http://localhost:3000/v1/mony/conversa?limite=30');
+
+        fireEvent(screen.getByTestId('mony-lista'), 'onEndReached');
+        expect(await screen.findByText('Bem-vinda de volta!', {}, ESPERA)).toBeOnTheScreen();
+
+        fireEvent.press(screen.getByRole('button', { name: 'Mercado' }));
+        expect(await screen.findByText('Como você pagou?', {}, ESPERA)).toBeOnTheScreen();
+        expect(pedidos.at(-1)?.corpo).toEqual({ acao: MERCADO });
+        expect(screen.queryByRole('button', { name: 'Mercado' })).toBeNull();
+      },
+      TEMPO_LIMITE_MS,
+    );
+
+    it(
+      'os atalhos da API mandam a frase; a busca mostra as mensagens com o texto',
+      async () => {
+        const { comTudo } = api();
+        fetchStreaming.mockResolvedValue(
+          respostaSse([
+            { tipo: 'texto.delta', texto: 'Você gastou R$ 1.234,00 em outubro.' },
+            { tipo: 'fim', mensagemId: '0199a000-0000-7000-8000-000000000009' },
+          ]),
+        );
+        renderizar();
+
+        fireEvent.press(
+          await screen.findByRole('button', { name: 'Quanto gastei este mês?' }, ESPERA),
+        );
+        expect(
+          await screen.findByText('Você gastou R$ 1.234,00 em outubro.', {}, ESPERA),
+        ).toBeOnTheScreen();
+        expect(corpoJson(fetchStreaming.mock.calls[0]?.[1])).toEqual({
+          texto: 'Quanto gastei este mês?',
+        });
+
+        fireEvent.press(screen.getByRole('button', { name: 'Buscar na conversa' }));
+        fireEvent.changeText(
+          await screen.findByLabelText('Buscar mensagem', {}, ESPERA),
+          'mercado',
+        );
+        expect(await screen.findByTestId('mony-resultado-busca', {}, ESPERA)).toHaveTextContent(
+          /Você · 14\/out.*fui ao mercado/,
+        );
+        expect(
+          comTudo.mock.calls.some(
+            ([url]) => typeof url === 'string' && url.includes('texto=mercado'),
+          ),
+        ).toBe(true);
       },
       TEMPO_LIMITE_MS,
     );

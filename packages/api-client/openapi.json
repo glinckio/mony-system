@@ -8432,11 +8432,18 @@
                 "type": "null"
               }
             ]
+          },
+          "sugestoes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
           "itens",
-          "proximoCursor"
+          "proximoCursor",
+          "sugestoes"
         ]
       },
       "ListaMetasDto": {

@@ -458,22 +458,47 @@ describe.runIf(ativo)('integração: Mony', () => {
       'Olá!',
     ]);
     expect(primeira.proximoCursor).not.toBeNull();
+    // T-069: os atalhos vêm só na primeira página sem busca.
+    expect(primeira.sugestoes).toEqual([
+      'Quanto gastei este mês?',
+      'Quero anotar um gasto',
+      'Quero criar um orçamento',
+    ]);
     const segunda = (
       await historico(usuario, `?limite=3&cursor=${primeira.proximoCursor ?? ''}`)
     ).json<PaginaConversa>();
     expect(segunda.itens.map(({ conteudo }) => conteudo)).toEqual(['bom dia']);
     expect(segunda.proximoCursor).toBeNull();
+    expect(segunda.sugestoes).toEqual([]);
 
     const busca = (await historico(usuario, '?texto=MERCADO')).json<PaginaConversa>();
+    expect(busca.sugestoes).toEqual([]);
     expect(busca.itens.map(({ autor, conteudo }) => [autor, conteudo])).toEqual([
       ['mony', 'Mercado anotado? Ainda não.'],
       ['usuario', 'fui ao mercado'],
     ]);
 
     const outro = await usuarioNovo();
+    await app.inject({
+      method: 'POST',
+      url: '/v1/cartoes',
+      headers: { authorization: `Bearer ${outro.acesso}` },
+      payload: {
+        nome: 'Inter',
+        limiteTotalCentavos: 100_000,
+        diaFechamento: 3,
+        diaVencimento: 10,
+        cor: '#FF7A00',
+      },
+    });
     expect((await historico(outro)).json<PaginaConversa>()).toEqual({
       itens: [],
       proximoCursor: null,
+      sugestoes: [
+        'Quanto gastei este mês?',
+        'Como está a fatura do Inter?',
+        'Quero criar um orçamento',
+      ],
     });
     expect((await historico(usuario, '?cursor=invalido')).statusCode).toBe(400);
     expect((await app.inject({ method: 'GET', url: '/v1/mony/conversa' })).statusCode).toBe(401);
