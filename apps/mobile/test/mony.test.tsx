@@ -10,6 +10,8 @@ import { cofre } from '@/lib/auth/cofre';
 import { useSessao } from '@/stores/sessao';
 
 jest.mock('expo/fetch', () => ({ fetch: jest.fn() }));
+// A dica da primeira conversa (T-046) busca o onboarding; aqui o assunto é só o chat.
+jest.mock('@/features/onboarding/components/dica', () => ({ Dica: () => null }));
 
 const fetchStreaming = fetchExpo as unknown as jest.Mock<
   (url: string, opcoes: RequestInit) => Promise<unknown>

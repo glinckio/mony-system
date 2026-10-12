@@ -17,6 +17,7 @@ import ChevronRight from 'lucide-react-native/icons/chevron-right';
 import Circle from 'lucide-react-native/icons/circle';
 import CircleAlert from 'lucide-react-native/icons/circle-alert';
 import CircleCheck from 'lucide-react-native/icons/circle-check';
+import CircleMinus from 'lucide-react-native/icons/circle-minus';
 import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark';
 import Clock from 'lucide-react-native/icons/clock';
 import CreditCard from 'lucide-react-native/icons/credit-card';
@@ -32,6 +33,7 @@ import HeartPulse from 'lucide-react-native/icons/heart-pulse';
 import House from 'lucide-react-native/icons/house';
 import Landmark from 'lucide-react-native/icons/landmark';
 import Laptop from 'lucide-react-native/icons/laptop';
+import Lightbulb from 'lucide-react-native/icons/lightbulb';
 import List from 'lucide-react-native/icons/list';
 import ListFilter from 'lucide-react-native/icons/list-filter';
 import Lock from 'lucide-react-native/icons/lock';
@@ -87,6 +89,7 @@ const ICONES = {
   circle: Circle,
   'circle-alert': CircleAlert,
   'circle-check': CircleCheck,
+  'circle-minus': CircleMinus,
   'circle-question-mark': CircleQuestionMark,
   clock: Clock,
   'credit-card': CreditCard,
@@ -102,6 +105,7 @@ const ICONES = {
   house: House,
   landmark: Landmark,
   laptop: Laptop,
+  lightbulb: Lightbulb,
   list: List,
   'list-filter': ListFilter,
   lock: Lock,

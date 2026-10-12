@@ -5,6 +5,7 @@ import { type ReactElement, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, RefreshControl, ScrollView, SectionList, View } from 'react-native';
 
+import { Dica } from '@/features/onboarding/components/dica';
 import { mensagemDeErro } from '@/lib/formularios';
 import { useHoje } from '@/lib/fuso';
 import { useValorAtrasado } from '@/lib/use-valor-atrasado';
@@ -259,6 +260,8 @@ export default function TelaTransacoes() {
           </View>
         </ScrollView>
       </View>
+
+      <Dica chave="transacoes.selecao" />
 
       <View className="-mx-1 flex-1 overflow-hidden rounded-t-lg bg-superficie">
         <SectionList

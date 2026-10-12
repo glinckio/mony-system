@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
+import { Dica } from '@/features/onboarding/components/dica';
 import { chaveDoToque, enviarMensagemMony } from '@/lib/mony/conversa';
 import { Botao, Campo, Chip, juntarClasses, Tela, Texto } from '@/ui';
 
@@ -117,6 +118,7 @@ export default function TelaMony() {
           contentContainerClassName="gap-3 p-4"
           onContentSizeChange={() => rolagem.current?.scrollToEnd({ animated: true })}
         >
+          <Dica chave="mony.primeira-conversa" />
           {mensagens.length === 0 ? <Texto cor="suave">{t('mony.boasVindas')}</Texto> : null}
           {mensagens.map((mensagem) => (
             <Balao

@@ -57,6 +57,11 @@ function sessao(onboardingConcluido = true, renovacao = 'renovacao-nova-01234567
   };
 }
 
+/** Só as rotas de sessão: o Início também busca o checklist (`/v1/me/onboarding`, T-046). */
+function rotasDeSessao(pedidos: { rota: string }[]) {
+  return pedidos.map(({ rota }) => rota).filter((rota) => rota.startsWith('/v1/auth/'));
+}
+
 function erro(status: number, codigo: string, mensagem: string) {
   return { status, corpo: { erro: { codigo, mensagem, detalhes: null } } };
 }
@@ -155,7 +160,9 @@ describe('autenticação no app (T-034)', () => {
 
       fireEvent.press(screen.getByRole('checkbox'));
       fireEvent.press(criar);
-      expect(await screen.findByRole('header', { name: 'Boas-vindas' }, ESPERA)).toBeOnTheScreen();
+      expect(
+        await screen.findByRole('header', { name: 'Registre gastos só conversando' }, ESPERA),
+      ).toBeOnTheScreen();
       expect(pedidos[0]?.corpo).toMatchObject({
         nome: 'Ana Souza',
         telefone: '(11) 98765-4321',
@@ -185,10 +192,7 @@ describe('autenticação no app (T-034)', () => {
       fireEvent.press(screen.getByRole('button', { name: 'Salvar senha nova e entrar' }));
 
       expect(await screen.findByRole('header', { name: 'Início' }, ESPERA)).toBeOnTheScreen();
-      expect(pedidos.map(({ rota }) => rota)).toEqual([
-        '/v1/auth/senha/codigo',
-        '/v1/auth/senha/redefinir',
-      ]);
+      expect(rotasDeSessao(pedidos)).toEqual(['/v1/auth/senha/codigo', '/v1/auth/senha/redefinir']);
       expect(pedidos[1]?.corpo).toMatchObject({
         email: 'ana@exemplo.com',
         codigo: '123456',
@@ -291,7 +295,7 @@ describe('autenticação no app (T-034)', () => {
 
       fireEvent.press(screen.getByRole('button', { name: 'Desbloquear' }));
       expect(await screen.findByRole('header', { name: 'Início' }, ESPERA)).toBeOnTheScreen();
-      expect(pedidos.map(({ rota }) => rota)).toEqual(['/v1/auth/renovar']);
+      expect(rotasDeSessao(pedidos)).toEqual(['/v1/auth/renovar']);
     },
     TEMPO_LIMITE_MS,
   );
