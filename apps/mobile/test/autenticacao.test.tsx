@@ -309,15 +309,15 @@ describe('autenticação no app (T-034)', () => {
   );
 
   it(
-    'na aba Mais: liga a biometria (confirmando) e sai do aparelho',
+    'no Perfil: liga a biometria (confirmando) e sai da conta',
     async () => {
       const pedidos = api({ '/v1/auth/sair': () => ({ status: 204 }) });
       await cofre.gravarRenovacao('renovacao-guardada-0123456789');
       useSessao.getState().iniciar({ id: 'u1', nome: 'Ana', onboardingConcluido: true }, 'acesso');
-      renderRouter(ROTAS, { initialUrl: '/mais' });
+      renderRouter(ROTAS, { initialUrl: '/mais/perfil' });
 
       fireEvent(
-        await screen.findByLabelText('Desbloquear com biometria', {}, ESPERA),
+        await screen.findByLabelText('Entrar com biometria', {}, ESPERA),
         'valueChange',
         true,
       );
@@ -326,13 +326,16 @@ describe('autenticação no app (T-034)', () => {
       }, ESPERA);
       expect(autenticar).toHaveBeenCalled();
 
-      fireEvent.press(screen.getByRole('button', { name: 'Sair deste aparelho' }));
+      fireEvent.press(screen.getByRole('button', { name: 'Sair da conta' }));
       expect(
         await screen.findByRole('header', { name: 'Seu dinheiro numa conversa' }, ESPERA),
       ).toBeOnTheScreen();
-      expect(pedidos.map(({ rota, corpo }) => [rota, corpo])).toEqual([
-        ['/v1/auth/sair', { renovacao: 'renovacao-guardada-0123456789' }],
-      ]);
+      // O Perfil também busca o `GET /me` (o e-mail); da sessão, só a saída.
+      expect(
+        pedidos
+          .filter(({ rota }) => rota.startsWith('/v1/auth/'))
+          .map(({ rota, corpo }) => [rota, corpo]),
+      ).toEqual([['/v1/auth/sair', { renovacao: 'renovacao-guardada-0123456789' }]]);
       expect(await cofre.lerRenovacao()).toBeNull();
     },
     TEMPO_LIMITE_MS,

@@ -18,9 +18,10 @@ const TELAS = [
 
 /**
  * Boas-vindas do onboarding (design, página 2): o que a Mony faz, em duas telas. "Pular" e o fim
- * levam às permissões. O resto dos primeiros passos fica no checklist do Início (RN-024).
+ * levam às permissões. O resto dos primeiros passos fica no checklist do Início (RN-024). Na
+ * revisão ("Rever tutorial", no Perfil), são só as duas telas, e o fim volta para onde estava.
  */
-export default function TelaBoasVindas() {
+export default function TelaBoasVindas({ revisao = false }: { revisao?: boolean }) {
   const { t } = useTranslation();
   const router = useRouter();
   const [indice, definirIndice] = useState(0);
@@ -28,14 +29,20 @@ export default function TelaBoasVindas() {
   const { Ilustracao } = tela;
 
   function irParaPermissoes() {
-    router.push('/permissoes');
+    if (!revisao) {
+      router.push('/permissoes');
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
   }
 
   return (
     <Tela bordas={['top', 'bottom']} className="px-6 pb-4">
       <IndicadorEtapas
         atual={indice + 1}
-        total={TOTAL_ETAPAS}
+        total={revisao ? TELAS.length : TOTAL_ETAPAS}
         direita={
           // Branco e em negrito: no topo claro do degradê, o azul de link some (design).
           <Pressable
@@ -59,7 +66,11 @@ export default function TelaBoasVindas() {
         </View>
       </ScrollView>
       <Botao
-        titulo={t('onboarding.continuar')}
+        titulo={
+          revisao && indice === TELAS.length - 1
+            ? t('onboarding.entendi')
+            : t('onboarding.continuar')
+        }
         larguraTotal
         aoPressionar={() => {
           if (indice < TELAS.length - 1) definirIndice(indice + 1);

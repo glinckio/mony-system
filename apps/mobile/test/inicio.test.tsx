@@ -3,7 +3,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 
-import { iniciais } from '@/features/inicio/components/topo-inicio';
+import { iniciais, telefoneParaTexto } from '@/lib/nomes';
 import { relogio } from '@/lib/relogio';
 import { usePrivacidade } from '@/stores/privacidade';
 import { useSessao } from '@/stores/sessao';
@@ -219,6 +219,12 @@ describe('Início no app (T-053)', () => {
     expect(iniciais('  ana  maria souza ')).toBe('AS');
     expect(iniciais('Ana')).toBe('AN');
     expect(iniciais('')).toBe('');
+  });
+
+  it('o telefone guardado (+55…) aparece como (11) 98765-4321', () => {
+    expect(telefoneParaTexto('+5511987654321')).toBe('(11) 98765-4321');
+    expect(telefoneParaTexto('+551133334444')).toBe('(11) 3333-4444');
+    expect(telefoneParaTexto('123')).toBe('123');
   });
 
   it(

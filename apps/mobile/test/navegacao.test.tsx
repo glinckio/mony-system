@@ -54,8 +54,7 @@ describe('navegação pela sessão', () => {
       expect(screen.getByRole('tab', { name: aba })).toBeSelected();
       expect(screen.getByRole('header', { name: aba })).toBeOnTheScreen();
     });
-    // A aba Mais confere a biometria do aparelho ao abrir.
-    expect(await screen.findByLabelText('Desbloquear com biometria')).toBeOnTheScreen();
+    expect(await screen.findByRole('button', { name: 'Configurações' })).toBeOnTheScreen();
   });
 
   it('ao sair, volta para o login', () => {

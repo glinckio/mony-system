@@ -3,6 +3,8 @@ export const textosOnboarding = {
   etapa: 'Etapa {{atual}} de {{total}}',
   pular: 'Pular',
   continuar: 'Continuar',
+  /** No fim de "Rever tutorial". */
+  entendi: 'Entendi',
   boasVindas: {
     titulo: 'Registre gastos só conversando',
     texto:

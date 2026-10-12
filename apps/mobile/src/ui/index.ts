@@ -1,5 +1,6 @@
 /** Design system do app (doc 04): telas usam só estes componentes e os tokens. */
 export { AnelProgresso, type PropsAnelProgresso } from './anel-progresso';
+export { Avatar, type PropsAvatar } from './avatar';
 export { BarraProgresso, type CorBarra, type PropsBarraProgresso } from './barra-progresso';
 export { Botao, type PropsBotao, type VarianteBotao } from './botao';
 export { BotaoIcone, type PropsBotaoIcone } from './botao-icone';

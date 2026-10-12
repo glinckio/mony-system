@@ -1,113 +1,91 @@
 import { type Href, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Switch, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
-import { biometriaDisponivel, confirmarBiometria } from '@/lib/auth/biometria';
-import { cofre } from '@/lib/auth/cofre';
-import { sair } from '@/lib/auth/sessao';
-import { Botao, Card, Icone, type NomeIcone, Tela, Texto } from '@/ui';
+import { useSessao } from '@/stores/sessao';
+import { Avatar, Card, Icone, type NomeIcone, Tela, Texto } from '@/ui';
 import { cores } from '@/ui/tokens';
 
-/** Os cadastros que já têm tela; a grade completa da aba é a T-057. */
-const ATALHOS: {
-  rota: Href;
-  icone: NomeIcone;
-  chave: 'orcamentos' | 'metas' | 'relatorios' | 'categorias' | 'contas' | 'permissoes';
-}[] = [
-  { rota: '/orcamentos', icone: 'chart-pie', chave: 'orcamentos' },
-  { rota: '/metas', icone: 'target', chave: 'metas' },
-  { rota: '/relatorios', icone: 'chart-column', chave: 'relatorios' },
-  { rota: '/mais/categorias', icone: 'tag', chave: 'categorias' },
-  { rota: '/mais/contas', icone: 'landmark', chave: 'contas' },
-  { rota: '/mais/permissoes', icone: 'shield', chave: 'permissoes' },
+import { Linha } from '../components/linha';
+
+type ChaveAtalho = 'orcamentos' | 'metas' | 'relatorios' | 'categorias' | 'contas';
+
+/**
+ * A grade do design (página 8) tem Parcelamentos, Orçamentos, Metas, Relatórios, Listas, Lembretes,
+ * Agenda, Bancos e Categorias. Cada atalho entra quando a tela dele existe; Contas (manuais) fica
+ * até Bancos (Open Finance, T-120).
+ */
+const ATALHOS: { chave: ChaveAtalho; icone: NomeIcone; cor: string; rota: Href }[] = [
+  { chave: 'orcamentos', icone: 'chart-pie', cor: cores.atencao, rota: '/orcamentos' },
+  { chave: 'metas', icone: 'target', cor: cores.receita, rota: '/metas' },
+  { chave: 'relatorios', icone: 'chart-column', cor: cores.link, rota: '/relatorios' },
+  { chave: 'categorias', icone: 'tag', cor: cores.estourado, rota: '/mais/categorias' },
+  { chave: 'contas', icone: 'landmark', cor: cores.receita, rota: '/mais/contas' },
 ];
 
-/** Aba Mais. Por enquanto: cadastros, biometria (RN-005) e sair deste aparelho. */
+const POR_LINHA = 3;
+
+/** Aba Mais (design, página 8): o perfil, a grade de atalhos e as configurações. */
 export default function TelaMais() {
   const { t } = useTranslation();
   const router = useRouter();
-  const [disponivel, definirDisponivel] = useState(false);
-  const [ligada, definirLigada] = useState(false);
-  const [saindo, definirSaindo] = useState(false);
+  const nome = useSessao((estado) => estado.usuario?.nome ?? '');
+  const linhas = Array.from({ length: Math.ceil(ATALHOS.length / POR_LINHA) }, (_, indice) =>
+    ATALHOS.slice(indice * POR_LINHA, (indice + 1) * POR_LINHA),
+  );
 
-  useEffect(() => {
-    void (async () => {
-      const [temBiometria, estaLigada] = await Promise.all([
-        biometriaDisponivel(),
-        cofre.biometriaLigada(),
-      ]);
-      definirDisponivel(temBiometria);
-      definirLigada(estaLigada);
-    })();
-  }, []);
-
-  async function mudarBiometria(ligar: boolean) {
-    // Ligar pede a biometria uma vez, para confirmar que é a pessoa e que o sensor funciona.
-    if (ligar && !(await confirmarBiometria(t('mais.biometriaMotivo'), t('mais.cancelar')))) return;
-    await cofre.ligarBiometria(ligar);
-    definirLigada(ligar);
+  function abrirPerfil() {
+    router.push('/mais/perfil');
   }
 
   return (
-    <Tela className="gap-4 p-3">
-      <Texto variante="titulo-lg" accessibilityRole="header">
-        {t('mais.titulo')}
-      </Texto>
-      <Card className="px-2 py-1">
-        {ATALHOS.map(({ rota, icone, chave }, indice) => (
-          <Pressable
-            key={chave}
-            accessibilityRole="button"
-            accessibilityLabel={t(`mais.atalhos.${chave}`)}
-            onPress={() => {
-              router.push(rota);
-            }}
-            className={
-              indice === 0
-                ? 'min-h-toque flex-row items-center gap-3 px-2 py-3 active:opacity-70'
-                : 'min-h-toque flex-row items-center gap-3 border-t border-borda px-2 py-3 active:opacity-70'
-            }
-          >
-            <Icone nome={icone} cor={cores['texto-suave']} />
-            <Texto className="flex-1">{t(`mais.atalhos.${chave}`)}</Texto>
-            <Icone nome="chevron-right" tamanho={18} cor={cores['texto-suave']} />
-          </Pressable>
-        ))}
-      </Card>
-      <Card className="gap-3">
-        <Texto variante="corpo-sm" cor="suave" className="font-forte">
-          {t('mais.seguranca')}
+    <Tela className="px-4 pt-2">
+      <ScrollView contentContainerClassName="gap-3 pb-6">
+        <Texto variante="titulo-lg" accessibilityRole="header">
+          {t('mais.titulo')}
         </Texto>
-        {disponivel ? (
-          <View className="flex-row items-center gap-3">
-            <View className="flex-1">
-              <Texto>{t('mais.biometria')}</Texto>
-              <Texto variante="legenda" cor="suave">
-                {t('mais.biometriaAjuda')}
-              </Texto>
-            </View>
-            <Switch
-              accessibilityLabel={t('mais.biometria')}
-              value={ligada}
-              onValueChange={(valor) => void mudarBiometria(valor)}
-              trackColor={{ true: cores.primaria, false: cores.borda }}
-            />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('mais.perfil', { nome })}
+          onPress={abrirPerfil}
+          className="active:opacity-70"
+        >
+          <Card className="flex-row items-center gap-3">
+            <Avatar nome={nome} />
+            <Texto variante="titulo" className="flex-1" numberOfLines={1}>
+              {nome}
+            </Texto>
+            <Icone nome="chevron-right" tamanho={18} cor={cores['texto-suave']} />
+          </Card>
+        </Pressable>
+        {linhas.map((linha) => (
+          <View key={linha[0]?.chave} className="flex-row gap-3">
+            {linha.map(({ chave, icone, cor, rota }) => (
+              <Pressable
+                key={chave}
+                accessibilityRole="button"
+                accessibilityLabel={t(`mais.atalhos.${chave}`)}
+                onPress={() => {
+                  router.push(rota);
+                }}
+                className="flex-1 items-center gap-2 rounded-lg bg-superficie px-2 py-4 active:opacity-70"
+              >
+                <Icone nome={icone} tamanho={22} cor={cor} />
+                <Texto variante="corpo-sm" className="font-forte" numberOfLines={1}>
+                  {t(`mais.atalhos.${chave}`)}
+                </Texto>
+              </Pressable>
+            ))}
+            {/* Linha incompleta: espaços vazios mantêm os blocos do mesmo tamanho. */}
+            {Array.from({ length: POR_LINHA - linha.length }, (_, indice) => (
+              <View key={`vazio-${String(indice)}`} className="flex-1" />
+            ))}
           </View>
-        ) : null}
-        <Botao
-          variante="secundaria"
-          icone="log-out"
-          titulo={t('mais.sair')}
-          carregando={saindo}
-          aoPressionar={() => {
-            definirSaindo(true);
-            void sair().finally(() => {
-              definirSaindo(false);
-            });
-          }}
-        />
-      </Card>
+        ))}
+        <Card className="py-1">
+          <Linha primeira titulo={t('mais.configuracoes')} aoPressionar={abrirPerfil} />
+        </Card>
+      </ScrollView>
     </Tela>
   );
 }
