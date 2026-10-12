@@ -17,7 +17,7 @@ export function criarProvedorLlm(config: Configuracao): LlmProvider {
     new Logger('IA').warn('IA_PROVEDOR=fake em produção: a Mony responde um texto fixo.');
   }
   // Fora dos testes, um pequeno atraso entre os pedaços, para ver o streaming no app.
-  return new LlmFake(undefined, config.ambiente === 'test' ? 0 : 40);
+  return new LlmFake({ atrasoMs: config.ambiente === 'test' ? 0 : 40 });
 }
 
 /** Provedores de IA (doc 08 e 10). */

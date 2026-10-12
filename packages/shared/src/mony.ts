@@ -5,7 +5,12 @@
 import { z } from 'zod';
 
 import { textoParaCentavos } from './dinheiro.js';
-import { FORMAS_PAGAMENTO, type FormaPagamento } from './enums.js';
+import {
+  AUTORES_MENSAGEM,
+  FORMAS_PAGAMENTO,
+  type FormaPagamento,
+  TIPOS_MENSAGEM,
+} from './enums.js';
 import { VALOR_MAXIMO_CENTAVOS } from './transacoes.js';
 
 /** Valor de um lançamento, em centavos (o mesmo limite da transação). */
@@ -40,6 +45,33 @@ export const esquemaMensagemMony = z.object({
 });
 
 export type DadosMensagemMony = z.infer<typeof esquemaMensagemMony>;
+
+/** Uma mensagem do histórico (`GET /mony/conversa`), do usuário ou da Mony. */
+export const esquemaMensagemConversa = z.object({
+  id: z.uuid(),
+  autor: z.enum(AUTORES_MENSAGEM),
+  /** `botao`: o toque num botão, com o rótulo em `conteudo`. */
+  tipo: z.enum(TIPOS_MENSAGEM),
+  conteudo: z.string().nullable(),
+  componentes: z.array(esquemaComponenteMony),
+  criadoEm: z.iso.datetime(),
+});
+
+/** Histórico da mais nova para a mais antiga, por cursor (doc 05); `texto` procura no conteúdo. */
+export const esquemaConsultaConversa = z.object({
+  texto: z.string().trim().min(1).max(100).optional(),
+  cursor: z.string().max(200).optional(),
+  limite: z.coerce.number().int().min(1).max(100).default(30),
+});
+
+export const esquemaPaginaConversa = z.object({
+  itens: z.array(esquemaMensagemConversa),
+  proximoCursor: z.string().nullable(),
+});
+
+export type MensagemConversa = z.infer<typeof esquemaMensagemConversa>;
+export type ConsultaConversa = z.infer<typeof esquemaConsultaConversa>;
+export type PaginaConversa = z.infer<typeof esquemaPaginaConversa>;
 
 /** O SSE com um evento: `event: <tipo>` e o JSON do evento em `data:`. */
 export function formatarEventoSse(evento: EventoMony): string {

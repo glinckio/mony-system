@@ -1918,6 +1918,63 @@
         ]
       }
     },
+    "/v1/mony/conversa": {
+      "get": {
+        "operationId": "conversaMony",
+        "parameters": [
+          {
+            "name": "texto",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minLength": 1,
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 30,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Da mais nova para a mais antiga.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaConversaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "mony"
+        ]
+      }
+    },
     "/v1/parcelamentos": {
       "get": {
         "operationId": "listarParcelamentos",
@@ -7619,6 +7676,121 @@
           "texto",
           "componente",
           "transacaoId"
+        ]
+      },
+      "PaginaConversaDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "autor": {
+                  "type": "string",
+                  "enum": [
+                    "usuario",
+                    "mony"
+                  ]
+                },
+                "tipo": {
+                  "type": "string",
+                  "enum": [
+                    "texto",
+                    "audio",
+                    "imagem",
+                    "pdf",
+                    "botao"
+                  ]
+                },
+                "conteudo": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "componentes": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "tipo": {
+                            "type": "string",
+                            "const": "botoes"
+                          },
+                          "opcoes": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "rotulo": {
+                                  "type": "string"
+                                },
+                                "acao": {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {}
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "rotulo",
+                                "acao"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "tipo",
+                          "opcoes"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "criadoEm": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "autor",
+                "tipo",
+                "conteudo",
+                "componentes",
+                "criadoEm"
+              ]
+            }
+          },
+          "proximoCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "itens",
+          "proximoCursor"
         ]
       },
       "ListaParcelamentosDto": {

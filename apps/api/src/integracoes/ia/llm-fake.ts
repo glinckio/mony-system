@@ -1,38 +1,71 @@
-import { type EventoLlm, LlmProvider, type PedidoLlm } from './llm.provider';
+import { randomUUID } from 'node:crypto';
+
+import { type ErroLlm, type EventoLlm, LlmProvider, type PedidoLlm } from './llm.provider';
 
 /** O que o modelo falso responde quando nenhuma regra resolve a mensagem. */
 export const RESPOSTA_FAKE =
   'Oi! Eu sou a Mony. Nesta versão de teste eu anoto gastos como "gastei 10" ou "paguei 32,90 no mercado".';
 
+/** Uma resposta roteirizada: texto, pedidos de ferramenta, ou uma falha do provedor. */
+export type TurnoFake =
+  | { texto?: string; ferramentas?: readonly { nome: string; entrada: unknown }[] }
+  | { erro: ErroLlm };
+
+export interface OpcoesLlmFake {
+  /** Espera entre os pedaços, para ver o streaming no app. */
+  atrasoMs?: number;
+  tamanhoPedaco?: number;
+}
+
 /**
- * Modelo que não chama ninguém: responde um texto fixo em pedaços, como um streaming de verdade
- * (desenvolvimento, testes e a PoC sem chave do provedor).
+ * Modelo que não chama ninguém (desenvolvimento, testes e quem não tem chave do provedor). Responde
+ * o roteiro de `roteirizar` em ordem, em pedaços, como um streaming de verdade; sem roteiro,
+ * responde o texto fixo. Guarda os pedidos, para os testes conferirem o que iria ao modelo.
  */
 export class LlmFake extends LlmProvider {
+  readonly modelo = 'fake';
   readonly pedidos: PedidoLlm[] = [];
+  private readonly roteiro: TurnoFake[] = [];
 
-  constructor(
-    private readonly resposta = RESPOSTA_FAKE,
-    private readonly atrasoMs = 0,
-    private readonly tamanhoPedaco = 12,
-  ) {
+  constructor(private readonly opcoes: OpcoesLlmFake = {}) {
     super();
+  }
+
+  /** Enfileira as próximas respostas. */
+  roteirizar(...turnos: TurnoFake[]): void {
+    this.roteiro.push(...turnos);
+  }
+
+  /** Esquece o roteiro e os pedidos (entre testes). */
+  limpar(): void {
+    this.roteiro.length = 0;
+    this.pedidos.length = 0;
   }
 
   async *conversar(pedido: PedidoLlm): AsyncIterable<EventoLlm> {
     this.pedidos.push(pedido);
-    for (let inicio = 0; inicio < this.resposta.length; inicio += this.tamanhoPedaco) {
+    const turno = this.roteiro.shift() ?? { texto: RESPOSTA_FAKE };
+    if ('erro' in turno) throw turno.erro;
+    const texto = turno.texto ?? '';
+    const tamanho = this.opcoes.tamanhoPedaco ?? 12;
+    for (let inicio = 0; inicio < texto.length; inicio += tamanho) {
       if (pedido.sinal?.aborted) return;
-      if (this.atrasoMs > 0) {
-        await new Promise((resolver) => setTimeout(resolver, this.atrasoMs));
+      if (this.opcoes.atrasoMs) {
+        await new Promise((resolver) => setTimeout(resolver, this.opcoes.atrasoMs));
       }
-      yield { tipo: 'texto', texto: this.resposta.slice(inicio, inicio + this.tamanhoPedaco) };
+      yield { tipo: 'texto', texto: texto.slice(inicio, inicio + tamanho) };
     }
-    const entrada = pedido.mensagens.reduce((soma, { texto }) => soma + texto.length, 0);
+    if (pedido.sinal?.aborted) return;
+    const ferramentas = turno.ferramentas ?? [];
+    for (const { nome, entrada } of ferramentas) {
+      yield { tipo: 'ferramenta', id: `toolu_fake_${randomUUID()}`, nome, entrada };
+    }
+    const entrada = JSON.stringify([pedido.sistema, pedido.mensagens, pedido.ferramentas]).length;
     yield {
       tipo: 'fim',
       tokensEntrada: Math.ceil(entrada / 4),
-      tokensSaida: Math.ceil(this.resposta.length / 4),
+      tokensSaida: Math.ceil((texto.length + JSON.stringify(ferramentas).length) / 4),
+      parada: ferramentas.length > 0 ? 'ferramenta' : 'fim',
     };
   }
 }
