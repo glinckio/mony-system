@@ -10,6 +10,7 @@ import { ParcelamentosModule } from '../parcelamentos/parcelamentos.module';
 import { RelatoriosModule } from '../relatorios/relatorios.module';
 import { TransacoesModule } from '../transacoes/transacoes.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
+import { ConfigMonyService } from './config.service';
 import { ConsultoriaMony } from './consultoria.service';
 import { ContextoMonyService } from './contexto.service';
 import { DocumentosMony } from './documentos.service';
@@ -82,6 +83,7 @@ const FERRAMENTAS = [
     RoteadorRegras,
     LancamentosMony,
     ConsultoriaMony,
+    ConfigMonyService,
     DocumentosMony,
     PreferenciasService,
     ContextoMonyService,

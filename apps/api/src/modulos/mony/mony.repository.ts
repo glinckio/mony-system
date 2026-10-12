@@ -77,6 +77,25 @@ const CAMPOS_IMPORTACAO = {
   resultado: true,
 } as const;
 
+/** Uma versão do prompt da Mony (T-068); `ferramentas` e `avaliacao` são validados por quem lê. */
+export interface ConfigSalva {
+  versao: number;
+  promptSistema: string;
+  ferramentas: unknown;
+  modelo: string;
+  ativo: boolean;
+  avaliacao: unknown;
+}
+
+const CAMPOS_CONFIG = {
+  versao: true,
+  promptSistema: true,
+  ferramentas: true,
+  modelo: true,
+  ativo: true,
+  avaliacao: true,
+} as const;
+
 /** Um rascunho de lançamento como sai do banco; `dados` é validado por quem lê. */
 export interface RascunhoSalvo {
   id: string;
@@ -302,6 +321,66 @@ export class MonyRepository {
 
   async registrarLogIa(dados: NovoLogIa): Promise<void> {
     await this.prisma.cliente.logIa.create({ data: dados, select: { id: true } });
+  }
+
+  /** A versão ativa do prompt da Mony; `null` sem nenhuma (vale o prompt local). */
+  configAtiva(): Promise<ConfigSalva | null> {
+    return this.prisma.cliente.monyConfig.findFirst({
+      where: { ativo: true },
+      orderBy: { versao: 'desc' },
+      select: CAMPOS_CONFIG,
+    });
+  }
+
+  configDaVersao(versao: number): Promise<ConfigSalva | null> {
+    return this.prisma.cliente.monyConfig.findUnique({ where: { versao }, select: CAMPOS_CONFIG });
+  }
+
+  /** Grava a próxima versão (a maior + 1), inativa. */
+  async criarConfig(dados: {
+    promptSistema: string;
+    ferramentas: object;
+    modelo: string;
+    criadoPorId: string | null;
+  }): Promise<ConfigSalva> {
+    return this.prisma.cliente.$transaction(async (tx) => {
+      // Duas versões criadas ao mesmo tempo esperam uma pela outra.
+      await tx.$executeRaw`LOCK TABLE mony_config IN SHARE ROW EXCLUSIVE MODE`;
+      const ultima = await tx.monyConfig.aggregate({ _max: { versao: true } });
+      return tx.monyConfig.create({
+        data: {
+          versao: (ultima._max.versao ?? 0) + 1,
+          promptSistema: dados.promptSistema,
+          ferramentas: dados.ferramentas as Prisma.InputJsonObject,
+          modelo: dados.modelo,
+          criadoPorId: dados.criadoPorId,
+        },
+        select: CAMPOS_CONFIG,
+      });
+    });
+  }
+
+  async salvarAvaliacaoConfig(versao: number, avaliacao: object): Promise<void> {
+    await this.prisma.cliente.monyConfig.update({
+      where: { versao },
+      data: { avaliacao: avaliacao as Prisma.InputJsonObject },
+      select: { id: true },
+    });
+  }
+
+  /** Só uma versão ativa: as outras saem na mesma transação. */
+  async ativarConfig(versao: number): Promise<void> {
+    await this.prisma.cliente.$transaction([
+      this.prisma.cliente.monyConfig.updateMany({
+        where: { ativo: true, versao: { not: versao } },
+        data: { ativo: false },
+      }),
+      this.prisma.cliente.monyConfig.update({
+        where: { versao },
+        data: { ativo: true },
+        select: { id: true },
+      }),
+    ]);
   }
 
   /** A importação do arquivo, se já houve leitura (o reenvio não lê de novo o que deu certo). */

@@ -15,7 +15,8 @@
     "test": "vitest run",
     "prisma": "prisma",
     "seed": "prisma db seed",
-    "openapi:exportar": "pnpm run generate && pnpm run build && node dist/exportar-openapi.js"
+    "openapi:exportar": "pnpm run generate && pnpm run build && node dist/exportar-openapi.js",
+    "mony:avaliar": "node dist/avaliar-mony.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1146.0",

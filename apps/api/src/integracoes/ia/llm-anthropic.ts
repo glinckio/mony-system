@@ -149,7 +149,7 @@ export class LlmAnthropic extends LlmProvider {
     const blocos = pedido.sistema.filter((texto) => texto !== '');
     const primeiroComCache = blocos.length - PONTOS_DE_CACHE_NO_SISTEMA;
     return {
-      model: this.modelo,
+      model: pedido.modelo ?? this.modelo,
       max_tokens: pedido.maximoTokens ?? MAXIMO_TOKENS_PADRAO,
       system: blocos.map((texto, indice) => ({
         type: 'text',

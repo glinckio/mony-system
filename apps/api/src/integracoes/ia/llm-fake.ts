@@ -31,6 +31,11 @@ export class LlmFake extends LlmProvider {
     super();
   }
 
+  /** O falso não troca de modelo: o `logs_ia` diz `fake`. */
+  override modeloDo(): string {
+    return this.modelo;
+  }
+
   /** Enfileira as próximas respostas. */
   roteirizar(...turnos: TurnoFake[]): void {
     this.roteiro.push(...turnos);

@@ -41,6 +41,8 @@ export interface PedidoLlm {
   ferramentas?: readonly FerramentaLlm[];
   /** Obriga o modelo a responder chamando esta ferramenta (saída estruturada, T-065). */
   ferramentaObrigatoria?: string;
+  /** Outro modelo do mesmo provedor só nesta chamada (versão de `mony_config`, T-068). */
+  modelo?: string;
   maximoTokens?: number;
   /** Cancela a chamada quando o app fecha a conexão ou o tempo acaba. */
   sinal?: AbortSignal;
@@ -71,4 +73,9 @@ export abstract class LlmProvider {
   /** Nome do modelo, gravado em `logs_ia`. */
   abstract readonly modelo: string;
   abstract conversar(pedido: PedidoLlm): AsyncIterable<EventoLlm>;
+
+  /** O modelo que atende o pedido, para o `logs_ia`. */
+  modeloDo(pedido: Pick<PedidoLlm, 'modelo'>): string {
+    return pedido.modelo ?? this.modelo;
+  }
 }

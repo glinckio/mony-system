@@ -33,6 +33,7 @@ import {
   MENSAGEM_AUDIO_FALHOU,
   MENSAGEM_AUDIO_VAZIO,
 } from '../src/modulos/mony/orquestrador.service';
+import { CONFIG_LOCAL, ConfigMonyService } from '../src/modulos/mony/config.service';
 
 const ativo = process.env.TESTES_INTEGRACAO === '1';
 
@@ -54,6 +55,8 @@ describe.runIf(ativo)('integração: áudio na Mony', () => {
     configurarApp(app, { documentacao: false });
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
+    // T-068: o prompt do código, mesmo se outro arquivo de teste ativar uma versão no banco.
+    app.get(ConfigMonyService).fixar(CONFIG_LOCAL);
     const llm = app.get(LlmProvider);
     const transcritor = app.get(TranscricaoProvider);
     if (!(llm instanceof LlmFake) || !(transcritor instanceof TranscricaoFake)) {
