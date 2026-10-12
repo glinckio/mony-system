@@ -1,4 +1,5 @@
-import type { FormaPagamento, TipoTransacao } from '@mony/shared/enums';
+import type { FormaPagamento, FrequenciaRecorrencia, TipoTransacao } from '@mony/shared/enums';
+import { type DadosNovaRecorrencia, esquemaNovaRecorrencia } from '@mony/shared/recorrencias';
 import {
   type DadosAtualizacaoTransacao,
   type DadosNovaTransacao,
@@ -28,12 +29,17 @@ export interface ValoresFormulario {
   observacao: string;
   /** Os anexos que ficam no lançamento (RN-040), já enviados ao S3. */
   anexoIds: string[];
+  /** Só no lançamento novo: com frequência, ele vira uma recorrência (RN-043). */
+  repetir: FrequenciaRecorrencia | null;
+  /** Data final da recorrência, `DD/MM/AAAA`; vazio é sem data final. */
+  repetirAte: string;
 }
 
 export type CampoFormulario = keyof ValoresFormulario;
 
 export type Pedido =
   | { tipo: 'novo'; dados: DadosNovaTransacao }
+  | { tipo: 'recorrencia'; dados: DadosNovaRecorrencia }
   | { tipo: 'atualizacao'; dados: DadosAtualizacaoTransacao };
 
 export type ResultadoValidacao =
@@ -53,6 +59,8 @@ export function valoresIniciais(hoje: string, original: Transacao | null): Valor
       pago: null,
       observacao: '',
       anexoIds: [],
+      repetir: null,
+      repetirAte: '',
     };
   }
   return {
@@ -67,6 +75,8 @@ export function valoresIniciais(hoje: string, original: Transacao | null): Valor
     pago: original.status === 'pago',
     observacao: original.observacao ?? '',
     anexoIds: original.anexos.map(({ id }) => id),
+    repetir: null,
+    repetirAte: '',
   };
 }
 
@@ -95,6 +105,28 @@ export function montarNovaTransacao(valores: ValoresFormulario): DadosNovaTransa
     ...(!noCartao && valores.pago !== null ? { status: valores.pago ? 'pago' : 'pendente' } : {}),
     ...(observacao === '' ? {} : { observacao }),
     ...(valores.anexoIds.length === 0 ? {} : { anexoIds: valores.anexoIds }),
+  };
+}
+
+/**
+ * O corpo do `POST /recorrencias` (RN-043): o modelo do lançamento, a frequência, a data como
+ * início e a data final, se houver. A API gera as ocorrências; status, observação e anexos não
+ * fazem parte do modelo.
+ */
+export function montarNovaRecorrencia(valores: ValoresFormulario): DadosNovaRecorrencia {
+  const noCartao = ehCompraNoCartao(valores);
+  const dataFim = textoParaData(valores.repetirAte);
+  return {
+    tipo: valores.tipo,
+    descricao: valores.descricao.trim(),
+    valorCentavos: valores.valorCentavos,
+    categoriaId: valores.categoriaId,
+    ...(valores.formaPagamento === null ? {} : { formaPagamento: valores.formaPagamento }),
+    ...(noCartao && valores.cartaoId !== null ? { cartaoId: valores.cartaoId } : {}),
+    ...(!noCartao && valores.contaId !== null ? { contaId: valores.contaId } : {}),
+    frequencia: valores.repetir ?? 'mensal',
+    dataInicio: textoParaData(valores.data) ?? '',
+    ...(dataFim === null ? {} : { dataFim }),
   };
 }
 
@@ -160,24 +192,37 @@ const CAMPO_DO_ERRO: Partial<Record<string, CampoFormulario>> = {
   status: 'formaPagamento',
   observacao: 'observacao',
   anexoIds: 'anexoIds',
+  dataInicio: 'data',
+  dataFim: 'repetirAte',
+  frequencia: 'repetir',
 };
 
 /**
  * Valida com os esquemas do `@mony/shared` (os mesmos da API) e monta o pedido. Lançamento novo e
  * edição livre passam pelo esquema de criação inteiro (RN-041: valor, descrição, categoria e,
- * na despesa, forma de pagamento); edição travada, só pelo de atualização.
+ * na despesa, forma de pagamento); edição travada, só pelo de atualização; o novo que repete,
+ * pelo da recorrência (RN-043), com a data final, se houver, a partir do início.
  */
 export function validarFormulario(
   valores: ValoresFormulario,
   original: Transacao | null,
 ): ResultadoValidacao {
   const campos = new Set<CampoFormulario>();
-  if (textoParaData(valores.data) === null) campos.add('data');
+  const data = textoParaData(valores.data);
+  if (data === null) campos.add('data');
+
+  const repete = original === null && valores.repetir !== null;
+  if (repete && valores.repetirAte.trim() !== '') {
+    const ate = textoParaData(valores.repetirAte);
+    if (ate === null || (data !== null && ate < data)) campos.add('repetirAte');
+  }
 
   const travada = original !== null && motivoDaTrava(original) !== null;
-  const resultado = travada
-    ? esquemaAtualizacaoTransacao.safeParse(montarAtualizacao(valores, original))
-    : esquemaNovaTransacao.safeParse(montarNovaTransacao(valores));
+  const resultado = repete
+    ? esquemaNovaRecorrencia.safeParse(montarNovaRecorrencia(valores))
+    : travada
+      ? esquemaAtualizacaoTransacao.safeParse(montarAtualizacao(valores, original))
+      : esquemaNovaTransacao.safeParse(montarNovaTransacao(valores));
   if (!resultado.success) {
     for (const problema of resultado.error.issues) {
       const campo = CAMPO_DO_ERRO[String(problema.path[0])];
@@ -185,6 +230,8 @@ export function validarFormulario(
     }
   }
   if (campos.size > 0) return { valido: false, campos: [...campos] };
+  if (repete)
+    return { valido: true, pedido: { tipo: 'recorrencia', dados: montarNovaRecorrencia(valores) } };
   return {
     valido: true,
     pedido:

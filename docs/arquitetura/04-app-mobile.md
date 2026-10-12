@@ -200,7 +200,8 @@ Telas em `src/features/transacoes`, no design da página 4 (`docs/design`):
   - a `Idempotency-Key` é uma por formulário;
   - excluir pede confirmação, e na ocorrência de recorrência pergunta só esta, esta e as próximas, ou todas (RN-043). Parcela, transferência e compra em fatura paga não têm o botão.
 - **Anexos** (T-058, RN-040): câmera, galeria ou PDF, até cinco por lançamento. A foto é reduzida no aparelho (`expo-image-manipulator`, lado maior até 2.000 px, JPEG); o PDF vem do `expo-document-picker`. Cada anexo vai direto ao S3 ao ser escolhido (`POST /arquivos` com tipo e tamanho, depois o `PUT` na URL assinada com os cabeçalhos dela) e só fica no lançamento quando ele é salvo (`anexoIds`; na edição, a lista inteira, só se mudou, inclusive no lançamento travado). O que já está no lançamento abre pela URL de leitura (`GET /arquivos/:id`) e pode sair. Os textos dos pedidos de câmera e fotos vão no plugin do `expo-image-picker`.
-- **Ainda não:** recorrência no formulário (tarefa própria no BACKLOG).
+- **Recorrência** (T-059, RN-043): o lançamento novo tem "Repetir" (toda semana, todo mês ou todo ano, com "Até" opcional). Com ele, o salvar vira `POST /recorrencias` (a data é o início; a mesma `Idempotency-Key`), e a API gera as ocorrências; status, observação e anexos somem do formulário, porque são de cada lançamento. A ocorrência mostra a recorrência dela ("Repete todo mês · sem data final"), com "Editar recorrência" e "Parar recorrência" (`DELETE /recorrencias/:id`, com confirmação).
+- **Editar recorrência** (`/recorrencias/<id>`, no grupo `(telas)`): valor, descrição, categoria, forma (com cartão ou conta), frequência, dia (do mês, ou da semana na semanal; trocar entre as duas volta ao dia da data de início) e data final (vazia tira). Vai só o que mudou (`PATCH /recorrencias/:id`), e a API refaz as ocorrências futuras livres.
 
 ## Categorias e contas (T-049)
 
