@@ -1,20 +1,12 @@
 /**
- * Mony (doc 08): o contrato do chat em SSE e das ações por botão, o leitor de SSE (usado pelo app
- * e pelo cliente do provedor de IA) e as regras puras do fluxo "gastei 10". Começou na PoC T-020.
+ * Mony (doc 08): o contrato do chat em SSE, do histórico e das ações por botão, e o leitor de SSE
+ * (usado pelo app e pelo cliente do provedor de IA). As regras do rascunho estão em `rascunhos`.
+ * Começou na PoC T-020.
  */
 import { z } from 'zod';
 
-import { textoParaCentavos } from './dinheiro.js';
-import {
-  AUTORES_MENSAGEM,
-  FORMAS_PAGAMENTO,
-  type FormaPagamento,
-  TIPOS_MENSAGEM,
-} from './enums.js';
-import { VALOR_MAXIMO_CENTAVOS } from './transacoes.js';
-
-/** Valor de um lançamento, em centavos (o mesmo limite da transação). */
-const esquemaValor = z.number().int().min(1).max(VALOR_MAXIMO_CENTAVOS);
+import { AUTORES_MENSAGEM, TIPOS_MENSAGEM } from './enums.js';
+import { CAMPOS_RASCUNHO } from './rascunhos.js';
 
 /** Uma opção de botão. O `acao` volta inteiro em `POST /mony/acoes`. */
 export const esquemaOpcaoBotao = z.object({
@@ -156,39 +148,18 @@ export function eventoMonyDoSse(evento: EventoSse): EventoMony | null {
 }
 
 /**
- * Fluxo "gastei 10" (RN-080, PoC T-020): o valor de um gasto dito em texto livre, como "gastei
- * 10", "paguei R$ 32,90 no mercado" ou "comprei pão 7,50". `null` se não há verbo de gasto ou
- * valor. A versão completa (descrição, data, cartão, parcelas) é da T-061.
+ * A ação de um botão (RN-084): responde o campo pendente do rascunho (T-061). `valor` é o id da
+ * categoria (ou `outra`, para ver todas), a forma de pagamento, o id do cartão ou o número de
+ * parcelas (1 é à vista). O servidor confere tudo de novo contra o rascunho e os dados do usuário.
  */
-export function valorDoGasto(texto: string): number | null {
-  const normalizado = texto.toLowerCase();
-  if (!/\b(gastei|paguei|comprei|torrei|desembolsei)\b/.test(normalizado)) return null;
-  const numero = /(?:r\$\s*)?(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?)/.exec(normalizado);
-  if (!numero?.[1]) return null;
-  const centavos = textoParaCentavos(numero[1]);
-  return centavos !== null && esquemaValor.safeParse(centavos).success ? centavos : null;
-}
+export const esquemaAcaoMony = z.object({
+  rascunhoId: z.uuid(),
+  campo: z.enum(CAMPOS_RASCUNHO),
+  valor: z.string().min(1).max(50),
+});
 
-/** Formas de pagamento oferecidas em botão no fluxo "gastei 10" (cartão entra na T-061). */
-export const FORMAS_DO_GASTO_RAPIDO = [
-  'pix',
-  'debito',
-  'dinheiro',
-] as const satisfies readonly FormaPagamento[];
-
-/**
- * PoC T-020: a ação de cada botão carrega o estado do lançamento em montagem (a T-061 troca por
- * rascunho no servidor). O servidor valida tudo de novo: valor, categoria do usuário e forma.
- */
-export const esquemaAcaoMony = z.discriminatedUnion('etapa', [
-  z.object({ etapa: z.literal('categoria'), valorCentavos: esquemaValor, categoriaId: z.uuid() }),
-  z.object({
-    etapa: z.literal('forma'),
-    valorCentavos: esquemaValor,
-    categoriaId: z.uuid(),
-    formaPagamento: z.enum(FORMAS_PAGAMENTO),
-  }),
-]);
+/** Valor de `acao.valor` que pede a lista de todas as categorias (RN-081: [Outra]). */
+export const VALOR_OUTRA_CATEGORIA = 'outra';
 
 export const esquemaPedidoAcaoMony = z.object({ acao: esquemaAcaoMony });
 

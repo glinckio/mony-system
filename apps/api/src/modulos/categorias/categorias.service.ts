@@ -7,15 +7,17 @@ import {
   type FiltroCategorias,
   type ListaCategorias,
 } from '@mony/shared/categorias';
+import type { DataCalendario } from '@mony/shared/datas';
 
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
+import { paraDataDoBanco } from '../transacoes/transacoes.repository';
 import { type CategoriaDoUsuario, CategoriasRepository } from './categorias.repository';
 
 /**
- * Categorias de receita e despesa (RN-065, RN-066). Usado pelas rotas e, depois, pela Mony
- * (T-062), sempre com o `Contexto`.
+ * Categorias de receita e despesa (RN-065, RN-066). Usado pelas rotas e pela Mony, sempre com o
+ * `Contexto`.
  */
 @Injectable()
 export class CategoriasService {
@@ -27,6 +29,23 @@ export class CategoriasService {
   async listar(contexto: Contexto, filtro: FiltroCategorias = {}): Promise<ListaCategorias> {
     const itens = await this.repositorio.listar(usuarioDoContexto(contexto), filtro.tipo);
     return { itens: itens.map(paraResposta) };
+  }
+
+  /**
+   * RN-081: as `quantidade` categorias de despesa mais usadas desde `desde` (botões da Mony). As
+   * preferências por estabelecimento entram na T-063.
+   */
+  async maisUsadas(
+    contexto: Contexto,
+    desde: DataCalendario,
+    quantidade: number,
+  ): Promise<Categoria[]> {
+    const itens = await this.repositorio.maisUsadas(
+      usuarioDoContexto(contexto),
+      paraDataDoBanco(desde),
+      quantidade,
+    );
+    return itens.map(paraResposta);
   }
 
   async buscar(contexto: Contexto, id: string): Promise<Categoria> {

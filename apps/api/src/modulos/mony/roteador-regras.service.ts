@@ -1,136 +1,456 @@
 import { Injectable } from '@nestjs/common';
-import { dataNoFuso } from '@mony/shared/datas';
+import type { Categoria } from '@mony/shared/categorias';
+import { type DataCalendario, dataNoFuso } from '@mony/shared/datas';
 import { formatarCentavos } from '@mony/shared/dinheiro';
-import type { FormaPagamento } from '@mony/shared/enums';
+import { FORMAS_PAGAMENTO, type FormaPagamento } from '@mony/shared/enums';
 import {
   type AcaoMony,
   type ComponenteMony,
-  FORMAS_DO_GASTO_RAPIDO,
+  type OpcaoBotao,
   type RespostaAcaoMony,
-  valorDoGasto,
+  VALOR_OUTRA_CATEGORIA,
 } from '@mony/shared/mony';
+import { MAXIMO_PARCELAS } from '@mony/shared/parcelamentos';
+import {
+  acharPorNome,
+  type CampoRascunho,
+  type DadosRascunho,
+  descricaoDoGasto,
+  diasAtras,
+  formaDoTexto,
+  normalizar,
+  parcelasDoTexto,
+  proximoCampo,
+  valorDoGasto,
+} from '@mony/shared/rascunhos';
 import { somarDias } from '@mony/shared/recorrencias';
 
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
+import { CartoesService } from '../cartoes/cartoes.service';
 import { CategoriasService } from '../categorias/categorias.service';
-import { paraDataDoBanco } from '../transacoes/transacoes.repository';
+import { ParcelamentosService } from '../parcelamentos/parcelamentos.service';
 import { TransacoesService } from '../transacoes/transacoes.service';
-import { MonyRepository } from './mony.repository';
+import { UsuariosService } from '../usuarios/usuarios.service';
+import { type Rascunho, RascunhosService } from './rascunhos.service';
 
-/** RN-081: quantas categorias viram botão. */
+/** RN-081: quantas categorias viram botão, além do [Outra]. */
 const CATEGORIAS_EM_BOTAO = 4;
 /** Janela do "mais usadas". */
 const DIAS_DE_USO = 90;
+/** Parcelas oferecidas em botão; outras quantidades vão por texto ("em 18x"). */
+const PARCELAS_EM_BOTAO = [1, 2, 3, 4, 5, 6, 10, 12] as const;
+/** Formas de pagamento oferecidas em botão; o crédito só com cartão cadastrado. */
+const FORMAS_EM_BOTAO = [
+  'pix',
+  'debito',
+  'cartao_credito',
+  'dinheiro',
+  'boleto',
+] as const satisfies readonly FormaPagamento[];
 
 export const ROTULO_FORMA: Record<FormaPagamento, string> = {
   pix: 'Pix',
   debito: 'Débito',
   dinheiro: 'Dinheiro',
-  cartao_credito: 'Cartão de crédito',
+  cartao_credito: 'Crédito',
   boleto: 'Boleto',
 };
 
-/** Resposta sem o modelo: o texto da Mony e, se houver, a próxima pergunta com botões. */
+/** "no Pix", "em dinheiro": como a forma entra na frase do resumo. */
+const NA_FRASE: Record<Exclude<FormaPagamento, 'cartao_credito'>, string> = {
+  pix: 'no Pix',
+  debito: 'no débito',
+  dinheiro: 'em dinheiro',
+  boleto: 'no boleto',
+};
+
+const PERGUNTAS: Record<CampoRascunho, string> = {
+  categoria: 'Em qual categoria?',
+  forma_pagamento: 'Como você pagou?',
+  cartao: 'Em qual cartão?',
+  parcelas: 'À vista ou parcelado?',
+};
+
+const CAMPO_POR_EXTENSO: Record<CampoRascunho, string> = {
+  categoria: 'a categoria',
+  forma_pagamento: 'a forma de pagamento',
+  cartao: 'o cartão',
+  parcelas: 'se foi à vista ou parcelado',
+};
+
+/** Pedidos para largar o lançamento em andamento. */
+const CANCELAR = /^(cancela(r)?|deixa (pra|para) la|esquece|desisto|nao quero mais)\b/;
+
+const reais = (centavos: number) => formatarCentavos(centavos);
+const rotuloParcelas = (parcelas: number) => (parcelas === 1 ? 'À vista' : `${String(parcelas)}x`);
+
+/** Resposta sem o modelo: o texto da Mony, a próxima pergunta e o lançamento gravado. */
 export interface RespostaRegra {
   texto: string;
   componente: ComponenteMony | null;
+  transacaoId: string | null;
 }
 
 /**
- * Respostas por regra, sem o modelo (doc 08). Por enquanto o fluxo "gastei 10" da PoC T-020: o
- * valor, botões de categoria e de forma de pagamento, e a despesa gravada. Rascunhos no servidor e
- * texto livre respondendo a um rascunho vêm na T-061.
+ * O que fazer com a mensagem: responder por regra, ou mandar ao modelo. Com rascunho em andamento,
+ * o modelo recebe a descrição dele e, depois da resposta, a pergunta pendente volta com os botões
+ * (RN-080, RN-085).
+ */
+export type ResultadoRegras =
+  | { tipo: 'resposta'; resposta: RespostaRegra }
+  | { tipo: 'modelo'; rascunho: { descricao: string; pergunta: RespostaRegra } | null };
+
+/** O que as regras consultam do usuário, uma vez por mensagem. */
+interface Catalogo {
+  hoje: DataCalendario;
+  categorias: Categoria[];
+  cartoes: { id: string; nome: string }[];
+}
+
+/**
+ * Respostas por regra, sem o modelo (doc 08): o rascunho do lançamento ("gastei 10" → categoria →
+ * forma de pagamento → cartão → à vista ou parcelado → gravado), uma pergunta por vez e sempre com
+ * botões (RN-080). Toque em botão (RN-084) e texto que responde a pergunta (RN-085) completam o
+ * rascunho; um gasto novo com valor troca o rascunho por outro.
  */
 @Injectable()
 export class RoteadorRegras {
   constructor(
-    private readonly repositorio: MonyRepository,
+    private readonly rascunhos: RascunhosService,
     private readonly categorias: CategoriasService,
+    private readonly cartoes: CartoesService,
     private readonly transacoes: TransacoesService,
+    private readonly parcelamentos: ParcelamentosService,
+    private readonly usuarios: UsuariosService,
     private readonly clock: Clock,
   ) {}
 
-  /** A resposta da mensagem, se uma regra resolve; `null` manda a mensagem ao modelo. */
-  async responder(contexto: Contexto, texto: string): Promise<RespostaRegra | null> {
+  async responder(contexto: Contexto, conversaId: string, texto: string): Promise<ResultadoRegras> {
+    const atual = await this.rascunhos.ativo(conversaId);
     const valor = valorDoGasto(texto);
-    if (valor === null) return null;
-    return {
-      texto: `Anotei ${formatarCentavos(valor)}. Em qual categoria?`,
-      componente: await this.botoesDeCategoria(usuarioDoContexto(contexto), valor),
-    };
-  }
-
-  /**
-   * Toque num botão (RN-084): avança o lançamento sem passar pelo modelo. Devolve também o rótulo
-   * do botão tocado, que vai para o histórico.
-   */
-  async agir(
-    contexto: Contexto,
-    acao: AcaoMony,
-  ): Promise<{ resposta: RespostaAcaoMony; toque: string }> {
-    const categoria = await this.categorias.buscar(contexto, acao.categoriaId);
-    if (categoria.tipo !== 'despesa') {
-      throw new ErroDominio('REQUISICAO_INVALIDA', {
-        mensagem: 'A categoria do gasto precisa ser de despesa.',
-      });
-    }
-    if (acao.etapa === 'categoria') {
+    if (valor !== null) {
+      if (atual) await this.rascunhos.descartar(atual.id);
+      const catalogo = await this.catalogo(contexto);
+      const dados = this.aplicarTexto(
+        {
+          valorCentavos: valor,
+          descricao: descricaoDoGasto(
+            texto,
+            catalogo.cartoes.map(({ nome }) => nome),
+          ),
+          data: somarDias(catalogo.hoje, -diasAtras(texto)),
+        },
+        texto,
+        catalogo,
+      );
       return {
-        toque: categoria.nome,
+        tipo: 'resposta',
+        resposta: await this.avancar(contexto, conversaId, dados, catalogo, {
+          antes: atual ? `Deixei de lado o lançamento de ${reais(atual.dados.valorCentavos)}.` : '',
+          anotei: `Anotei ${reais(valor)}.`,
+        }),
+      };
+    }
+    if (!atual) return { tipo: 'modelo', rascunho: null };
+
+    const normalizado = normalizar(texto.trim());
+    if (CANCELAR.test(normalizado)) {
+      await this.rascunhos.descartar(atual.id);
+      return {
+        tipo: 'resposta',
         resposta: {
-          texto: 'Como você pagou?',
-          componente: {
-            tipo: 'botoes',
-            opcoes: FORMAS_DO_GASTO_RAPIDO.map((forma) => ({
-              id: forma,
-              rotulo: ROTULO_FORMA[forma],
-              acao: { ...acao, etapa: 'forma', formaPagamento: forma },
-            })),
-          },
+          texto: `Tudo bem, deixei de lado o lançamento de ${reais(atual.dados.valorCentavos)}.`,
+          componente: null,
           transacaoId: null,
         },
       };
     }
-    const { transacao } = await this.transacoes.registrar(
-      { ...contexto, origem: 'mony' },
-      {
-        tipo: 'despesa',
-        descricao: categoria.nome,
-        valorCentavos: acao.valorCentavos,
-        categoriaId: categoria.id,
-        formaPagamento: acao.formaPagamento,
-      },
-    );
+    const catalogo = await this.catalogo(contexto);
+    if (atual.campoPendente === 'categoria' && /^outras?\b/.test(normalizado)) {
+      return {
+        tipo: 'resposta',
+        resposta: await this.pergunta(contexto, atual, catalogo, { todasAsCategorias: true }),
+      };
+    }
+    // RN-085: a resposta completa o rascunho em andamento.
+    const dados = this.aplicarTexto(atual.dados, texto, catalogo);
+    if (atual.campoPendente && proximoCampo(dados) !== atual.campoPendente) {
+      return {
+        tipo: 'resposta',
+        resposta: await this.avancar(contexto, conversaId, dados, catalogo),
+      };
+    }
     return {
-      toque: ROTULO_FORMA[acao.formaPagamento],
-      resposta: {
-        texto: `Pronto! Anotei ${formatarCentavos(acao.valorCentavos)} em ${categoria.nome}, no ${ROTULO_FORMA[acao.formaPagamento]}.`,
-        componente: null,
-        transacaoId: transacao.id,
+      tipo: 'modelo',
+      rascunho: {
+        descricao: this.descrever(atual, catalogo),
+        pergunta: await this.pergunta(contexto, atual, catalogo),
       },
     };
   }
 
-  private async botoesDeCategoria(
-    usuarioId: string,
-    valorCentavos: number,
-  ): Promise<ComponenteMony> {
-    const fuso = await this.repositorio.fusoDoUsuario(usuarioId);
-    const desde = paraDataDoBanco(somarDias(dataNoFuso(this.clock.agora(), fuso), -DIAS_DE_USO));
-    const categorias = await this.repositorio.categoriasMaisUsadas(
-      usuarioId,
-      desde,
-      CATEGORIAS_EM_BOTAO,
-    );
+  /**
+   * Toque num botão (RN-084): responde o campo pendente do rascunho, sem o modelo. Devolve também o
+   * rótulo do botão, que vai para o histórico.
+   */
+  async agir(
+    contexto: Contexto,
+    conversaId: string,
+    acao: AcaoMony,
+  ): Promise<{ resposta: RespostaAcaoMony; toque: string }> {
+    const atual = await this.rascunhos.ativo(conversaId);
+    if (!atual || atual.id !== acao.rascunhoId) throw new ErroDominio('RASCUNHO_EXPIRADO');
+    if (atual.campoPendente !== acao.campo) {
+      throw new ErroDominio('CONFLITO', { mensagem: 'Essa pergunta já foi respondida.' });
+    }
+    const catalogo = await this.catalogo(contexto);
+    const invalido = () =>
+      new ErroDominio('REQUISICAO_INVALIDA', { mensagem: 'Opção inválida para esta pergunta.' });
+    let dados: DadosRascunho;
+    let toque: string;
+    switch (acao.campo) {
+      case 'categoria': {
+        if (acao.valor === VALOR_OUTRA_CATEGORIA) {
+          return {
+            toque: 'Outra',
+            resposta: await this.pergunta(contexto, atual, catalogo, { todasAsCategorias: true }),
+          };
+        }
+        const categoria = await this.categorias.buscar(contexto, acao.valor);
+        if (categoria.tipo !== 'despesa') throw invalido();
+        dados = { ...atual.dados, categoriaId: categoria.id };
+        toque = categoria.nome;
+        break;
+      }
+      case 'forma_pagamento': {
+        const forma = FORMAS_PAGAMENTO.find((item) => item === acao.valor);
+        if (!forma) throw invalido();
+        dados = { ...atual.dados, formaPagamento: forma };
+        toque = ROTULO_FORMA[forma];
+        break;
+      }
+      case 'cartao': {
+        const cartao = await this.cartoes.buscar(contexto, acao.valor);
+        dados = { ...atual.dados, cartaoId: cartao.id };
+        toque = cartao.nome;
+        break;
+      }
+      case 'parcelas': {
+        const parcelas = Number(acao.valor);
+        if (!Number.isInteger(parcelas) || parcelas < 1 || parcelas > MAXIMO_PARCELAS) {
+          throw invalido();
+        }
+        dados = { ...atual.dados, parcelas };
+        toque = rotuloParcelas(parcelas);
+        break;
+      }
+    }
+    return { toque, resposta: await this.avancar(contexto, conversaId, dados, catalogo) };
+  }
+
+  private async catalogo(contexto: Contexto): Promise<Catalogo> {
+    const [perfil, categorias, cartoes] = await Promise.all([
+      this.usuarios.perfil(usuarioDoContexto(contexto)),
+      this.categorias.listar(contexto, { tipo: 'despesa' }),
+      this.cartoes.listar(contexto),
+    ]);
     return {
-      tipo: 'botoes',
-      opcoes: categorias.map(({ id, nome }) => ({
-        id,
-        rotulo: nome,
-        acao: { etapa: 'categoria', valorCentavos, categoriaId: id },
-      })),
+      hoje: dataNoFuso(this.clock.agora(), perfil.fusoHorario),
+      categorias: categorias.itens,
+      cartoes: cartoes.itens.map(({ id, nome }) => ({ id, nome })),
     };
   }
+
+  /**
+   * Preenche o que o texto diz e o rascunho ainda não tem: categoria (pelo nome, na descrição ou
+   * no texto), forma de pagamento, cartão (o nome dele já diz crédito) e parcelas (parcelado é no
+   * crédito). O que já estava preenchido não muda.
+   */
+  private aplicarTexto(dados: DadosRascunho, texto: string, catalogo: Catalogo): DadosRascunho {
+    const novo = { ...dados };
+    const categoria =
+      (dados.descricao ? acharPorNome(dados.descricao, catalogo.categorias) : null) ??
+      acharPorNome(texto, catalogo.categorias);
+    if (novo.categoriaId === undefined && categoria) novo.categoriaId = categoria.id;
+    const forma = formaDoTexto(texto);
+    const cartao = acharPorNome(texto, catalogo.cartoes);
+    const parcelas = parcelasDoTexto(texto);
+    if (novo.formaPagamento === undefined) {
+      if (forma) novo.formaPagamento = forma;
+      else if (cartao || (parcelas !== null && parcelas > 1))
+        novo.formaPagamento = 'cartao_credito';
+    }
+    if (novo.formaPagamento === 'cartao_credito') {
+      if (novo.cartaoId === undefined && cartao) novo.cartaoId = cartao.id;
+      if (novo.parcelas === undefined && parcelas !== null) novo.parcelas = parcelas;
+    }
+    return novo;
+  }
+
+  /**
+   * O próximo passo do rascunho (RN-080): grava o lançamento quando está completo, senão guarda o
+   * rascunho e faz a próxima pergunta. Crédito sem cartão cadastrado volta para a forma de
+   * pagamento; com um cartão só, ele já vale.
+   */
+  private async avancar(
+    contexto: Contexto,
+    conversaId: string,
+    dados: DadosRascunho,
+    catalogo: Catalogo,
+    abertura: { antes: string; anotei: string } = { antes: '', anotei: '' },
+  ): Promise<RespostaRegra> {
+    let completo = { ...dados };
+    const avisos: string[] = [];
+    if (completo.formaPagamento === 'cartao_credito') {
+      const [unico, ...outros] = catalogo.cartoes;
+      if (!unico) {
+        const { valorCentavos, descricao, data, categoriaId } = completo;
+        completo = { valorCentavos, descricao, data, ...(categoriaId ? { categoriaId } : {}) };
+        avisos.push('Você ainda não tem cartão de crédito cadastrado.');
+      } else if (outros.length === 0) {
+        completo.cartaoId ??= unico.id;
+      }
+    }
+    const campo = proximoCampo(completo);
+    if (campo === null) {
+      const gravado = await this.gravar(contexto, completo, catalogo);
+      const atual = await this.rascunhos.ativo(conversaId);
+      if (atual) await this.rascunhos.descartar(atual.id);
+      // O resumo já diz o valor: sem o "Anotei" da abertura.
+      return { ...gravado, texto: juntar([abertura.antes, ...avisos, gravado.texto]) };
+    }
+    const rascunho = await this.rascunhos.salvar(
+      usuarioDoContexto(contexto),
+      conversaId,
+      completo,
+      campo,
+    );
+    const pergunta = await this.pergunta(contexto, rascunho, catalogo);
+    return {
+      ...pergunta,
+      texto: juntar([abertura.antes, abertura.anotei, ...avisos, pergunta.texto]),
+    };
+  }
+
+  /** A pergunta do campo pendente, com os botões (RN-080, RN-081). */
+  private async pergunta(
+    contexto: Contexto,
+    rascunho: Rascunho,
+    catalogo: Catalogo,
+    opcoes: { todasAsCategorias?: boolean } = {},
+  ): Promise<RespostaRegra> {
+    const campo = rascunho.campoPendente ?? proximoCampo(rascunho.dados) ?? 'categoria';
+    const botao = (valor: string, rotulo: string): OpcaoBotao => ({
+      id: valor,
+      rotulo,
+      acao: { rascunhoId: rascunho.id, campo, valor },
+    });
+    let botoes: OpcaoBotao[];
+    let texto = PERGUNTAS[campo];
+    switch (campo) {
+      case 'categoria': {
+        if (opcoes.todasAsCategorias) {
+          texto = 'Escolha a categoria:';
+          botoes = catalogo.categorias.map(({ id, nome }) => botao(id, nome));
+        } else {
+          const desde = somarDias(catalogo.hoje, -DIAS_DE_USO);
+          const maisUsadas = await this.categorias.maisUsadas(contexto, desde, CATEGORIAS_EM_BOTAO);
+          botoes = [
+            ...maisUsadas.map(({ id, nome }) => botao(id, nome)),
+            botao(VALOR_OUTRA_CATEGORIA, 'Outra'),
+          ];
+        }
+        break;
+      }
+      case 'forma_pagamento':
+        botoes = FORMAS_EM_BOTAO.filter(
+          (forma) => forma !== 'cartao_credito' || catalogo.cartoes.length > 0,
+        ).map((forma) => botao(forma, ROTULO_FORMA[forma]));
+        break;
+      case 'cartao':
+        botoes = catalogo.cartoes.map(({ id, nome }) => botao(id, nome));
+        break;
+      case 'parcelas':
+        botoes = PARCELAS_EM_BOTAO.map((parcelas) =>
+          botao(String(parcelas), rotuloParcelas(parcelas)),
+        );
+        break;
+    }
+    return { texto, componente: { tipo: 'botoes', opcoes: botoes }, transacaoId: null };
+  }
+
+  /** Grava a despesa (à vista) ou o parcelamento no cartão, de origem `mony`, e o resumo. */
+  private async gravar(
+    contexto: Contexto,
+    dados: DadosRascunho,
+    catalogo: Catalogo,
+  ): Promise<RespostaRegra> {
+    const doMony: Contexto = { ...contexto, origem: 'mony' };
+    const categoria = catalogo.categorias.find(({ id }) => id === dados.categoriaId);
+    const categoriaId = dados.categoriaId ?? '';
+    const forma = dados.formaPagamento ?? 'pix';
+    const descricao = dados.descricao ?? categoria?.nome ?? 'Gasto';
+    const cartao = catalogo.cartoes.find(({ id }) => id === dados.cartaoId);
+    const parcelas = dados.parcelas ?? 1;
+    let transacaoId: string | null;
+    let onde: string;
+    if (forma === 'cartao_credito' && dados.cartaoId !== undefined && parcelas > 1) {
+      const { parcelamento } = await this.parcelamentos.registrar(doMony, {
+        tipo: 'compra_cartao',
+        nome: descricao.slice(0, 100),
+        valorCentavos: dados.valorCentavos,
+        totalParcelas: parcelas,
+        dataInicio: dados.data,
+        categoriaId,
+        cartaoId: dados.cartaoId,
+      });
+      const [primeira] = parcelamento.parcelas;
+      transacaoId = primeira?.transacaoId ?? null;
+      onde = `no ${cartao?.nome ?? 'cartão'} em ${String(parcelas)}x de ${reais(primeira?.valorCentavos ?? 0)}`;
+    } else {
+      const { transacao } = await this.transacoes.registrar(doMony, {
+        tipo: 'despesa',
+        descricao,
+        valorCentavos: dados.valorCentavos,
+        data: dados.data,
+        categoriaId,
+        formaPagamento: forma,
+        ...(forma === 'cartao_credito' && dados.cartaoId !== undefined
+          ? { cartaoId: dados.cartaoId }
+          : {}),
+      });
+      transacaoId = transacao.id;
+      onde = forma === 'cartao_credito' ? `no ${cartao?.nome ?? 'cartão'}` : NA_FRASE[forma];
+    }
+    const deQue = categoria && descricao !== categoria.nome ? ` de ${descricao}` : '';
+    const quando =
+      dados.data === catalogo.hoje
+        ? ''
+        : `, em ${dados.data.slice(8, 10)}/${dados.data.slice(5, 7)}`;
+    return {
+      texto: `Pronto! Anotei ${reais(dados.valorCentavos)}${deQue} em ${categoria?.nome ?? 'Outros'}, ${onde}${quando}.`,
+      componente: null,
+      transacaoId,
+    };
+  }
+
+  /** O rascunho em palavras, para o modelo saber o que está em andamento (RN-085). */
+  private descrever(rascunho: Rascunho, catalogo: Catalogo): string {
+    const { dados } = rascunho;
+    const partes = [reais(dados.valorCentavos)];
+    if (dados.descricao) partes.push(`"${dados.descricao}"`);
+    const categoria = catalogo.categorias.find(({ id }) => id === dados.categoriaId);
+    if (categoria) partes.push(`categoria ${categoria.nome}`);
+    if (dados.formaPagamento) partes.push(ROTULO_FORMA[dados.formaPagamento]);
+    const cartao = catalogo.cartoes.find(({ id }) => id === dados.cartaoId);
+    if (cartao) partes.push(`cartão ${cartao.nome}`);
+    const campo = rascunho.campoPendente ?? proximoCampo(dados);
+    return `${partes.join(', ')}; falta ${campo ? CAMPO_POR_EXTENSO[campo] : 'nada'}.`;
+  }
+}
+
+function juntar(partes: readonly string[]): string {
+  return partes.filter((parte) => parte !== '').join(' ');
 }

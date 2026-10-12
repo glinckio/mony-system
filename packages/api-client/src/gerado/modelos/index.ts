@@ -218,6 +218,7 @@ export * from './paginaTransacoesDtoItensItemStatus';
 export * from './paginaTransacoesDtoItensItemTipo';
 export * from './pedidoAcaoMonyDto';
 export * from './pedidoAcaoMonyDtoAcao';
+export * from './pedidoAcaoMonyDtoAcaoCampo';
 export * from './pedidoCodigoDto';
 export * from './perfilDto';
 export * from './perfilDtoLoginsSociaisItem';

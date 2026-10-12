@@ -176,7 +176,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 
 - [x] **T-060** Módulo Mony: orquestrador, `LlmProvider` (fake + provedor real), SSE, histórico, `logs_ia` (PR #53; ferramenta `listar_categorias`, as de finanças na T-062)
   - dep: T-020, T-037 · docs: 08
-- [ ] **T-061** Rascunhos e roteador por regra (próximo campo, botões, `/mony/acoes` sem modelo)
+- [x] **T-061** Rascunhos e roteador por regra (próximo campo, botões, `/mony/acoes` sem modelo) (PR #56)
   - dep: T-060 · RN-080, RN-081, RN-084, RN-085, RN-088
 - [ ] **T-062** Ferramentas de finanças (categorias, cartões, transações, parcelamento, consultas, resumo, fatura, orçamentos, metas)
   - dep: T-061, T-042, T-043 · RN-082, RN-086, RN-087, RN-092

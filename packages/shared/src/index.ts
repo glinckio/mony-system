@@ -16,6 +16,7 @@ export * from './nfce.js';
 export * from './notificacoes.js';
 export * from './orcamentos.js';
 export * from './parcelamentos.js';
+export * from './rascunhos.js';
 export * from './recorrencias.js';
 export * from './relatorios.js';
 export * from './transacoes.js';

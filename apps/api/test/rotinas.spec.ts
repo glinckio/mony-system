@@ -9,6 +9,7 @@ import { Clock, ClockFixo } from '../src/core/clock/clock';
 import { FILAS } from '../src/core/filas/filas';
 import { ProcessadorRotinas, ROTINA, Rotina } from '../src/core/rotinas/rotinas';
 import { CartoesService } from '../src/modulos/cartoes/cartoes.service';
+import { RascunhosService } from '../src/modulos/mony/rascunhos.service';
 import { MotorAlertas } from '../src/modulos/notificacoes/motor-alertas';
 import { OrcamentosService } from '../src/modulos/orcamentos/orcamentos.service';
 import { ParcelamentosService } from '../src/modulos/parcelamentos/parcelamentos.service';
@@ -88,6 +89,14 @@ describe('rotinas agendadas (doc 09)', () => {
     expect(Reflect.getMetadata(ROTINA, metodo)).toEqual({
       nome: 'repetir-orcamentos',
       padrao: '15 0 1 * *',
+    });
+  });
+
+  it('RN-088 a limpeza dos rascunhos vencidos da Mony roda todo dia às 03:00', () => {
+    const metodo = Reflect.get(RascunhosService.prototype, 'limpar') as object;
+    expect(Reflect.getMetadata(ROTINA, metodo)).toEqual({
+      nome: 'limpar-rascunhos',
+      padrao: '0 3 * * *',
     });
   });
 

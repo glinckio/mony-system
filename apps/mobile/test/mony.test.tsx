@@ -44,17 +44,19 @@ function corpoJson(opcoes: RequestInit | undefined): unknown {
   return typeof opcoes?.body === 'string' ? JSON.parse(opcoes.body) : undefined;
 }
 
+/** A ação do botão responde o campo pendente do rascunho no servidor (T-061). */
+const RASCUNHO = '0199a000-0000-7000-8000-0000000000a1';
 const MERCADO = {
-  etapa: 'categoria',
-  valorCentavos: 1_000,
-  categoriaId: '0199a000-0000-7000-8000-000000000001',
+  rascunhoId: RASCUNHO,
+  campo: 'categoria',
+  valor: '0199a000-0000-7000-8000-000000000001',
 };
 
 /** O CI roda build, lint e testes juntos: a primeira renderização da tela passa de 5 s lá. */
 const TEMPO_LIMITE_MS = 30_000;
 const ESPERA = { timeout: 10_000 };
 
-describe('chat da Mony (PoC T-020)', () => {
+describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
   const fetchOriginal = globalThis.fetch;
 
   beforeEach(() => {
@@ -83,7 +85,7 @@ describe('chat da Mony (PoC T-020)', () => {
                 {
                   id: 'lazer',
                   rotulo: 'Lazer',
-                  acao: { ...MERCADO, categoriaId: '0199a000-0000-7000-8000-000000000002' },
+                  acao: { ...MERCADO, valor: '0199a000-0000-7000-8000-000000000002' },
                 },
               ],
             },
@@ -102,7 +104,7 @@ describe('chat da Mony (PoC T-020)', () => {
                   {
                     id: 'pix',
                     rotulo: 'Pix',
-                    acao: { ...MERCADO, etapa: 'forma', formaPagamento: 'pix' },
+                    acao: { rascunhoId: RASCUNHO, campo: 'forma_pagamento', valor: 'pix' },
                   },
                 ],
               },

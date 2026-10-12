@@ -715,4 +715,16 @@ Reversível: sim, `ritmoDaMeta` em `@mony/shared/metas` e `dicaDasMetas` no app.
 Contexto: o tema do Tailwind troca a escala pelos tokens, e classe com valor fora deles some sem aviso (achado da T-053). Decisões:
 - **Comparação com o Tailwind de fábrica**: o teste junta toda palavra dos textos do código (`app/` e `src/`, lidos pelo compilador do TypeScript: literais e partes fixas de template) e acusa a que gera CSS no Tailwind de fábrica (com o mesmo preset do NativeWind) e não no tema do app. Palavra que não é classe em nenhum dos dois (texto comum, rótulo) não conta, então não precisa de lista de exceções. Não pega erro de digitação (`bg-superfice`), que não é classe em nenhum dos dois.
 - Usa APIs internas do Tailwind 3.4 (`createContext`, `generateRules`), seguras porque a versão é fixa no `package.json`; na troca para o Tailwind 4 o teste precisa mudar junto.
+
+## 2026-10-12 — T-061 — Rascunho do lançamento da Mony
+Contexto: a PoC (T-020) guardava o estado do lançamento no próprio botão. Decisões:
+- **Ação do botão `{ rascunhoId, campo, valor }`**, devolvida inteira em `POST /mony/acoes { acao }`, e não o `{ mensagemId, acaoId, payload }` do doc 04: o app não precisa saber de mensagens nem de ids de ação, e o servidor confere a ação contra o rascunho (410 se ele não existe mais, 409 se a pergunta já foi respondida) e contra os dados do usuário. O app não mudou.
+- **Validade de 24 h desde a última resposta** (RN-088 diz só "24 horas"): quem está respondendo não perde o rascunho no meio.
+- **Gasto novo com valor troca o rascunho** em vez de completar o atual (RN-085 fala de resposta a uma pergunta; "gastei 30" não é resposta) e a Mony avisa ("Deixei de lado o lançamento de R$ 25,00."). Um rascunho por conversa continua valendo.
+- **O texto preenche tudo o que diz**, não só o campo da pergunta: "gastei 80 de iFood no Nubank em 3x" já sai com cartão e parcelas; nome de cartão diz crédito; parcelado (mais de 1x) também. Com um cartão só, ele vale sem perguntar; crédito sem cartão cadastrado avisa e pergunta a forma de novo.
+- **Descrição pelo texto** ("no mercado" → Mercado); sem ela, o nome da categoria. A categoria sai do nome na descrição ou no texto, sem diferença de acento e maiúscula. Dois nomes diferentes no texto (ex.: dois cartões) não escolhem nenhum.
+- **Texto que não responde vai ao modelo** com o rascunho no contexto, e a pergunta pendente volta com os botões depois da resposta (RN-080: sempre com botões). "cancela", "esquece" e afins descartam por regra.
+- **"Mais usadas" pelo `CategoriasService.maisUsadas`**: a consulta saiu do repositório da Mony, que agora só lê as tabelas dela (a Mony chama Services). O fuso vem do `UsuariosService`.
+- `mensagens.rascunho_id` fica sem uso: o rascunho some ao gravar e o vínculo viraria nulo de qualquer jeito.
+- O resumo com [Desfazer] (RN-082) e as preferências por estabelecimento (RN-081, RN-090) ficam para a T-062 e a T-063.
 Reversível: sim.

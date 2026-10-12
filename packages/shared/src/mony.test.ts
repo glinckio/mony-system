@@ -6,7 +6,6 @@ import {
   eventoMonyDoSse,
   formatarEventoSse,
   LeitorSse,
-  valorDoGasto,
 } from './mony.js';
 
 describe('SSE da Mony', () => {
@@ -64,31 +63,19 @@ describe('SSE da Mony', () => {
   });
 });
 
-describe('fluxo "gastei 10" (RN-080)', () => {
-  it.each([
-    ['gastei 10', 1_000],
-    ['Gastei R$ 32,90 no mercado', 3_290],
-    ['paguei 1.234,56 de aluguel', 123_456],
-    ['comprei pão 7,5', 750],
-  ])('%s → %i centavos', (texto, centavos) => {
-    expect(valorDoGasto(texto)).toBe(centavos);
-  });
-
-  it.each(['quanto gastei esse mês?', 'oi, Mony', 'gastei 0', 'recebi 100'])(
-    '%s não é um gasto com valor',
-    (texto) => {
-      expect(valorDoGasto(texto)).toBeNull();
-    },
-  );
-
-  it('a ação do botão é validada de novo no servidor', () => {
-    const base = { valorCentavos: 1_000, categoriaId: '0199a000-0000-7000-8000-000000000001' };
-    expect(esquemaAcaoMony.safeParse({ etapa: 'categoria', ...base }).success).toBe(true);
+describe('ação do botão (RN-084)', () => {
+  it('responde um campo do rascunho; o servidor confere o resto', () => {
+    const base = { rascunhoId: '0199a000-0000-7000-8000-000000000001', valor: 'pix' };
+    expect(esquemaAcaoMony.safeParse({ ...base, campo: 'forma_pagamento' }).success).toBe(true);
+    expect(esquemaAcaoMony.safeParse({ ...base, campo: 'valor' }).success).toBe(false);
+    expect(esquemaAcaoMony.safeParse({ ...base, campo: 'cartao', valor: '' }).success).toBe(false);
+    // O formato da PoC (estado no botão) não vale mais.
     expect(
-      esquemaAcaoMony.safeParse({ etapa: 'forma', ...base, formaPagamento: 'cheque' }).success,
-    ).toBe(false);
-    expect(
-      esquemaAcaoMony.safeParse({ etapa: 'categoria', ...base, valorCentavos: -5 }).success,
+      esquemaAcaoMony.safeParse({
+        etapa: 'categoria',
+        valorCentavos: 1_000,
+        categoriaId: base.rascunhoId,
+      }).success,
     ).toBe(false);
   });
 });

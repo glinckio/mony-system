@@ -98,7 +98,7 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 | Disparo de lembretes e ligações | A cada minuto | Lembretes com `data_hora` (ou `adiado_ate`) no minuto atual |
 | Sincronização de agendas externas | A cada 15 min | Google e Microsoft (prefira webhooks/delta quando disponíveis) |
 | Liberação do silêncio (`liberar-silencio`) | A cada 15 min | Envia alertas adiados cujo silêncio terminou; mais de 3 para o mesmo usuário saem num envio agrupado. Implementada na T-080 |
-| Limpeza | Diária 03:00 | Rascunhos, códigos, sessões expiradas; arquivos fora do prazo de retenção (RN-162) |
+| Limpeza | Diária 03:00 | Rascunhos, códigos, sessões expiradas; arquivos fora do prazo de retenção (RN-162). Os rascunhos da Mony já saem na `limpar-rascunhos` (T-061, RN-088) |
 | Backup check | Diária | Confere que o snapshot do banco existe (alerta se não) |
 
 ## Central de notificações
