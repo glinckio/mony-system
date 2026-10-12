@@ -7,6 +7,7 @@ import * as SecureStore from 'expo-secure-store';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
 import { cofre } from '@/lib/auth/cofre';
+import { useAtualizacao } from '@/stores/atualizacao';
 import { useSessao } from '@/stores/sessao';
 
 const ROTAS = path.resolve(__dirname, '../app');
@@ -25,6 +26,10 @@ function api(rotas: Record<string, Manipulador>) {
       string,
       unknown
     >;
+    // A conferência da versão mínima na abertura (T-056) não entra na conta dos fluxos.
+    if (rota === '/v1/config-app' && !(rota in rotas)) {
+      return Promise.resolve(new Response(null, { status: 404 }));
+    }
     pedidos.push({ rota, corpo, cabecalhos: new Headers(opcoes?.headers) });
     const manipular = rotas[rota];
     const { status, corpo: resposta } = manipular ? manipular(corpo) : { status: 404 };
@@ -77,6 +82,7 @@ describe('autenticação no app (T-034)', () => {
   beforeEach(() => {
     guardados.clear();
     useSessao.getState().encerrar();
+    useAtualizacao.setState({ obrigatoria: false, versaoMinima: null });
     autenticar.mockResolvedValue({ success: true });
   });
 
@@ -238,11 +244,13 @@ describe('autenticação no app (T-034)', () => {
       });
       useSessao.setState({ estado: 'iniciando' });
       const { unmount } = renderRouter(ROTAS, { initialUrl: '/' });
+      // A versão recusada abre a atualização obrigatória (T-056); a sessão fica guardada.
       expect(
-        await screen.findByRole('header', { name: 'Seu dinheiro numa conversa' }, ESPERA),
+        await screen.findByRole('header', { name: 'Atualize o Monitorizze' }, ESPERA),
       ).toBeOnTheScreen();
       expect(await cofre.lerRenovacao()).toBe('renovacao-guardada-0123456789');
       unmount();
+      useAtualizacao.setState({ obrigatoria: false, versaoMinima: null });
 
       api({ '/v1/auth/renovar': () => erro(503, 'INDISPONIVEL', 'Tente de novo.') });
       useSessao.setState({ estado: 'iniciando' });

@@ -22,6 +22,10 @@ describe('app.config por ambiente', () => {
       ambiente: 'development',
       urlApi: 'http://localhost:3000',
       sentryDsn: undefined,
+      urlLoja: {
+        ios: 'https://apps.apple.com/br/search?term=Monitorizze',
+        android: 'https://play.google.com/store/apps/details?id=com.monitorizze.app.dev',
+      },
     });
   });
 
@@ -55,11 +59,16 @@ describe('app.config por ambiente', () => {
     const config = criarConfigApp(base, {
       EXPO_PUBLIC_API_URL: 'http://192.168.0.10:3000/',
       EXPO_PUBLIC_SENTRY_DSN: 'https://chave@sentry.exemplo.test/1',
+      EXPO_PUBLIC_APP_STORE_ID: '6700000000',
     });
     expect(lerConfigPublica(config.extra)).toEqual({
       ambiente: 'development',
       urlApi: 'http://192.168.0.10:3000',
       sentryDsn: 'https://chave@sentry.exemplo.test/1',
+      urlLoja: {
+        ios: 'https://apps.apple.com/br/app/id6700000000',
+        android: 'https://play.google.com/store/apps/details?id=com.monitorizze.app.dev',
+      },
     });
   });
 
@@ -78,5 +87,6 @@ describe('lerConfigPublica', () => {
     expect(() => lerConfigPublica(undefined)).toThrow(/ausente/);
     expect(() => lerConfigPublica({ ambiente: 'teste', urlApi: 'x' })).toThrow(/inválido/);
     expect(() => lerConfigPublica({ ambiente: 'preview', urlApi: '' })).toThrow(/URL da API/);
+    expect(() => lerConfigPublica({ ambiente: 'preview', urlApi: 'https://x' })).toThrow(/lojas/);
   });
 });

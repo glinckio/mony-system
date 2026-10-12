@@ -17,16 +17,24 @@ export function lerConfigPublica(extra: unknown): ConfigPublica {
   if (typeof extra !== 'object' || extra === null) {
     throw new Error('Configuração do app ausente: confira o app.config.ts.');
   }
-  const { ambiente, urlApi, sentryDsn } = extra as Record<string, unknown>;
+  const { ambiente, urlApi, sentryDsn, urlLoja } = extra as Record<string, unknown>;
   if (!ehAmbiente(ambiente)) {
     throw new Error(`Ambiente do app inválido: ${String(ambiente)}.`);
   }
   if (typeof urlApi !== 'string' || urlApi === '') {
     throw new Error('URL da API ausente: defina EXPO_PUBLIC_API_URL.');
   }
+  const lojas = (typeof urlLoja === 'object' && urlLoja !== null ? urlLoja : {}) as Record<
+    string,
+    unknown
+  >;
+  if (typeof lojas.ios !== 'string' || typeof lojas.android !== 'string') {
+    throw new Error('Página do app nas lojas ausente: confira o app.config.ts.');
+  }
   return {
     ambiente,
     urlApi,
     sentryDsn: typeof sentryDsn === 'string' && sentryDsn !== '' ? sentryDsn : undefined,
+    urlLoja: { ios: lojas.ios, android: lojas.android },
   };
 }

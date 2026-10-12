@@ -1,3 +1,4 @@
+import { textosAtualizacao } from '@/features/atualizacao/atualizacao.strings';
 import { textosAuth } from '@/features/auth/auth.strings';
 import { textosCartoes } from '@/features/cartoes/cartoes.strings';
 import { textosCategorias } from '@/features/categorias/categorias.strings';
@@ -19,6 +20,7 @@ export const textosPtBr = {
   comum: textosComuns,
   ui: textosUi,
   auth: textosAuth,
+  atualizacao: textosAtualizacao,
   onboarding: textosOnboarding,
   inicio: textosInicio,
   transacoes: textosTransacoes,

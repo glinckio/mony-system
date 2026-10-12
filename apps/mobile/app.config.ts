@@ -5,7 +5,7 @@ import pacote from './package.json';
 /*
  * Configuração do app por ambiente. O perfil do `eas.json` define `APP_ENV`; localmente o padrão é
  * `development`. Valores públicos podem ser trocados por variável (`.env` local ou variáveis do
- * EAS): `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SENTRY_DSN`.
+ * EAS): `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_APP_STORE_ID`.
  *
  * Este arquivo só importa pacotes: o Expo compila o app.config.ts, mas não os arquivos locais que
  * ele importaria.
@@ -23,6 +23,8 @@ export interface ConfigPublica {
   urlApi: string;
   /** DSN do Sentry. Sem ele, o Sentry fica desligado. */
   sentryDsn: string | undefined;
+  /** Onde o app é atualizado, na atualização obrigatória (T-056). */
+  urlLoja: { ios: string; android: string };
 }
 
 /**
@@ -78,6 +80,20 @@ function texto(valor: string | undefined): string | undefined {
   return valor === undefined || valor.trim() === '' ? undefined : valor.trim();
 }
 
+/**
+ * A página do app na loja. No Google Play vem do identificador; na App Store, do número que a Apple
+ * dá ao app (`EXPO_PUBLIC_APP_STORE_ID`, na publicação, T-146). Sem ele, a busca pelo nome.
+ */
+function urlsDaLoja(identificador: string, idAppStore: string | undefined) {
+  return {
+    ios:
+      idAppStore === undefined
+        ? 'https://apps.apple.com/br/search?term=Monitorizze'
+        : `https://apps.apple.com/br/app/id${idAppStore}`,
+    android: `https://play.google.com/store/apps/details?id=${identificador}`,
+  };
+}
+
 /** Fundo do app (o fim do degradê), também na splash e atrás das telas. */
 const COR_FUNDO = '#0A2133';
 
@@ -99,6 +115,7 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
     ambiente,
     urlApi: urlApi.replace(/\/+$/, ''),
     sentryDsn: texto(variaveis.EXPO_PUBLIC_SENTRY_DSN),
+    urlLoja: urlsDaLoja(dados.identificador, texto(variaveis.EXPO_PUBLIC_APP_STORE_ID)),
   };
   if (idProjeto) extra.eas = { projectId: idProjeto };
 
