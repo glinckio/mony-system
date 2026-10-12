@@ -13,8 +13,8 @@ export function useRotuloDoDia(): (data: string) => string {
   const { t } = useTranslation();
   const hoje = useHoje();
   const ontem = somarDias(hoje, -1);
-  const meses = t('transacoes.meses', { returnObjects: true });
-  const semana = t('transacoes.semana', { returnObjects: true });
+  const meses = t('comum.meses', { returnObjects: true });
+  const semana = t('comum.semana', { returnObjects: true });
   return (data) => {
     const { dia, mes } = partesDaData(data);
     const texto = t('transacoes.dia.data', { dia, mes: meses[mes - 1] ?? '' });
@@ -22,24 +22,6 @@ export function useRotuloDoDia(): (data: string) => string {
     if (data === ontem) return t('transacoes.dia.ontem', { data: texto });
     return t('transacoes.dia.outro', { semana: semana[diaDaSemana(data)] ?? '', data: texto });
   };
-}
-
-/** "Outubro 2026". */
-export function useTituloDoMes(): (competencia: string) => string {
-  const { t } = useTranslation();
-  const meses = t('transacoes.meses', { returnObjects: true });
-  return (competencia) => {
-    const { ano, mes } = partesDaData(competencia);
-    const nome = meses[mes - 1] ?? '';
-    return t('transacoes.mes', { mes: nome.charAt(0).toUpperCase() + nome.slice(1), ano });
-  };
-}
-
-/** Nome do mês em minúscula, para frases ("Nenhum lançamento em outubro"). */
-export function useNomeDoMes(): (competencia: string) => string {
-  const { t } = useTranslation();
-  const meses = t('transacoes.meses', { returnObjects: true });
-  return (competencia) => meses[partesDaData(competencia).mes - 1] ?? '';
 }
 
 /**

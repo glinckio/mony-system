@@ -7,6 +7,7 @@ import { ActivityIndicator, RefreshControl, ScrollView, SectionList, View } from
 
 import { Dica } from '@/features/onboarding/components/dica';
 import { mensagemDeErro } from '@/lib/formularios';
+import { useNomeDoMes } from '@/lib/datas-texto';
 import { useHoje } from '@/lib/fuso';
 import { useValorAtrasado } from '@/lib/use-valor-atrasado';
 import {
@@ -29,12 +30,7 @@ import { ItemTransacao } from '../components/item-transacao';
 import { ResumoTotais } from '../components/resumo-totais';
 import { SeletorMes } from '../components/seletor-mes';
 import { useLoteTransacoes } from '../hooks/use-mutacoes';
-import {
-  useDetalhesDoItem,
-  useNomeDoMes,
-  useRotuloDoDia,
-  useValorFalado,
-} from '../hooks/use-textos';
+import { useDetalhesDoItem, useRotuloDoDia, useValorFalado } from '../hooks/use-textos';
 import { useCatalogos, useListaTransacoes, useTotais } from '../hooks/use-transacoes';
 import {
   aplicarAtalho,

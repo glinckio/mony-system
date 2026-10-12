@@ -598,3 +598,13 @@ Contexto: o design traz a lista de categorias (página 8), sem o formulário; co
 - **Saldo inicial negativo** por uma chave ao lado do `CampoValor`, que só aceita dígitos.
 - **Componentes novos**: `GrupoOpcoes` saiu da feature de transações para `src/ui`; `Segmentado` e `Cabecalho` entram no design system.
 Reversível: sim.
+
+## 2026-10-11 — T-050 — Cartões e faturas no app
+Contexto: o design (página 4) traz a aba Cartões com o carrossel, o limite, a fatura atual e as próximas faturas; lista de faturas, detalhe da fatura e formulário do cartão não têm design. Decisões:
+- **Pagar a fatura entra aqui**: "Marcar fatura como paga" está na tela do design, e a API (`POST /faturas/:id/pagar`, RN-036) já existe. Valor acima do saldo não vai (a API também recusa); a folha não deixa data no futuro.
+- **Rotas iguais às dos alertas** (`/cartoes/<id>`, `/cartoes/<id>/faturas/<id>`): o link da notificação abre a tela certa sem tradução. `/cartoes/<id>` é a própria aba com aquele cartão escolhido.
+- **Próximas faturas**: as de competência depois da atual, até três, da lista de faturas do cartão (que já traz as futuras com parcelas e recorrências).
+- **Faixas de aviso** em cinco opções (50, 70, 80, 90 e 100%) que ligam e desligam; o esquema aceita qualquer inteiro de 1 a 200, mas o design só fala em porcentagens redondas.
+- **Nomes dos meses** (`comum.meses`, `comum.mesesCurtos`) saíram das strings de transações para `comum`, com os ganchos em `src/lib/datas-texto.ts`, porque cartões também usam.
+- **Token novo** `chip-cartao` (dourado do chip no cartão), para não usar cor solta na tela.
+Reversível: sim.

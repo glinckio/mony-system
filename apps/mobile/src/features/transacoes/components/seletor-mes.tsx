@@ -1,9 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
+import { useTituloDoMes } from '@/lib/datas-texto';
 import { BotaoIcone, Texto } from '@/ui';
-
-import { useTituloDoMes } from '../hooks/use-textos';
 
 interface PropsSeletorMes {
   competencia: string;

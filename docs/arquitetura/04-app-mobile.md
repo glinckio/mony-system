@@ -209,6 +209,19 @@ Telas na aba Mais (`/mais/categorias`, `/mais/contas`), abertas pelos atalhos da
 - **Contas** (sem design próprio): nome, tipo e o saldo atual calculado pela API. O formulário tem saldo inicial em dígitos e uma chave para saldo negativo. Conta do banco (Open Finance) só muda o nome e não tem "Excluir" (sai desconectando o banco); a manual sai com confirmação, e o que a usava fica sem conta.
 - O design mostra "38 lançamentos" em cada categoria; a API não manda essa contagem, então a lista não mostra.
 
+## Cartões e faturas (T-050)
+
+Telas em `src/features/cartoes`, no design da página 4 (`docs/design`), nas rotas que o servidor já manda nos alertas (`LINKS_INTERNOS`):
+
+- **Aba Cartões** (`/cartoes`, e `/cartoes/<id>` pelo link da notificação, já com aquele cartão): os cartões em carrossel (arrastar ou tocar escolhe) e, do escolhido:
+  - o limite (RN-034): usado, disponível (ou "Acima do limite", em vermelho), a barra e as faixas de aviso do cartão;
+  - a fatura atual: total, situação (aberta, fechada, paga em parte, paga, atrasada), fechamento e vencimento, o aviso de vencimento no fim de semana, "Marcar fatura como paga" (com saldo) e "Ver fatura" (com compras);
+  - as próximas faturas (até três, com parcelas e recorrências já lançadas), "Todas as faturas" e "Editar cartão".
+- **Pagar a fatura** (RN-036): folha com o valor começando no que falta pagar (menor é parcial e avisa que o resto fica na fatura; maior não vai), a data até hoje, a conta de pagamento do cartão já escolhida e a forma (opcional). Uma `Idempotency-Key` por abertura da folha.
+- **Faturas** (`/cartoes/<id>/faturas`): todas, da mais nova para a mais antiga, com total e situação. **Fatura** (`/cartoes/<id>/faturas/<id>`, também pelo link): total, pago, saldo, as compras (abrem o lançamento) e os pagamentos.
+- **Cadastro e edição** (`/cartoes/novo`, `/cartoes/<id>/editar`): nome, bandeira, últimos 4 dígitos, limite, dias de fechamento e vencimento (RN-030), 10 cores, faixas de aviso (50, 70, 80, 90 e 100%, RN-038) e conta de pagamento, validados pelo `esquemaNovoCartao`; a edição manda só o que mudou. Cartão do banco (Open Finance) só muda nome, cor, avisos e conta. Excluir pede confirmação e mostra a recusa da API quando há fatura em aberto.
+- **Contrato**: criar e editar devolvem o cartão sozinho, cujo tipo gerado tem `bandeira` e `final` como `string[]` (T-018); o app usa o tipo do `@mony/shared`.
+
 ## Onboarding
 
 Rotas em `(onboarding)` seguindo o PDF: boas-vindas (2–3 telas), primeiro lançamento guiado no chat, cartões (opcional), orçamento inicial, permissões uma a uma, tour pulável. O progresso fica no servidor (`GET/PATCH /v1/me/onboarding`) para o **checklist de primeiros passos** no Início. Dicas contextuais na primeira visita a cada tela usam um registro de "dicas vistas" no servidor (para sobreviver a reinstalação).
