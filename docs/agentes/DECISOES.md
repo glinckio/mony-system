@@ -690,4 +690,15 @@ Contexto: a API de recorrências existe (T-038, T-051); o app só mostrava "todo
 - **Editar e parar pela ocorrência**: sem lista de recorrências (o design não tem); a ocorrência é o caminho natural ("o aluguel deste mês" → "Editar recorrência"). Uma lista pode vir com a tela de Parcelamentos e dívidas.
 - **Trocar entre semanal e mensal/anual volta o dia ao da data de início** (`diaPadrao` do `@mony/shared`): dia da semana (0 a 6) e do mês (1 a 31) não se convertem.
 - **Recorrência parada** mostra só o aviso, sem edição (a API não reativa).
+
+## 2026-10-12 — T-060 — Orquestrador da Mony, histórico e `logs_ia`
+Contexto: a PoC (T-020) respondia sem histórico, sem ferramentas e sem `logs_ia`. Decisões:
+- **Uma conversa por usuário**: a mensagem vai para a conversa mais recente (a primeira cria uma). `GET /mony/conversa` lista as mensagens de todas as conversas do usuário, da mais nova para a mais antiga, por cursor, com `texto` para a busca da T-069. Atalhos de sugestão (`sugestoes`, doc 04) ficam para a T-069.
+- **Idempotência opcional em `POST /mony/mensagens`**: com `Idempotency-Key`, a mensagem do usuário grava a chave e a resposta grava `<chave>:resposta` (o único `(conversa_id, idempotency_key)` já existia). Reenvio com resposta gravada repete os eventos; sem resposta, refaz sem gravar a mensagem de novo. Resposta com falha é gravada **sem** a chave, para "Tentar de novo" com a mesma chave refazer; se o app fecha a conexão, nada é gravado como resposta.
+- **Botão no histórico**: o toque vira mensagem do usuário com tipo `botao` e o rótulo em `conteudo`; o modelo vê `(tocou em "Pix")` e os botões oferecidos como `[botões: …]`.
+- **Contexto ao modelo** em dois blocos de sistema com cache de prompt (o prompt, igual para todos, e o contexto do usuário): data de hoje no fuso, primeiro nome, nomes das categorias, cartões (dias e % do limite) e orçamentos do mês, tudo pelos Services. Sem ids: as ferramentas os trazem. Histórico de até 20 mensagens ou 12.000 caracteres; turnos seguidos do mesmo papel viram um só.
+- **`logs_ia` por chamada ao modelo**, inclusive retentativas e chamadas canceladas, ligado à **mensagem do usuário** (a resposta ainda não existe durante as chamadas). `tokens_entrada` soma a entrada normal e a gravada e lida do cache: o custo por tipo fica para o admin (T-141), que pode pedir colunas novas.
+- **Retentativas** (RN-087, doc 08): até 2, após 400 ms e 1.200 ms, só em erro transitório e só enquanto nada saiu para o app (texto já enviado não se repete). Tempo limite de 60 s por chamada e até 5 chamadas por mensagem (voltas de ferramenta).
+- **Primeira ferramenta já na T-060**: `listar_categorias` (só leitura), para o loop de ferramentas rodar de ponta a ponta. As demais são da T-062. Erro de regra, entrada inválida e ferramenta desconhecida voltam ao modelo como `tool_result` com erro; falha inesperada vai ao log e volta como "Falha interna".
+- O fluxo "gastei 10" da PoC segue no `RoteadorRegras` até a T-061 trocar por rascunhos.
 Reversível: sim.

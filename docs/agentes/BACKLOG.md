@@ -174,7 +174,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 
 ## Fase 2 — Mony
 
-- [ ] **T-060** Módulo Mony: orquestrador, `LlmProvider` (fake + provedor real), SSE, histórico, `logs_ia`
+- [x] **T-060** Módulo Mony: orquestrador, `LlmProvider` (fake + provedor real), SSE, histórico, `logs_ia` (PR #53; ferramenta `listar_categorias`, as de finanças na T-062)
   - dep: T-020, T-037 · docs: 08
 - [ ] **T-061** Rascunhos e roteador por regra (próximo campo, botões, `/mony/acoes` sem modelo)
   - dep: T-060 · RN-080, RN-081, RN-084, RN-085, RN-088

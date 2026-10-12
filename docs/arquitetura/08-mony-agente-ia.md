@@ -34,13 +34,15 @@ sequenceDiagram
   Orq->>Orq: grava mensagens, logs_ia, preferências aprendidas
 ```
 
-**Como está (PoC T-020, [relatório](../agentes/poc/T-020.md)):**
+**Como está (T-060; a PoC foi a T-020, [relatório](../agentes/poc/T-020.md)):**
 
-- `POST /mony/mensagens` responde em SSE: `texto.delta`, `componente`, `erro`, `fim`.
-- "gastei 10" segue por regra até gravar a despesa, por botões em `POST /mony/acoes`.
-- O resto vai ao `LlmProvider` em streaming (`fake` ou `anthropic`, por `IA_PROVEDOR`).
-- Contrato e leitor SSE em `@mony/shared/mony`.
-- Orquestrador com ferramentas, rascunhos, histórico e `logs_ia` vêm na T-060 a T-062.
+- `POST /mony/mensagens` responde em SSE: `texto.delta`, `componente`, `erro`, `fim` (com o id da resposta gravada). Contrato e leitor SSE em `@mony/shared/mony`.
+- `MonyOrquestrador` grava a mensagem, tenta o `RoteadorRegras` ("gastei 10" com botões em `POST /mony/acoes`, até a T-061 trocar por rascunhos) e, sem regra, chama o `LlmProvider` (`fake` ou `anthropic`, por `IA_PROVEDOR`) com o prompt local (`prompts/sistema.ts`), o contexto do usuário, o histórico e as ferramentas. Pedido de ferramenta → executa → devolve o resultado ao modelo, até 5 chamadas por mensagem.
+- Ferramentas registradas: `listar_categorias`. As de finanças vêm na T-062.
+- Toda mensagem, toque em botão e resposta vai para `mensagens`; `GET /mony/conversa` devolve o histórico por cursor, com busca no texto.
+- Cada chamada ao modelo grava um `logs_ia` (modelo, tokens, ferramentas pedidas, duração, erro), ligado à mensagem do usuário.
+- Erro transitório: até 2 retentativas (400 ms e 1.200 ms) enquanto nada saiu para o app; tempo limite de 60 s por chamada. Falha: evento `erro` com "Não consegui responder agora…" (RN-087).
+- `Idempotency-Key` opcional: o reenvio repete a resposta gravada (decisões da T-060 em `DECISOES.md`).
 
 ## Componentes do módulo
 
@@ -136,7 +138,7 @@ Mídias pesadas são processadas na fila; o chat mostra "lendo seu documento…"
 
 ## Provedor de IA
 
-- Interface `LlmProvider { conversar(stream, ferramentas, mensagens): AsyncIterable<Evento> }` e `TranscricaoProvider { transcrever(arquivo): Promise<string> }`.
+- Interface `LlmProvider { modelo; conversar({ sistema, mensagens, ferramentas, sinal }): AsyncIterable<EventoLlm> }` (eventos `texto`, `ferramenta` e `fim` com tokens e motivo da parada) e `TranscricaoProvider { transcrever(arquivo): Promise<string> }`. O `LlmFake` responde um roteiro, para os testes.
 - Recomendação inicial **(confirmar com cliente)**: Anthropic Claude, `claude-sonnet-5-5` para conversa, visão e PDF, e `claude-haiku-5-5` para tarefas simples (classificação de intenção, sugestão de categoria). Transcrição num provedor de fala dedicado.
 - Contrato com o provedor deve garantir que os dados não são usados para treino (exigência LGPD do PDF).
 - Timeout por chamada, até 2 retentativas com backoff em erro transitório, e mensagem de erro amigável com [Tentar de novo] (RN-087).
