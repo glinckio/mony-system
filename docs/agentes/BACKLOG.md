@@ -162,7 +162,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-058** Anexos no formulário do lançamento no app (foto, PDF ou comprovante: `POST /arquivos`, envio direto ao S3 e `anexoIds`) (PR #51)
   - dep: T-045 · docs: 04, 05 (Transações e arquivos) · RN-040
   - Separada da T-045: precisa do `expo-image-picker` e do `expo-document-picker`, módulos nativos que pedem novo build de desenvolvimento.
-- [ ] **T-059** Recorrência no app: "repetir" no formulário do lançamento (`POST /recorrencias`), editar e parar a recorrência
+- [x] **T-059** Recorrência no app: "repetir" no formulário do lançamento (`POST /recorrencias`), editar e parar a recorrência (PR #52)
   - dep: T-045, T-038, T-051 · docs: 04, 05 (Recorrências) · RN-043
   - Separada da T-045: a lista já mostra "todo mês" e a exclusão pergunta o escopo, mas criar e editar a recorrência usam outras rotas.
 - [ ] **T-147** Metas: quanto foi guardado no mês (total e por meta) no `GET /metas` e, no app, o "+ R$ 450 este mês" e a "Dica da Mony" da tela de metas ("Guardando R$ 450 por mês, sua reserva fica completa em 19 meses")

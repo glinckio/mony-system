@@ -148,6 +148,54 @@ describe('formulário do lançamento', () => {
     expect(montarAtualizacao(valoresIniciais('2026-10-09', original), original)).toEqual({});
   });
 
+  it('RN-043 o novo que repete vira o pedido da recorrência, com o início e a data final', () => {
+    const base = valores({
+      descricao: 'Academia',
+      valorCentavos: 9900,
+      categoriaId: CATEGORIA,
+      formaPagamento: 'pix',
+      observacao: 'não vai',
+      repetir: 'mensal',
+    });
+    expect(validarFormulario(base, null)).toEqual({
+      valido: true,
+      pedido: {
+        tipo: 'recorrencia',
+        dados: {
+          tipo: 'despesa',
+          descricao: 'Academia',
+          valorCentavos: 9900,
+          categoriaId: CATEGORIA,
+          formaPagamento: 'pix',
+          frequencia: 'mensal',
+          dataInicio: '2026-10-09',
+        },
+      },
+    });
+    expect(validarFormulario({ ...base, repetirAte: '31/12/2026' }, null)).toMatchObject({
+      valido: true,
+      pedido: { dados: { dataFim: '2026-12-31' } },
+    });
+    expect(validarFormulario({ ...base, repetirAte: '01/09/2026' }, null)).toEqual({
+      valido: false,
+      campos: ['repetirAte'],
+    });
+    expect(validarFormulario({ ...base, repetirAte: '31/02/2026' }, null)).toEqual({
+      valido: false,
+      campos: ['repetirAte'],
+    });
+    // No cartão, como na compra: o cartão vai e a conta não.
+    expect(
+      validarFormulario(
+        { ...base, formaPagamento: 'cartao_credito', cartaoId: CARTAO, contaId: CONTA },
+        null,
+      ),
+    ).toMatchObject({
+      valido: true,
+      pedido: { dados: { formaPagamento: 'cartao_credito', cartaoId: CARTAO } },
+    });
+  });
+
   it('RN-040 anexos: o novo manda os ids; a edição manda a lista só se mudou, até no travado', () => {
     const A = '0199a000-0000-7000-8000-0000000000a1';
     const B = '0199a000-0000-7000-8000-0000000000a2';

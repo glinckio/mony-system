@@ -682,3 +682,12 @@ Contexto: a API já tem `POST /arquivos` (URL assinada de `PUT`), `GET /arquivos
 - **Abrir anexo** pela URL de leitura no navegador do aparelho (`Linking`), sem visualizador próprio.
 - **Galeria sem pedir permissão**: o seletor do sistema (PHPicker no iOS, Photo Picker no Android) não precisa; só a câmera pede.
 Reversível: sim.
+
+## 2026-10-12 — T-059 — Recorrência no app
+Contexto: a API de recorrências existe (T-038, T-051); o app só mostrava "todo mês" e perguntava o escopo ao excluir. Decisões:
+- **"Repetir" no próprio formulário do lançamento novo**, e não numa tela separada: é o mesmo modelo (tipo, valor, descrição, categoria, forma, cartão ou conta), e a data vira o início. Com "Repetir", o salvar chama `POST /recorrencias` em vez de `POST /transacoes`, com a mesma `Idempotency-Key` do formulário.
+- **Status, observação e anexos somem com "Repetir"**: não são do modelo da recorrência; ficam para cada lançamento gerado. O aviso explica.
+- **Editar e parar pela ocorrência**: sem lista de recorrências (o design não tem); a ocorrência é o caminho natural ("o aluguel deste mês" → "Editar recorrência"). Uma lista pode vir com a tela de Parcelamentos e dívidas.
+- **Trocar entre semanal e mensal/anual volta o dia ao da data de início** (`diaPadrao` do `@mony/shared`): dia da semana (0 a 6) e do mês (1 a 31) não se convertem.
+- **Recorrência parada** mostra só o aviso, sem edição (a API não reativa).
+Reversível: sim.

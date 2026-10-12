@@ -1,4 +1,9 @@
-import { FORMAS_PAGAMENTO, type FormaPagamento } from '@mony/shared/enums';
+import {
+  FORMAS_PAGAMENTO,
+  type FormaPagamento,
+  FREQUENCIAS_RECORRENCIA,
+  type FrequenciaRecorrencia,
+} from '@mony/shared/enums';
 import type { EscopoExclusaoOcorrencia } from '@mony/shared/recorrencias';
 import { statusPadrao, type Transacao } from '@mony/shared/transacoes';
 import { randomUUID } from 'expo-crypto';
@@ -36,6 +41,7 @@ import {
   useExcluirTransacao,
   useRegistrarTransacao,
 } from '../hooks/use-mutacoes';
+import { useCriarRecorrencia } from '../hooks/use-recorrencias';
 import { useCatalogos } from '../hooks/use-transacoes';
 import { motivoDaTrava, podeExcluir } from '../lib/edicao';
 import {
@@ -47,6 +53,7 @@ import {
 } from '../lib/formulario';
 import { dataParaTexto, mascararData, somarDias, textoParaData } from '../lib/periodo';
 import type { AnexoNaTela } from '../lib/anexos';
+import { CartaoRecorrencia } from './cartao-recorrencia';
 import { SecaoAnexos } from './secao-anexos';
 
 export interface PropsFormularioTransacao {
@@ -62,6 +69,7 @@ const VALIDACAO_DO_CAMPO = {
   categoriaId: 'categoria',
   formaPagamento: 'forma',
   cartaoId: 'cartao',
+  repetirAte: 'repetirAte',
 } as const satisfies Partial<Record<CampoFormulario, string>>;
 
 /**
@@ -75,6 +83,7 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
   const hoje = useHoje();
   const catalogos = useCatalogos();
   const registrar = useRegistrarTransacao();
+  const criarRecorrencia = useCriarRecorrencia();
   const atualizar = useAtualizarTransacao();
   const excluir = useExcluirTransacao();
   // Uma chave por formulário: tentar de novo depois de uma falha não duplica (doc 04).
@@ -99,9 +108,18 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
   });
   const { control, setValue, getValues } = formulario;
   const { errors, isSubmitted, isSubmitting } = formulario.formState;
-  const [tipo, formaPagamento, categoriaId, cartaoId, contaId, data, pago] = useWatch({
+  const [tipo, formaPagamento, categoriaId, cartaoId, contaId, data, pago, repetir] = useWatch({
     control,
-    name: ['tipo', 'formaPagamento', 'categoriaId', 'cartaoId', 'contaId', 'data', 'pago'],
+    name: [
+      'tipo',
+      'formaPagamento',
+      'categoriaId',
+      'cartaoId',
+      'contaId',
+      'data',
+      'pago',
+      'repetir',
+    ],
   });
   const noCartao = ehCompraNoCartao({ formaPagamento });
 
@@ -149,6 +167,8 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
       const { pedido } = resultado;
       if (pedido.tipo === 'novo') {
         await registrar.mutateAsync({ dados: pedido.dados, chave: chaveIdempotencia });
+      } else if (pedido.tipo === 'recorrencia') {
+        await criarRecorrencia.mutateAsync({ dados: pedido.dados, chave: chaveIdempotencia });
       } else if (original !== null && Object.keys(pedido.dados).length > 0) {
         await atualizar.mutateAsync({ id: original.id, dados: pedido.dados });
       }
@@ -286,6 +306,50 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
             </View>
           </View>
 
+          {original === null ? (
+            <View className="gap-2">
+              <GrupoOpcoes<FrequenciaRecorrencia | ''>
+                titulo={t('transacoes.formulario.repetir.titulo')}
+                selecionado={repetir ?? ''}
+                aoEscolher={(valor) => {
+                  mudar('repetir', valor === '' ? null : valor);
+                }}
+                opcoes={[
+                  { valor: '' as const, rotulo: t('transacoes.formulario.repetir.nao') },
+                  ...FREQUENCIAS_RECORRENCIA.map((valor) => ({
+                    valor,
+                    rotulo: t(`transacoes.formulario.repetir.${valor}`),
+                  })),
+                ]}
+              />
+              {repetir === null ? null : (
+                <>
+                  <Controller
+                    control={control}
+                    name="repetirAte"
+                    render={({ field }) => (
+                      <Campo
+                        rotulo={t('transacoes.formulario.repetir.ate')}
+                        ajuda={t('transacoes.formulario.repetir.ateAjuda')}
+                        value={field.value}
+                        onChangeText={(texto) => {
+                          field.onChange(mascararData(texto));
+                        }}
+                        onBlur={field.onBlur}
+                        keyboardType="number-pad"
+                        maxLength={10}
+                        erro={erroDe('repetirAte')}
+                      />
+                    )}
+                  />
+                  <Texto variante="corpo-sm" cor="suave">
+                    {t('transacoes.formulario.repetir.aviso')}
+                  </Texto>
+                </>
+              )}
+            </View>
+          ) : null}
+
           <GrupoOpcoes
             titulo={t('transacoes.formulario.categoria')}
             selecionado={categoriaId}
@@ -340,7 +404,7 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
             />
           ) : null}
 
-          {noCartao ? (
+          {repetir !== null ? null : noCartao ? (
             <Texto variante="corpo-sm" cor="suave">
               {t('transacoes.formulario.cartaoPendente')}
             </Texto>
@@ -374,25 +438,33 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
             </View>
           )}
 
-          <CampoControlado
-            controle={control}
-            nome="observacao"
-            rotulo={t('transacoes.formulario.observacao')}
-            mensagemErro=""
-            multiline
-            maxLength={1000}
-          />
+          {repetir !== null ? null : (
+            <>
+              <CampoControlado
+                controle={control}
+                nome="observacao"
+                rotulo={t('transacoes.formulario.observacao')}
+                mensagemErro=""
+                multiline
+                maxLength={1000}
+              />
 
-          <SecaoAnexos
-            anexos={anexos}
-            aoMudar={(novos) => {
-              definirAnexos(novos);
-              mudar(
-                'anexoIds',
-                novos.map(({ id }) => id),
-              );
-            }}
-          />
+              <SecaoAnexos
+                anexos={anexos}
+                aoMudar={(novos) => {
+                  definirAnexos(novos);
+                  mudar(
+                    'anexoIds',
+                    novos.map(({ id }) => id),
+                  );
+                }}
+              />
+            </>
+          )}
+
+          {original?.recorrenciaId ? (
+            <CartaoRecorrencia recorrenciaId={original.recorrenciaId} aoParar={voltar} />
+          ) : null}
 
           {erroEnvio === null ? null : (
             <Texto cor="perigo" accessibilityRole="alert" accessibilityLiveRegion="polite">
