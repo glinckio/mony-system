@@ -8,6 +8,7 @@ import { textosMetas } from '@/features/metas/metas.strings';
 import { textosMony } from '@/features/mony/mony.strings';
 import { textosOnboarding } from '@/features/onboarding/onboarding.strings';
 import { textosOrcamentos } from '@/features/orcamentos/orcamentos.strings';
+import { textosRelatorios } from '@/features/relatorios/relatorios.strings';
 import { textosTransacoes } from '@/features/transacoes/transacoes.strings';
 import { textosUi } from '@/ui/ui.strings';
 
@@ -28,4 +29,5 @@ export const textosPtBr = {
   contas: textosContas,
   orcamentos: textosOrcamentos,
   metas: textosMetas,
+  relatorios: textosRelatorios,
 };

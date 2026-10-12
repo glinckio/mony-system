@@ -147,7 +147,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-053** Tela Início no app (seletor de período, resumo, próximos vencimentos, cartões, orçamentos, checklist e modo privacidade) (PR #47)
   - dep: T-044, T-011, T-034 · docs: 04 · RN-020 a RN-024
   - Separada da T-044 pelo mesmo motivo da T-049. O modo privacidade (RN-022) fica só no aparelho.
-- [ ] **T-054** Telas de relatórios no app (mensal, anual, por categoria, dia da semana, cartão e forma de pagamento)
+- [x] **T-054** Telas de relatórios no app (mensal, anual, por categoria, dia da semana, cartão e forma de pagamento) (PR #48)
   - dep: T-048, T-011, T-034 · docs: 04 · RN-150
   - Separada da T-048 pelo mesmo motivo da T-049.
 - [ ] **T-055** 👤 Botões de entrar com Google e com Apple no app (`POST /v1/auth/social` com o `id_token`)

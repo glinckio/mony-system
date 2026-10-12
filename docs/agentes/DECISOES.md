@@ -641,3 +641,14 @@ Contexto: o design (página 3) mostra o topo, o saldo, quatro atalhos, o checkli
 - **Conferido em tela** (export web temporário, Playwright, 390 × 844, API falsa), fora do repositório. A conferência achou classes com valor fora dos tokens (`h-14`, `h-11`, `h-px`), que o Tailwind ignora sem aviso: viraram tamanhos do tema, e o teste que pega isso é a T-148. Orçamentos e metas (T-052) também foram conferidos e estão como o design.
 - `Segmentado` com menos respiro lateral (`px-2`), para "Mês passado" caber.
 Reversível: sim.
+
+## 2026-10-12 — T-054 — Relatórios no app
+Contexto: o design (página 6) traz Mês, 6 meses e Ano, as barras de receitas × despesas, a rosca por categoria e uma frase da Mony; a RN-150 pede também dia da semana, cartão, forma de pagamento e evolução anual. Decisões:
+- **Abas** com o mês de hoje inteiro: Mês (1), 6 meses e Ano (12 meses), e 6 meses aberta primeiro, como no design. Abaixo do que o design mostra: dia da semana, cartão, forma de pagamento e, na aba Ano, a evolução dos últimos cinco anos (o "por ano" com 12 meses teria no máximo dois anos).
+- **"Sobrou em média por mês"** = saldo do período ÷ número de meses, arredondado ao centavo: conta de exibição sobre o total da API. Com um mês só, "Sobrou em outubro"; negativo vira "Faltou".
+- **A frase da Mony** do design ("Você gasta mais às sextas e sábados: 41% das despesas de lazer…") virou a do dia de mais gastos, com o percentual sobre os totais da API. Por categoria e dia ao mesmo tempo, só com outra rota (a Mony de verdade é a Fase 2).
+- **Rosca** com as quatro maiores e "Outras" (soma das demais, percentual para baixo), nas cores das categorias.
+- **Gráficos sem biblioteca**: barras são `View` com altura proporcional e a rosca é um `react-native-svg` (já no app). Cada coluna tem o rótulo para o leitor de tela com os valores, que respeitam o modo privacidade.
+- **Sem o botão de baixar**: a exportação é a T-125.
+- Conferido em tela (export web temporário, Playwright, API falsa), fora do repositório.
+Reversível: sim.

@@ -9,6 +9,7 @@ export const textosMais = {
   atalhos: {
     orcamentos: 'Orçamentos',
     metas: 'Metas',
+    relatorios: 'Relatórios',
     categorias: 'Categorias',
     contas: 'Contas',
     permissoes: 'Permissões',
