@@ -144,7 +144,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-052** Telas de orçamentos e metas no app (barras por faixa, projeção, definir orçamento, metas com aportes e sugestão de concluir) (PR #45)
   - dep: T-043, T-011, T-034 · docs: 04 · RN-060 a RN-063
   - Separada da T-043 pelo mesmo motivo da T-049.
-- [ ] **T-053** Tela Início no app (seletor de período, resumo, próximos vencimentos, cartões, orçamentos, checklist e modo privacidade)
+- [x] **T-053** Tela Início no app (seletor de período, resumo, próximos vencimentos, cartões, orçamentos, checklist e modo privacidade) (PR #47)
   - dep: T-044, T-011, T-034 · docs: 04 · RN-020 a RN-024
   - Separada da T-044 pelo mesmo motivo da T-049. O modo privacidade (RN-022) fica só no aparelho.
 - [ ] **T-054** Telas de relatórios no app (mensal, anual, por categoria, dia da semana, cartão e forma de pagamento)
@@ -168,6 +168,9 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-147** Metas: quanto foi guardado no mês (total e por meta) no `GET /metas` e, no app, o "+ R$ 450 este mês" e a "Dica da Mony" da tela de metas ("Guardando R$ 450 por mês, sua reserva fica completa em 19 meses")
   - dep: T-043, T-052 · docs: 04, 05 (Orçamentos e metas) · RN-063
   - Achada na T-052: o design (página 5) mostra os dois, mas a lista de metas não traz os aportes. A conta do ritmo fica na API, como as outras.
+- [ ] **T-148** Teste que falha quando uma classe do Tailwind usa valor fora dos tokens (ex.: `h-14`, `w-px`) no app
+  - dep: T-011 · docs: 04 (Design system)
+  - Achada na T-053: o tema troca a escala pelos tokens, e uma classe com valor que não existe some sem aviso (os círculos dos atalhos ficaram sem tamanho). Só apareceu na conferência visual.
 
 ## Fase 2 — Mony
 

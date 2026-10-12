@@ -44,7 +44,7 @@ export function Segmentado<T extends string>({
               aoEscolher(opcao.valor);
             }}
             className={juntarClasses(
-              'min-h-toque flex-1 items-center justify-center rounded-total px-3',
+              'min-h-toque flex-1 items-center justify-center rounded-total px-2',
               ativa && 'bg-claro',
             )}
           >

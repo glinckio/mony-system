@@ -236,6 +236,17 @@ Telas em `src/features/orcamentos` e `src/features/metas`, no design da página 
   - **Cadastro e edição** (`/metas/nova`, `/metas/<id>/editar`): nome, valor alvo e prazo opcional (`DD/MM/AAAA`), validados pelo `esquemaNovaMeta`; a edição manda só o que mudou, e apagar o prazo manda `prazo: null`. Excluir pede confirmação.
 - **Ainda não** (tarefa própria no BACKLOG): o "+ R$ 450 este mês" e a "Dica da Mony" da tela de metas, que pedem à API o quanto foi guardado no mês.
 
+## Início (T-053)
+
+Tela em `src/features/inicio`, no design da página 3 (`docs/design`), com uma chamada (`GET /dashboard`):
+
+- **Topo**: as iniciais do nome (abrem a aba Mais, onde fica o perfil), "Pesquisar" (abre Transações, que tem a busca), o calendário do período e o sino com o ponto das não lidas. O sino só avisa até a central de notificações (T-087).
+- **Saldo do período** (RN-020) grande, com os centavos menores, o olho do modo privacidade (RN-022) e "Ver o mês" (abre Transações). O título da tela ("Início") é só para o leitor de tela: o design não tem título visível.
+- **Período** (RN-021): folha com "Este mês", "Mês passado" e "Escolher" (de e até, `DD/MM/AAAA`), validada pelo `esquemaConsultaDashboard`. Ao trocar, a tela segue com o período anterior até o novo chegar.
+- **Atalhos**: Lançar, Orçamentos e Metas. Os do design que ainda não têm tela (Ler nota, Lista, Lembrete) entram com as tarefas deles.
+- **Blocos**: o checklist (RN-024), o resumo (receitas e quanto já entrou, despesas pagas, a pagar), os próximos vencimentos (RN-023, até cinco; a fatura abre a fatura, parcela e conta abrem o lançamento), os cartões (cor, fatura atual, barra do limite e vencimento) e os orçamentos do mês (total e as três categorias mais perto de estourar). Cartões e orçamentos só aparecem quando existem.
+- Puxar para baixo atualiza o Início e o checklist.
+
 ## Onboarding
 
 Rotas em `(onboarding)` seguindo o PDF: boas-vindas (2–3 telas), primeiro lançamento guiado no chat, cartões (opcional), orçamento inicial, permissões uma a uma, tour pulável. O progresso fica no servidor (`GET/PATCH /v1/me/onboarding`) para o **checklist de primeiros passos** no Início. Dicas contextuais na primeira visita a cada tela usam um registro de "dicas vistas" no servidor (para sobreviver a reinstalação).
@@ -245,7 +256,7 @@ Rotas em `(onboarding)` seguindo o PDF: boas-vindas (2–3 telas), primeiro lan�
 - **Fluxo inicial** em `(onboarding)`: duas telas de boas-vindas (`/boas-vindas`, etapas 1 e 2 de 3; a segunda não tem design próprio e segue o mesmo visual) e as permissões (`/permissoes`, etapa 3). "Pular" leva às permissões.
   - "Concluir" grava `{ concluido: true, etapas: { permissoes: 'concluida' } }`; "Configurar depois" grava só `concluido`, e o passo fica no checklist. Com a resposta, a sessão marca `onboardingConcluido` e a navegação passa para as abas.
   - Primeiro lançamento, cartões e orçamento não são telas do fluxo: viram passos do checklist, como no design do Início.
-- **Checklist** (`CartaoChecklist`, RN-024), no Início provisório até a T-053: anel com os passos feitos, a frase dos dois próximos ("Cadastre seus cartões e defina os orçamentos do mês.") e "Continuar", que abre a folha com os cinco passos.
+- **Checklist** (`CartaoChecklist`, RN-024), no Início: anel com os passos feitos, a frase dos dois próximos ("Cadastre seus cartões e defina os orçamentos do mês.") e "Continuar", que abre a folha com os cinco passos.
   - Cada passo pendente tem "Fazer agora" (primeiro gasto → `/transacoes/nova`, cartões → `/cartoes`, orçamento → `/orcamentos`, avisos → `/mais/permissoes`) e "Dispensar". O tour não tem tela própria: só é dispensado.
   - O primeiro lançamento e o primeiro cartão são marcados pela API; avisos, pelo "Concluir" ou pelo "Pronto" da tela de Permissões; o tour, ao fechar a primeira dica.
   - A mudança aparece na hora (`useAtualizarOnboarding` atualiza o cache antes da resposta e volta se a API recusar).
