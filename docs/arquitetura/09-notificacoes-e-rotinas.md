@@ -22,7 +22,9 @@ flowchart LR
   EN --> M[Mensagem da Mony<br/>no chat, quando faz sentido]
 ```
 
-Cada avaliador é uma classe com `tipo`, `avaliar(contexto) → AlertaCandidato[]`. O candidato traz `chaveUnica`, `urgente`, `titulo`, `corpo`, `linkInterno`, `acoes` e `vaiParaChat`.
+Cada avaliador é uma classe com `tipo`, `avaliar(contexto) → AlertaCandidato[]`. O candidato traz `chaveUnica`, `urgente`, `titulo`, `corpo`, `linkInterno`, `acoes` e `vaiParaChat` (com `textoChat` opcional).
+
+**Chat (T-083):** o candidato com `vaiParaChat` que passa nos filtros (não desligado, sem cota estourada, chave nova) vira também uma mensagem da Mony na conversa, pela porta `ChatDosAlertas` (implementada na Mony, `ChatDaMony`): `textoChat`, ou o título e o corpo. Entra na hora, mesmo no silêncio, porque não toca o aparelho; o push continua esperando o fim do silêncio. Falha no chat vai ao log e não segura a notificação.
 
 **Como está (T-082):** os avaliadores dos alertas de dinheiro ficam em `modulos/alertas` (`AvaliadoresAlertas`), só no worker, e chamam `MotorAlertas.emitir`. As regras puras e os links internos estão em `@mony/shared/alertas`.
 
@@ -30,7 +32,8 @@ Cada avaliador é uma classe com `tipo`, `avaliar(contexto) → AlertaCandidato[
   - `transacao.registrada` e `transacao.alterada` (despesa normal): `limite_cartao`, `orcamento` (só se a data é do mês de hoje) e `gasto_fora_padrao` (só lançamento dos últimos 7 dias). `transacao.alterada` sai do `PATCH` que muda tipo, valor, data, categoria, forma ou cartão;
   - `parcelamento.registrado`: `limite_cartao` e `orcamento` do mês;
   - `fatura.fechada` e `fatura.atrasada`: o alerta do tipo, se ainda há saldo a pagar.
-- **Rotina `alertas-diarios`** (de hora em hora, no minuto 5): avalia os usuários ativos em cujo fuso são 09:00; `fatura_vencimento`, `vencimento_pendente` e `projecao_mes`. Um erro num usuário fica no log e não para os outros.
+- **Rotina `alertas-diarios`** (de hora em hora, no minuto 5): avalia os usuários ativos em cujo fuso são 09:00; `fatura_vencimento`, `vencimento_pendente`, `projecao_mes` e, na segunda e no dia 1, `resumo_periodo` (T-083). Um erro num usuário fica no log e não para os outros.
+- **Resumos (T-083):** na segunda, a semana anterior (segunda a domingo) contra a de antes; no dia 1, o mês anterior contra o de antes, com os orçamentos que passaram do limite. Despesas, receitas, a diferença das despesas, as 3 categorias com mais despesa (`RelatoriosService.categorias`, sem pagamento de fatura nem transferência). O push é curto; o chat recebe o resumo em linhas. Link `mony://mony`. Chave `resumo:semana:<segunda>` ou `resumo:mes:<AAAA-MM>`. Sem despesa nem receita no período, sem resumo.
 - **Faixa:** sai só a maior faixa atingida (de 40% para 85% avisa 80%, não 50%). O ciclo do limite é a competência da fatura aberta hoje (`limite:<cartão>:<AAAA-MM>:<faixa>`), que é uma fatura por cartão.
 - **Vencimento:** o aviso "antes" sai no primeiro dia em que faltam de 1 a X dias (X da preferência, padrão 3) e o "no dia" no vencimento; as chaves são `…:<X>` e `…:0`. Assim o que foi lançado já dentro do prazo também é avisado, e a rotina que falhou um dia avisa no seguinte.
 - **Lançamentos em lote (Mony) e ocorrências de recorrência** não publicam evento: entram nos avisos de vencimento, mas não nos de limite e orçamento até a próxima despesa avaliada.
@@ -91,7 +94,7 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 | Marcar atrasos (`marcar-atrasos`) | De hora em hora, no minuto 0 | Parcelas pendentes vencidas → `atrasado`; o status guardado dos parcelamentos tocados e dos que estavam atrasados é refeito. Parcela de dívida publica `parcela.atrasada`. Implementada na T-047 |
 | Encerrar testes | Diária 01:15 | Testes vencidos → gratuito; avisos do 2º e do último dia (RN-124, RN-126) |
 | Alertas de vencimento e projeção (`alertas-diarios`) | De hora em hora, no minuto 5, para quem está às 09:00 | `fatura_vencimento`, `vencimento_pendente`, `projecao_mes`. Implementada na T-082 |
-| Resumo semanal e mensal | Segunda e dia 1, 09:00 | Mensagem da Mony no chat + push |
+| Resumo semanal e mensal | Segunda e dia 1, 09:00 (na `alertas-diarios`) | Mensagem da Mony no chat + push. Implementada na T-083 |
 | Repetir orçamentos | Dia 1, 00:15 | Copia do mês anterior os orçamentos com `repetir_mensal` (RN-060); o mês é o de São Paulo (T-043) |
 | Sincronização Open Finance | A cada 6 h | Além dos webhooks |
 | Aviso de consentimento | Diária | 7 dias antes de vencer (RN-144) |

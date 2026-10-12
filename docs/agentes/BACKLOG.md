@@ -206,7 +206,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-080, T-033 · docs: 04, 09
 - [x] **T-082** Alertas de cartão, fatura, orçamento, vencimentos, fora do padrão e projeção (PR #33)
   - dep: T-080 · RN-106, RN-107, RN-108
-- [ ] **T-083** Resumos semanal e mensal no chat
+- [x] **T-083** Resumos semanal e mensal no chat (PR #66)
   - dep: T-080, T-062b
 - [ ] **T-084** Lembretes: CRUD, recorrência RRULE, soneca, feito pela notificação, alarme local
   - dep: T-081, T-023 · RN-075 a RN-077

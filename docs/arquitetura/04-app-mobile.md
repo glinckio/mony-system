@@ -58,7 +58,7 @@ As rotas em `app/` ficam finas: só importam a `screen` da feature. Isso mantém
 - Expo Router com grupos `(auth)`, `(onboarding)` e `(tabs)`. O `_layout.tsx` raiz decide o grupo pelo estado da sessão e por `usuario.onboardingConcluido`.
 - Esquema `mony://` e Universal Links / App Links em `https://app.<dominio>/`.
 - Toda notificação traz `linkInterno` (ex.: `mony://cartoes/<id>/faturas/<id>`). `lib/deeplinks` valida o link contra uma lista de rotas permitidas antes de navegar.
-- Links que o servidor já manda (`LINKS_INTERNOS` em `@mony/shared/alertas`): `mony://inicio`, `mony://notificacoes`, `mony://cartoes/<id>`, `mony://cartoes/<id>/faturas/<id>`, `mony://orcamentos?competencia=AAAA-MM`, `mony://transacoes/<id>` e `mony://parcelamentos/<id>`.
+- Links que o servidor já manda (`LINKS_INTERNOS` em `@mony/shared/alertas`): `mony://inicio`, `mony://notificacoes`, `mony://cartoes/<id>`, `mony://cartoes/<id>/faturas/<id>`, `mony://orcamentos?competencia=AAAA-MM`, `mony://transacoes/<id>`, `mony://parcelamentos/<id>` e `mony://mony` (o chat, nos resumos da T-083).
 
 ## Dados e estado
 

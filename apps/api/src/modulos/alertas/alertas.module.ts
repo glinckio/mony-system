@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { CartoesModule } from '../cartoes/cartoes.module';
 import { NotificacoesModule } from '../notificacoes/notificacoes.module';
 import { OrcamentosModule } from '../orcamentos/orcamentos.module';
+import { RelatoriosModule } from '../relatorios/relatorios.module';
 import { AlertasRepository } from './alertas.repository';
 import { AvaliadoresAlertas } from './avaliadores-alertas';
 
@@ -11,7 +12,7 @@ import { AvaliadoresAlertas } from './avaliadores-alertas';
  * da fila `eventos-dominio` e à rotina `alertas-diarios`; a API não tem rota aqui.
  */
 @Module({
-  imports: [NotificacoesModule, CartoesModule, OrcamentosModule],
+  imports: [NotificacoesModule, CartoesModule, OrcamentosModule, RelatoriosModule],
   providers: [AlertasRepository, AvaliadoresAlertas],
   exports: [AvaliadoresAlertas],
 })
