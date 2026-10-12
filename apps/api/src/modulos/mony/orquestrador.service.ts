@@ -4,6 +4,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { ComponenteMony, DadosMensagemMony, EventoMony } from '@mony/shared/mony';
 
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
+import { ErroDominio } from '../../core/erros/erro-dominio';
 import {
   type BlocoLlm,
   type ChamadaFerramenta,
@@ -13,6 +14,8 @@ import {
   type MotivoParada,
   type PedidoLlm,
 } from '../../integracoes/ia/llm.provider';
+import { ErroTranscricao, TranscricaoProvider } from '../../integracoes/ia/transcricao.provider';
+import { ArquivosService } from '../arquivos/arquivos.service';
 import { ContextoMonyService } from './contexto.service';
 import { type ContextoFerramenta, RegistroFerramentas } from './ferramentas/registro';
 import { componentesDaMensagem, conversaParaModelo } from './historico';
@@ -31,6 +34,12 @@ export const HISTORICO_MENSAGENS = 20;
 export const HISTORICO_CARACTERES = 12_000;
 
 export const MENSAGEM_FALHA = 'Não consegui responder agora. Tente de novo em instantes.';
+export const MENSAGEM_AUDIO_FALHOU =
+  'Não consegui entender o áudio agora. Tente de novo ou escreva a mensagem.';
+export const MENSAGEM_AUDIO_VAZIO = 'Não ouvi nada no áudio. Tente de novo ou escreva a mensagem.';
+const AUDIO_JA_ENVIADO = 'Este áudio já foi enviado.';
+/** Tempo máximo da transcrição de um áudio (até 10 minutos de fala). */
+const TEMPO_LIMITE_TRANSCRICAO_MS = 60_000;
 
 /** O que uma chamada ao modelo produziu. */
 interface Rodada {
@@ -54,6 +63,8 @@ export class MonyOrquestrador {
     private readonly contextoMony: ContextoMonyService,
     private readonly ferramentas: RegistroFerramentas,
     private readonly llm: LlmProvider,
+    private readonly transcricao: TranscricaoProvider,
+    private readonly arquivos: ArquivosService,
   ) {}
 
   /**
@@ -79,21 +90,54 @@ export class MonyOrquestrador {
       }
       pergunta = await this.repositorio.mensagemPorChave(conversaId, chave);
     }
+    if (!pergunta && dados.arquivoId !== undefined) {
+      // Áudio de outra pessoa, já usado ou que não chegou: erro antes de gravar qualquer coisa.
+      try {
+        await this.arquivos.audioParaMony(contexto, dados.arquivoId);
+        if (await this.repositorio.mensagemDoAnexo(dados.arquivoId)) {
+          throw new ErroDominio('CONFLITO', { mensagem: AUDIO_JA_ENVIADO });
+        }
+      } catch (erro) {
+        if (!(erro instanceof ErroDominio)) throw erro;
+        yield { tipo: 'erro', codigo: erro.codigo, mensagem: erro.message };
+        return;
+      }
+    }
     pergunta ??= await this.salvar({
       usuarioId,
       conversaId,
       autor: 'usuario',
-      tipo: 'texto',
-      conteudo: dados.texto,
+      tipo: dados.arquivoId === undefined ? 'texto' : 'audio',
+      conteudo: dados.texto ?? null,
       componentes: [],
+      anexoId: dados.arquivoId,
       idempotencyKey: chave,
     });
+    if (!pergunta) {
+      yield { tipo: 'erro', codigo: 'CONFLITO', mensagem: AUDIO_JA_ENVIADO };
+      return;
+    }
 
     let texto = '';
     const componentes: ComponenteMony[] = [];
-    let falhou = false;
-    const roteado = await this.regras.responder(contexto, conversaId, dados.texto);
-    if (roteado.tipo === 'resposta') {
+    let falha: string | null = null;
+    // T-064: o áudio vira texto antes de tudo; daí em diante é como se a pessoa tivesse escrito.
+    if (pergunta.conteudo === null && pergunta.anexoId !== null) {
+      const transcrito = yield* this.transcrever(contexto, pergunta, pergunta.anexoId, sinal);
+      if (transcrito === null) {
+        if (sinal?.aborted) return;
+        falha = MENSAGEM_AUDIO_FALHOU;
+      } else {
+        pergunta = { ...pergunta, conteudo: transcrito };
+      }
+    }
+    const roteado =
+      falha === null
+        ? await this.regras.responder(contexto, conversaId, pergunta.conteudo ?? '')
+        : null;
+    if (roteado === null) {
+      // O áudio não virou texto: só a falha.
+    } else if (roteado.tipo === 'resposta') {
       texto = roteado.resposta.texto;
       yield { tipo: 'texto.delta', texto };
       if (roteado.resposta.componente) {
@@ -110,7 +154,7 @@ export class MonyOrquestrador {
       )) {
         if (evento.tipo === 'texto.delta') texto += evento.texto;
         if (evento.tipo === 'componente') componentes.push(evento.componente);
-        if (evento.tipo === 'erro') falhou = true;
+        if (evento.tipo === 'erro') falha = MENSAGEM_FALHA;
         yield evento;
       }
       // RN-080: com rascunho em andamento, a pergunta pendente volta com os botões.
@@ -129,11 +173,12 @@ export class MonyOrquestrador {
       conversaId,
       autor: 'mony',
       tipo: 'texto',
-      conteudo: falhou
-        ? [texto, MENSAGEM_FALHA].filter((parte) => parte !== '').join('\n\n')
-        : texto || null,
+      conteudo:
+        falha === null
+          ? texto || null
+          : [texto, falha].filter((parte) => parte !== '').join('\n\n'),
       componentes,
-      idempotencyKey: falhou ? undefined : chaveResposta,
+      idempotencyKey: falha === null ? chaveResposta : undefined,
     });
     const mensagemId =
       resposta?.id ??
@@ -145,18 +190,83 @@ export class MonyOrquestrador {
     yield { tipo: 'fim', mensagemId };
   }
 
-  /** Grava a mensagem; se a chave já existe (envio duplicado ao mesmo tempo), devolve a gravada. */
+  /**
+   * Grava a mensagem; se a chave já existe (envio duplicado ao mesmo tempo), devolve a gravada.
+   * `null`: o áudio foi para outra mensagem ao mesmo tempo.
+   */
   private async salvar(
     dados: Parameters<MonyRepository['salvarMensagem']>[0],
-  ): Promise<MensagemSalva> {
+  ): Promise<MensagemSalva | null> {
     const salva = await this.repositorio.salvarMensagem(dados);
     if (salva) return salva;
     const existente =
       dados.idempotencyKey === undefined
         ? null
         : await this.repositorio.mensagemPorChave(dados.conversaId, dados.idempotencyKey);
-    if (!existente) throw new Error('Mensagem da Mony não gravada');
-    return existente;
+    if (existente) return existente;
+    if (dados.anexoId !== undefined) return null;
+    throw new Error('Mensagem da Mony não gravada');
+  }
+
+  /**
+   * T-064: transcreve o áudio da mensagem, grava o texto nela e avisa o app (`transcricao`). Um
+   * `logs_ia` por chamada. `null`: não deu (o evento de erro já saiu) ou o app cancelou.
+   */
+  private async *transcrever(
+    contexto: Contexto,
+    pergunta: MensagemSalva,
+    anexoId: string,
+    sinal: AbortSignal | undefined,
+  ): AsyncGenerator<EventoMony, string | null> {
+    const usuarioId = usuarioDoContexto(contexto);
+    const inicio = performance.now();
+    const tempo = AbortSignal.timeout(TEMPO_LIMITE_TRANSCRICAO_MS);
+    const registrar = (erro: string | null) =>
+      this.repositorio.registrarLogIa({
+        usuarioId,
+        mensagemId: pergunta.id,
+        modelo: this.transcricao.modelo,
+        tokensEntrada: 0,
+        tokensSaida: 0,
+        ferramenta: 'transcricao',
+        duracaoMs: Math.round(performance.now() - inicio),
+        erro,
+      });
+    let texto: string;
+    try {
+      const audio = await this.arquivos.audioParaMony(contexto, anexoId);
+      ({ texto } = await this.transcricao.transcrever({
+        ...audio,
+        sinal: sinal ? AbortSignal.any([sinal, tempo]) : tempo,
+      }));
+    } catch (erro) {
+      if (sinal?.aborted) {
+        await registrar('cancelada pelo app');
+        return null;
+      }
+      const motivo = tempo.aborted
+        ? 'tempo esgotado'
+        : erro instanceof Error
+          ? erro.message
+          : String(erro);
+      await registrar(motivo.slice(0, 500));
+      this.log.warn(`Áudio da Mony sem transcrição: ${motivo}`);
+      const transitorio = tempo.aborted || (erro instanceof ErroTranscricao && erro.transitorio);
+      yield {
+        tipo: 'erro',
+        codigo: transitorio ? 'SERVICO_INDISPONIVEL' : 'ERRO_INTERNO',
+        mensagem: MENSAGEM_AUDIO_FALHOU,
+      };
+      return null;
+    }
+    await registrar(null);
+    if (texto === '') {
+      yield { tipo: 'erro', codigo: 'REQUISICAO_INVALIDA', mensagem: MENSAGEM_AUDIO_VAZIO };
+      return null;
+    }
+    await this.repositorio.atualizarConteudo(pergunta.id, texto);
+    yield { tipo: 'transcricao', texto };
+    return texto;
   }
 
   /** O modelo, com as voltas de ferramenta, até ele responder sem pedir ferramenta. */

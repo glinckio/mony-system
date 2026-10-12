@@ -25,6 +25,8 @@ describe('variáveis de ambiente', () => {
       PUSH_PROVEDOR: 'fake',
       IA_PROVEDOR: 'fake',
       IA_MODELO: 'claude-sonnet-5-5',
+      TRANSCRICAO_PROVEDOR: 'fake',
+      TRANSCRICAO_MODELO: 'nova-3',
       APP_VERSAO_MINIMA_IOS: '0.0.0',
       APP_VERSAO_MINIMA_ANDROID: '0.0.0',
       AWS_REGION: 'sa-east-1',

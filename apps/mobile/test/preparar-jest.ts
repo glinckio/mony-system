@@ -43,3 +43,54 @@ jest.mock('expo-local-authentication', () => ({
 jest.mock('expo-crypto', () => ({
   randomUUID: () => jest.requireActual<typeof import('node:crypto')>('node:crypto').randomUUID(),
 }));
+
+// Gravador de voz da Mony (T-064): `record` e `stop` mudam o estado que o hook lê; os testes mudam
+// a duração com `__gravador.simularDuracao` e a permissão pelo mock de
+// `requestRecordingPermissionsAsync`.
+jest.mock('expo-audio', () => {
+  const { useSyncExternalStore } = jest.requireActual<typeof import('react')>('react');
+  const ouvintes = new Set<() => void>();
+  let estado = { isRecording: false, durationMillis: 0 };
+  const mudar = (novo: Partial<typeof estado>) => {
+    estado = { ...estado, ...novo };
+    for (const ouvinte of ouvintes) ouvinte();
+  };
+  const gravador = {
+    uri: null as string | null,
+    prepareToRecordAsync: jest.fn(() => Promise.resolve()),
+    record: jest.fn(() => {
+      gravador.uri = 'file:///cache/Audio/gravacao.m4a';
+      mudar({ isRecording: true, durationMillis: 0 });
+    }),
+    stop: jest.fn(() => {
+      mudar({ isRecording: false });
+      return Promise.resolve();
+    }),
+    simularDuracao: (segundos: number) => {
+      mudar({ durationMillis: segundos * 1000 });
+    },
+    /** Entre testes, sem avisar a tela (já desmontada ou de saída). */
+    reiniciar: () => {
+      gravador.uri = null;
+      estado = { isRecording: false, durationMillis: 0 };
+    },
+  };
+  return {
+    AudioQuality: { MIN: 0, LOW: 32, MEDIUM: 64, HIGH: 96, MAX: 127 },
+    IOSOutputFormat: { MPEG4AAC: 'aac ' },
+    requestRecordingPermissionsAsync: jest.fn(() =>
+      Promise.resolve({ granted: true, status: 'granted' }),
+    ),
+    setAudioModeAsync: jest.fn(() => Promise.resolve()),
+    useAudioRecorder: () => gravador,
+    useAudioRecorderState: () =>
+      useSyncExternalStore(
+        (ouvinte: () => void) => {
+          ouvintes.add(ouvinte);
+          return () => ouvintes.delete(ouvinte);
+        },
+        () => estado,
+      ),
+    __gravador: gravador,
+  };
+});

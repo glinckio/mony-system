@@ -80,6 +80,21 @@ describe('app.config por ambiente', () => {
       extra: { eas: { projectId: 'projeto-1' } },
     });
   });
+
+  it('microfone para a mensagem de voz (T-064): nenhum plugin bloqueia, nada em segundo plano', () => {
+    const plugins = criarConfigApp(base, {}).plugins ?? [];
+    const opcoes = (nome: string) =>
+      plugins.find((plugin) => Array.isArray(plugin) && plugin[0] === nome)?.[1] as
+        Record<string, unknown> | undefined;
+    const audio = opcoes('expo-audio');
+    expect(audio).toMatchObject({
+      microphonePermission: expect.stringContaining('Mony'),
+      enableBackgroundPlayback: false,
+      enableBackgroundRecording: false,
+    });
+    // `false` no expo-image-picker bloquearia o RECORD_AUDIO no Android.
+    expect(opcoes('expo-image-picker')?.microphonePermission).toBe(audio?.microphonePermission);
+  });
 });
 
 describe('lerConfigPublica', () => {

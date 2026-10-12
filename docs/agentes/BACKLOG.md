@@ -185,7 +185,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-062a · RN-087, RN-092 · docs: 08 (Ferramentas)
 - [x] **T-063** Preferências aprendidas e ordenação de botões (PR #60)
   - dep: T-062b · RN-081, RN-090
-- [ ] **T-064** Áudio: gravação no app + `TranscricaoProvider`
+- [x] **T-064** Áudio: gravação no app + `TranscricaoProvider` (PR #61)
   - dep: T-060
 - [ ] **T-065** Foto, print e PDF: `ler_documento`, `importacoes_documento`, confirmação obrigatória
   - dep: T-062b · RN-083, RN-086

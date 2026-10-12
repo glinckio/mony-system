@@ -109,10 +109,10 @@ Regras de cache:
 ## Chat da Mony
 
 - Envio por `POST /v1/mony/mensagens` com resposta em **SSE** lida com `expo/fetch` (streaming de texto e eventos de componente).
-- Eventos SSE: `texto.delta`, `componente` (botões, cartão de resumo), `acao.resultado`, `erro`, `fim`.
+- Eventos SSE: `transcricao` (o texto do áudio, T-064), `texto.delta`, `componente` (botões, cartão de resumo), `acao.resultado`, `erro`, `fim`.
 - Toque em botão vai por `POST /v1/mony/acoes` com `{ acao }`, a ação que veio no botão (`{ tipo, … }`: resposta do rascunho, [Desfazer], confirmação de exclusão ou cancelar; T-061 e T-062a), com `Idempotency-Key` e sem texto livre (RN-084). O app não lê a ação: só a devolve.
 - **Como está (PoC T-020):** `src/lib/mony/conversa.ts` lê o SSE com o `expo/fetch` (`body.getReader()`) e o `LeitorSse` de `@mony/shared/mony`. A aba Mony mostra a resposta crescendo, os botões como `Chip` e o cartão de resumo do que foi gravado (valor, descrição, categoria, data, forma ou cartão e parcelas) com o [Desfazer]; tocar num botão tira os componentes daquela mensagem. O estado do lançamento fica no rascunho do servidor (T-061).
-- Áudio: gravação com `expo-audio` (AAC/m4a), upload por URL assinada, depois a mensagem referencia o `arquivoId`.
+- Áudio (T-064): com o campo vazio, o botão de microfone grava com `expo-audio` (AAC/m4a, mono, 64 kbps; até 10 minutos, quando envia sozinho), com [Cancelar gravação] e [Enviar áudio]. O arquivo sobe por URL assinada (`POST /arquivos`, tipo `audio`) e a mensagem leva o `arquivoId`; o balão mostra "Entendendo o áudio…" até o evento `transcricao` trazer o texto. Microfone negado: a Mony avisa para liberar nos Ajustes. Sem áudio em segundo plano (`enableBackgroundPlayback` e `enableBackgroundRecording` desligados).
 - Foto, print, PDF: `expo-image-picker` / `expo-document-picker`, compressão de imagem no aparelho (lado maior até ~2000 px) antes do upload.
 - QR Code de NFC-e: `expo-camera` com leitura de código; envia a URL lida para `POST /v1/mony/nfce`.
 - Histórico paginado (`GET /v1/mony/conversa`) com FlashList invertida e busca.

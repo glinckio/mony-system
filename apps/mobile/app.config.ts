@@ -98,6 +98,7 @@ function urlsDaLoja(identificador: string, idAppStore: string | undefined) {
 const COR_FUNDO = '#0A2133';
 
 const PEDIDO_FACE_ID = 'Use o Face ID para desbloquear o Mony neste aparelho.';
+const PEDIDO_MICROFONE = 'O Mony usa o microfone para você mandar mensagens de voz para a Mony.';
 
 export function criarConfigApp(base: ConfigContext['config'], variaveis: Variaveis): ExpoConfig {
   const ambiente = texto(variaveis.APP_ENV) ?? 'development';
@@ -162,14 +163,24 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
       // restaurado em outro aparelho não abriria.
       ['expo-secure-store', { faceIDPermission: PEDIDO_FACE_ID, configureAndroidBackup: true }],
       // Anexos do lançamento (RN-040, T-058): os textos dos pedidos de câmera e fotos no iOS. O
-      // microfone fica de fora: o app não grava vídeo.
+      // microfone vem com o mesmo texto do expo-audio: `false` aqui bloquearia o RECORD_AUDIO no
+      // Android e apagaria o texto do iOS, e a mensagem de voz da Mony (T-064) não gravaria.
       [
         'expo-image-picker',
         {
           photosPermission:
             'O Mony usa suas fotos para anexar comprovantes e notas aos lançamentos.',
           cameraPermission: 'O Mony usa a câmera para fotografar comprovantes e notas.',
-          microphonePermission: false,
+          microphonePermission: PEDIDO_MICROFONE,
+        },
+      ],
+      // Mensagem de voz para a Mony (T-064): só com o app aberto, sem áudio em segundo plano.
+      [
+        'expo-audio',
+        {
+          microphonePermission: PEDIDO_MICROFONE,
+          enableBackgroundPlayback: false,
+          enableBackgroundRecording: false,
         },
       ],
       // Envio de source maps no build do EAS: precisa de SENTRY_AUTH_TOKEN (segredo no EAS) ou

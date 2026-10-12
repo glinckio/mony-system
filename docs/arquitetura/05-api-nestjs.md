@@ -208,7 +208,7 @@ Implementado na T-037 (RN-040 a RN-047).
 | `PATCH /transacoes/:id` | Só o que veio; `anexoIds` substitui a lista |
 | `DELETE /transacoes/:id` | Exclusão lógica (RN-046) |
 | `POST /transacoes/lote` | `excluir` ou `mudar_categoria` em vários, tudo ou nada (RN-044) |
-| `POST /arquivos` | URL assinada de `PUT` (5 min) e o id do anexo |
+| `POST /arquivos` | URL assinada de `PUT` (5 min) e o id do anexo. O `tipoConteudo` combina com o `tipo` (`foto`: imagens; `pdf`; `comprovante`: imagem ou PDF; `audio`: m4a, aac, mp3 ou webm). Áudio é só para a Mony (`arquivoId` em `POST /mony/mensagens`) e não entra em `anexoIds` |
 | `GET /arquivos/:id` | URL assinada de leitura (15 min) |
 
 - **Gravação:**

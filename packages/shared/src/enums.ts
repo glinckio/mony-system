@@ -109,7 +109,7 @@ export type StatusParcelamento = (typeof STATUS_PARCELAMENTO)[number];
 export const STATUS_PARCELA = ['pendente', 'pago', 'atrasado'] as const;
 export type StatusParcela = (typeof STATUS_PARCELA)[number];
 
-export const TIPOS_ANEXO = ['foto', 'pdf', 'comprovante'] as const;
+export const TIPOS_ANEXO = ['foto', 'pdf', 'comprovante', 'audio'] as const;
 export type TipoAnexo = (typeof TIPOS_ANEXO)[number];
 
 // Planejamento

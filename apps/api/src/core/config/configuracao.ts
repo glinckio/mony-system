@@ -69,6 +69,19 @@ export class Configuracao {
     return this.config.get('IA_MODELO', { infer: true });
   }
 
+  get provedorTranscricao(): Ambiente['TRANSCRICAO_PROVEDOR'] {
+    return this.config.get('TRANSCRICAO_PROVEDOR', { infer: true });
+  }
+
+  /** Chave da API da Deepgram; obrigatória com `TRANSCRICAO_PROVEDOR=deepgram`. */
+  get chaveDeepgram(): string | undefined {
+    return this.config.get('DEEPGRAM_CHAVE_API', { infer: true });
+  }
+
+  get modeloTranscricao(): string {
+    return this.config.get('TRANSCRICAO_MODELO', { infer: true });
+  }
+
   get provedorPush(): Ambiente['PUSH_PROVEDOR'] {
     return this.config.get('PUSH_PROVEDOR', { infer: true });
   }

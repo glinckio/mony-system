@@ -49,6 +49,8 @@ export const esquemaComponenteMony = z.discriminatedUnion('tipo', [
 
 /** Doc 04: os eventos do SSE de `POST /mony/mensagens`, um por bloco `event:`/`data:`. */
 export const esquemaEventoMony = z.discriminatedUnion('tipo', [
+  /** O que a Mony entendeu do áudio da pessoa, antes da resposta (T-064). */
+  z.object({ tipo: z.literal('transcricao'), texto: z.string() }),
   z.object({ tipo: z.literal('texto.delta'), texto: z.string() }),
   z.object({ tipo: z.literal('componente'), componente: esquemaComponenteMony }),
   z.object({ tipo: z.literal('erro'), codigo: z.string(), mensagem: z.string() }),
@@ -61,9 +63,18 @@ export type ResumoLancamento = z.infer<typeof esquemaResumoLancamento>;
 export type EventoMony = z.infer<typeof esquemaEventoMony>;
 export type TipoEventoMony = EventoMony['tipo'];
 
-export const esquemaMensagemMony = z.object({
-  texto: z.string().trim().min(1).max(2000),
-});
+/**
+ * A mensagem para a Mony: o texto, ou o áudio já enviado (`POST /arquivos` com tipo `audio`), que a
+ * API transcreve (T-064). Um dos dois.
+ */
+export const esquemaMensagemMony = z
+  .object({
+    texto: z.string().trim().min(1).max(2000).optional(),
+    arquivoId: z.uuid().optional(),
+  })
+  .refine(({ texto, arquivoId }) => (texto === undefined) !== (arquivoId === undefined), {
+    message: 'Mande o texto ou o áudio',
+  });
 
 export type DadosMensagemMony = z.infer<typeof esquemaMensagemMony>;
 

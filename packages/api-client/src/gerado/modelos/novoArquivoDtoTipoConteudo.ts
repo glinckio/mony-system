@@ -15,4 +15,8 @@ export const NovoArquivoDtoTipoConteudo = {
   'image/heic': 'image/heic',
   'image/webp': 'image/webp',
   'application/pdf': 'application/pdf',
+  'audio/mp4': 'audio/mp4',
+  'audio/aac': 'audio/aac',
+  'audio/mpeg': 'audio/mpeg',
+  'audio/webm': 'audio/webm',
 } as const;

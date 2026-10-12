@@ -4,16 +4,34 @@
  */
 import { z } from 'zod';
 
-import { TIPOS_ANEXO } from './enums.js';
+import { TIPOS_ANEXO, type TipoAnexo } from './enums.js';
 
-/** Tipos de arquivo aceitos como anexo: fotos e PDF. */
+/** Tipos de arquivo aceitos: fotos e PDF (anexos) e áudio (mensagem de voz para a Mony, T-064). */
 export const TIPOS_CONTEUDO_ANEXO = [
   'image/jpeg',
   'image/png',
   'image/heic',
   'image/webp',
   'application/pdf',
+  'audio/mp4',
+  'audio/aac',
+  'audio/mpeg',
+  'audio/webm',
 ] as const;
+
+/** Tipos de conteúdo de cada tipo de arquivo: o áudio não vira anexo de lançamento, e vice-versa. */
+export const CONTEUDOS_DO_TIPO: Record<
+  TipoAnexo,
+  readonly (typeof TIPOS_CONTEUDO_ANEXO)[number][]
+> = {
+  foto: ['image/jpeg', 'image/png', 'image/heic', 'image/webp'],
+  pdf: ['application/pdf'],
+  comprovante: ['image/jpeg', 'image/png', 'image/heic', 'image/webp', 'application/pdf'],
+  audio: ['audio/mp4', 'audio/aac', 'audio/mpeg', 'audio/webm'],
+};
+
+/** Doc 11: áudio de até 10 minutos. */
+export const DURACAO_MAXIMA_AUDIO_SEGUNDOS = 10 * 60;
 
 /** 10 MB: foto comprimida no aparelho (lado maior até ~2000 px, doc 04) ou PDF de comprovante. */
 export const TAMANHO_MAXIMO_ANEXO = 10 * 1024 * 1024;
@@ -22,12 +40,17 @@ export const TAMANHO_MAXIMO_ANEXO = 10 * 1024 * 1024;
 export const VALIDADE_URL_ENVIO_SEGUNDOS = 5 * 60;
 export const VALIDADE_URL_LEITURA_SEGUNDOS = 15 * 60;
 
-export const esquemaNovoArquivo = z.object({
-  tipo: z.enum(TIPOS_ANEXO),
-  tipoConteudo: z.enum(TIPOS_CONTEUDO_ANEXO),
-  /** Tamanho em bytes; conferido de novo quando o arquivo é ligado ao recurso. */
-  tamanho: z.number().int().min(1).max(TAMANHO_MAXIMO_ANEXO),
-});
+export const esquemaNovoArquivo = z
+  .object({
+    tipo: z.enum(TIPOS_ANEXO),
+    tipoConteudo: z.enum(TIPOS_CONTEUDO_ANEXO),
+    /** Tamanho em bytes; conferido de novo quando o arquivo é ligado ao recurso. */
+    tamanho: z.number().int().min(1).max(TAMANHO_MAXIMO_ANEXO),
+  })
+  .refine(({ tipo, tipoConteudo }) => CONTEUDOS_DO_TIPO[tipo].includes(tipoConteudo), {
+    message: 'Tipo de conteúdo que não combina com o tipo do arquivo',
+    path: ['tipoConteudo'],
+  });
 
 export const esquemaEnvioArquivo = z.object({
   id: z.uuid(),
