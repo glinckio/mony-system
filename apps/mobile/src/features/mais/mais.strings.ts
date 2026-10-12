@@ -20,6 +20,8 @@ export const textosMais = {
     biometriaMotivo: 'Confirmar para ligar a biometria',
     cancelar: 'Cancelar',
     permissoes: 'Permissões e apps de compra',
+    alertas: 'Alertas da Mony',
+    alertasAjuda: 'O que avisar e o horário de silêncio.',
     tutorial: 'Rever tutorial',
     sair: 'Sair da conta',
     sairAjuda: 'Sai deste aparelho. Seus dados continuam na conta.',

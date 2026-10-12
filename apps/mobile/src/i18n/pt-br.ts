@@ -7,6 +7,7 @@ import { textosInicio } from '@/features/inicio/inicio.strings';
 import { textosMais } from '@/features/mais/mais.strings';
 import { textosMetas } from '@/features/metas/metas.strings';
 import { textosMony } from '@/features/mony/mony.strings';
+import { textosNotificacoes } from '@/features/notificacoes/notificacoes.strings';
 import { textosOnboarding } from '@/features/onboarding/onboarding.strings';
 import { textosOrcamentos } from '@/features/orcamentos/orcamentos.strings';
 import { textosRelatorios } from '@/features/relatorios/relatorios.strings';
@@ -25,6 +26,7 @@ export const textosPtBr = {
   inicio: textosInicio,
   transacoes: textosTransacoes,
   mony: textosMony,
+  notificacoes: textosNotificacoes,
   cartoes: textosCartoes,
   mais: textosMais,
   categorias: textosCategorias,

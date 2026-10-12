@@ -55,18 +55,21 @@ export function TopoInicio({ notificacoesNaoLidas, aoEscolherPeriodo }: PropsTop
         rotulo={t('inicio.periodo.botao')}
         aoPressionar={aoEscolherPeriodo}
       />
-      {/* Só aviso por enquanto: a central de notificações é a T-087. */}
-      <View
-        accessible
+      {/* O sino abre a central de notificações (T-087). */}
+      <Pressable
+        accessibilityRole="button"
         accessibilityLabel={avisoNotificacoes}
         testID="inicio-notificacoes"
-        className="min-h-toque min-w-toque items-center justify-center rounded-total border border-vidro bg-vidro"
+        onPress={() => {
+          router.push('/notificacoes');
+        }}
+        className="min-h-toque min-w-toque items-center justify-center rounded-total border border-vidro bg-vidro active:opacity-70"
       >
         <Icone nome="bell" tamanho={22} cor={cores.texto} />
         {notificacoesNaoLidas > 0 ? (
           <View className="absolute right-2 top-2 h-2 w-2 rounded-total bg-atencao" />
         ) : null}
-      </View>
+      </Pressable>
     </View>
   );
 }

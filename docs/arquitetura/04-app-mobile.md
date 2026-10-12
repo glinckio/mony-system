@@ -243,7 +243,7 @@ Telas em `src/features/orcamentos` e `src/features/metas`, no design da página 
 
 Tela em `src/features/inicio`, no design da página 3 (`docs/design`), com uma chamada (`GET /dashboard`):
 
-- **Topo**: as iniciais do nome (abrem o Perfil), "Pesquisar" (abre Transações, que tem a busca), o calendário do período e o sino com o ponto das não lidas. O sino só avisa até a central de notificações (T-087).
+- **Topo**: as iniciais do nome (abrem o Perfil), "Pesquisar" (abre Transações, que tem a busca), o calendário do período e o sino com o ponto das não lidas, que abre a central de notificações (T-087).
 - **Saldo do período** (RN-020) grande, com os centavos menores, o olho do modo privacidade (RN-022) e "Ver o mês" (abre Transações). O título da tela ("Início") é só para o leitor de tela: o design não tem título visível.
 - **Período** (RN-021): folha com "Este mês", "Mês passado" e "Escolher" (de e até, `DD/MM/AAAA`), validada pelo `esquemaConsultaDashboard`. Ao trocar, a tela segue com o período anterior até o novo chegar.
 - **Atalhos**: Lançar, Orçamentos e Metas. Os do design que ainda não têm tela (Ler nota, Lista, Lembrete) entram com as tarefas deles.
@@ -267,10 +267,12 @@ Tela em `src/features/relatorios` (`/relatorios`, no grupo `(telas)`, pela grade
 Telas em `src/features/mais`, no design das páginas 8 e 9 (`docs/design`):
 
 - **Mais** (`/mais`): o cartão do perfil (iniciais e nome, abre o Perfil), a grade de atalhos e "Configurações". A grade só mostra as telas que já existem (Orçamentos, Metas, Relatórios, Categorias e Contas); Parcelamentos, Listas, Lembretes, Agenda e Bancos entram com as tarefas deles, e Contas sai quando Bancos (Open Finance) chegar.
-- **Perfil** (`/mais/perfil`, também pelas iniciais do Início): iniciais, nome e e-mail (`GET /me`); Dados pessoais; Entrar com biometria (RN-005, quando o aparelho tem); Permissões e apps de compra; Rever tutorial; Sair da conta.
+- **Perfil** (`/mais/perfil`, também pelas iniciais do Início): iniciais, nome e e-mail (`GET /me`); Dados pessoais; Entrar com biometria (RN-005, quando o aparelho tem); Alertas da Mony; Permissões e apps de compra; Rever tutorial; Sair da conta.
+- **Alertas da Mony** (`/mais/alertas`, T-087): o horário de silêncio (chave e as horas de começo e fim, "22:00"; RN-101), a chave de cada alerta que o app já manda (limite, fatura fechada, vencimento da fatura, fatura atrasada, orçamentos, contas a vencer, fora do padrão, projeção, resumos; assinatura "sempre ligado", RN-100) e, nos vencimentos, a antecedência (no dia, 1, 3, 5 ou 7 dias, RN-108). "Salvar" manda só o que mudou (`PUT /preferencias-alerta`). Os alertas de recursos que ainda não existem (lembretes, agenda, apps de compra, banco) entram com eles.
+- **Central de notificações** (`/notificacoes`, pelo sino do Início, T-087): "Todas | Não lidas", da mais nova para a mais antiga (`GET /notificacoes`, 30 por página), a não lida em destaque com o ponto, o título, o corpo e o dia e a hora no fuso do usuário. Tocar marca como lida (`POST /notificacoes/:id/lida`) e abre a tela do `linkInterno` (`rotaDoLink` em `src/lib/links-internos.ts`, que só aceita as rotas que o app tem; parcelamento ainda não tem tela e não abre). "Marcar todas como lidas" (`POST /notificacoes/lidas`). Ler atualiza o ponto do sino.
 - **Dados pessoais** (`/mais/dados-pessoais`): nome e celular (`PATCH /me`, validado pelo `esquemaAtualizacaoPerfil`), só o que mudou; o e-mail só aparece. O nome novo vai para a sessão, e as iniciais do app acompanham.
 - **Rever tutorial** (`/tutorial`, no grupo `(telas)`): as duas boas-vindas do onboarding, sem as permissões no fim; "Entendi" volta ao Perfil.
-- **Ainda não** (com as tarefas deles): assinatura e o selo "Teste grátis" (Fase 4), Alertas da Mony (T-087), Exportar meus dados e Excluir conta (T-140), Planos e assinatura e Ajuda e suporte. O modo escuro do design não vira chave: o app é só escuro (T-017).
+- **Ainda não** (com as tarefas deles): assinatura e o selo "Teste grátis" (Fase 4), Exportar meus dados e Excluir conta (T-140), Planos e assinatura e Ajuda e suporte. O modo escuro do design não vira chave: o app é só escuro (T-017).
 
 ## Onboarding
 

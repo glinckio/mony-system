@@ -107,3 +107,5 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 ## Central de notificações
 
 `GET /notificacoes` com filtro por tipo, paginação por cursor. `POST /notificacoes/:id/lida`. Contador de não lidas no `GET /dashboard`. Novidades vêm de `GET /novidades` e aparecem na mesma central em aba própria.
+
+No app (T-087): a central abre pelo sino do Início, com "Todas | Não lidas", marcar como lida ao tocar (e abrir a tela do link) e "Marcar todas como lidas"; as preferências e o silêncio ficam em Perfil → Alertas da Mony ([04](04-app-mobile.md)).

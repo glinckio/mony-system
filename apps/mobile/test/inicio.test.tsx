@@ -228,6 +228,19 @@ describe('Início no app (T-053)', () => {
   });
 
   it(
+    'o sino abre a central de notificações (T-087)',
+    async () => {
+      api();
+      renderRouter(ROTAS, { initialUrl: '/' });
+      fireEvent.press(
+        await screen.findByRole('button', { name: '3 notificações não lidas' }, ESPERA),
+      );
+      expect(await screen.findByRole('header', { name: 'Notificações' }, ESPERA)).toBeOnTheScreen();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
     'RN-020 RN-023 saldo, resumo, vencimentos, cartões e orçamentos do mês',
     async () => {
       const pedidos = api();

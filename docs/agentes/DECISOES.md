@@ -822,3 +822,11 @@ Contexto: o doc 09 manda o resumo da segunda e do dia 1 "no chat + push" e já t
 - **Porta `ChatDosAlertas`** no módulo de notificações, implementada na Mony (`ChatDaMony`, no `RascunhosModule`, que o worker já carrega): o motor não depende do resto da Mony.
 - **Link `mony://mony`** (a aba do chat) entra nos `LINKS_INTERNOS`; o app passa a abrir links com a T-088.
 Reversível: sim.
+
+## 2026-10-12 — T-087 — Central de notificações e alertas da Mony no app
+Contexto: o doc 04 põe a central atrás do sino e os "Alertas da Mony" no Perfil, sem detalhar a tela. Decisões:
+- **Só os alertas que o app já manda** aparecem nas preferências; lembretes, compromissos, apps de compra, banco e novidades entram com as tarefas deles (as preferências deles continuam na API, ligadas).
+- **Antecedência em chips** (no dia, 1, 3, 5 e 7 dias), dentro do 0–30 que a API aceita.
+- **Salvar com botão**, mandando só o que mudou, em vez de gravar a cada chave: uma requisição só e o silêncio validado antes (hora "HH:MM", começo diferente do fim).
+- **Links internos pelo app** (`rotaDoLink`): uma lista de padrões das rotas que existem; o resto (parcelamento, por exemplo) marca como lida e não navega. A T-088 usa a mesma função para o toque no push.
+Reversível: sim.
