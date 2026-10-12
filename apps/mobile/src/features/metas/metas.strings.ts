@@ -3,6 +3,17 @@ export const textosMetas = {
   nova: 'Nova meta',
   editar: 'Editar meta',
   guardadoTotal: 'Guardado em todas as metas',
+  /** "+ R$ 450,00 este mês". */
+  esteMes: '+ {{valor}} este mês',
+  dica: {
+    titulo: 'Dica da Mony',
+    ritmo: 'Guardando {{valor}} por mês, {{titulo}} fica completa em {{meses}}.',
+    /** Sem chave de plural: o Hermes pode não ter `Intl.PluralRules`. */
+    umMes: '1 mês',
+    meses: '{{quantidade}} meses',
+    ritmoComPrazo: 'Para chegar até {{data}}, guarde {{valor}} por mês.',
+    soPrazo: 'Para {{titulo}} chegar até {{data}}, guarde {{valor}} por mês.',
+  },
   /** "até dez/2027". */
   ate: 'até {{data}}',
   semPrazo: 'Sem prazo',

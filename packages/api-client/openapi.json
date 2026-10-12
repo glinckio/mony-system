@@ -9241,6 +9241,40 @@
                 },
                 "concluida": {
                   "type": "boolean"
+                },
+                "guardadoNoMesCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "ritmoMensalCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "mesesParaConcluir": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "necessarioPorMesCentavos": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               },
               "required": [
@@ -9251,13 +9285,23 @@
                 "restanteCentavos",
                 "percentual",
                 "prazo",
-                "concluida"
+                "concluida",
+                "guardadoNoMesCentavos",
+                "ritmoMensalCentavos",
+                "mesesParaConcluir",
+                "necessarioPorMesCentavos"
               ]
             }
+          },
+          "guardadoNoMesCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           }
         },
         "required": [
-          "itens"
+          "itens",
+          "guardadoNoMesCentavos"
         ]
       },
       "DetalheMetaDto": {

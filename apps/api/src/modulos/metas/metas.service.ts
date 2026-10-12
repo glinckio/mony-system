@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { type DataCalendario, dataNoFuso } from '@mony/shared/datas';
-import type {
-  Aporte,
-  DadosAtualizacaoMeta,
-  DadosNovaMeta,
-  DadosNovoAporte,
-  DetalheMeta,
-  ListaMetas,
-  Meta,
-  RespostaAporte,
+import {
+  type Aporte,
+  type DadosAtualizacaoMeta,
+  type DadosNovaMeta,
+  type DadosNovoAporte,
+  type DetalheMeta,
+  inicioDaJanelaDoRitmo,
+  type ListaMetas,
+  type Meta,
+  type RespostaAporte,
+  ritmoDaMeta,
 } from '@mony/shared/metas';
 
 import { Clock } from '../../core/clock/clock';
@@ -25,9 +27,39 @@ export class MetasService {
     private readonly clock: Clock,
   ) {}
 
+  /** As metas com o ritmo de cada uma e o total guardado no mês de hoje (RN-063). */
   async listar(contexto: Contexto): Promise<ListaMetas> {
     const usuarioId = usuarioDoContexto(contexto);
-    return { itens: (await this.repositorio.listar(usuarioId)).map(paraMeta) };
+    const fuso = await this.repositorio.fusoDoUsuario(usuarioId);
+    const hoje = dataNoFuso(this.clock.agora(), fuso);
+    const [metas, aportes] = await Promise.all([
+      this.repositorio.listar(usuarioId),
+      this.repositorio.aportesDesde(usuarioId, paraDataDoBanco(inicioDaJanelaDoRitmo(hoje))),
+    ]);
+    const itens = metas.map((linha) => {
+      const meta = paraMeta(linha);
+      const ritmo = ritmoDaMeta({
+        hoje,
+        criacao: dataNoFuso(linha.criadoEm, fuso),
+        prazo: meta.prazo,
+        restanteCentavos: meta.restanteCentavos,
+        concluida: meta.concluida,
+        aportes: aportes
+          .filter(({ metaId }) => metaId === meta.id)
+          .map(({ data, valor }) => ({
+            data: data.toISOString().slice(0, 10),
+            valorCentavos: Number(valor),
+          })),
+      });
+      return { ...meta, ...ritmo };
+    });
+    return {
+      itens,
+      guardadoNoMesCentavos: itens.reduce(
+        (total, { guardadoNoMesCentavos }) => total + guardadoNoMesCentavos,
+        0,
+      ),
+    };
   }
 
   async buscar(contexto: Contexto, id: string): Promise<DetalheMeta> {

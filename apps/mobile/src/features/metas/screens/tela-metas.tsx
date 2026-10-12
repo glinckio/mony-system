@@ -4,23 +4,38 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 
-import { BotaoIcone, Cabecalho, Card, Erro, Skeleton, Tela, Texto, Valor, Vazio } from '@/ui';
+import {
+  BotaoIcone,
+  Cabecalho,
+  Card,
+  Erro,
+  Skeleton,
+  Tela,
+  Texto,
+  useTextoDoValor,
+  Valor,
+  Vazio,
+} from '@/ui';
 
 import { CartaoMeta } from '../components/cartao-meta';
+import { DicaDaMony } from '../components/dica-da-mony';
 import { FolhaAporte } from '../components/folha-aporte';
 import { useMetas } from '../hooks/use-metas';
 
 /**
- * Metas (design, página 5): o total guardado em todas e cada meta com o percentual, a barra e
- * "Guardar" (RN-063). Abertas primeiro, pelo prazo, como a API manda.
+ * Metas (design, página 5): o total guardado em todas, o que entrou no mês, cada meta com o
+ * percentual, a barra e "Guardar", e a "Dica da Mony" (RN-063). Abertas primeiro, pelo prazo, como
+ * a API manda.
  */
 export default function TelaMetas() {
   const { t } = useTranslation();
   const router = useRouter();
+  const textoDoValor = useTextoDoValor();
   const consulta = useMetas();
   const [guardando, definirGuardando] = useState<Meta | null>(null);
   const metas = consulta.data?.itens ?? [];
   const guardado = metas.reduce((total, meta) => total + meta.valorAtualCentavos, 0);
+  const guardadoNoMes = consulta.data?.guardadoNoMesCentavos ?? 0;
 
   function nova() {
     router.push('/metas/nova');
@@ -60,6 +75,11 @@ export default function TelaMetas() {
               {t('metas.guardadoTotal')}
             </Texto>
             <Valor centavos={guardado} variante="titulo-xl" testID="metas-guardado" />
+            {guardadoNoMes > 0 ? (
+              <Texto variante="corpo-sm" cor="receita" className="font-forte">
+                {t('metas.esteMes', { valor: textoDoValor(guardadoNoMes) })}
+              </Texto>
+            ) : null}
           </View>
           {metas.map((meta, indice) => (
             <CartaoMeta
@@ -74,6 +94,7 @@ export default function TelaMetas() {
               }}
             />
           ))}
+          <DicaDaMony metas={metas} />
         </ScrollView>
       )}
 

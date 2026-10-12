@@ -33,4 +33,16 @@ export type ListaMetasDtoItensItem = {
   /** @nullable */
   prazo: string | null;
   concluida: boolean;
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  guardadoNoMesCentavos: number;
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  ritmoMensalCentavos: number;
+  mesesParaConcluir: number | null;
+  necessarioPorMesCentavos: number | null;
 };

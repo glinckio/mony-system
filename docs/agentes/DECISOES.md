@@ -702,3 +702,11 @@ Contexto: a PoC (T-020) respondia sem histórico, sem ferramentas e sem `logs_ia
 - **Primeira ferramenta já na T-060**: `listar_categorias` (só leitura), para o loop de ferramentas rodar de ponta a ponta. As demais são da T-062. Erro de regra, entrada inválida e ferramenta desconhecida voltam ao modelo como `tool_result` com erro; falha inesperada vai ao log e volta como "Falha interna".
 - O fluxo "gastei 10" da PoC segue no `RoteadorRegras` até a T-061 trocar por rascunhos.
 Reversível: sim.
+
+## 2026-10-12 — T-147 — Guardado no mês e ritmo das metas
+Contexto: o design (página 5) mostra "+ R$ 450 este mês" e a dica "Guardando R$ 450 por mês, sua reserva fica completa em 19 meses. Com R$ 600, em 15.", sem dizer de onde vêm os números. Decisões:
+- **Guardado no mês**: soma dos aportes com data no mês de hoje (fuso do usuário), por meta e no total, na lista (`GET /metas`). O detalhe e as respostas de criar, editar e aportar não mudam.
+- **Ritmo**: média mensal dos aportes nos últimos 3 meses, o atual incluso, dividida só pelos meses em que a meta já existia (meta nova não fica com ritmo baixo). Os aportes até o dia da criação contam como **saldo inicial** e ficam fora da média: quem cria a meta e lança o que já tinha guardado não vira "ritmo" de milhares por mês. Alternativa: só o guardado no mês (como no design), que zera no começo de todo mês.
+- **Meses para completar**: para cima (8.600 / 450 = 19,1 → 20; o design arredonda para baixo). **Necessário até o prazo**: o restante dividido pelos meses do mês de hoje ao do prazo, os dois inclusos, para cima; prazo vencido não tem conta.
+- **A dica no app**: a primeira meta aberta, na ordem da API (pelo prazo), que tem conta. Em vez do "Com R$ 600, em 15" do design (valor sem critério), a segunda frase diz quanto guardar por mês para chegar no prazo, e só aparece quando o ritmo não chega.
+Reversível: sim, `ritmoDaMeta` em `@mony/shared/metas` e `dicaDasMetas` no app.

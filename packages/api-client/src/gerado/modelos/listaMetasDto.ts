@@ -9,4 +9,9 @@ import type { ListaMetasDtoItensItem } from './listaMetasDtoItensItem';
 
 export interface ListaMetasDto {
   itens: ListaMetasDtoItensItem[];
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  guardadoNoMesCentavos: number;
 }
