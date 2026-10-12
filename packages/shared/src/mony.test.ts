@@ -80,6 +80,13 @@ describe('ação do botão (RN-084)', () => {
     expect(esquemaAcaoMony.safeParse({ tipo: 'excluir_transacao', transacaoId: id }).success).toBe(
       true,
     );
+    expect(
+      esquemaAcaoMony.safeParse({ tipo: 'pagar_fatura', faturaId: id, valorCentavos: 12_000 })
+        .success,
+    ).toBe(true);
+    expect(
+      esquemaAcaoMony.safeParse({ tipo: 'pagar_fatura', faturaId: id, valorCentavos: 0 }).success,
+    ).toBe(false);
     expect(esquemaAcaoMony.safeParse({ tipo: 'cancelar' }).success).toBe(true);
     // Sem tipo (formato da T-061) ou com o estado no botão (PoC) não vale mais.
     expect(

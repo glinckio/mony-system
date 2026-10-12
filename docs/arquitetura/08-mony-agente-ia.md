@@ -38,7 +38,7 @@ sequenceDiagram
 
 - `POST /mony/mensagens` responde em SSE: `texto.delta`, `componente`, `erro`, `fim` (com o id da resposta gravada). Contrato e leitor SSE em `@mony/shared/mony`.
 - `MonyOrquestrador` grava a mensagem, tenta o `RoteadorRegras` (rascunho do lançamento, com botões em `POST /mony/acoes`) e, sem regra, chama o `LlmProvider` (`fake` ou `anthropic`, por `IA_PROVEDOR`) com o prompt local (`prompts/sistema.ts`), o contexto do usuário, o histórico e as ferramentas. Pedido de ferramenta → executa → devolve o resultado ao modelo, até 5 chamadas por mensagem.
-- Ferramentas registradas: as de lançamento (T-062a, ver "Ferramentas"). As de consulta e planejamento vêm na T-062b.
+- Ferramentas registradas: as de finanças (T-062a e T-062b, ver "Ferramentas").
 - Rascunhos de lançamento (T-061): ver "Rascunhos e perguntas com botões".
 - Toda mensagem, toque em botão e resposta vai para `mensagens`; `GET /mony/conversa` devolve o histórico por cursor, com busca no texto.
 - Cada chamada ao modelo grava um `logs_ia` (modelo, tokens, ferramentas pedidas, duração, erro), ligado à mensagem do usuário.
@@ -98,13 +98,14 @@ Ferramentas que gravam (`criar_*`, `editar_*`, `pagar_fatura`, `definir_orcament
 - Dados vindos de foto/PDF → devolve cartão(ões) de resumo com [Confirmar]/[Editar], sem gravar (RN-083).
 - Exclusão e pagamento → sempre confirmação por botão (RN-092).
 
-**Como está (T-062a):**
+**Como está (T-062a e T-062b):**
 
-- Registradas: `listar_categorias`, `listar_cartoes`, `criar_categoria` (cor e ícone padrão), `criar_transacao`, `criar_parcelamento`, `editar_transacao`, `excluir_transacao` e `consultar_transacoes` (até 20, com os totais do filtro). As de consulta e planejamento (`resumo_periodo`, `consultar_cartao`, `pagar_fatura`, orçamentos e metas) são da T-062b.
+- Registradas: `listar_categorias`, `listar_cartoes`, `criar_categoria` (cor e ícone padrão), `criar_transacao`, `criar_parcelamento`, `editar_transacao`, `excluir_transacao` e `consultar_transacoes` (até 20, com os totais do filtro); e `resumo_periodo` (sem datas, do dia 1 até hoje; receitas, despesas, saldo, as 5 categorias com mais despesa e o período anterior do mesmo tamanho), `consultar_cartao` (limite e as faturas em aberto, futuras e a última paga), `pagar_fatura`, `consultar_orcamentos`, `definir_orcamento`, `consultar_metas` e `atualizar_meta` (aporte, alvo, prazo, concluir; avisa `sugerirConclusao`).
 - `executar(contexto, entrada)` recebe o contexto da Mony (origem `mony`) com a conversa e devolve `{ dados, componentes }`: os `dados` voltam ao modelo em JSON; os componentes saem no SSE depois da resposta e ficam na mensagem gravada, mesmo se uma chamada seguinte ao modelo falhar.
 - `criar_transacao`: receita grava direto (precisa da categoria); despesa segue o rascunho (T-061): completa, grava e devolve o resumo; faltando categoria ou forma, guarda o rascunho e o app pergunta com botões (RN-080). Categoria e cartão de outra pessoa dão `NAO_ENCONTRADO` (RN-092).
 - **Cartão de resumo** (componente `resumo`): tipo, descrição, valor, data, categoria, forma, cartão e parcelas, com [Desfazer] (RN-082). Um por lançamento (RN-086). O fim do rascunho também mostra o resumo. Edição mostra o resumo sem [Desfazer].
-- **Ações por botão** (`POST /mony/acoes { acao }`, `tipo`): `rascunho`, `desfazer` (até 24 h depois de gravar e só para origem `mony`; parcelamento sai cancelado; depois do prazo, 410 `DESFAZER_EXPIRADO`), `excluir_transacao` (a confirmação pedida pela ferramenta) e `cancelar`.
+- **Ações por botão** (`POST /mony/acoes { acao }`, `tipo`): `rascunho`, `desfazer` (até 24 h depois de gravar e só para origem `mony`; parcelamento sai cancelado; depois do prazo, 410 `DESFAZER_EXPIRADO`), `excluir_transacao` e `pagar_fatura` (as confirmações pedidas pelas ferramentas; o pagamento vale o valor mostrado no botão, total ou parcial, hoje) e `cancelar`.
+- `definir_orcamento` e `atualizar_meta` gravam direto e respondem em texto, sem cartão de resumo nem [Desfazer] (DECISOES, T-062b).
 
 ## Rascunhos e perguntas com botões
 

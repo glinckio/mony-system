@@ -88,6 +88,11 @@ export class MonyService {
           toque: 'Excluir',
           resposta: await this.lancamentos.excluir(contexto, acao.transacaoId),
         };
+      case 'pagar_fatura':
+        return {
+          toque: 'Pagar',
+          resposta: await this.lancamentos.pagarFatura(contexto, acao.faturaId, acao.valorCentavos),
+        };
       case 'cancelar':
         return {
           toque: 'Cancelar',

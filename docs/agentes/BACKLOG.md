@@ -181,7 +181,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-062a** Ferramentas de lançamento da Mony: `listar_cartoes`, `criar_categoria`, `criar_transacao`, `criar_parcelamento`, `editar_transacao`, `excluir_transacao` (confirmação por botão), `consultar_transacoes`; cartão de resumo com [Desfazer] (PR #57)
   - dep: T-061, T-042, T-043 · RN-082, RN-086, RN-087, RN-092
   - A T-062 (ferramentas de finanças) foi dividida em T-062a e T-062b por tamanho.
-- [ ] **T-062b** Ferramentas de consulta e planejamento da Mony: `resumo_periodo`, `consultar_cartao`, `pagar_fatura` (confirmação por botão), `consultar_orcamentos`, `definir_orcamento`, `consultar_metas`, `atualizar_meta`
+- [x] **T-062b** Ferramentas de consulta e planejamento da Mony: `resumo_periodo`, `consultar_cartao`, `pagar_fatura` (confirmação por botão), `consultar_orcamentos`, `definir_orcamento`, `consultar_metas`, `atualizar_meta` (PR #58)
   - dep: T-062a · RN-087, RN-092 · docs: 08 (Ferramentas)
 - [ ] **T-063** Preferências aprendidas e ordenação de botões
   - dep: T-062b · RN-081, RN-090
