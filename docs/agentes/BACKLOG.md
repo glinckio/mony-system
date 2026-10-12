@@ -165,7 +165,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-059** Recorrência no app: "repetir" no formulário do lançamento (`POST /recorrencias`), editar e parar a recorrência (PR #52)
   - dep: T-045, T-038, T-051 · docs: 04, 05 (Recorrências) · RN-043
   - Separada da T-045: a lista já mostra "todo mês" e a exclusão pergunta o escopo, mas criar e editar a recorrência usam outras rotas.
-- [ ] **T-147** Metas: quanto foi guardado no mês (total e por meta) no `GET /metas` e, no app, o "+ R$ 450 este mês" e a "Dica da Mony" da tela de metas ("Guardando R$ 450 por mês, sua reserva fica completa em 19 meses")
+- [x] **T-147** Metas: quanto foi guardado no mês (total e por meta) no `GET /metas` e, no app, o "+ R$ 450 este mês" e a "Dica da Mony" da tela de metas ("Guardando R$ 450 por mês, sua reserva fica completa em 19 meses") (PR #54)
   - dep: T-043, T-052 · docs: 04, 05 (Orçamentos e metas) · RN-063
   - Achada na T-052: o design (página 5) mostra os dois, mas a lista de metas não traz os aportes. A conta do ritmo fica na API, como as outras.
 - [ ] **T-148** Teste que falha quando uma classe do Tailwind usa valor fora dos tokens (ex.: `h-14`, `w-px`) no app

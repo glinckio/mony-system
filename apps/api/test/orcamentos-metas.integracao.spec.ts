@@ -373,6 +373,67 @@ describe.runIf(ativo)('integração: orçamentos e metas', () => {
     expect(concluida.json()).toMatchObject({ concluida: true, prazo: null });
   });
 
+  it('RN-063 lista: guardado no mês (por meta e total), ritmo dos últimos 3 meses e o necessário até o prazo', async () => {
+    const usuario = await usuarioNovo();
+    const criar = async (dados: Record<string, unknown>) =>
+      (await chamar('POST', '/metas', usuario.acesso, dados)).json<Meta>();
+    const reserva = await criar({
+      titulo: 'Reserva',
+      valorAlvoCentavos: 1_000_000,
+      prazo: '2027-12-31',
+    });
+    const viagem = await criar({ titulo: 'Viagem', valorAlvoCentavos: 50_000 });
+    // As metas "existem" desde agosto; o aporte do dia da criação seria saldo inicial.
+    await prisma.meta.updateMany({
+      where: { id: { in: [reserva.id, viagem.id] } },
+      data: { criadoEm: new Date('2026-08-10T12:00:00Z') },
+    });
+    const aportar = (metaId: string, valorCentavos: number, data: string) =>
+      chamar(
+        'POST',
+        `/metas/${metaId}/aportes`,
+        usuario.acesso,
+        { valorCentavos, data },
+        { 'idempotency-key': randomUUID() },
+      );
+    for (const [valor, data] of [
+      [50_000, '2026-07-31'],
+      [30_000, '2026-08-20'],
+      [30_000, '2026-09-10'],
+      [20_000, '2026-10-02'],
+      [10_000, HOJE],
+    ] as const) {
+      expect((await aportar(reserva.id, valor, data)).statusCode).toBe(201);
+    }
+    await aportar(viagem.id, 5_000, '2026-10-05');
+    await chamar('PATCH', `/metas/${viagem.id}`, usuario.acesso, { concluida: true });
+
+    const lista = await chamar('GET', '/metas', usuario.acesso);
+    expect(lista.statusCode).toBe(200);
+    expect(lista.json()).toEqual({
+      itens: [
+        expect.objectContaining({
+          id: reserva.id,
+          restanteCentavos: 860_000,
+          guardadoNoMesCentavos: 30_000,
+          // Agosto a outubro, sem julho: (300 + 300 + 300) / 3.
+          ritmoMensalCentavos: 30_000,
+          mesesParaConcluir: 29,
+          // Outubro/2026 a dezembro/2027: 15 meses.
+          necessarioPorMesCentavos: 57_334,
+        }),
+        expect.objectContaining({
+          id: viagem.id,
+          concluida: true,
+          guardadoNoMesCentavos: 5_000,
+          mesesParaConcluir: null,
+          necessarioPorMesCentavos: null,
+        }),
+      ],
+      guardadoNoMesCentavos: 35_000,
+    });
+  });
+
   it('aportes ao mesmo tempo somam certo; meta de outro usuário não aparece', async () => {
     const usuario = await usuarioNovo();
     const outro = await usuarioNovo();
@@ -405,7 +466,10 @@ describe.runIf(ativo)('integração: orçamentos e metas', () => {
       const resposta = await chamar(method, url, outro.acesso, method === 'PATCH' ? {} : undefined);
       expect(resposta.statusCode).toBe(404);
     }
-    expect((await chamar('GET', '/metas', outro.acesso)).json()).toEqual({ itens: [] });
+    expect((await chamar('GET', '/metas', outro.acesso)).json()).toEqual({
+      itens: [],
+      guardadoNoMesCentavos: 0,
+    });
     expect((await chamar('DELETE', `/metas/${meta.id}`, usuario.acesso)).statusCode).toBe(204);
     expect((await chamar('GET', `/metas/${meta.id}`, usuario.acesso)).statusCode).toBe(404);
   });

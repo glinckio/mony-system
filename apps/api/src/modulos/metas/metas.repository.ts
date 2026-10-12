@@ -11,6 +11,7 @@ const CAMPOS_META = {
   valorAtual: true,
   prazo: true,
   concluida: true,
+  criadoEm: true,
 } as const satisfies Prisma.MetaSelect;
 
 const CAMPOS_APORTE = {
@@ -53,6 +54,17 @@ export class MetasRepository {
       where: { usuarioId, metaId },
       select: CAMPOS_APORTE,
       orderBy: [{ data: 'desc' }, { id: 'desc' }],
+    });
+  }
+
+  /** Aportes de todas as metas do usuário com data a partir de `desde` (o ritmo, RN-063). */
+  aportesDesde(
+    usuarioId: string,
+    desde: Date,
+  ): Promise<{ metaId: string; valor: bigint; data: Date }[]> {
+    return this.prisma.cliente.metaAporte.findMany({
+      where: { usuarioId, data: { gte: desde } },
+      select: { metaId: true, valor: true, data: true },
     });
   }
 

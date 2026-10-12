@@ -356,7 +356,7 @@ Implementado na T-043 (RN-060 a RN-063).
 | `GET /orcamentos?competencia=` | Orçamentos do mês (sem competência, o de hoje) com gasto, restante, percentual, faixa e projeção; e os totais |
 | `PUT /orcamentos` | Cria ou muda o orçamento da categoria na competência (`categoriaId`, `valorLimiteCentavos`, `competencia?`, `repetirMensal?`) |
 | `DELETE /orcamentos/:id` | Tira o orçamento do mês; os seguintes não o recebem |
-| `GET /metas` · `GET /metas/:id` | Metas (abertas primeiro, pelo prazo); o detalhe traz os aportes |
+| `GET /metas` · `GET /metas/:id` | Metas (abertas primeiro, pelo prazo); a lista traz o ritmo de cada uma e o guardado no mês, o detalhe traz os aportes |
 | `POST /metas` · `PATCH /metas/:id` · `DELETE /metas/:id` | Título, alvo, prazo e `concluida` |
 | `POST /metas/:id/aportes` | `Idempotency-Key`; aporte → `{ meta, aporte, sugerirConclusao }` |
 | `DELETE /metas/:id/aportes/:aporteId` | Tira o aporte e devolve a meta |
@@ -372,6 +372,7 @@ Implementado na T-043 (RN-060 a RN-063).
   - O valor atual é a soma dos aportes, refeita com a meta travada (`FOR UPDATE`).
   - O aporte não pode ter data futura.
   - `sugerirConclusao` vem quando o aporte fez a meta chegar ao alvo e ela não está concluída.
+  - **Ritmo (T-147, `ritmoDaMeta` em `@mony/shared/metas`)**: a lista traz, por meta, o guardado no mês de hoje, o ritmo (média mensal dos aportes nos últimos 3 meses, o atual incluso, só nos meses em que a meta existia e sem os aportes até o dia da criação, que contam como saldo inicial), os meses para completar nesse ritmo (para cima) e quanto guardar por mês, do mês de hoje ao do prazo, para chegar a tempo. Também o total guardado no mês em todas as metas.
 
 ## Parcelamentos e dívidas
 

@@ -131,7 +131,35 @@ function api(extra: (pedido: Pedido) => Resposta = () => undefined) {
       },
       'PUT /v1/orcamentos': { status: 200, corpo: LAZER },
       [`DELETE /v1/orcamentos/${LAZER.id}`]: { status: 204 },
-      'GET /v1/metas': { status: 200, corpo: { itens: [RESERVA, VIAGEM, CELULAR] } },
+      'GET /v1/metas': {
+        status: 200,
+        corpo: {
+          itens: [
+            {
+              ...RESERVA,
+              guardadoNoMesCentavos: 45000,
+              ritmoMensalCentavos: 45000,
+              mesesParaConcluir: 20,
+              necessarioPorMesCentavos: 57334,
+            },
+            {
+              ...VIAGEM,
+              guardadoNoMesCentavos: 0,
+              ritmoMensalCentavos: 0,
+              mesesParaConcluir: null,
+              necessarioPorMesCentavos: 59000,
+            },
+            {
+              ...CELULAR,
+              guardadoNoMesCentavos: 0,
+              ritmoMensalCentavos: 0,
+              mesesParaConcluir: null,
+              necessarioPorMesCentavos: null,
+            },
+          ],
+          guardadoNoMesCentavos: 45000,
+        },
+      },
       [`GET /v1/metas/${RESERVA.id}`]: { status: 200, corpo: { ...RESERVA, aportes: [APORTE] } },
       [`POST /v1/metas/${VIAGEM.id}/aportes`]: {
         status: 201,
@@ -321,7 +349,7 @@ describe('orçamentos e metas no app (T-052)', () => {
   );
 
   it(
-    'RN-063 metas: total guardado, guardar e, ao chegar no alvo, concluir',
+    'RN-063 metas: total guardado, o do mês, a dica da Mony, guardar e, ao chegar no alvo, concluir',
     async () => {
       const pedidos = api();
       renderRouter(ROTAS, { initialUrl: '/mais' });
@@ -330,6 +358,15 @@ describe('orçamentos e metas no app (T-052)', () => {
       expect(await screen.findByTestId('metas-guardado', {}, ESPERA)).toHaveTextContent(
         reais('R$ 10.000,00'),
       );
+      expect(screen.getByText(reais('+ R$ 450,00 este mês'))).toBeOnTheScreen();
+      // A primeira meta aberta com conta: no ritmo, não chega no prazo.
+      expect(
+        within(screen.getByTestId('dica-da-mony')).getByText(
+          reais(
+            'Guardando R$ 450,00 por mês, Reserva de emergência fica completa em 20 meses. Para chegar até dez/2027, guarde R$ 573,34 por mês.',
+          ),
+        ),
+      ).toBeOnTheScreen();
       expect(screen.getByText('até dez/2027')).toBeOnTheScreen();
       expect(screen.getByText('42%')).toBeOnTheScreen();
       expect(screen.getByText(reais('R$ 6.400,00 de R$ 15.000,00'))).toBeOnTheScreen();

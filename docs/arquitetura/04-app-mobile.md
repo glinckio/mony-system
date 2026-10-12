@@ -233,11 +233,11 @@ Telas em `src/features/orcamentos` e `src/features/metas`, no design da página 
   - o resumo: anel com o percentual do planejado já gasto (na cor da faixa), o gasto, o planejado, "faltam N dias" e, no mês de hoje, a projeção (soma das projeções da API, RN-061), em laranja quando passa do planejado;
   - cada categoria com a barra na cor da faixa (RN-062), "R$ 312 de R$ 300" e o selo: "Passou R$ 12" quando estoura, o percentual em destaque na atenção, só o percentual no normal;
   - o lápis liga a edição: tocar no item muda o valor, liga ou desliga "repetir todo mês" ou tira o orçamento do mês (RN-060). "Adicionar orçamento" oferece só as categorias de despesa sem orçamento no mês.
-- **Metas** (`/metas`): o total guardado em todas e cada meta com o prazo ("até dez/2027"), o percentual, a barra (verde e azul, alternados) e "Guardar".
+- **Metas** (`/metas`): o total guardado em todas, "+ R$ 450 este mês" (o guardado no mês, quando há), cada meta com o prazo ("até dez/2027"), o percentual, a barra (verde e azul, alternados) e "Guardar", e a "Dica da Mony" no fim.
   - **Guardar** (RN-063): folha com o valor e a data (até hoje), uma `Idempotency-Key` por abertura. Se a API mandar `sugerirConclusao`, a folha pergunta se é para concluir a meta.
   - **A meta** (`/metas/<id>`): guardado, falta, prazo, os aportes (cada um pode sair, com confirmação), "Guardar" e "Marcar como concluída" ou "Reabrir meta".
   - **Cadastro e edição** (`/metas/nova`, `/metas/<id>/editar`): nome, valor alvo e prazo opcional (`DD/MM/AAAA`), validados pelo `esquemaNovaMeta`; a edição manda só o que mudou, e apagar o prazo manda `prazo: null`. Excluir pede confirmação.
-- **Ainda não** (tarefa própria no BACKLOG): o "+ R$ 450 este mês" e a "Dica da Mony" da tela de metas, que pedem à API o quanto foi guardado no mês.
+  - **Dica da Mony** (`dicaDasMetas`): a primeira meta aberta, na ordem da API, que tem conta a fazer. Com ritmo: "Guardando R$ 450 por mês, Reserva fica completa em 20 meses." e, se o ritmo não chega no prazo, "Para chegar até dez/2027, guarde R$ 573,34 por mês."; sem ritmo e com prazo, só o necessário. As contas vêm da API (RN-063); sem conta, a dica some.
 
 ## Início (T-053)
 
