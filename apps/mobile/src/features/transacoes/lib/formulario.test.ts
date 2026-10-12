@@ -148,6 +148,32 @@ describe('formulário do lançamento', () => {
     expect(montarAtualizacao(valoresIniciais('2026-10-09', original), original)).toEqual({});
   });
 
+  it('RN-040 anexos: o novo manda os ids; a edição manda a lista só se mudou, até no travado', () => {
+    const A = '0199a000-0000-7000-8000-0000000000a1';
+    const B = '0199a000-0000-7000-8000-0000000000a2';
+    expect(montarNovaTransacao(valores({ anexoIds: [A, B] })).anexoIds).toEqual([A, B]);
+    expect(montarNovaTransacao(valores()).anexoIds).toBeUndefined();
+
+    const comAnexos = transacao({
+      anexos: [
+        { id: A, tipo: 'foto', tamanho: 1000 },
+        { id: B, tipo: 'pdf', tamanho: 2000 },
+      ],
+    });
+    const iniciais = valoresIniciais('2026-10-09', comAnexos);
+    expect(iniciais.anexoIds).toEqual([A, B]);
+    expect(montarAtualizacao({ ...iniciais, anexoIds: [B, A] }, comAnexos)).toEqual({});
+    expect(montarAtualizacao({ ...iniciais, anexoIds: [B] }, comAnexos)).toEqual({
+      anexoIds: [B],
+    });
+
+    // Lançamento do banco também troca os anexos (sempre editáveis na API).
+    const doBanco = transacao({ origem: 'open_finance' });
+    expect(
+      montarAtualizacao({ ...valoresIniciais('2026-10-09', doBanco), anexoIds: [A] }, doBanco),
+    ).toEqual({ anexoIds: [A] });
+  });
+
   it('edição: passar para o cartão manda forma e cartão, e a API tira a conta', () => {
     const original = transacao({ contaId: CONTA });
     const editados = {
