@@ -1,18 +1,20 @@
 import { agirMony, ErroApi, type PedidoAcaoMonyDto } from '@mony/api-client';
-import type { EventoMony, OpcaoBotao } from '@mony/shared/mony';
+import type { ComponenteMony, EventoMony, OpcaoBotao, ResumoLancamento } from '@mony/shared/mony';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
 import { Dica } from '@/features/onboarding/components/dica';
+import { useDataCurta } from '@/lib/datas-texto';
 import { chaveDoToque, enviarMensagemMony } from '@/lib/mony/conversa';
-import { Botao, Campo, Chip, juntarClasses, Tela, Texto } from '@/ui';
+import { Botao, Campo, Card, Chip, juntarClasses, Tela, Texto, useTextoDoValor } from '@/ui';
 
 interface Mensagem {
   id: string;
   autor: 'usuario' | 'mony';
   texto: string;
-  botoes: OpcaoBotao[];
+  /** Botões de pergunta ou confirmação e cartões de resumo (RN-082), na ordem em que chegaram. */
+  componentes: ComponenteMony[];
   erro: boolean;
 }
 
@@ -30,7 +32,7 @@ export default function TelaMony() {
 
   function nova(autor: Mensagem['autor'], conteudo = ''): Mensagem {
     ultimoId.current += 1;
-    return { id: String(ultimoId.current), autor, texto: conteudo, botoes: [], erro: false };
+    return { id: String(ultimoId.current), autor, texto: conteudo, componentes: [], erro: false };
   }
 
   function atualizar(id: string, mudar: (mensagem: Mensagem) => Mensagem) {
@@ -43,7 +45,10 @@ export default function TelaMony() {
     if (evento.tipo === 'texto.delta') {
       atualizar(id, (mensagem) => ({ ...mensagem, texto: mensagem.texto + evento.texto }));
     } else if (evento.tipo === 'componente') {
-      atualizar(id, (mensagem) => ({ ...mensagem, botoes: evento.componente.opcoes }));
+      atualizar(id, (mensagem) => ({
+        ...mensagem,
+        componentes: [...mensagem.componentes, evento.componente],
+      }));
     } else if (evento.tipo === 'erro') {
       atualizar(id, (mensagem) => ({ ...mensagem, texto: evento.mensagem, erro: true }));
     }
@@ -62,7 +67,7 @@ export default function TelaMony() {
     const resposta = nova('mony');
     definirMensagens((lista) => [
       ...lista.map((mensagem) =>
-        mensagem.id === perguntaId ? { ...mensagem, botoes: [] } : mensagem,
+        mensagem.id === perguntaId ? { ...mensagem, componentes: [] } : mensagem,
       ),
       minha,
       resposta,
@@ -98,7 +103,7 @@ export default function TelaMony() {
       atualizar(respostaId, (mensagem) => ({
         ...mensagem,
         texto: resposta.texto,
-        botoes: resposta.componente?.opcoes ?? [],
+        componentes: resposta.componente ? [resposta.componente] : [],
       }));
     });
   }
@@ -160,35 +165,101 @@ function Balao({
 }) {
   const { t } = useTranslation();
   const minha = mensagem.autor === 'usuario';
-  const escrevendo = !minha && mensagem.texto === '' && !mensagem.erro;
+  const semTexto = mensagem.texto === '' && !mensagem.erro;
+  const escrevendo = !minha && semTexto && mensagem.componentes.length === 0;
   return (
     <View className={juntarClasses('gap-2', minha ? 'items-end' : 'items-start')}>
-      <View
-        style={{ maxWidth: '85%' }}
-        className={juntarClasses(
-          'rounded-md px-4 py-3',
-          minha && 'bg-balao-usuario',
-          !minha && !mensagem.erro && 'bg-superficie-alta',
-          mensagem.erro && 'bg-perigo-suave',
-        )}
-      >
-        <Texto cor={minha ? 'texto' : mensagem.erro ? 'perigo' : escrevendo ? 'suave' : 'texto'}>
-          {escrevendo ? t('mony.escrevendo') : mensagem.texto}
-        </Texto>
-      </View>
-      {mensagem.botoes.length > 0 ? (
-        <View className="flex-row flex-wrap gap-2">
-          {mensagem.botoes.map((opcao) => (
-            <Chip
-              key={opcao.id}
-              rotulo={opcao.rotulo}
-              aoPressionar={() => {
-                aoTocar(opcao);
-              }}
-            />
-          ))}
+      {semTexto && !escrevendo ? null : (
+        <View
+          style={{ maxWidth: '85%' }}
+          className={juntarClasses(
+            'rounded-md px-4 py-3',
+            minha && 'bg-balao-usuario',
+            !minha && !mensagem.erro && 'bg-superficie-alta',
+            mensagem.erro && 'bg-perigo-suave',
+          )}
+        >
+          <Texto cor={minha ? 'texto' : mensagem.erro ? 'perigo' : escrevendo ? 'suave' : 'texto'}>
+            {escrevendo ? t('mony.escrevendo') : mensagem.texto}
+          </Texto>
         </View>
-      ) : null}
+      )}
+      {mensagem.componentes.map((componente, indice) =>
+        componente.tipo === 'resumo' ? (
+          <CartaoResumo
+            // A lista só cresce enquanto a resposta chega: o índice é estável.
+            key={indice}
+            lancamento={componente.lancamento}
+            opcoes={componente.opcoes}
+            aoTocar={aoTocar}
+          />
+        ) : (
+          <Opcoes key={indice} opcoes={componente.opcoes} aoTocar={aoTocar} />
+        ),
+      )}
     </View>
+  );
+}
+
+function Opcoes({
+  opcoes,
+  aoTocar,
+}: {
+  opcoes: readonly OpcaoBotao[];
+  aoTocar: (opcao: OpcaoBotao) => void;
+}) {
+  if (opcoes.length === 0) return null;
+  return (
+    <View className="flex-row flex-wrap gap-2">
+      {opcoes.map((opcao) => (
+        <Chip
+          key={opcao.id}
+          rotulo={opcao.rotulo}
+          aoPressionar={() => {
+            aoTocar(opcao);
+          }}
+        />
+      ))}
+    </View>
+  );
+}
+
+/** O que a Mony gravou (RN-082): valor, descrição, categoria, data e forma, com o [Desfazer]. */
+function CartaoResumo({
+  lancamento,
+  opcoes,
+  aoTocar,
+}: {
+  lancamento: ResumoLancamento;
+  opcoes: readonly OpcaoBotao[];
+  aoTocar: (opcao: OpcaoBotao) => void;
+}) {
+  const { t } = useTranslation();
+  const textoDoValor = useTextoDoValor();
+  const dataCurta = useDataCurta();
+  const forma = lancamento.cartao
+    ? lancamento.parcelas
+      ? t('mony.resumo.cartaoParcelado', {
+          cartao: lancamento.cartao,
+          parcelas: String(lancamento.parcelas),
+          valor: textoDoValor(lancamento.valorParcelaCentavos ?? 0),
+        })
+      : lancamento.cartao
+    : lancamento.formaPagamento
+      ? t(`transacoes.formas.${lancamento.formaPagamento}`)
+      : null;
+  return (
+    <Card className="gap-2" style={{ maxWidth: '85%' }} testID="mony-resumo">
+      <Texto variante="corpo-sm" cor="suave">
+        {t(lancamento.tipo === 'receita' ? 'mony.resumo.receita' : 'mony.resumo.despesa')}
+      </Texto>
+      <Texto className="font-forte">
+        {`${textoDoValor(lancamento.valorCentavos)} · ${lancamento.descricao}`}
+      </Texto>
+      <Texto variante="corpo-sm" cor="suave">
+        {[lancamento.categoria, dataCurta(lancamento.data), forma].filter(Boolean).join(' · ')}
+      </Texto>
+      <Opcoes opcoes={opcoes} aoTocar={aoTocar} />
+    </Card>
   );
 }

@@ -9,6 +9,7 @@ import type {
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { paraMensagemConversa } from './historico';
+import { LancamentosMony } from './lancamentos.service';
 import { MonyRepository, type PosicaoMensagem } from './mony.repository';
 import { RoteadorRegras } from './roteador-regras.service';
 
@@ -18,6 +19,7 @@ export class MonyService {
   constructor(
     private readonly repositorio: MonyRepository,
     private readonly regras: RoteadorRegras,
+    private readonly lancamentos: LancamentosMony,
   ) {}
 
   /** `GET /mony/conversa`: da mais nova para a mais antiga, por cursor, com busca no texto. */
@@ -38,13 +40,14 @@ export class MonyService {
   }
 
   /**
-   * Toque num botão (RN-084): a regra responde sem o modelo, e o toque e a resposta entram no
-   * histórico. O mesmo toque repetido não chega aqui: a idempotência devolve a resposta guardada.
+   * Toque num botão (RN-084): responde por regra, sem o modelo (pergunta do rascunho, [Desfazer],
+   * confirmação de exclusão), e o toque e a resposta entram no histórico. O mesmo toque repetido
+   * não chega aqui: a idempotência devolve a resposta guardada.
    */
   async agir(contexto: Contexto, acao: AcaoMony): Promise<RespostaAcaoMony> {
     const usuarioId = usuarioDoContexto(contexto);
     const conversaId = await this.repositorio.conversaAtual(usuarioId);
-    const { resposta, toque } = await this.regras.agir(contexto, conversaId, acao);
+    const { resposta, toque } = await this.executar(contexto, conversaId, acao);
     const chave = contexto.idempotencyKey;
     await this.repositorio.salvarMensagem({
       usuarioId,
@@ -65,6 +68,32 @@ export class MonyService {
       idempotencyKey: chave === undefined ? undefined : `${chave}:resposta`,
     });
     return resposta;
+  }
+
+  private async executar(
+    contexto: Contexto,
+    conversaId: string,
+    acao: AcaoMony,
+  ): Promise<{ resposta: RespostaAcaoMony; toque: string }> {
+    switch (acao.tipo) {
+      case 'rascunho':
+        return this.regras.agir(contexto, conversaId, acao);
+      case 'desfazer':
+        return {
+          toque: 'Desfazer',
+          resposta: await this.lancamentos.desfazer(contexto, acao.alvo, acao.id),
+        };
+      case 'excluir_transacao':
+        return {
+          toque: 'Excluir',
+          resposta: await this.lancamentos.excluir(contexto, acao.transacaoId),
+        };
+      case 'cancelar':
+        return {
+          toque: 'Cancelar',
+          resposta: { texto: 'Tudo bem, não mexi em nada.', componente: null, transacaoId: null },
+        };
+    }
   }
 }
 

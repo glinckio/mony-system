@@ -110,8 +110,8 @@ Regras de cache:
 
 - Envio por `POST /v1/mony/mensagens` com resposta em **SSE** lida com `expo/fetch` (streaming de texto e eventos de componente).
 - Eventos SSE: `texto.delta`, `componente` (botões, cartão de resumo), `acao.resultado`, `erro`, `fim`.
-- Toque em botão vai por `POST /v1/mony/acoes` com `{ acao }`, a ação que veio no botão (`{ rascunhoId, campo, valor }`, T-061), com `Idempotency-Key` e sem texto livre (RN-084). O app não lê a ação: só a devolve.
-- **Como está (PoC T-020):** `src/lib/mony/conversa.ts` lê o SSE com o `expo/fetch` (`body.getReader()`) e o `LeitorSse` de `@mony/shared/mony`. A aba Mony mostra a resposta crescendo e os botões como `Chip`; a pergunta respondida perde os botões. O estado do lançamento fica no rascunho do servidor (T-061).
+- Toque em botão vai por `POST /v1/mony/acoes` com `{ acao }`, a ação que veio no botão (`{ tipo, … }`: resposta do rascunho, [Desfazer], confirmação de exclusão ou cancelar; T-061 e T-062a), com `Idempotency-Key` e sem texto livre (RN-084). O app não lê a ação: só a devolve.
+- **Como está (PoC T-020):** `src/lib/mony/conversa.ts` lê o SSE com o `expo/fetch` (`body.getReader()`) e o `LeitorSse` de `@mony/shared/mony`. A aba Mony mostra a resposta crescendo, os botões como `Chip` e o cartão de resumo do que foi gravado (valor, descrição, categoria, data, forma ou cartão e parcelas) com o [Desfazer]; tocar num botão tira os componentes daquela mensagem. O estado do lançamento fica no rascunho do servidor (T-061).
 - Áudio: gravação com `expo-audio` (AAC/m4a), upload por URL assinada, depois a mensagem referencia o `arquivoId`.
 - Foto, print, PDF: `expo-image-picker` / `expo-document-picker`, compressão de imagem no aparelho (lado maior até ~2000 px) antes do upload.
 - QR Code de NFC-e: `expo-camera` com leitura de código; envia a URL lida para `POST /v1/mony/nfce`.

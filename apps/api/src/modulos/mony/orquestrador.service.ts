@@ -14,7 +14,7 @@ import {
   type PedidoLlm,
 } from '../../integracoes/ia/llm.provider';
 import { ContextoMonyService } from './contexto.service';
-import { RegistroFerramentas } from './ferramentas/registro';
+import { type ContextoFerramenta, RegistroFerramentas } from './ferramentas/registro';
 import { componentesDaMensagem, conversaParaModelo } from './historico';
 import { type MensagemSalva, MonyRepository } from './mony.repository';
 import { PROMPT_SISTEMA } from './prompts/sistema';
@@ -109,6 +109,7 @@ export class MonyOrquestrador {
         sinal,
       )) {
         if (evento.tipo === 'texto.delta') texto += evento.texto;
+        if (evento.tipo === 'componente') componentes.push(evento.componente);
         if (evento.tipo === 'erro') falhou = true;
         yield evento;
       }
@@ -168,10 +169,11 @@ export class MonyOrquestrador {
   ): AsyncGenerator<EventoMony> {
     const usuarioId = usuarioDoContexto(contexto);
     // As ferramentas agem como a Mony, sem a chave de idempotência da requisição.
-    const contextoFerramentas: Contexto = {
+    const contextoFerramentas: ContextoFerramenta = {
       usuarioId,
       origem: 'mony',
       requisicaoId: contexto.requisicaoId,
+      conversaId,
     };
     const [contextoUsuario, anteriores] = await Promise.all([
       this.contextoMony.montar(contexto),
@@ -192,6 +194,10 @@ export class MonyOrquestrador {
       mensagens,
     };
     let escreveu = false;
+    let terminou = false;
+    // Componentes das ferramentas (resumo, confirmação, pergunta): saem depois da resposta, mesmo
+    // se uma chamada seguinte ao modelo falhar, porque o que foi gravado continua gravado (RN-087).
+    const componentes: ComponenteMony[] = [];
     for (let rodada = 0; rodada < MAXIMO_RODADAS; rodada += 1) {
       const resultado: Rodada | null = yield* this.chamarModelo(
         usuarioId,
@@ -200,13 +206,21 @@ export class MonyOrquestrador {
         sinal,
         escreveu,
       );
-      if (!resultado) return;
+      if (!resultado || resultado.chamadas.length === 0) {
+        terminou = true;
+        break;
+      }
       escreveu ||= resultado.texto !== '';
-      if (resultado.chamadas.length === 0) return;
       const resultados: BlocoLlm[] = [];
       for (const chamada of resultado.chamadas) {
-        const { conteudo, erro } = await this.ferramentas.executar(contextoFerramentas, chamada);
-        resultados.push({ tipo: 'resultado', id: chamada.id, conteudo, erro });
+        const saida = await this.ferramentas.executar(contextoFerramentas, chamada);
+        resultados.push({
+          tipo: 'resultado',
+          id: chamada.id,
+          conteudo: saida.conteudo,
+          erro: saida.erro,
+        });
+        componentes.push(...saida.componentes);
       }
       mensagens.push(
         {
@@ -219,8 +233,12 @@ export class MonyOrquestrador {
         { papel: 'usuario', conteudo: resultados },
       );
     }
-    this.log.warn(`Mony passou de ${String(MAXIMO_RODADAS)} chamadas ao modelo numa mensagem`);
-    yield { tipo: 'erro', codigo: 'ERRO_INTERNO', mensagem: MENSAGEM_FALHA };
+    if (!terminou) {
+      this.log.warn(`Mony passou de ${String(MAXIMO_RODADAS)} chamadas ao modelo numa mensagem`);
+      yield { tipo: 'erro', codigo: 'ERRO_INTERNO', mensagem: MENSAGEM_FALHA };
+    }
+    if (sinal?.aborted) return;
+    for (const componente of componentes) yield { tipo: 'componente', componente };
   }
 
   /**

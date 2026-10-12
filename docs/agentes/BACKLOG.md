@@ -178,20 +178,23 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-020, T-037 · docs: 08
 - [x] **T-061** Rascunhos e roteador por regra (próximo campo, botões, `/mony/acoes` sem modelo) (PR #56)
   - dep: T-060 · RN-080, RN-081, RN-084, RN-085, RN-088
-- [ ] **T-062** Ferramentas de finanças (categorias, cartões, transações, parcelamento, consultas, resumo, fatura, orçamentos, metas)
+- [x] **T-062a** Ferramentas de lançamento da Mony: `listar_cartoes`, `criar_categoria`, `criar_transacao`, `criar_parcelamento`, `editar_transacao`, `excluir_transacao` (confirmação por botão), `consultar_transacoes`; cartão de resumo com [Desfazer] (PR #57)
   - dep: T-061, T-042, T-043 · RN-082, RN-086, RN-087, RN-092
+  - A T-062 (ferramentas de finanças) foi dividida em T-062a e T-062b por tamanho.
+- [ ] **T-062b** Ferramentas de consulta e planejamento da Mony: `resumo_periodo`, `consultar_cartao`, `pagar_fatura` (confirmação por botão), `consultar_orcamentos`, `definir_orcamento`, `consultar_metas`, `atualizar_meta`
+  - dep: T-062a · RN-087, RN-092 · docs: 08 (Ferramentas)
 - [ ] **T-063** Preferências aprendidas e ordenação de botões
-  - dep: T-062 · RN-081, RN-090
+  - dep: T-062b · RN-081, RN-090
 - [ ] **T-064** Áudio: gravação no app + `TranscricaoProvider`
   - dep: T-060
 - [ ] **T-065** Foto, print e PDF: `ler_documento`, `importacoes_documento`, confirmação obrigatória
-  - dep: T-062 · RN-083, RN-086
+  - dep: T-062b · RN-083, RN-086
 - [ ] **T-066** NFC-e: leitura do QR no app, `NfceProvider`, histórico de preços, fallback por foto
   - dep: T-026, T-065 · docs: 10 (NFC-e)
 - [ ] **T-067** Consultoria pós-lançamento (impacto no orçamento e no cartão)
-  - dep: T-062 · RN-089
+  - dep: T-062b · RN-089
 - [ ] **T-068** Prompt versionado (`mony_config`) e avaliação com frases de teste no CI
-  - dep: T-062 · docs: 08 (Controle de custo e qualidade)
+  - dep: T-062b · docs: 08 (Controle de custo e qualidade)
 - [ ] **T-069** Tela de chat completa no app (componentes, atalhos, busca no histórico)
   - dep: T-061, T-034
 
@@ -204,13 +207,13 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-082** Alertas de cartão, fatura, orçamento, vencimentos, fora do padrão e projeção (PR #33)
   - dep: T-080 · RN-106, RN-107, RN-108
 - [ ] **T-083** Resumos semanal e mensal no chat
-  - dep: T-080, T-062
+  - dep: T-080, T-062b
 - [ ] **T-084** Lembretes: CRUD, recorrência RRULE, soneca, feito pela notificação, alarme local
   - dep: T-081, T-023 · RN-075 a RN-077
 - [ ] **T-085** 👤 Agendas Google e Outlook (OAuth no servidor) e agenda do aparelho
   - dep: T-084 · RN-079 · requer verificação do app no Google
 - [ ] **T-086** Ferramentas da Mony: lembretes, compromissos, agenda, `ajuda_app`
-  - dep: T-084, T-062
+  - dep: T-084, T-062b
 - [ ] **T-087** Preferências de alerta e horário de silêncio no app; central de notificações
   - dep: T-081, T-011, T-034 · docs: 04
   - Tela do app: depende do design system (T-011) e da sessão no app (T-034), como a T-049.
@@ -222,7 +225,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 ## Fase 4 — Planos e cobrança
 
 - [ ] **T-100** Cotas do plano gratuito: `@RecursoLimitado`, contagem atômica, `GET /assinatura/uso`, aviso com [Ver planos]
-  - dep: T-062 · RN-120, RN-122, RN-123, RN-127
+  - dep: T-062b · RN-120, RN-122, RN-123, RN-127
 - [ ] **T-101** Teste de 3 dias: início no cadastro, controle de um teste por pessoa, avisos, encerramento automático
   - dep: T-100, T-080 · RN-124, RN-125, RN-126
 - [ ] **T-102** 👤 Stripe: `BillingProvider`, checkout, webhooks idempotentes, portal, inadimplência

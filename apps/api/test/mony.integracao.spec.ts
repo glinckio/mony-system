@@ -256,7 +256,7 @@ describe.runIf(ativo)('integração: Mony', () => {
         componentes.length,
       ]),
     ).toEqual([
-      ['mony', 'texto', fim.texto, 0],
+      ['mony', 'texto', fim.texto, 1],
       ['usuario', 'botao', 'Pix', 0],
       ['mony', 'texto', 'Como você pagou?', 1],
       ['usuario', 'botao', preferida.nome, 0],
@@ -287,7 +287,16 @@ describe.runIf(ativo)('integração: Mony', () => {
     expect(contextoUsuario).not.toContain(usuario.email);
     expect(contextoUsuario).not.toContain('98765');
     expect(pedido?.mensagens).toEqual([{ papel: 'usuario', conteudo: 'oi, Mony' }]);
-    expect(pedido?.ferramentas?.map(({ nome }) => nome)).toEqual(['listar_categorias']);
+    expect(pedido?.ferramentas?.map(({ nome }) => nome)).toEqual([
+      'listar_categorias',
+      'listar_cartoes',
+      'criar_categoria',
+      'criar_transacao',
+      'criar_parcelamento',
+      'editar_transacao',
+      'excluir_transacao',
+      'consultar_transacoes',
+    ]);
 
     const mensagens = await mensagensDo(usuario.usuarioId);
     expect(mensagens.map(({ autor, conteudo }) => [autor, conteudo])).toEqual([
@@ -522,7 +531,24 @@ describe.runIf(ativo)('integração: Mony', () => {
     const usuario = await usuarioNovo();
     const { texto, eventos } = await conversar(usuario, 'gastei 15,50 ontem no mercado no pix');
     expect(texto).toBe(`Pronto! Anotei ${formatarCentavos(1_550)} em Mercado, no Pix, em 14/10.`);
-    expect(eventos.some(({ tipo }) => tipo === 'componente')).toBe(false);
+    // RN-082: o resumo do que foi gravado, com [Desfazer].
+    const resumo = eventos.find((evento) => evento.tipo === 'componente');
+    expect(resumo).toMatchObject({
+      componente: {
+        tipo: 'resumo',
+        lancamento: {
+          tipo: 'despesa',
+          descricao: 'Mercado',
+          valorCentavos: 1_550,
+          data: '2026-10-14',
+          categoria: 'Mercado',
+          formaPagamento: 'pix',
+          cartao: null,
+          parcelas: null,
+        },
+        opcoes: [{ rotulo: 'Desfazer', acao: { tipo: 'desfazer', alvo: 'transacao' } }],
+      },
+    });
     expect(
       await prisma.transacao.findMany({
         where: { usuarioId: usuario.usuarioId },
@@ -709,5 +735,357 @@ describe.runIf(ativo)('integração: Mony', () => {
     expect(texto).toBe(
       `Anotei ${formatarCentavos(5_000)}. Você ainda não tem cartão de crédito cadastrado. Como você pagou?`,
     );
+  });
+  async function categoriaDo(usuario: Usuario, nome: string, tipo: 'despesa' | 'receita') {
+    const categoria = await prisma.categoria.findFirst({
+      where: { usuarioId: usuario.usuarioId, nome, tipo },
+      select: { id: true },
+    });
+    if (!categoria) throw new Error(`sem a categoria ${nome}`);
+    return categoria.id;
+  }
+
+  /** O que voltou ao modelo como resultado da ferramenta, na chamada seguinte. */
+  function resultadosDaFerramenta(chamada: number) {
+    const ultima = modelo.pedidos[chamada]?.mensagens.at(-1)?.conteudo;
+    if (!Array.isArray(ultima)) throw new Error('sem resultado de ferramenta');
+    return (ultima as BlocoLlm[]).map((bloco) =>
+      bloco.tipo === 'resultado'
+        ? { erro: bloco.erro, dados: JSON.parse(bloco.conteudo) as unknown }
+        : null,
+    );
+  }
+
+  /** Lançamentos feitos agora (o relógio dos testes é fixo; o banco grava a hora de verdade). */
+  async function feitoAgora(usuario: Usuario) {
+    await prisma.transacao.updateMany({
+      where: { usuarioId: usuario.usuarioId },
+      data: { criadoEm: new Date('2026-10-15T14:00:00Z') },
+    });
+  }
+
+  it('RN-082 RN-086 criar_transacao: receita e despesa completas gravam com resumo; incompleta pergunta com botões', async () => {
+    const usuario = await usuarioNovo();
+    const salario = await categoriaDo(usuario, 'Salário', 'receita');
+    const lazer = await categoriaDo(usuario, 'Lazer', 'despesa');
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'criar_transacao',
+            entrada: {
+              tipo: 'receita',
+              descricao: 'Salário',
+              valorCentavos: 500_000,
+              categoriaId: salario,
+            },
+          },
+          {
+            nome: 'criar_transacao',
+            entrada: {
+              tipo: 'despesa',
+              descricao: 'Cinema',
+              valorCentavos: 4_000,
+              categoriaId: lazer,
+              formaPagamento: 'debito',
+              data: '2026-10-14',
+            },
+          },
+        ],
+      },
+      { texto: 'Anotei os dois.' },
+    );
+    const { texto, eventos } = await conversar(
+      usuario,
+      'recebi meu salário de 5 mil e fui ao cinema ontem',
+    );
+    expect(texto).toBe('Anotei os dois.');
+    // Um cartão de resumo por lançamento, depois do texto (RN-086).
+    const resumos = eventos.flatMap((evento) =>
+      evento.tipo === 'componente' && evento.componente.tipo === 'resumo'
+        ? [evento.componente.lancamento]
+        : [],
+    );
+    expect(resumos).toMatchObject([
+      { tipo: 'receita', descricao: 'Salário', valorCentavos: 500_000, categoria: 'Salário' },
+      { tipo: 'despesa', descricao: 'Cinema', data: '2026-10-14', formaPagamento: 'debito' },
+    ]);
+    expect(eventos.map(({ tipo }) => tipo).slice(-3)).toEqual(['componente', 'componente', 'fim']);
+    expect(resultadosDaFerramenta(1)).toMatchObject([
+      { erro: false, dados: { gravado: true } },
+      { erro: false, dados: { gravado: true } },
+    ]);
+    expect(
+      await prisma.transacao.findMany({
+        where: { usuarioId: usuario.usuarioId },
+        orderBy: { valor: 'desc' },
+        select: { tipo: true, valor: true, origem: true },
+      }),
+    ).toEqual([
+      { tipo: 'receita', valor: 500_000n, origem: 'mony' },
+      { tipo: 'despesa', valor: 4_000n, origem: 'mony' },
+    ]);
+    // O histórico guarda os componentes da resposta.
+    const [resposta] = (await historico(usuario)).json<PaginaConversa>().itens;
+    expect(resposta?.componentes.map(({ tipo }) => tipo)).toEqual(['resumo', 'resumo']);
+
+    // Despesa sem forma de pagamento: vira rascunho e a pergunta vem com botões (RN-080).
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'criar_transacao',
+            entrada: {
+              tipo: 'despesa',
+              descricao: 'Pizza',
+              valorCentavos: 6_000,
+              categoriaId: lazer,
+            },
+          },
+        ],
+      },
+      { texto: 'Como você pagou?' },
+    );
+    const incompleta = await conversar(usuario, 'pedi uma pizza de 60');
+    expect(resultadosDaFerramenta(3)).toMatchObject([
+      { erro: false, dados: { gravado: false, pergunta: 'Como você pagou?' } },
+    ]);
+    expect(botoes(incompleta.eventos.at(-2)).map(({ rotulo }) => rotulo)).toEqual([
+      'Pix',
+      'Débito',
+      'Dinheiro',
+      'Boleto',
+    ]);
+    expect(await rascunhoDo(usuario.usuarioId)).toMatchObject([
+      { campoPendente: 'forma_pagamento', dados: { descricao: 'Pizza', categoriaId: lazer } },
+    ]);
+  });
+
+  it('RN-092 criar_transacao com categoria de outra pessoa falha e não grava nada', async () => {
+    const usuario = await usuarioNovo();
+    const outro = await usuarioNovo();
+    const alheia = await categoriaDo(outro, 'Lazer', 'despesa');
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'criar_transacao',
+            entrada: {
+              tipo: 'despesa',
+              descricao: 'Cinema',
+              valorCentavos: 4_000,
+              categoriaId: alheia,
+              formaPagamento: 'pix',
+            },
+          },
+        ],
+      },
+      { texto: 'Não consegui anotar.' },
+    );
+    await conversar(usuario, 'cinema 40 no pix');
+    expect(resultadosDaFerramenta(1)).toMatchObject([
+      { erro: true, dados: { erro: { codigo: 'NAO_ENCONTRADO' } } },
+    ]);
+    expect(await prisma.transacao.count({ where: { usuarioId: usuario.usuarioId } })).toBe(0);
+  });
+
+  it('RN-082 [Desfazer] tira o lançamento da Mony em até 24 horas', async () => {
+    const usuario = await usuarioNovo();
+    const { eventos } = await conversar(usuario, 'gastei 15 no mercado no pix');
+    const [desfazer] = botoes(eventos.find((evento) => evento.tipo === 'componente'));
+    if (!desfazer) throw new Error('sem Desfazer');
+    await feitoAgora(usuario);
+
+    const desfeito = await tocar(usuario, desfazer);
+    expect(desfeito.statusCode, desfeito.body).toBe(200);
+    expect(desfeito.json<RespostaAcaoMony>().texto).toBe(
+      `Pronto, desfiz: Mercado (${formatarCentavos(1_500)}) saiu dos seus lançamentos.`,
+    );
+    expect(
+      await prisma.transacao.count({ where: { usuarioId: usuario.usuarioId, excluidoEm: null } }),
+    ).toBe(0);
+    expect((await tocar(usuario, desfazer)).statusCode).toBe(404);
+
+    // Depois de 24 horas não desfaz mais.
+    const outro = await conversar(usuario, 'gastei 20 no mercado no pix');
+    const [tarde] = botoes(outro.eventos.find((evento) => evento.tipo === 'componente'));
+    if (!tarde) throw new Error('sem Desfazer');
+    await prisma.transacao.updateMany({
+      where: { usuarioId: usuario.usuarioId, excluidoEm: null },
+      data: { criadoEm: new Date('2026-10-14T14:59:00Z') },
+    });
+    const expirado = await tocar(usuario, tarde);
+    expect(expirado.statusCode).toBe(410);
+    expect(expirado.json()).toMatchObject({ erro: { codigo: 'DESFAZER_EXPIRADO' } });
+
+    // Lançamento feito no app não se desfaz pela Mony.
+    const manual = await app.inject({
+      method: 'POST',
+      url: '/v1/transacoes',
+      headers: { authorization: `Bearer ${usuario.acesso}`, 'idempotency-key': randomUUID() },
+      payload: {
+        tipo: 'despesa',
+        descricao: 'Feira',
+        valorCentavos: 3_000,
+        categoriaId: await categoriaDo(usuario, 'Mercado', 'despesa'),
+        formaPagamento: 'pix',
+      },
+    });
+    const idManual = manual.json<{ transacao: { id: string } }>().transacao.id;
+    const alheio = await tocar(usuario, {
+      id: 'desfazer',
+      rotulo: 'Desfazer',
+      acao: { tipo: 'desfazer', alvo: 'transacao', id: idManual },
+    });
+    expect(alheio.statusCode).toBe(400);
+  });
+
+  it('RN-092 excluir_transacao só pede a confirmação; o botão exclui e o cancelar não mexe', async () => {
+    const usuario = await usuarioNovo();
+    await conversar(usuario, 'gastei 15 no mercado no pix');
+    const [transacao] = await prisma.transacao.findMany({
+      where: { usuarioId: usuario.usuarioId },
+      select: { id: true },
+    });
+    if (!transacao) throw new Error('sem transação');
+    const pedir = () => {
+      modelo.roteirizar(
+        { ferramentas: [{ nome: 'excluir_transacao', entrada: { transacaoId: transacao.id } }] },
+        { texto: 'Confirma a exclusão?' },
+      );
+    };
+
+    pedir();
+    const pedido = await conversar(usuario, 'apaga o mercado');
+    const [excluir, cancelar] = botoes(pedido.eventos.at(-2));
+    expect([excluir?.rotulo, cancelar?.rotulo]).toEqual(['Excluir Mercado', 'Cancelar']);
+    expect(resultadosDaFerramenta(1)).toMatchObject([{ erro: false, dados: { excluido: false } }]);
+    expect(await prisma.transacao.count({ where: { id: transacao.id, excluidoEm: null } })).toBe(1);
+    if (!excluir || !cancelar) throw new Error('sem botões');
+
+    const cancelado = await tocar(usuario, cancelar);
+    expect(cancelado.json<RespostaAcaoMony>().texto).toBe('Tudo bem, não mexi em nada.');
+    expect(await prisma.transacao.count({ where: { id: transacao.id, excluidoEm: null } })).toBe(1);
+
+    const excluido = await tocar(usuario, excluir);
+    expect(excluido.json<RespostaAcaoMony>().texto).toBe(
+      `Pronto, excluí Mercado (${formatarCentavos(1_500)}).`,
+    );
+    expect(await prisma.transacao.count({ where: { id: transacao.id, excluidoEm: null } })).toBe(0);
+
+    // De outra pessoa: a ferramenta não acha.
+    const outro = await usuarioNovo();
+    modelo.roteirizar(
+      { ferramentas: [{ nome: 'excluir_transacao', entrada: { transacaoId: transacao.id } }] },
+      { texto: 'Não achei.' },
+    );
+    await conversar(outro, 'apaga');
+    expect(resultadosDaFerramenta(3)).toMatchObject([
+      { erro: true, dados: { erro: { codigo: 'NAO_ENCONTRADO' } } },
+    ]);
+  });
+
+  it('consultar_transacoes, editar_transacao, listar_cartoes e criar_parcelamento com [Desfazer]', async () => {
+    const usuario = await usuarioNovo();
+    const nubank = await cartaoNovo(usuario, 'Nubank');
+    await conversar(usuario, 'gastei 15 no mercado no pix');
+    const mercado = await categoriaDo(usuario, 'Mercado', 'despesa');
+    // Lançada no app, na categoria errada.
+    await app.inject({
+      method: 'POST',
+      url: '/v1/transacoes',
+      headers: { authorization: `Bearer ${usuario.acesso}`, 'idempotency-key': randomUUID() },
+      payload: {
+        tipo: 'despesa',
+        descricao: 'Farmácia',
+        valorCentavos: 3_000,
+        categoriaId: mercado,
+        formaPagamento: 'debito',
+      },
+    });
+    const saude = await categoriaDo(usuario, 'Saúde', 'despesa');
+    const eletronicos = await categoriaDo(usuario, 'Compras', 'despesa');
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          { nome: 'consultar_transacoes', entrada: { texto: 'farm', limite: 5 } },
+          { nome: 'listar_cartoes', entrada: {} },
+        ],
+      },
+      { texto: 'Achei.' },
+    );
+    await conversar(usuario, 'quanto gastei na farmácia?');
+    const [consulta, cartoes] = resultadosDaFerramenta(1);
+    expect(consulta).toMatchObject({
+      erro: false,
+      dados: {
+        lancamentos: [{ descricao: 'Farmácia', valorCentavos: 3_000, categoria: 'Mercado' }],
+        temMais: false,
+        totais: { despesasCentavos: 3_000 },
+      },
+    });
+    expect(cartoes).toMatchObject({
+      dados: { cartoes: [{ id: nubank.id, nome: 'Nubank', diaFechamento: 3, diaVencimento: 10 }] },
+    });
+    const farmacia = (consulta?.dados as { lancamentos: { id: string }[] }).lancamentos[0];
+    if (!farmacia) throw new Error('sem lançamento');
+
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'editar_transacao',
+            entrada: { transacaoId: farmacia.id, categoriaId: saude, valorCentavos: 3_250 },
+          },
+          {
+            nome: 'criar_parcelamento',
+            entrada: {
+              tipo: 'compra_cartao',
+              nome: 'Fone',
+              valorCentavos: 60_000,
+              totalParcelas: 3,
+              categoriaId: eletronicos,
+              cartaoId: nubank.id,
+            },
+          },
+        ],
+      },
+      { texto: 'Feito.' },
+    );
+    const { eventos } = await conversar(
+      usuario,
+      'a farmácia foi 32,50 em saúde; e o fone de 600 em 3x no nubank',
+    );
+    const [editado, parcelado] = eventos.flatMap((evento) =>
+      evento.tipo === 'componente' && evento.componente.tipo === 'resumo'
+        ? [evento.componente]
+        : [],
+    );
+    expect(editado).toMatchObject({
+      lancamento: { descricao: 'Farmácia', valorCentavos: 3_250, categoria: 'Saúde' },
+      opcoes: [],
+    });
+    expect(parcelado).toMatchObject({
+      lancamento: {
+        descricao: 'Fone',
+        valorCentavos: 60_000,
+        cartao: 'Nubank',
+        parcelas: 3,
+        valorParcelaCentavos: 20_000,
+      },
+      opcoes: [{ acao: { tipo: 'desfazer', alvo: 'parcelamento' } }],
+    });
+    await feitoAgora(usuario);
+    const [desfazer] = parcelado?.opcoes ?? [];
+    if (!desfazer) throw new Error('sem Desfazer');
+    expect((await tocar(usuario, desfazer)).json<RespostaAcaoMony>().texto).toBe(
+      'Pronto, desfiz: Fone em 3x saiu dos seus lançamentos.',
+    );
+    expect(
+      await prisma.parcelamento.findFirst({
+        where: { usuarioId: usuario.usuarioId },
+        select: { status: true },
+      }),
+    ).toEqual({ status: 'cancelada' });
   });
 });

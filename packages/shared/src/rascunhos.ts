@@ -191,7 +191,7 @@ export function descricaoDoGasto(texto: string, cortes: readonly string[] = []):
     // "comprei pão 7,50": o que vem entre o verbo e o valor.
     frase = limpar(
       new RegExp(
-        String.raw`^\s*(?:${PREPOSICAO}\s+|um\s+|uma\s+|o\s+|a\s+)?(.+?)\s*(?:por\s*)?$`,
+        String.raw`^\s*(?:${PREPOSICAO}\s+|um\s+|uma\s+|o\s+|a\s+)?(.+?)\s*(?:(?:por|de|do|da|no|na|em)\s*)?$`,
         'is',
       ).exec(antes)?.[1],
     );

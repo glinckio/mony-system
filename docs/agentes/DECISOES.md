@@ -728,3 +728,15 @@ Contexto: a PoC (T-020) guardava o estado do lançamento no próprio botão. Dec
 - `mensagens.rascunho_id` fica sem uso: o rascunho some ao gravar e o vínculo viraria nulo de qualquer jeito.
 - O resumo com [Desfazer] (RN-082) e as preferências por estabelecimento (RN-081, RN-090) ficam para a T-062 e a T-063.
 Reversível: sim.
+
+## 2026-10-12 — T-062a — Ferramentas de lançamento da Mony
+Contexto: a T-062 lista 15 ferramentas de finanças; ficou grande demais para um PR. Decisões:
+- **Divisão**: T-062a (lançamentos: criar, editar, excluir, consultar, cartões e categoria nova, com o resumo e o [Desfazer]) e T-062b (consultas e planejamento: resumo do período, cartão e fatura, pagar fatura, orçamentos e metas). As tarefas que dependiam da T-062 passam a depender da T-062b.
+- **`criar_transacao` de despesa passa pelo rascunho** da T-061 em vez de gravar direto ou devolver erro quando falta algo: o modelo manda o que a pessoa disse; completo, grava; incompleto, o app pergunta com botões (RN-080). Assim as regras de cartão único, crédito sem cartão e parcelas ficam num lugar só. Receita grava direto e precisa da categoria.
+- **Componentes das ferramentas saem depois da resposta** do modelo e entram na mensagem gravada; o que foi gravado aparece mesmo se a chamada seguinte ao modelo falhar (RN-087).
+- **[Desfazer]**: até 24 h depois de gravar (RN-082), só para lançamento de origem `mony`; parcelamento sai cancelado (o `ParcelamentosService.cancelar`). A hora vem do `criadoEm` da transação.
+- **Exclusão**: `excluir_transacao` só devolve os botões [Excluir …] e [Cancelar]; a exclusão acontece no toque (RN-092), pelo `TransacoesService.excluir` (que já recusa parcela e pagamento de fatura).
+- **Ação do botão com `tipo`** (`rascunho`, `desfazer`, `excluir_transacao`, `cancelar`): a ação de rascunho da T-061 ganhou `tipo: 'rascunho'`; nada publicado usava o formato antigo.
+- **Cartão de resumo com `opcoes`**, como o componente de botões, para a aba Mony da PoC mostrar o [Desfazer] sem saber de cada tipo; a tela completa do chat é a T-069.
+- `criar_categoria` usa cor e ícone padrão (`#94A3B8`, `outros`); a pessoa troca no app.
+Reversível: sim.
