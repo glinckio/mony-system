@@ -55,6 +55,43 @@ export function normalizar(texto: string): string {
     .toLowerCase();
 }
 
+/** Tamanho máximo da chave do estabelecimento (`preferencias_aprendidas.chave`). */
+const TAMANHO_CHAVE = 100;
+
+/**
+ * RN-090: a chave do estabelecimento, a partir da descrição do lançamento: sem acento, minúscula,
+ * só letras e números, com um espaço entre as palavras ("iFood!" → "ifood"; "Pão de Açúcar" → "pao
+ * de acucar"). `null` quando não sobra nada.
+ */
+export function chaveDoEstabelecimento(descricao: string): string | null {
+  const chave = normalizar(descricao)
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+    .slice(0, TAMANHO_CHAVE)
+    .trim();
+  return chave === '' ? null : chave;
+}
+
+/**
+ * RN-081: os itens com os preferidos na frente, na ordem dos preferidos, e o resto na ordem em que
+ * veio, sem repetir chave. Preferido que não está na lista é ignorado.
+ */
+export function preferidosPrimeiro<T>(
+  itens: readonly T[],
+  chave: (item: T) => string,
+  preferidos: readonly (string | null | undefined)[],
+): T[] {
+  const ordem = preferidos.filter((id): id is string => typeof id === 'string');
+  const frente = ordem.flatMap((id) => itens.filter((item) => chave(item) === id).slice(0, 1));
+  const vistos = new Set<string>();
+  return [...frente, ...itens].filter((item) => {
+    const id = chave(item);
+    if (vistos.has(id)) return false;
+    vistos.add(id);
+    return true;
+  });
+}
+
 const VERBO_DE_GASTO = /\b(gastei|paguei|comprei|torrei|desembolsei)\b/;
 /** Um número de dinheiro: "1.234,56", "32,90", "10". */
 const NUMERO = String.raw`(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?)`;

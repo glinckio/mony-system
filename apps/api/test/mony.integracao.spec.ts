@@ -1320,4 +1320,95 @@ describe.runIf(ativo)('integração: Mony', () => {
       { erro: false, dados: { meta: { concluida: true }, sugerirConclusao: false } },
     ]);
   });
+
+  it('RN-081 RN-090 o que foi confirmado para o estabelecimento vem primeiro nos botões e no contexto', async () => {
+    const usuario = await usuarioNovo();
+    const nubank = await cartaoNovo(usuario, 'Nubank');
+    await cartaoNovo(usuario, 'Inter');
+    const lazer = await categoriaDo(usuario, 'Lazer', 'despesa');
+    // Lazer fica fora das 4 mais usadas.
+    for (const [nome, vezes] of [
+      ['Mercado', 3],
+      ['Transporte', 2],
+      ['Moradia', 2],
+      ['Saúde', 2],
+    ] as const) {
+      const categoriaId = await categoriaDo(usuario, nome, 'despesa');
+      await prisma.transacao.createMany({
+        data: Array.from({ length: vezes }, () => ({
+          usuarioId: usuario.usuarioId,
+          tipo: 'despesa' as const,
+          descricao: 'Antes',
+          valor: 1_000n,
+          data: new Date('2026-10-01T00:00:00Z'),
+          status: 'pago' as const,
+          formaPagamento: 'pix' as const,
+          categoriaId,
+        })),
+      });
+    }
+    const rotulos = (opcoes: OpcaoBotao[]) => opcoes.map(({ rotulo }) => rotulo);
+    const escolher = async (opcoes: OpcaoBotao[], rotulo: string) => {
+      const opcao = opcoes.find((item) => item.rotulo === rotulo);
+      if (!opcao) throw new Error(`sem o botão ${rotulo}: ${rotulos(opcoes).join(', ')}`);
+      const resposta = await tocar(usuario, opcao);
+      expect(resposta.statusCode, resposta.body).toBe(200);
+      return botoes(resposta.json<RespostaAcaoMony>().componente);
+    };
+    const preferencia = () =>
+      prisma.preferenciaAprendida.findMany({
+        where: { usuarioId: usuario.usuarioId },
+        select: {
+          chave: true,
+          categoriaId: true,
+          cartaoId: true,
+          formaPagamento: true,
+          contagem: true,
+        },
+      });
+
+    // Primeira vez: sem preferência, as mais usadas; Lazer só pelo [Outra].
+    const primeira = botoes((await conversar(usuario, 'gastei 50 no cinema')).eventos[1]);
+    expect(rotulos(primeira)).toEqual(['Mercado', 'Moradia', 'Saúde', 'Transporte', 'Outra']);
+    const todas = await escolher(primeira, 'Outra');
+    const formas = await escolher(todas, 'Lazer');
+    expect(rotulos(formas)).toEqual(['Pix', 'Débito', 'Crédito', 'Dinheiro', 'Boleto']);
+    const cartoes = await escolher(formas, 'Crédito');
+    expect(rotulos(cartoes)).toEqual(['Inter', 'Nubank']);
+    await escolher(await escolher(cartoes, 'Nubank'), 'À vista');
+    expect(await preferencia()).toEqual([
+      {
+        chave: 'cinema',
+        categoriaId: lazer,
+        cartaoId: nubank.id,
+        formaPagamento: 'cartao_credito',
+        contagem: 1,
+      },
+    ]);
+
+    // Segunda vez: Lazer, Crédito e Nubank na frente (RN-081); a mesma combinação soma 1 (RN-090).
+    const segunda = botoes((await conversar(usuario, 'gastei 40 no Cinema')).eventos[1]);
+    expect(rotulos(segunda)).toEqual(['Lazer', 'Mercado', 'Moradia', 'Saúde', 'Outra']);
+    const formas2 = await escolher(segunda, 'Lazer');
+    expect(rotulos(formas2)[0]).toBe('Crédito');
+    const cartoes2 = await escolher(formas2, 'Crédito');
+    expect(rotulos(cartoes2)).toEqual(['Nubank', 'Inter']);
+    await escolher(await escolher(cartoes2, 'Nubank'), 'À vista');
+    expect((await preferencia())[0]?.contagem).toBe(2);
+
+    // Outra combinação toma o lugar e começa do 1.
+    const terceira = botoes((await conversar(usuario, 'gastei 30 no cinema no pix')).eventos[1]);
+    expect(rotulos(terceira)[0]).toBe('Lazer');
+    await escolher(terceira, 'Lazer');
+    expect(await preferencia()).toEqual([
+      { chave: 'cinema', categoriaId: lazer, cartaoId: null, formaPagamento: 'pix', contagem: 1 },
+    ]);
+
+    // O modelo recebe os hábitos no contexto.
+    modelo.roteirizar({ texto: 'Oi!' });
+    await conversar(usuario, 'oi');
+    expect(modelo.pedidos[0]?.sistema[1]).toContain(
+      '- Hábitos (estabelecimento → categoria, forma ou cartão): cinema → Lazer, Pix.',
+    );
+  });
 });

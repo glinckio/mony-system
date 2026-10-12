@@ -183,7 +183,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - A T-062 (ferramentas de finanças) foi dividida em T-062a e T-062b por tamanho.
 - [x] **T-062b** Ferramentas de consulta e planejamento da Mony: `resumo_periodo`, `consultar_cartao`, `pagar_fatura` (confirmação por botão), `consultar_orcamentos`, `definir_orcamento`, `consultar_metas`, `atualizar_meta` (PR #58)
   - dep: T-062a · RN-087, RN-092 · docs: 08 (Ferramentas)
-- [ ] **T-063** Preferências aprendidas e ordenação de botões
+- [x] **T-063** Preferências aprendidas e ordenação de botões (PR #60)
   - dep: T-062b · RN-081, RN-090
 - [ ] **T-064** Áudio: gravação no app + `TranscricaoProvider`
   - dep: T-060

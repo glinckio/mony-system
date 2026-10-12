@@ -752,3 +752,12 @@ Contexto: segunda parte da T-062. Decisões:
 - `consultar_cartao` devolve as faturas com saldo, a aberta e a última paga, não o histórico todo.
 - O `LlmFake` guarda uma cópia da conversa de cada pedido: o orquestrador continua a mesma lista nas voltas de ferramenta.
 Reversível: sim.
+
+## 2026-10-12 — T-063 — Preferências aprendidas
+Contexto: `preferencias_aprendidas` tem uma linha por estabelecimento (único usuário + chave), com uma combinação e a contagem; a RN-090 diz "`contagem += 1` na combinação confirmada" sem dizer o que fazer quando a combinação muda. Decisões:
+- **Uma combinação por estabelecimento**: a mesma soma 1; outra toma o lugar e volta para 1 (o hábito mais recente vale). Alternativa: guardar várias combinações por estabelecimento, que pediria mudar a tabela.
+- **Chave = descrição normalizada** (sem acento, minúscula, só letras e números, até 100), em `chaveDoEstabelecimento`; a mesma função serve depois para a coluna `transacoes.estabelecimento` (ainda sem uso).
+- **Aprende só com o que a Mony grava** (rascunho e ferramentas), que é a "confirmação" da RN-090; lançamentos feitos no app ficam de fora por enquanto. Falha ao gravar a preferência vai ao log e não desfaz o lançamento; [Desfazer] não desaprende.
+- **Ordem dos botões (RN-081)**: a preferida na frente, inclusive a categoria que não está entre as 4 mais usadas (ela entra e a quarta sai); formas e cartões também. Nada é preenchido sozinho: a pessoa ainda toca (RN-080 pergunta o que o texto não disse).
+- **Contexto do modelo**: os 10 hábitos com mais confirmações.
+Reversível: sim.
