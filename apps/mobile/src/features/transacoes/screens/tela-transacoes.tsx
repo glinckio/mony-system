@@ -16,6 +16,7 @@ import {
   Chip,
   Erro,
   Folha,
+  GrupoOpcoes,
   Skeleton,
   Tela,
   Texto,
@@ -24,7 +25,6 @@ import {
 import { cores, espacos } from '@/ui/tokens';
 
 import { FolhaFiltros } from '../components/folha-filtros';
-import { GrupoOpcoes } from '../components/grupo-opcoes';
 import { ItemTransacao } from '../components/item-transacao';
 import { ResumoTotais } from '../components/resumo-totais';
 import { SeletorMes } from '../components/seletor-mes';

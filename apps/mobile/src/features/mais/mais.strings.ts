@@ -6,4 +6,9 @@ export const textosMais = {
   biometriaMotivo: 'Confirmar para ligar a biometria',
   cancelar: 'Cancelar',
   sair: 'Sair deste aparelho',
+  atalhos: {
+    categorias: 'Categorias',
+    contas: 'Contas',
+    permissoes: 'Permissões',
+  },
 };

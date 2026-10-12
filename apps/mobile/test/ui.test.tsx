@@ -11,6 +11,7 @@ import {
   AnelProgresso,
   BarraProgresso,
   Botao,
+  Cabecalho,
   BotaoPrivacidade,
   Campo,
   CampoBusca,
@@ -21,6 +22,7 @@ import {
   Erro,
   Etiqueta,
   Folha,
+  Segmentado,
   Skeleton,
   Texto,
   Valor,
@@ -283,5 +285,36 @@ describe('AnelProgresso', () => {
       screen.getByRole('progressbar', { name: '2 de 5 passos feitos' }),
     ).toHaveAccessibilityValue({ min: 0, max: 5, now: 2 });
     expect(screen.getByText('2/5')).toBeOnTheScreen();
+  });
+});
+
+describe('Segmentado e Cabecalho', () => {
+  it('as abas dizem qual está escolhida e trocam ao tocar', () => {
+    const aoEscolher = jest.fn();
+    render(
+      <Segmentado
+        rotulo="Tipo"
+        selecionado="despesa"
+        aoEscolher={aoEscolher}
+        opcoes={[
+          { valor: 'despesa', rotulo: 'Despesas (9)' },
+          { valor: 'receita', rotulo: 'Receitas (3)' },
+        ]}
+      />,
+    );
+    expect(screen.getByRole('tab', { name: 'Despesas (9)' })).toBeSelected();
+    expect(screen.getByRole('tab', { name: 'Receitas (3)' })).not.toBeSelected();
+    fireEvent.press(screen.getByRole('tab', { name: 'Receitas (3)' }));
+    expect(aoEscolher).toHaveBeenCalledWith('receita');
+  });
+
+  it('cabeçalho tem título e só mostra voltar quando há para onde', () => {
+    const voltar = jest.fn();
+    const { rerender } = render(<Cabecalho titulo="Categorias" />);
+    expect(screen.getByRole('header', { name: 'Categorias' })).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Voltar' })).toBeNull();
+    rerender(<Cabecalho titulo="Categorias" aoVoltar={voltar} />);
+    fireEvent.press(screen.getByRole('button', { name: 'Voltar' }));
+    expect(voltar).toHaveBeenCalledTimes(1);
   });
 });

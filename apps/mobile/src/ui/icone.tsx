@@ -3,6 +3,7 @@ import ArrowDown from 'lucide-react-native/icons/arrow-down';
 import ArrowLeft from 'lucide-react-native/icons/arrow-left';
 import ArrowLeftRight from 'lucide-react-native/icons/arrow-left-right';
 import ArrowUp from 'lucide-react-native/icons/arrow-up';
+import Baby from 'lucide-react-native/icons/baby';
 import Banknote from 'lucide-react-native/icons/banknote';
 import Bell from 'lucide-react-native/icons/bell';
 import Calendar from 'lucide-react-native/icons/calendar';
@@ -22,11 +23,13 @@ import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark';
 import Clock from 'lucide-react-native/icons/clock';
 import CreditCard from 'lucide-react-native/icons/credit-card';
 import Download from 'lucide-react-native/icons/download';
+import Dumbbell from 'lucide-react-native/icons/dumbbell';
 import Ellipsis from 'lucide-react-native/icons/ellipsis';
 import Eye from 'lucide-react-native/icons/eye';
 import EyeOff from 'lucide-react-native/icons/eye-off';
 import FingerprintPattern from 'lucide-react-native/icons/fingerprint-pattern';
 import Gamepad2 from 'lucide-react-native/icons/gamepad-2';
+import Gift from 'lucide-react-native/icons/gift';
 import GraduationCap from 'lucide-react-native/icons/graduation-cap';
 import Hamburger from 'lucide-react-native/icons/hamburger';
 import HeartPulse from 'lucide-react-native/icons/heart-pulse';
@@ -42,7 +45,10 @@ import Mail from 'lucide-react-native/icons/mail';
 import MessageCircle from 'lucide-react-native/icons/message-circle';
 import Mic from 'lucide-react-native/icons/mic';
 import Paperclip from 'lucide-react-native/icons/paperclip';
+import PawPrint from 'lucide-react-native/icons/paw-print';
 import Pencil from 'lucide-react-native/icons/pencil';
+import PiggyBank from 'lucide-react-native/icons/piggy-bank';
+import Plane from 'lucide-react-native/icons/plane';
 import Plus from 'lucide-react-native/icons/plus';
 import Receipt from 'lucide-react-native/icons/receipt';
 import RefreshCw from 'lucide-react-native/icons/refresh-cw';
@@ -52,6 +58,7 @@ import Search from 'lucide-react-native/icons/search';
 import SendHorizontal from 'lucide-react-native/icons/send-horizontal';
 import Settings from 'lucide-react-native/icons/settings';
 import Shield from 'lucide-react-native/icons/shield';
+import Shirt from 'lucide-react-native/icons/shirt';
 import ShoppingBag from 'lucide-react-native/icons/shopping-bag';
 import ShoppingCart from 'lucide-react-native/icons/shopping-cart';
 import Tag from 'lucide-react-native/icons/tag';
@@ -60,6 +67,7 @@ import Trash from 'lucide-react-native/icons/trash';
 import TrendingUp from 'lucide-react-native/icons/trending-up';
 import TriangleAlert from 'lucide-react-native/icons/triangle-alert';
 import User from 'lucide-react-native/icons/user';
+import Wallet from 'lucide-react-native/icons/wallet';
 import WifiOff from 'lucide-react-native/icons/wifi-off';
 import X from 'lucide-react-native/icons/x';
 import Zap from 'lucide-react-native/icons/zap';
@@ -75,6 +83,7 @@ const ICONES = {
   'arrow-left': ArrowLeft,
   'arrow-left-right': ArrowLeftRight,
   'arrow-up': ArrowUp,
+  baby: Baby,
   banknote: Banknote,
   bell: Bell,
   calendar: Calendar,
@@ -94,11 +103,13 @@ const ICONES = {
   clock: Clock,
   'credit-card': CreditCard,
   download: Download,
+  dumbbell: Dumbbell,
   ellipsis: Ellipsis,
   eye: Eye,
   'eye-off': EyeOff,
   'fingerprint-pattern': FingerprintPattern,
   'gamepad-2': Gamepad2,
+  gift: Gift,
   'graduation-cap': GraduationCap,
   hamburger: Hamburger,
   'heart-pulse': HeartPulse,
@@ -114,7 +125,10 @@ const ICONES = {
   'message-circle': MessageCircle,
   mic: Mic,
   paperclip: Paperclip,
+  'paw-print': PawPrint,
   pencil: Pencil,
+  'piggy-bank': PiggyBank,
+  plane: Plane,
   plus: Plus,
   receipt: Receipt,
   'refresh-cw': RefreshCw,
@@ -124,6 +138,7 @@ const ICONES = {
   'send-horizontal': SendHorizontal,
   settings: Settings,
   shield: Shield,
+  shirt: Shirt,
   'shopping-bag': ShoppingBag,
   'shopping-cart': ShoppingCart,
   tag: Tag,
@@ -132,6 +147,7 @@ const ICONES = {
   'trending-up': TrendingUp,
   'triangle-alert': TriangleAlert,
   user: User,
+  wallet: Wallet,
   'wifi-off': WifiOff,
   x: X,
   zap: Zap,

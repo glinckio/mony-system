@@ -9,11 +9,10 @@ import {
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Botao, Folha } from '@/ui';
+import { Botao, Folha, GrupoOpcoes } from '@/ui';
 
 import type { Catalogos } from '../hooks/use-transacoes';
 import type { FiltrosDaFolha } from '../lib/filtro';
-import { GrupoOpcoes } from './grupo-opcoes';
 
 interface PropsFolhaFiltros {
   inicial: FiltrosDaFolha;

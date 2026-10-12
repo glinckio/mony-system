@@ -17,7 +17,18 @@ import { KeyboardAvoidingView, Platform, ScrollView, Switch, View } from 'react-
 
 import { CampoControlado, mensagemDeErro } from '@/lib/formularios';
 import { useHoje } from '@/lib/fuso';
-import { Botao, BotaoIcone, Campo, CampoValor, Card, Chip, Folha, Tela, Texto } from '@/ui';
+import {
+  Botao,
+  BotaoIcone,
+  Campo,
+  CampoValor,
+  Card,
+  Chip,
+  Folha,
+  GrupoOpcoes,
+  Tela,
+  Texto,
+} from '@/ui';
 import { cores } from '@/ui/tokens';
 
 import {
@@ -35,7 +46,6 @@ import {
   valoresIniciais,
 } from '../lib/formulario';
 import { dataParaTexto, mascararData, somarDias, textoParaData } from '../lib/periodo';
-import { GrupoOpcoes } from './grupo-opcoes';
 
 export interface PropsFormularioTransacao {
   /** `null` para lançamento novo. */
