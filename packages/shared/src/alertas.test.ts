@@ -103,6 +103,7 @@ describe('links internos (RN-105)', () => {
       LINKS_INTERNOS.orcamentos('2026-10-01'),
       LINKS_INTERNOS.transacao(id),
       LINKS_INTERNOS.parcelamento(id),
+      LINKS_INTERNOS.mony(),
     ]) {
       expect(link).toMatch(REGEX_LINK_INTERNO);
     }

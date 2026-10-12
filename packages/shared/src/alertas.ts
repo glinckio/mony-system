@@ -123,6 +123,8 @@ export function marcoDoVencimento(diasAteVencer: number, antecedencia: number): 
 /** RN-105 e doc 04: os links internos que as notificações abrem. */
 export const LINKS_INTERNOS = {
   inicio: (): string => 'mony://inicio',
+  /** O chat da Mony (resumos, T-083). */
+  mony: (): string => 'mony://mony',
   notificacoes: (): string => 'mony://notificacoes',
   cartao: (cartaoId: string): string => `mony://cartoes/${cartaoId}`,
   fatura: (cartaoId: string, faturaId: string): string =>

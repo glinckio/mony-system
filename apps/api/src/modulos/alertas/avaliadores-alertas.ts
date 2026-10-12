@@ -24,6 +24,7 @@ import { ALERTAS_ORCAMENTO } from '@mony/shared/orcamentos';
 import { somarDias } from '@mony/shared/recorrencias';
 
 import { Clock } from '../../core/clock/clock';
+import type { Contexto } from '../../core/contexto/contexto';
 import { AoEvento } from '../../core/eventos/ao-evento.decorator';
 import type { EventoDominio } from '../../core/eventos/evento-dominio';
 import { Rotina } from '../../core/rotinas/rotinas';
@@ -34,6 +35,7 @@ import {
 } from '../cartoes/cartoes.service';
 import { type AlertaCandidato, MotorAlertas } from '../notificacoes/motor-alertas';
 import { OrcamentosService } from '../orcamentos/orcamentos.service';
+import { RelatoriosService } from '../relatorios/relatorios.service';
 import { EVENTO_PARCELAMENTO_REGISTRADO } from '../parcelamentos/parcelamentos.service';
 import {
   EVENTO_TRANSACAO_ALTERADA,
@@ -41,6 +43,7 @@ import {
 } from '../transacoes/transacoes.service';
 import { AlertasRepository, deDataDoBanco } from './alertas.repository';
 import {
+  type DadosResumo,
   textoFaturaAtrasada,
   textoFaturaFechada,
   textoFaturaVencimento,
@@ -48,6 +51,7 @@ import {
   textoLimiteCartao,
   textoOrcamento,
   textoProjecaoDoMes,
+  textoResumo,
   textoVencimentoPendente,
 } from './textos';
 
@@ -56,6 +60,15 @@ export const HORA_ALERTAS_DIARIOS = '09';
 
 /** Usuários por lote na rotina diária. */
 const LOTE_USUARIOS = 200;
+/** Categorias no resumo da semana e do mês. */
+const CATEGORIAS_NO_RESUMO = 3;
+/** `getUTCDay` da segunda-feira. */
+const SEGUNDA = 1;
+
+/** O dia da semana da data (0 é domingo). */
+function diaDaSemana(data: DataCalendario): number {
+  return new Date(`${data}T12:00:00Z`).getUTCDay();
+}
 
 /**
  * Avaliadores dos alertas de dinheiro (T-082, doc 09): cartão, fatura, orçamento, vencimentos,
@@ -73,6 +86,7 @@ export class AvaliadoresAlertas {
     private readonly motor: MotorAlertas,
     private readonly cartoes: CartoesService,
     private readonly orcamentos: OrcamentosService,
+    private readonly relatorios: RelatoriosService,
     private readonly clock: Clock,
   ) {}
 
@@ -248,6 +262,7 @@ export class AvaliadoresAlertas {
         antecedencias.get('vencimento_pendente') ?? ANTECEDENCIA_PADRAO_DIAS,
       )),
       ...(await this.projecaoDoMes(usuarioId, hoje)),
+      ...(await this.resumos(usuarioId, hoje)),
     ];
     await this.emitir(candidatos, agora);
     return candidatos;
@@ -442,6 +457,85 @@ export class AvaliadoresAlertas {
   }
 
   /** RN-107: saldo projetado negativo no fim do mês, no máximo uma vez por semana. */
+  /**
+   * Resumos (doc 09, T-083): na segunda, o da semana anterior (segunda a domingo); no dia 1, o do
+   * mês anterior. Vão ao chat e à central; sem movimento no período, nada.
+   */
+  private async resumos(usuarioId: string, hoje: DataCalendario): Promise<AlertaCandidato[]> {
+    const periodos: {
+      periodo: 'semana' | 'mes';
+      inicio: string;
+      fim: string;
+      antes: [string, string];
+    }[] = [];
+    if (diaDaSemana(hoje) === SEGUNDA) {
+      const inicio = somarDias(hoje, -7);
+      periodos.push({
+        periodo: 'semana',
+        inicio,
+        fim: somarDias(hoje, -1),
+        antes: [somarDias(inicio, -7), somarDias(inicio, -1)],
+      });
+    }
+    if (hoje.endsWith('-01')) {
+      const fim = somarDias(hoje, -1);
+      const inicio = competenciaDe(fim);
+      const fimAntes = somarDias(inicio, -1);
+      periodos.push({ periodo: 'mes', inicio, fim, antes: [competenciaDe(fimAntes), fimAntes] });
+    }
+    const candidatos: AlertaCandidato[] = [];
+    for (const { periodo, inicio, fim, antes } of periodos) {
+      const dados = await this.dadosDoResumo(usuarioId, periodo, inicio, fim, antes);
+      if (!dados) continue;
+      const { textoChat, ...texto } = textoResumo(dados);
+      candidatos.push({
+        usuarioId,
+        tipo: 'resumo_periodo',
+        chaveUnica:
+          periodo === 'semana' ? `resumo:semana:${inicio}` : `resumo:mes:${inicio.slice(0, 7)}`,
+        urgente: false,
+        ...texto,
+        linkInterno: LINKS_INTERNOS.mony(),
+        vaiParaChat: true,
+        textoChat,
+      });
+    }
+    return candidatos;
+  }
+
+  private async dadosDoResumo(
+    usuarioId: string,
+    periodo: 'semana' | 'mes',
+    inicio: DataCalendario,
+    fim: DataCalendario,
+    [inicioAntes, fimAntes]: [DataCalendario, DataCalendario],
+  ): Promise<DadosResumo | null> {
+    const contexto: Contexto = { usuarioId, origem: 'sistema' };
+    const [despesas, receitas, despesasAntes, orcamentos] = await Promise.all([
+      this.relatorios.categorias(contexto, { inicio, fim, tipo: 'despesa' }),
+      this.relatorios.categorias(contexto, { inicio, fim, tipo: 'receita' }),
+      this.relatorios.categorias(contexto, { inicio: inicioAntes, fim: fimAntes, tipo: 'despesa' }),
+      periodo === 'mes' ? this.orcamentos.listar(contexto, inicio) : null,
+    ]);
+    if (despesas.totalCentavos === 0 && receitas.totalCentavos === 0) return null;
+    const nomes = new Map(despesas.itens.map(({ categoriaId, nome }) => [categoriaId, nome]));
+    return {
+      periodo,
+      inicio,
+      fim,
+      despesasCentavos: despesas.totalCentavos,
+      receitasCentavos: receitas.totalCentavos,
+      despesasAntesCentavos: despesasAntes.itens.length > 0 ? despesasAntes.totalCentavos : null,
+      categorias: despesas.itens
+        .slice(0, CATEGORIAS_NO_RESUMO)
+        .map(({ nome, totalCentavos, percentual }) => ({ nome, totalCentavos, percentual })),
+      orcamentosEstourados: (orcamentos?.itens ?? [])
+        .filter(({ faixa }) => faixa === 'estourado')
+        .map(({ categoriaId }) => nomes.get(categoriaId))
+        .filter((nome): nome is string => nome !== undefined),
+    };
+  }
+
   private async projecaoDoMes(usuarioId: string, hoje: DataCalendario): Promise<AlertaCandidato[]> {
     const competencia = competenciaDe(hoje);
     const numeros = await this.repositorio.numerosDaProjecao(

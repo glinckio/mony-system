@@ -141,3 +141,81 @@ export function textoProjecaoDoMes(dados: {
     corpo: `Pela projeção, o saldo termina ${nomeDoMes(dados.hoje)} em ${reais(dados.saldoProjetadoCentavos)}. Veja onde ajustar.`,
   };
 }
+
+/** O que entra no resumo da semana ou do mês (T-083). */
+export interface DadosResumo {
+  periodo: 'semana' | 'mes';
+  inicio: DataCalendario;
+  fim: DataCalendario;
+  despesasCentavos: number;
+  receitasCentavos: number;
+  /** As despesas do período anterior do mesmo tipo, para comparar; `null` sem movimento. */
+  despesasAntesCentavos: number | null;
+  /** As categorias com mais despesa, da maior para a menor. */
+  categorias: readonly { nome: string; totalCentavos: number; percentual: number }[];
+  /** No mês: as categorias que passaram do orçamento. */
+  orcamentosEstourados: readonly string[];
+}
+
+/** "Mercado e Lazer", "Mercado, Lazer e Casa". */
+function lista(nomes: readonly string[]): string {
+  if (nomes.length <= 1) return nomes.join('');
+  return `${nomes.slice(0, -1).join(', ')} e ${nomes.at(-1) ?? ''}`;
+}
+
+/**
+ * Resumo da semana (segunda) ou do mês (dia 1), doc 09: o push curto e o texto do chat com as
+ * despesas, a comparação com o período anterior, as receitas, onde mais gastou e, no mês, os
+ * orçamentos que passaram.
+ */
+export function textoResumo(dados: DadosResumo): TextoAlerta & { textoChat: string } {
+  const mes = MESES[Number(dados.inicio.slice(5, 7)) - 1] ?? dados.inicio.slice(0, 7);
+  const nomeDoPeriodo =
+    dados.periodo === 'semana' ? 'Sua semana' : `${mes.slice(0, 1).toUpperCase()}${mes.slice(1)}`;
+  const anterior = dados.periodo === 'semana' ? 'na semana anterior' : 'no mês anterior';
+  let comparacao = '';
+  if (dados.despesasAntesCentavos !== null) {
+    const diferenca = dados.despesasCentavos - dados.despesasAntesCentavos;
+    comparacao =
+      diferenca === 0
+        ? `o mesmo que ${anterior}`
+        : `${reais(Math.abs(diferenca))} a ${diferenca > 0 ? 'mais' : 'menos'} que ${anterior}`;
+  }
+  const [maior] = dados.categorias;
+  const corpo = [
+    comparacao ? `${comparacao.slice(0, 1).toUpperCase()}${comparacao.slice(1)}.` : '',
+    `Receitas: ${reais(dados.receitasCentavos)}.`,
+    maior ? `Onde mais gastou: ${maior.nome} (${reais(maior.totalCentavos)}).` : '',
+  ]
+    .filter((parte) => parte !== '')
+    .join(' ');
+  const linhas = [
+    dados.periodo === 'semana'
+      ? `Resumo da semana de ${diaEMes(dados.inicio)} a ${diaEMes(dados.fim)}:`
+      : `Resumo de ${mes}:`,
+    `- Despesas: ${reais(dados.despesasCentavos)}${comparacao ? ` (${comparacao})` : ''}`,
+    `- Receitas: ${reais(dados.receitasCentavos)}`,
+  ];
+  if (dados.categorias.length > 0) {
+    linhas.push(
+      `- Onde mais gastou: ${dados.categorias
+        .map(
+          ({ nome, totalCentavos, percentual }) =>
+            `${nome} ${reais(totalCentavos)} (${String(percentual)}%)`,
+        )
+        .join(', ')}`,
+    );
+  }
+  if (dados.orcamentosEstourados.length > 0) {
+    linhas.push(
+      `- Orçamentos: ${lista(dados.orcamentosEstourados)} ${
+        dados.orcamentosEstourados.length === 1 ? 'passou' : 'passaram'
+      } do limite`,
+    );
+  }
+  return {
+    titulo: `${nomeDoPeriodo}: ${reais(dados.despesasCentavos)} em despesas`,
+    corpo,
+    textoChat: linhas.join('\n'),
+  };
+}

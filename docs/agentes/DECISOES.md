@@ -812,3 +812,13 @@ Contexto: o doc 04 pede o histórico com FlashList invertida, busca e atalhos vi
 - **Atalhos pelo que a pessoa tem**, calculados na API só na primeira página sem busca: o mês, a fatura do primeiro cartão (ou anotar um gasto), os orçamentos (ou criar um) e as metas abertas. Nenhum atalho é um lançamento pronto ("gastei 25"), para um toque não gravar sem querer.
 - **Busca numa folha**, a partir de 2 letras, só leitura: tocar no resultado não pula para a mensagem (fica para quando a conversa tiver âncora por id).
 Reversível: sim.
+
+## 2026-10-12 — T-083 — Resumos semanal e mensal e alertas no chat
+Contexto: o doc 09 manda o resumo da segunda e do dia 1 "no chat + push" e já tinha `vaiParaChat` nos alertas, sem dizer o conteúdo nem quando a mensagem entra. Decisões:
+- **Na rotina `alertas-diarios` das 09:00**, não numa rotina nova: o mesmo horário e o mesmo laço por fuso.
+- **Períodos fechados**: a semana de segunda a domingo anterior e o mês anterior, comparados com o período de antes do mesmo tipo (sem movimento antes, sem comparação). Três categorias; no mês, os orçamentos estourados.
+- **Sem movimento, sem resumo** (nem despesa nem receita): não manda "R$ 0,00" a quem não usa o app.
+- **Chat na hora, push no fim do silêncio**: a mensagem da Mony não toca o aparelho. Todo alerta com `vaiParaChat` entra no chat, não só o resumo.
+- **Porta `ChatDosAlertas`** no módulo de notificações, implementada na Mony (`ChatDaMony`, no `RascunhosModule`, que o worker já carrega): o motor não depende do resto da Mony.
+- **Link `mony://mony`** (a aba do chat) entra nos `LINKS_INTERNOS`; o app passa a abrir links com a T-088.
+Reversível: sim.

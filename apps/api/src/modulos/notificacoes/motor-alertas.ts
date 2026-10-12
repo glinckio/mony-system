@@ -11,6 +11,7 @@ import {
 } from '@mony/shared/notificacoes';
 
 import { Rotina } from '../../core/rotinas/rotinas';
+import { ChatDosAlertas } from './chat-dos-alertas';
 import { EnvioNotificacoes, type NotificacaoParaEnvio } from './envio-notificacoes';
 import { type NotificacaoDoUsuario, NotificacoesRepository } from './notificacoes.repository';
 
@@ -29,8 +30,10 @@ export interface AlertaCandidato {
   corpo: string;
   /** RN-105: `mony://…`, a tela que a notificação abre. */
   linkInterno: string;
-  /** Também vira mensagem da Mony no chat (entra com a Mony, T-062/T-083). */
+  /** Também vira mensagem da Mony no chat (T-083). */
   vaiParaChat: boolean;
+  /** O texto no chat, quando é mais que o título e o corpo do push (os resumos). */
+  textoChat?: string;
 }
 
 /** Por que um candidato não virou notificação. */
@@ -58,7 +61,8 @@ interface SituacaoDoUsuario {
  * 2. cota diária de consultoria (RN-103);
  * 3. chave única já usada (RN-102);
  * 4. horário de silêncio (RN-101): o não urgente fica gravado e espera o fim do silêncio.
- * O que passa vai para a central e para os canais (`EnvioNotificacoes`).
+ * O que passa vai para a central e para os canais (`EnvioNotificacoes`); com `vaiParaChat`,
+ * também para o chat da Mony (`ChatDosAlertas`).
  */
 @Injectable()
 export class MotorAlertas {
@@ -67,6 +71,7 @@ export class MotorAlertas {
   constructor(
     private readonly repositorio: NotificacoesRepository,
     private readonly envio: EnvioNotificacoes,
+    private readonly chat: ChatDosAlertas,
   ) {}
 
   async emitir(candidatos: readonly AlertaCandidato[], agora: Date): Promise<ResultadoEmissao> {
@@ -114,6 +119,8 @@ export class MotorAlertas {
           continue;
         }
         if (consultoria) consultoriaHoje += 1;
+        // No chat, já: a mensagem não toca o aparelho, então o silêncio não segura (T-083).
+        if (candidato.vaiParaChat) await this.paraOChat(candidato);
         if (!candidato.urgente && this.emSilencio(situacao, agora)) {
           resultado.adiadas.push(gravada.id);
           continue;
@@ -175,6 +182,19 @@ export class MotorAlertas {
         liberadas += adiadas.length;
       }
       depoisDe = usuarios.at(-1) ?? null;
+    }
+  }
+
+  /** A mensagem da Mony no chat; uma falha fica no log e não segura a notificação. */
+  private async paraOChat(candidato: AlertaCandidato): Promise<void> {
+    try {
+      await this.chat.enviar(
+        candidato.usuarioId,
+        candidato.textoChat ?? `${candidato.titulo}\n${candidato.corpo}`,
+      );
+    } catch (erro) {
+      const motivo = erro instanceof Error ? erro.message : String(erro);
+      this.log.error(`Alerta ${candidato.chaveUnica} não foi ao chat: ${motivo}`);
     }
   }
 

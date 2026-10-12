@@ -477,4 +477,102 @@ describe.runIf(ativo)('integração: avaliadores de alertas', () => {
     expect(falhas).toBe(0);
     expect(await chaves(usuario)).toEqual([`venc:${gas.id}:0`]);
   });
+
+  function mensagensDaMony(usuario: Usuario) {
+    return prisma.mensagem.findMany({
+      where: { usuarioId: usuario.usuarioId, autor: 'mony' },
+      select: { tipo: true, conteudo: true },
+      orderBy: { criadoEm: 'asc' },
+    });
+  }
+
+  it('alerta com vaiParaChat também vira mensagem da Mony no chat (T-083)', async () => {
+    const usuario = await usuarioNovo();
+    const cartaoId = await cartaoNovo(usuario, 5, 18);
+    const compra = await despesa(usuario, {
+      formaPagamento: 'cartao_credito',
+      cartaoId,
+      valorCentavos: 55_000,
+    });
+    await registrada(compra.id);
+
+    const [limite] = await notificacoes(usuario);
+    expect(limite?.tipo).toBe('limite_cartao');
+    expect(await mensagensDaMony(usuario)).toEqual([
+      { tipo: 'texto', conteudo: `${limite?.titulo ?? ''}\n${limite?.corpo ?? ''}` },
+    ]);
+    // O vencimento da fatura não vai ao chat.
+    await avaliadores.avaliarDiario(usuario.usuarioId, noDia('2026-11-15'));
+    expect((await notificacoes(usuario)).map(({ tipo }) => tipo)).toContain('fatura_vencimento');
+    expect(await mensagensDaMony(usuario)).toHaveLength(1);
+  });
+
+  it('T-083 resumo da semana na segunda e do mês no dia 1, na central e no chat, uma vez só', async () => {
+    const usuario = await usuarioNovo();
+    const salario = await prisma.categoria.findFirstOrThrow({
+      where: { usuarioId: usuario.usuarioId, tipo: 'receita', nome: 'Salário' },
+    });
+    await despesa(usuario, { valorCentavos: 4_000, data: '2026-10-13' });
+    await despesa(usuario, { valorCentavos: 1_000, data: '2026-10-08' });
+    await postar(usuario, '/transacoes', {
+      tipo: 'receita',
+      descricao: 'Salário',
+      categoriaId: salario.id,
+      valorCentavos: 300_000,
+      data: '2026-10-14',
+    });
+    await chamar('PUT', usuario, '/orcamentos', {
+      categoriaId: usuario.despesa,
+      competencia: '2026-10-01',
+      valorLimiteCentavos: 3_000,
+    });
+
+    // Segunda, 19/10: a semana de 12 a 18/10, contra a de 05 a 11/10.
+    const semana = (await avaliadores.avaliarDiario(usuario.usuarioId, noDia('2026-10-19'))).find(
+      ({ tipo }) => tipo === 'resumo_periodo',
+    );
+    expect(semana).toMatchObject({
+      chaveUnica: 'resumo:semana:2026-10-12',
+      titulo: `Sua semana: ${reais(4_000)} em despesas`,
+      corpo: `${reais(3_000)} a mais que na semana anterior. Receitas: ${reais(300_000)}. Onde mais gastou: ${usuario.nomeDespesa} (${reais(4_000)}).`,
+      linkInterno: 'mony://mony',
+      vaiParaChat: true,
+    });
+    const textoSemana = [
+      'Resumo da semana de 12/10 a 18/10:',
+      `- Despesas: ${reais(4_000)} (${reais(3_000)} a mais que na semana anterior)`,
+      `- Receitas: ${reais(300_000)}`,
+      `- Onde mais gastou: ${usuario.nomeDespesa} ${reais(4_000)} (100%)`,
+    ].join('\n');
+    expect(semana?.textoChat).toBe(textoSemana);
+    expect(await mensagensDaMony(usuario)).toEqual([{ tipo: 'texto', conteudo: textoSemana }]);
+
+    // A rotina de novo no mesmo dia não repete (RN-102).
+    await avaliadores.avaliarDiario(usuario.usuarioId, noDia('2026-10-19'));
+    expect(await mensagensDaMony(usuario)).toHaveLength(1);
+
+    // Dia 1/11 (domingo): o mês de outubro, sem setembro para comparar, com o orçamento estourado.
+    const mes = (await avaliadores.avaliarDiario(usuario.usuarioId, noDia('2026-11-01'))).find(
+      ({ tipo }) => tipo === 'resumo_periodo',
+    );
+    expect(mes?.chaveUnica).toBe('resumo:mes:2026-10');
+    expect(mes?.titulo).toBe(`Outubro: ${reais(5_000)} em despesas`);
+    expect(mes?.textoChat).toBe(
+      [
+        'Resumo de outubro:',
+        `- Despesas: ${reais(5_000)}`,
+        `- Receitas: ${reais(300_000)}`,
+        `- Onde mais gastou: ${usuario.nomeDespesa} ${reais(5_000)} (100%)`,
+        `- Orçamentos: ${usuario.nomeDespesa} passou do limite`,
+      ].join('\n'),
+    );
+    expect(
+      (await notificacoes(usuario)).filter(({ tipo }) => tipo === 'resumo_periodo'),
+    ).toHaveLength(2);
+
+    // Sem movimento no período, sem resumo.
+    const parado = await usuarioNovo();
+    const nada = await avaliadores.avaliarDiario(parado.usuarioId, noDia('2026-10-19'));
+    expect(nada.filter(({ tipo }) => tipo === 'resumo_periodo')).toEqual([]);
+  });
 });
