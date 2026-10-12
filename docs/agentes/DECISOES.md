@@ -740,3 +740,6 @@ Contexto: a T-062 lista 15 ferramentas de finanças; ficou grande demais para um
 - **Cartão de resumo com `opcoes`**, como o componente de botões, para a aba Mony da PoC mostrar o [Desfazer] sem saber de cada tipo; a tela completa do chat é a T-069.
 - `criar_categoria` usa cor e ícone padrão (`#94A3B8`, `outros`); a pessoa troca no app.
 Reversível: sim.
+
+## 2026-10-12 — T-HOTFIX — Patches do SDK 57 do Expo
+Contexto: o Expo publicou patches do SDK 57 (`expo` 57.0.28 e afins) e o passo "App com as versões do SDK do Expo" (`expo install --check`) do CI passou a falhar em todo PR, inclusive na `main`. O pnpm 12 só instala versão publicada há mais de um dia (`minimumReleaseAge`). Decisão: subir os pacotes para as versões exigidas, fixas, com as versões novas do Expo na lista `minimumReleaseAgeExclude` do `pnpm-workspace.yaml` (o pnpm acrescenta sozinho ao instalar). Alternativa: esperar um dia com o CI vermelho. As exceções podem sair da lista quando as versões passarem de um dia. Reversível: sim.
