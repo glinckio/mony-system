@@ -10,7 +10,7 @@ import { EmailModule } from './integracoes/email/email.module';
 import { ProcessadorEmails } from './integracoes/email/processador-emails';
 import { AlertasModule } from './modulos/alertas/alertas.module';
 import { CartoesModule } from './modulos/cartoes/cartoes.module';
-import { MonyModule } from './modulos/mony/mony.module';
+import { RascunhosModule } from './modulos/mony/rascunhos.module';
 import { PushModule } from './integracoes/push/push.module';
 import { NotificacoesModule } from './modulos/notificacoes/notificacoes.module';
 import { ProcessadorNotificacoes } from './modulos/notificacoes/processador-notificacoes';
@@ -37,7 +37,7 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     NotificacoesModule,
     PushModule,
     AlertasModule,
-    MonyModule,
+    RascunhosModule,
   ],
   providers: [ProcessadorEventos, ProcessadorEmails, ProcessadorRotinas, ProcessadorNotificacoes],
 })

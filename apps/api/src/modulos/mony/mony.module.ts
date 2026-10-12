@@ -11,10 +11,9 @@ import { ContextoMonyService } from './contexto.service';
 import { ListarCategoriasTool } from './ferramentas/listar-categorias.tool';
 import { FERRAMENTAS_MONY, type Ferramenta, RegistroFerramentas } from './ferramentas/registro';
 import { MonyController } from './mony.controller';
-import { MonyRepository } from './mony.repository';
 import { MonyService } from './mony.service';
 import { MonyOrquestrador } from './orquestrador.service';
-import { RascunhosService } from './rascunhos.service';
+import { RascunhosModule } from './rascunhos.module';
 import { RoteadorRegras } from './roteador-regras.service';
 
 /** Ferramentas que o modelo pode chamar; as de finanças entram na T-062. */
@@ -34,14 +33,13 @@ const FERRAMENTAS = [ListarCategoriasTool];
     ParcelamentosModule,
     TransacoesModule,
     UsuariosModule,
+    RascunhosModule,
   ],
   controllers: [MonyController],
   providers: [
     MonyOrquestrador,
     MonyService,
-    MonyRepository,
     RoteadorRegras,
-    RascunhosService,
     ContextoMonyService,
     RegistroFerramentas,
     ...FERRAMENTAS,
