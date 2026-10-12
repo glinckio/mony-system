@@ -214,7 +214,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-084 · RN-079 · requer verificação do app no Google
 - [ ] **T-086** Ferramentas da Mony: lembretes, compromissos, agenda, `ajuda_app`
   - dep: T-084, T-062b
-- [ ] **T-087** Preferências de alerta e horário de silêncio no app; central de notificações
+- [x] **T-087** Preferências de alerta e horário de silêncio no app; central de notificações (PR #67)
   - dep: T-081, T-011, T-034 · docs: 04
   - Tela do app: depende do design system (T-011) e da sessão no app (T-034), como a T-049.
   - "Alertas da Mony" (com o horário de silêncio, "silêncio 22h às 7h") entra no Perfil (T-057), e o sino do Início (T-053) passa a abrir a central.
