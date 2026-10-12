@@ -323,11 +323,8 @@ export class RoteadorRegras {
   /**
    * O próximo passo do rascunho (RN-080): grava o lançamento quando está completo, senão guarda o
    * rascunho e faz a próxima pergunta. Crédito sem cartão cadastrado volta para a forma de
-   * pagamento; com um cartão só, ele já vale.
-   */
-  /**
-   * RN-123: o lançamento que não cabe no limite do gratuito não é gravado nem perguntado; o
-   * rascunho dele sai e a Mony avisa com o [Ver planos].
+   * pagamento; com um cartão só, ele já vale. RN-123: o lançamento que não cabe no limite do
+   * gratuito não é gravado nem perguntado; o rascunho dele sai e a Mony avisa com o [Ver planos].
    */
   private async avancar(
     contexto: Contexto,
@@ -350,6 +347,7 @@ export class RoteadorRegras {
     }
   }
 
+  /** O passo do rascunho, que lança `LIMITE_PLANO_ATINGIDO` quando o gratuito não deixa. */
   private async avancarNoLimite(
     contexto: Contexto,
     conversaId: string,
