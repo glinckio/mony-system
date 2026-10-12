@@ -16,12 +16,12 @@ import {
 } from '../../integracoes/ia/llm.provider';
 import { ErroTranscricao, TranscricaoProvider } from '../../integracoes/ia/transcricao.provider';
 import { type ArquivoMony, ArquivosService } from '../arquivos/arquivos.service';
+import { ConfigMonyService } from './config.service';
 import { ContextoMonyService } from './contexto.service';
 import { DocumentosMony, type LeituraNoChat } from './documentos.service';
 import { type ContextoFerramenta, RegistroFerramentas } from './ferramentas/registro';
 import { componentesDaMensagem, conversaParaModelo } from './historico';
 import { type MensagemSalva, MonyRepository } from './mony.repository';
-import { PROMPT_SISTEMA } from './prompts/sistema';
 import { RoteadorRegras } from './roteador-regras.service';
 
 /** Chamadas ao modelo por mensagem: a resposta e as voltas com resultado de ferramenta. */
@@ -69,6 +69,7 @@ export class MonyOrquestrador {
     private readonly transcricao: TranscricaoProvider,
     private readonly arquivos: ArquivosService,
     private readonly documentos: DocumentosMony,
+    private readonly config: ConfigMonyService,
   ) {}
 
   /**
@@ -345,10 +346,13 @@ export class MonyOrquestrador {
       rascunho === null
         ? ''
         : `\n- Lançamento em andamento (rascunho): ${rascunho} Se a mensagem responde a ele, peça para a pessoa tocar num dos botões que aparecem abaixo da sua resposta; não comece outro lançamento (RN-085).`;
-    const pedido = {
-      sistema: [PROMPT_SISTEMA, contextoUsuario + emAndamento],
-      ferramentas: this.ferramentas.paraModelo(),
+    // T-068: o prompt, as descrições e o modelo da versão ativa de `mony_config`.
+    const config = await this.config.ativa();
+    const pedido: Omit<PedidoLlm, 'sinal'> = {
+      sistema: [config.promptSistema, contextoUsuario + emAndamento],
+      ferramentas: this.ferramentas.paraModelo(config.descricoes),
       mensagens,
+      ...(config.modelo === null ? {} : { modelo: config.modelo }),
     };
     let escreveu = false;
     let terminou = false;
@@ -422,7 +426,7 @@ export class MonyOrquestrador {
         return this.repositorio.registrarLogIa({
           usuarioId,
           mensagemId,
-          modelo: this.llm.modelo,
+          modelo: this.llm.modeloDo(pedido),
           tokensEntrada: fim?.tokensEntrada ?? 0,
           tokensSaida: fim?.tokensSaida ?? 0,
           ferramenta: chamadas.map(({ nome }) => nome).join(',') || null,

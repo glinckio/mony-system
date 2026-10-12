@@ -153,6 +153,14 @@ Por mensagem (do PDF): data de hoje (no fuso do usuário), nome, categorias, car
 - Editável no admin; publicar uma versão roda antes o conjunto de frases de teste (ver abaixo) e só ativa se passar.
 - O prompt carrega as regras de tom (RN-091): direto, amigável, sem julgamento, sem recomendação de investimento.
 
+**Como está (T-068):**
+
+- `ConfigMonyService.ativa()` lê a versão ativa de `mony_config` (relida a cada minuto): `prompt_sistema` substitui o prompt do código, `ferramentas.descricoes` troca a descrição das ferramentas pelo nome e `modelo` vai em `PedidoLlm.modelo`. Sem versão ativa, com uma que não se lê ou com o banco fora do ar, vale o prompt do código (`prompts/sistema.ts`). A leitura de documentos tem prompt próprio, fora daqui.
+- Versão nova: `criarVersao` grava a próxima, inativa (descrição só de ferramenta que existe). `ativar` exige `mony_config.avaliacao` com 95% ou mais; a anterior sai na mesma transação.
+- Avaliação: `modulos/mony/avaliacao/casos.ts` (as frases, tipadas, no lugar do `casos.yaml`) e `avaliador.ts` (um usuário novo por frase, com o estado do caso, a conversa de verdade e as chamadas de ferramenta anotadas; os usuários são apagados no fim). Confere ferramentas e argumentos (em qualquer ordem, só os campos que importam), ferramentas proibidas, o primeiro componente (tipo, pergunta do rascunho, primeiro botão, botões) e trechos que o texto deve ou não ter.
+- `pnpm --filter api mony:avaliar [--criar arquivo] [--versao n] [--gravar] [--ativar] [--so-regras]` roda contra o banco e o provedor do ambiente; com `IA_PROVEDOR=fake`, só as frases resolvidas por regra. Até o painel (T-141), publicar uma versão é por aqui.
+- CI: as frases por regra rodam no job Banco (`mony-avaliacao.integracao.spec.ts`); o workflow "Avaliação da Mony" roda todas com o modelo de verdade quando muda prompt, ferramenta, provedor ou caso, se houver o segredo `ANTHROPIC_CHAVE_API`.
+
 ## Leitura de mídia
 
 | Entrada | Processamento | Fila |

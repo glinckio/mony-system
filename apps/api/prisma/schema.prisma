@@ -1447,6 +1447,8 @@ model MonyConfig {
   ferramentas   Json
   modelo        String
   ativo         Boolean  @default(false)
+  /// Resultado das frases de teste com esta versão (T-068): só ativa com 95% ou mais.
+  avaliacao     Json?
   criadoPorId   String?  @map("criado_por") @db.Uuid
   criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm  DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)

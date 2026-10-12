@@ -29,6 +29,7 @@ import { type BlocoLlm, ErroLlm, LlmProvider } from '../src/integracoes/ia/llm.p
 import { MENSAGEM_FALHA } from '../src/modulos/mony/orquestrador.service';
 import { RascunhosService } from '../src/modulos/mony/rascunhos.service';
 import { PROMPT_SISTEMA } from '../src/modulos/mony/prompts/sistema';
+import { CONFIG_LOCAL, ConfigMonyService } from '../src/modulos/mony/config.service';
 
 const ativo = process.env.TESTES_INTEGRACAO === '1';
 
@@ -46,6 +47,8 @@ describe.runIf(ativo)('integração: Mony', () => {
     configurarApp(app, { documentacao: false });
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
+    // T-068: o prompt do código, mesmo se outro arquivo de teste ativar uma versão no banco.
+    app.get(ConfigMonyService).fixar(CONFIG_LOCAL);
     const provedor = app.get(LlmProvider);
     if (!(provedor instanceof LlmFake)) throw new Error('os testes usam IA_PROVEDOR=fake');
     modelo = provedor;

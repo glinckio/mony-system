@@ -794,3 +794,13 @@ Contexto: a RN-089 pede que a Mony comente o impacto no orçamento da categoria 
 - **Receita** não tem orçamento; só comenta o cartão quando houver. [Confirmar todos] de documento responde só o total, sem o impacto de cada lançamento.
 - **Falha no cálculo** vai ao log e o lançamento fica sem o comentário.
 Reversível: sim.
+
+## 2026-10-12 — T-068 — Prompt versionado e avaliação da Mony
+Contexto: o doc 08 pede o prompt em `mony_config` com uma versão ativa, publicada só depois das frases de teste (95%), e o conjunto de frases em `avaliacao/casos.yaml` rodando no CI. Decisões:
+- **Frases em TypeScript** (`casos.ts`), não YAML: tipadas, sem dependência nova, e o mesmo arquivo serve ao teste e ao script.
+- **`mony_config.avaliacao`** (coluna nova, `jsonb`) guarda o resultado da avaliação de cada versão; `ativar` recusa sem ela ou abaixo de 95%.
+- **Cache de 1 minuto** da versão ativa: ativar vale em todas as instâncias sem reiniciar; banco fora do ar usa a última lida ou o prompt do código.
+- **Avaliação pela conversa de verdade** (HTTP injetado no app, um usuário novo por frase, apagado no fim), não por chamada direta ao modelo: testa regras, ferramentas e componentes juntos. Por isso as frases resolvidas por regra rodam no CI com o modelo falso e as do modelo só com a chave.
+- **Sem painel ainda**: criar, avaliar e ativar versão é pelo script `mony:avaliar` até a T-141. O workflow da avaliação não é obrigatório para mergear e roda só quando muda o que afeta a Mony.
+- **Testes de integração** que olham o prompt fixam a configuração local (`fixar(CONFIG_LOCAL)`): os arquivos rodam em paralelo no mesmo banco e um deles ativa uma versão.
+Reversível: sim.

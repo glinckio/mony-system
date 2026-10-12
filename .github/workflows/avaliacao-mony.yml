@@ -1,0 +1,90 @@
+# Frases de teste da Mony (docs/arquitetura/08, "Conjunto de frases de teste"; T-068): roda quando
+# muda o prompt, uma ferramenta, o provedor de IA ou os casos. Com o segredo ANTHROPIC_CHAVE_API,
+# todas as frases rodam com o modelo de verdade e o job falha abaixo de 95%; sem ele, só as
+# resolvidas por regra (que também rodam no job Banco do CI).
+name: Avaliação da Mony
+
+on:
+  pull_request:
+    paths:
+      - apps/api/src/modulos/mony/prompts/**
+      - apps/api/src/modulos/mony/ferramentas/**
+      - apps/api/src/modulos/mony/avaliacao/**
+      - apps/api/src/modulos/mony/orquestrador.service.ts
+      - apps/api/src/integracoes/ia/**
+      - .github/workflows/avaliacao-mony.yml
+  workflow_dispatch:
+
+concurrency:
+  group: avaliacao-mony-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  avaliar:
+    name: Avaliação da Mony
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Imagens oficiais pelo espelho da AWS, como no job Banco.
+    services:
+      postgres:
+        image: public.ecr.aws/docker/library/postgres:18-alpine
+        env:
+          POSTGRES_USER: mony
+          POSTGRES_PASSWORD: mony-ci
+          POSTGRES_DB: mony
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mony -d mony"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+      redis:
+        image: public.ecr.aws/docker/library/redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      HUSKY: '0'
+      DATABASE_URL: postgresql://mony:mony-ci@localhost:5432/mony
+      REDIS_URL: redis://localhost:6379
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+
+      - name: Instalar pnpm (versão do packageManager) com cache do store
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - name: Instalar Node (versão do .nvmrc)
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Banco com as migrações e o seed
+        run: |
+          pnpm --filter api exec prisma migrate deploy
+          pnpm turbo run build --filter=api
+          pnpm --filter api seed
+
+      - name: Frases de teste
+        env:
+          ANTHROPIC_CHAVE_API: ${{ secrets.ANTHROPIC_CHAVE_API }}
+        run: |
+          if [ -n "$ANTHROPIC_CHAVE_API" ]; then
+            export IA_PROVEDOR=anthropic
+          else
+            echo "::notice title=Avaliação da Mony::Sem o segredo ANTHROPIC_CHAVE_API: só as frases resolvidas por regra."
+          fi
+          pnpm --filter api mony:avaliar

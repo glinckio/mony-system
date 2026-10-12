@@ -68,9 +68,16 @@ export class RegistroFerramentas {
     });
   }
 
-  /** Como o modelo vê as ferramentas: nome, descrição e o JSON Schema da entrada. */
-  paraModelo(): readonly FerramentaLlm[] {
-    return this.definicoes;
+  /**
+   * Como o modelo vê as ferramentas: nome, descrição e o JSON Schema da entrada. `descricoes`
+   * troca a descrição pelo nome (versão de `mony_config`, T-068).
+   */
+  paraModelo(descricoes: Readonly<Record<string, string>> = {}): readonly FerramentaLlm[] {
+    if (Object.keys(descricoes).length === 0) return this.definicoes;
+    return this.definicoes.map((definicao) => ({
+      ...definicao,
+      descricao: descricoes[definicao.nome] ?? definicao.descricao,
+    }));
   }
 
   /**
