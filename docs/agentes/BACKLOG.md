@@ -133,7 +133,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-048** Relatórios (API + telas), sem exportação (PR #29; telas na T-054, histórico de preços da NFC-e na T-066)
   - dep: T-044 · RN-150
 
-- [ ] **T-049** Telas de categorias e contas no app (lista, criar, editar, excluir escolhendo para onde mover os lançamentos)
+- [x] **T-049** Telas de categorias e contas no app (lista, criar, editar, excluir escolhendo para onde mover os lançamentos) (PR #43)
   - dep: T-035, T-036, T-011, T-034 · docs: 04 · RN-065, RN-066
   - Separada da T-035 e da T-036: as telas dependem do esqueleto do app (T-010), do design system (T-011) e da sessão no app (T-034), que ainda não existiam.
 - [ ] **T-050** Telas de cartões e faturas no app (lista com limite, cadastro e edição, fatura atual, lista de faturas, detalhe da fatura com as compras)

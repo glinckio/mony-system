@@ -1,5 +1,7 @@
 import { textosAuth } from '@/features/auth/auth.strings';
 import { textosCartoes } from '@/features/cartoes/cartoes.strings';
+import { textosCategorias } from '@/features/categorias/categorias.strings';
+import { textosContas } from '@/features/contas/contas.strings';
 import { textosInicio } from '@/features/inicio/inicio.strings';
 import { textosMais } from '@/features/mais/mais.strings';
 import { textosMony } from '@/features/mony/mony.strings';
@@ -20,4 +22,6 @@ export const textosPtBr = {
   mony: textosMony,
   cartoes: textosCartoes,
   mais: textosMais,
+  categorias: textosCategorias,
+  contas: textosContas,
 };

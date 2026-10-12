@@ -175,7 +175,8 @@ Componente `Valor` concentra a formatação de dinheiro e o **modo privacidade**
   - `Card`, `BarraProgresso` (cor pela faixa da RN-062);
   - `Vazio`, `Erro`, `Skeleton`;
   - `BarraAbas`: pílula flutuante, com a aba atual em vidro e a Mony no meio;
-  - da T-045: `Folha` (bottom sheet sobre `Modal`, com véu, X e voltar do Android), `Etiqueta` ("Pendente", "Atrasada"), `CampoBusca` (pílula com lupa e X), `CampoValor` (só dígitos: "1050" vira R$ 10,50), `Valor` com `comSinal` e `Chip` desabilitado.
+  - da T-045: `Folha` (bottom sheet sobre `Modal`, com véu, X e voltar do Android), `Etiqueta` ("Pendente", "Atrasada"), `CampoBusca` (pílula com lupa e X), `CampoValor` (só dígitos: "1050" vira R$ 10,50), `Valor` com `comSinal` e `Chip` desabilitado;
+  - da T-046: `AnelProgresso`; da T-049: `GrupoOpcoes` (escolha em chips com título e erro), `Segmentado` (abas em pílula) e `Cabecalho` (voltar, título e ação).
 
   `Toast` entra com a primeira tela que precisar dele. O ícone da categoria (`IconeCategoria`, em `src/features/categorias`) liga a chave do ícone das categorias padrão a um ícone do Lucide; a cor é a da categoria, escolhida pelo usuário.
 - **Ícones:** Lucide (`lucide-react-native` com `react-native-svg`), importados um a um pelo caminho (`lucide-react-native/icons/<nome>`) para o bundle levar só os usados. A lista fica em `src/ui/icone.tsx`.
@@ -198,6 +199,15 @@ Telas em `src/features/transacoes`, no design da página 4 (`docs/design`):
   - a `Idempotency-Key` é uma por formulário;
   - excluir pede confirmação, e na ocorrência de recorrência pergunta só esta, esta e as próximas, ou todas (RN-043). Parcela, transferência e compra em fatura paga não têm o botão.
 - **Ainda não:** anexos e recorrência no formulário (tarefas próprias no BACKLOG). O tipo das respostas da lista e do lançamento vem do `@mony/shared`, porque o contrato gerado tipa `string | null` de topo como `string[]` (tarefa própria no BACKLOG).
+
+## Categorias e contas (T-049)
+
+Telas na aba Mais (`/mais/categorias`, `/mais/contas`), abertas pelos atalhos da aba até a grade da T-057:
+
+- **Categorias** (design, página 8): abas Despesas e Receitas com a quantidade, ícone e cor de cada uma e o "+" que cria no tipo da aba. O formulário mostra a prévia, o nome, o tipo (só ao criar), 14 cores e 21 ícones (os das categorias padrão e outros para categorias novas), validado pelo `esquemaNovaCategoria`; a edição manda só o que mudou. Nome repetido volta com a mensagem da API (RN-065).
+- **Excluir categoria** (RN-066) pede a categoria do mesmo tipo para onde vão os lançamentos, avisa que os orçamentos dela saem e não oferece excluir a única do tipo.
+- **Contas** (sem design próprio): nome, tipo e o saldo atual calculado pela API. O formulário tem saldo inicial em dígitos e uma chave para saldo negativo. Conta do banco (Open Finance) só muda o nome e não tem "Excluir" (sai desconectando o banco); a manual sai com confirmação, e o que a usava fica sem conta.
+- O design mostra "38 lançamentos" em cada categoria; a API não manda essa contagem, então a lista não mostra.
 
 ## Onboarding
 

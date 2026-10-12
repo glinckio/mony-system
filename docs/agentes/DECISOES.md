@@ -588,3 +588,13 @@ Contexto: o design (página 2) traz duas telas do onboarding: a primeira boas-vi
 - **Contraste**: "Pular" e "Etapa 3 de 3" em branco e negrito, porque o azul de link e o texto suave somem no topo claro do degradê. Pelo mesmo motivo, o formulário de lançamento (T-045) passou a usar fundo sólido: os rótulos dele começam no topo.
 - **Conferido em tela** com um export web temporário (Playwright, 390 × 844, API falsa e cofre em memória), fora do repositório.
 Reversível: sim.
+
+## 2026-10-11 — T-049 — Categorias e contas no app
+Contexto: o design traz a lista de categorias (página 8), sem o formulário; contas manuais não têm design. Decisões:
+- **Rotas dentro da aba Mais** (`/mais/categorias`, `/mais/contas`), e não na raiz como no esboço do doc 04: na raiz, fora dos grupos protegidos, a rota abriria sem sessão. A aba Mais ganhou atalhos simples até a grade da T-057.
+- **Sem a contagem de lançamentos** que o design mostra em cada categoria: `GET /categorias` não a manda. Se o cliente fizer questão, é uma tarefa de API.
+- **Cores e ícones fechados**: 14 cores (as das categorias padrão) e 21 ícones (os 14 padrão e 7 novos: viagem, pets, presentes, investimentos, academia, roupas, filhos). A chave do ícone continua livre na API; chave desconhecida vira a etiqueta.
+- **Excluir categoria sempre pede o destino** (RN-066), mesmo quando ela não tem lançamentos: o app não sabe a contagem, e escolher um destino nunca está errado. A única do tipo não oferece destino (a API recusaria com `ULTIMA_CATEGORIA_DO_TIPO`).
+- **Saldo inicial negativo** por uma chave ao lado do `CampoValor`, que só aceita dígitos.
+- **Componentes novos**: `GrupoOpcoes` saiu da feature de transações para `src/ui`; `Segmentado` e `Cabecalho` entram no design system.
+Reversível: sim.

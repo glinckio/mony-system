@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 
-import { Chip, Texto } from '@/ui';
+import { Chip } from './chip';
+import { Texto } from './texto';
 
 export interface Opcao<T extends string> {
   valor: T;
