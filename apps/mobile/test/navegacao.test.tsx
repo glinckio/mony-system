@@ -28,7 +28,9 @@ describe('navegação pela sessão', () => {
   it('com onboarding pendente abre as boas-vindas', () => {
     entrar(false);
     const app = renderRouter(ROTAS, { initialUrl: '/' });
-    expect(screen.getByRole('header', { name: 'Boas-vindas' })).toBeOnTheScreen();
+    expect(
+      screen.getByRole('header', { name: 'Registre gastos só conversando' }),
+    ).toBeOnTheScreen();
     expect(app.getSegments()).toEqual(['(onboarding)']);
   });
 

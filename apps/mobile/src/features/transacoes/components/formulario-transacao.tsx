@@ -170,7 +170,9 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
     : null;
 
   return (
-    <Tela bordas={['top']}>
+    // Fundo sólido: o topo claro do degradê é só para títulos grandes, e o formulário tem rótulos
+    // pequenos logo no começo (T-017).
+    <Tela bordas={['top']} degrade={false}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

@@ -8,6 +8,7 @@ import '@/i18n';
 import { usePrivacidade } from '@/stores/privacidade';
 import { IconeCategoria } from '@/features/categorias/components/icone-categoria';
 import {
+  AnelProgresso,
   BarraProgresso,
   Botao,
   BotaoPrivacidade,
@@ -272,5 +273,15 @@ describe('CampoBusca, Etiqueta, Folha e Chip desabilitado', () => {
         <IconeCategoria />
       </>,
     );
+  });
+});
+
+describe('AnelProgresso', () => {
+  it('mostra "feitos/total" e informa o progresso ao leitor de tela', () => {
+    render(<AnelProgresso feitos={2} total={5} rotulo="2 de 5 passos feitos" />);
+    expect(
+      screen.getByRole('progressbar', { name: '2 de 5 passos feitos' }),
+    ).toHaveAccessibilityValue({ min: 0, max: 5, now: 2 });
+    expect(screen.getByText('2/5')).toBeOnTheScreen();
   });
 });

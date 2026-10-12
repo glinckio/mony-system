@@ -22,6 +22,8 @@ interface EstadoSessao {
   iniciar: (usuario: UsuarioSessao, tokenAcesso: string | null) => void;
   encerrar: () => void;
   definirEstado: (estado: EstadoDaSessao) => void;
+  /** O onboarding terminou no servidor: a navegação passa para as abas. */
+  concluirOnboarding: () => void;
 }
 
 export const useSessao = create<EstadoSessao>()((definir) => ({
@@ -36,5 +38,10 @@ export const useSessao = create<EstadoSessao>()((definir) => ({
   },
   definirEstado: (estado) => {
     definir({ estado });
+  },
+  concluirOnboarding: () => {
+    definir(({ usuario }) =>
+      usuario ? { usuario: { ...usuario, onboardingConcluido: true } } : {},
+    );
   },
 }));
