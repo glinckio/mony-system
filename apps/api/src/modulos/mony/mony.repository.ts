@@ -10,6 +10,7 @@ const CAMPOS_MENSAGEM = {
   tipo: true,
   conteudo: true,
   componentes: true,
+  anexoId: true,
   criadoEm: true,
 } as const;
 
@@ -20,6 +21,8 @@ export interface MensagemSalva {
   tipo: TipoMensagem;
   conteudo: string | null;
   componentes: unknown;
+  /** O áudio (ou a imagem) da mensagem do usuário. */
+  anexoId: string | null;
   criadoEm: Date;
 }
 
@@ -36,6 +39,7 @@ export interface NovaMensagem {
   tipo: TipoMensagem;
   conteudo: string | null;
   componentes: readonly object[];
+  anexoId?: string | undefined;
   idempotencyKey?: string | undefined;
 }
 
@@ -122,7 +126,7 @@ export class MonyRepository {
    * já existe na conversa (duas respostas à mesma mensagem ao mesmo tempo).
    */
   async salvarMensagem(dados: NovaMensagem): Promise<MensagemSalva | null> {
-    const { componentes, idempotencyKey, ...resto } = dados;
+    const { componentes, idempotencyKey, anexoId, ...resto } = dados;
     try {
       const [mensagem] = await this.prisma.cliente.$transaction([
         this.prisma.cliente.mensagem.create({
@@ -131,6 +135,7 @@ export class MonyRepository {
             componentes:
               componentes.length > 0 ? (componentes as Prisma.InputJsonArray) : Prisma.DbNull,
             ...(idempotencyKey === undefined ? {} : { idempotencyKey }),
+            ...(anexoId === undefined ? {} : { anexoId }),
           },
           select: CAMPOS_MENSAGEM,
         }),
@@ -147,6 +152,16 @@ export class MonyRepository {
       }
       throw erro;
     }
+  }
+
+  /** A mensagem que já usa o anexo (o áudio só vale para uma mensagem). */
+  mensagemDoAnexo(anexoId: string): Promise<{ id: string } | null> {
+    return this.prisma.cliente.mensagem.findUnique({ where: { anexoId }, select: { id: true } });
+  }
+
+  /** O texto da mensagem de voz, depois da transcrição (T-064). */
+  async atualizarConteudo(id: string, conteudo: string): Promise<void> {
+    await this.prisma.cliente.mensagem.update({ where: { id }, data: { conteudo } });
   }
 
   /** As últimas mensagens da conversa antes de uma, da mais nova para a mais antiga. */

@@ -147,6 +147,7 @@ describe('conversaParaModelo', () => {
       tipo: 'texto',
       conteudo,
       componentes: null,
+      anexoId: null,
       criadoEm: new Date(Date.UTC(2026, 9, 15, 12, 0, segundos)),
       ...extras,
     };

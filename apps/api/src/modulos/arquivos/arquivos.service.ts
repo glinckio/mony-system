@@ -22,11 +22,20 @@ const EXTENSOES: Record<DadosNovoArquivo['tipoConteudo'], string> = {
   'image/heic': 'heic',
   'image/webp': 'webp',
   'application/pdf': 'pdf',
+  'audio/mp4': 'm4a',
+  'audio/aac': 'aac',
+  'audio/mpeg': 'mp3',
+  'audio/webm': 'webm',
 };
+
+const TIPO_DA_EXTENSAO = new Map(
+  Object.entries(EXTENSOES).map(([tipoConteudo, extensao]) => [extensao, tipoConteudo]),
+);
 
 /**
  * Anexos (doc 05, doc 11). O app pede a URL de envio, manda o arquivo direto para o S3 e depois
- * informa o anexo no recurso (`anexoIds`); só então a API confere que ele chegou.
+ * informa o anexo no recurso (`anexoIds`, ou o `arquivoId` do áudio para a Mony); só então a API
+ * confere que ele chegou.
  */
 @Injectable()
 export class ArquivosService {
@@ -85,6 +94,12 @@ export class ArquivosService {
     const anexos = await this.repositorio.buscarVarios(usuarioId, unicos);
     if (anexos.length !== unicos.length) throw new ErroDominio('NAO_ENCONTRADO');
     for (const anexo of anexos) {
+      if (anexo.tipo === 'audio') {
+        throw new ErroDominio('REQUISICAO_INVALIDA', {
+          mensagem: 'Áudio não vai como anexo de lançamento.',
+          detalhes: { anexoId: anexo.id },
+        });
+      }
       if (anexo.transacaoId !== null && anexo.transacaoId !== transacaoId) {
         throw new ErroDominio('CONFLITO', {
           mensagem: 'Este anexo já está em outro lançamento.',
@@ -109,6 +124,35 @@ export class ArquivosService {
         await this.repositorio.atualizarTamanho(anexo.id, objeto.tamanho);
       }
     }
+  }
+
+  /**
+   * Áudio de uma mensagem para a Mony (T-064): do usuário, do tipo `audio`, fora de lançamento e já
+   * no S3 dentro do tamanho máximo. Devolve a URL de leitura (15 min) para a transcrição.
+   */
+  async audioParaMony(
+    contexto: Contexto,
+    id: string,
+  ): Promise<{ url: string; tipoConteudo: string }> {
+    const anexo = await this.repositorio.buscar(usuarioDoContexto(contexto), id);
+    if (anexo?.tipo !== 'audio' || anexo.transacaoId !== null) {
+      throw new ErroDominio('NAO_ENCONTRADO');
+    }
+    const objeto = await this.armazenamento.consultar(anexo.arquivoUrl);
+    if (objeto === null) {
+      throw new ErroDominio('REQUISICAO_INVALIDA', {
+        mensagem: 'O áudio ainda não terminou de ser enviado.',
+      });
+    }
+    if (objeto.tamanho > TAMANHO_MAXIMO_ANEXO) {
+      await this.armazenamento.apagar(anexo.arquivoUrl);
+      throw new ErroDominio('REQUISICAO_INVALIDA', { mensagem: 'O áudio passa de 10 MB.' });
+    }
+    const extensao = anexo.arquivoUrl.slice(anexo.arquivoUrl.lastIndexOf('.') + 1);
+    return {
+      url: await this.armazenamento.urlDeLeitura(anexo.arquivoUrl, VALIDADE_URL_LEITURA_SEGUNDOS),
+      tipoConteudo: objeto.tipoConteudo ?? TIPO_DA_EXTENSAO.get(extensao) ?? 'audio/mp4',
+    };
   }
 
   private expiraEm(segundos: number): string {

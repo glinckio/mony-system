@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { IaModule } from '../../integracoes/ia/ia.module';
+import { ArquivosModule } from '../arquivos/arquivos.module';
 import { CartoesModule } from '../cartoes/cartoes.module';
 import { CategoriasModule } from '../categorias/categorias.module';
 import { MetasModule } from '../metas/metas.module';
@@ -61,6 +62,7 @@ const FERRAMENTAS = [
 @Module({
   imports: [
     IaModule,
+    ArquivosModule,
     CartoesModule,
     CategoriasModule,
     MetasModule,

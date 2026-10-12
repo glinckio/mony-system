@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   esquemaAcaoMony,
+  esquemaMensagemMony,
   type EventoMony,
   eventoMonyDoSse,
   formatarEventoSse,
@@ -92,5 +93,24 @@ describe('ação do botão (RN-084)', () => {
     expect(
       esquemaAcaoMony.safeParse({ rascunhoId: id, campo: 'categoria', valor: id }).success,
     ).toBe(false);
+  });
+});
+
+describe('mensagem para a Mony (T-064)', () => {
+  const arquivoId = '0199a000-0000-7000-8000-000000000002';
+
+  it('o texto ou o áudio já enviado, um dos dois', () => {
+    expect(esquemaMensagemMony.parse({ texto: '  gastei 10  ' })).toEqual({ texto: 'gastei 10' });
+    expect(esquemaMensagemMony.parse({ arquivoId })).toEqual({ arquivoId });
+    expect(esquemaMensagemMony.safeParse({}).success).toBe(false);
+    expect(esquemaMensagemMony.safeParse({ texto: 'oi', arquivoId }).success).toBe(false);
+    expect(esquemaMensagemMony.safeParse({ texto: '   ' }).success).toBe(false);
+    expect(esquemaMensagemMony.safeParse({ arquivoId: 'audio.m4a' }).success).toBe(false);
+  });
+
+  it('o evento da transcrição chega pelo SSE', () => {
+    const evento: EventoMony = { tipo: 'transcricao', texto: 'gastei 10 no mercado' };
+    const [bruto] = new LeitorSse().ler(formatarEventoSse(evento));
+    expect(bruto && eventoMonyDoSse(bruto)).toEqual(evento);
   });
 });

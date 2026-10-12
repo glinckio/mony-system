@@ -194,6 +194,8 @@ enum TipoAnexo {
   foto
   pdf
   comprovante
+  /// Mensagem de voz para a Mony (T-064).
+  audio
 
   @@map("tipo_anexo")
 }

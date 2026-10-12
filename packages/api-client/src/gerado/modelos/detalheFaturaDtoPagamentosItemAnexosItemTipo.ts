@@ -13,4 +13,5 @@ export const DetalheFaturaDtoPagamentosItemAnexosItemTipo = {
   foto: 'foto',
   pdf: 'pdf',
   comprovante: 'comprovante',
+  audio: 'audio',
 } as const;

@@ -77,6 +77,13 @@ export const esquemaAmbiente = z
     ANTHROPIC_CHAVE_API: z.preprocess(vazioComoAusente, z.string().optional()),
     IA_MODELO: z.string().min(1).default('claude-sonnet-5-5'),
     /**
+     * Transcrição das mensagens de voz da Mony (doc 08, T-064): `deepgram` em nuvem, com
+     * `DEEPGRAM_CHAVE_API`; `fake` devolve um texto fixo (desenvolvimento e testes).
+     */
+    TRANSCRICAO_PROVEDOR: z.enum(['fake', 'deepgram']).default('fake'),
+    DEEPGRAM_CHAVE_API: z.preprocess(vazioComoAusente, z.string().optional()),
+    TRANSCRICAO_MODELO: z.string().min(1).default('nova-3'),
+    /**
      * Arquivos (anexos, áudios, exportações) no S3 privado, só por URL assinada (doc 11). Sem
      * bucket, o envio de arquivos fica desligado. `S3_ENDPOINT` só para S3 compatível local
      * (SeaweedFS do `docker compose`); na AWS fica vazio e as credenciais vêm do papel da tarefa.
@@ -119,6 +126,16 @@ export const esquemaAmbiente = z
           message: `obrigatória com EMAIL_PROVEDOR=${variaveis.EMAIL_PROVEDOR}`,
         });
       }
+    }
+    if (
+      variaveis.TRANSCRICAO_PROVEDOR === 'deepgram' &&
+      variaveis.DEEPGRAM_CHAVE_API === undefined
+    ) {
+      contexto.addIssue({
+        code: 'custom',
+        path: ['DEEPGRAM_CHAVE_API'],
+        message: 'obrigatória com TRANSCRICAO_PROVEDOR=deepgram',
+      });
     }
     if (variaveis.IA_PROVEDOR === 'anthropic' && variaveis.ANTHROPIC_CHAVE_API === undefined) {
       contexto.addIssue({

@@ -4913,7 +4913,8 @@
                         "enum": [
                           "foto",
                           "pdf",
-                          "comprovante"
+                          "comprovante",
+                          "audio"
                         ]
                       },
                       "tamanho": {
@@ -5118,7 +5119,8 @@
                         "enum": [
                           "foto",
                           "pdf",
-                          "comprovante"
+                          "comprovante",
+                          "audio"
                         ]
                       },
                       "tamanho": {
@@ -5435,7 +5437,8 @@
                       "enum": [
                         "foto",
                         "pdf",
-                        "comprovante"
+                        "comprovante",
+                        "audio"
                       ]
                     },
                     "tamanho": {
@@ -5556,7 +5559,8 @@
             "enum": [
               "foto",
               "pdf",
-              "comprovante"
+              "comprovante",
+              "audio"
             ]
           },
           "tipoConteudo": {
@@ -5566,7 +5570,11 @@
               "image/png",
               "image/heic",
               "image/webp",
-              "application/pdf"
+              "application/pdf",
+              "audio/mp4",
+              "audio/aac",
+              "audio/mpeg",
+              "audio/webm"
             ]
           },
           "tamanho": {
@@ -5632,7 +5640,8 @@
             "enum": [
               "foto",
               "pdf",
-              "comprovante"
+              "comprovante",
+              "audio"
             ]
           },
           "tamanho": {
@@ -5815,7 +5824,8 @@
                         "enum": [
                           "foto",
                           "pdf",
-                          "comprovante"
+                          "comprovante",
+                          "audio"
                         ]
                       },
                       "tamanho": {
@@ -6081,7 +6091,8 @@
                   "enum": [
                     "foto",
                     "pdf",
-                    "comprovante"
+                    "comprovante",
+                    "audio"
                   ]
                 },
                 "tamanho": {
@@ -6362,7 +6373,8 @@
                       "enum": [
                         "foto",
                         "pdf",
-                        "comprovante"
+                        "comprovante",
+                        "audio"
                       ]
                     },
                     "tamanho": {
@@ -7405,7 +7417,8 @@
                         "enum": [
                           "foto",
                           "pdf",
-                          "comprovante"
+                          "comprovante",
+                          "audio"
                         ]
                       },
                       "tamanho": {
