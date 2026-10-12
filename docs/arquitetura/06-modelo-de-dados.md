@@ -150,7 +150,7 @@ erDiagram
 | `mony_config` | versao, prompt_sistema, ferramentas (`jsonb`), modelo, ativo, criado_por | Prompt versionado e editável sem nova versão do app |
 | `ligacoes` | lembrete_id, status, provedor_id, custo_centavos, iniciada_em | Custo e limite mensal de ligações |
 | `dicas_vistas` | chave, vista_em | Dicas contextuais de primeira visita e checklist de onboarding |
-| `importacoes_documento` | arquivo_id, tipo, status, resultado (`jsonb`) | Leitura de fatura PDF/foto com vários lançamentos aguardando confirmação |
+| `importacoes_documento` | arquivo_id, tipo, status, resultado (`jsonb`: documento, estabelecimento, aviso e os lançamentos lidos, cada um com o estado e o id do que foi gravado) | Leitura de fatura PDF/foto com vários lançamentos aguardando confirmação (T-065) |
 
 Com essas, o banco fica com 50 tabelas. Cada adição é **proposta**: pode ser recusada sem afetar o resto do desenho.
 

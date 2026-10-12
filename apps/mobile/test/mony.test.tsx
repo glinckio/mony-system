@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { type EventoMony, formatarEventoSse } from '@mony/shared/mony';
+import { type ComponenteMony, type EventoMony, formatarEventoSse } from '@mony/shared/mony';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import * as ExpoAudio from 'expo-audio';
+import * as ImagePicker from 'expo-image-picker';
 import { fetch as fetchExpo } from 'expo/fetch';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import TelaMony from '@/features/mony/screens/tela-mony';
 import '@/i18n';
@@ -11,6 +13,26 @@ import { cofre } from '@/lib/auth/cofre';
 import { useSessao } from '@/stores/sessao';
 
 jest.mock('expo/fetch', () => ({ fetch: jest.fn() }));
+jest.mock('expo-image-picker', () => ({
+  requestCameraPermissionsAsync: jest.fn(),
+  launchCameraAsync: jest.fn(),
+  launchImageLibraryAsync: jest.fn(),
+}));
+jest.mock('expo-document-picker', () => ({ getDocumentAsync: jest.fn() }));
+jest.mock('expo-image-manipulator', () => {
+  const contexto = {
+    resize: jest.fn(() => contexto),
+    renderAsync: jest.fn(() =>
+      Promise.resolve({
+        saveAsync: jest.fn(() => Promise.resolve({ uri: 'file:///cache/reduzida.jpg' })),
+      }),
+    ),
+  };
+  return {
+    ImageManipulator: { manipulate: jest.fn(() => contexto) },
+    SaveFormat: { JPEG: 'jpeg' },
+  };
+});
 // A dica da primeira conversa (T-046) busca o onboarding; aqui o assunto é só o chat.
 jest.mock('@/features/onboarding/components/dica', () => ({ Dica: () => null }));
 
@@ -50,6 +72,20 @@ function respostaSse(eventos: EventoMony[], tamanho = 9) {
       }),
     },
   };
+}
+
+/** A tela com a área segura (a folha de anexo usa). */
+function renderizar() {
+  return render(
+    <SafeAreaProvider
+      initialMetrics={{
+        frame: { x: 0, y: 0, width: 390, height: 844 },
+        insets: { top: 0, left: 0, right: 0, bottom: 0 },
+      }}
+    >
+      <TelaMony />
+    </SafeAreaProvider>,
+  );
 }
 
 function corpoJson(opcoes: RequestInit | undefined): unknown {
@@ -136,7 +172,7 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
       );
       globalThis.fetch = fetchApi;
 
-      render(<TelaMony />);
+      renderizar();
       fireEvent.changeText(screen.getByLabelText('Mensagem para a Mony'), 'gastei 10');
       fireEvent.press(screen.getByRole('button', { name: 'Enviar' }));
 
@@ -215,7 +251,7 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
       );
       globalThis.fetch = fetchApi;
 
-      render(<TelaMony />);
+      renderizar();
       fireEvent.changeText(screen.getByLabelText('Mensagem para a Mony'), 'oi');
       fireEvent.press(screen.getByRole('button', { name: 'Enviar' }));
 
@@ -247,7 +283,7 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
           }),
       });
 
-      render(<TelaMony />);
+      renderizar();
       fireEvent.changeText(screen.getByLabelText('Mensagem para a Mony'), 'oi');
       fireEvent.press(screen.getByRole('button', { name: 'Enviar' }));
 
@@ -307,7 +343,7 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
       );
       globalThis.fetch = fetchApi;
 
-      render(<TelaMony />);
+      renderizar();
       fireEvent.changeText(screen.getByLabelText('Mensagem para a Mony'), 'comprei um fone');
       fireEvent.press(screen.getByRole('button', { name: 'Enviar' }));
 
@@ -384,7 +420,7 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
         const pedidos = api();
         fetchStreaming.mockResolvedValue(respostaDoAudio());
 
-        render(<TelaMony />);
+        renderizar();
         fireEvent.press(screen.getByRole('button', { name: 'Gravar áudio' }));
         expect(await screen.findByText('Gravando 0:00', {}, ESPERA)).toBeOnTheScreen();
         act(() => {
@@ -419,7 +455,7 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
       async () => {
         audio.requestRecordingPermissionsAsync.mockResolvedValueOnce({ granted: false });
 
-        render(<TelaMony />);
+        renderizar();
         fireEvent.press(screen.getByRole('button', { name: 'Gravar áudio' }));
 
         expect(
@@ -441,7 +477,7 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
         api();
         fetchStreaming.mockResolvedValue(respostaDoAudio());
 
-        render(<TelaMony />);
+        renderizar();
         fireEvent.press(screen.getByRole('button', { name: 'Gravar áudio' }));
         await screen.findByText('Gravando 0:00', {}, ESPERA);
         fireEvent.press(screen.getByRole('button', { name: 'Cancelar gravação' }));
@@ -459,6 +495,174 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
         expect(await screen.findByText('gastei 10 no mercado', {}, ESPERA)).toBeOnTheScreen();
         expect(fetchStreaming).toHaveBeenCalledTimes(1);
         expect(corpoJson(fetchStreaming.mock.calls[0]?.[1])).toEqual({ arquivoId: AUDIO });
+      },
+      TEMPO_LIMITE_MS,
+    );
+  });
+
+  describe('foto, print e PDF (T-065)', () => {
+    const IMPORTACAO = '0199a000-0000-7000-8000-0000000000c1';
+    const ARQUIVO = '0199a000-0000-7000-8000-0000000000c2';
+
+    function cartao(indice: number, descricao: string, valorCentavos: number): ComponenteMony {
+      return {
+        tipo: 'resumo',
+        aConfirmar: true,
+        lancamento: {
+          transacaoId: null,
+          parcelamentoId: null,
+          tipo: 'despesa',
+          descricao,
+          valorCentavos,
+          data: '2026-10-14',
+          categoria: indice === 0 ? null : 'Mercado',
+          formaPagamento: indice === 0 ? null : 'pix',
+          cartao: null,
+          parcelas: null,
+          valorParcelaCentavos: null,
+        },
+        opcoes: [
+          {
+            id: 'confirmar',
+            rotulo: 'Confirmar',
+            acao: { tipo: 'confirmar_importacao', importacaoId: IMPORTACAO, indice },
+          },
+          {
+            id: 'descartar',
+            rotulo: 'Descartar',
+            acao: { tipo: 'descartar_importacao', importacaoId: IMPORTACAO, indice },
+          },
+        ],
+      };
+    }
+
+    /** `POST /arquivos`, a foto no aparelho, o S3 e as ações da Mony. */
+    function api() {
+      const pedidos: { metodo: string; url: string; corpo: unknown }[] = [];
+      globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
+        const endereco = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
+        if (endereco.startsWith('file://')) {
+          return Promise.resolve(new Response(new Uint8Array(250_000), { status: 200 }));
+        }
+        const corpo: unknown =
+          typeof opcoes?.body === 'string' ? JSON.parse(opcoes.body) : opcoes?.body;
+        pedidos.push({ metodo: opcoes?.method ?? 'GET', url: endereco, corpo });
+        const json = (dados: unknown, status = 200) =>
+          Promise.resolve(new Response(JSON.stringify(dados), { status }));
+        if (endereco.endsWith('/v1/arquivos')) {
+          return json(
+            {
+              id: ARQUIVO,
+              metodo: 'PUT',
+              url: 'https://s3.exemplo.test/envio/foto',
+              cabecalhos: { 'content-type': 'image/jpeg' },
+              expiraEm: '2026-10-15T15:05:00.000Z',
+            },
+            201,
+          );
+        }
+        if (endereco.endsWith('/v1/mony/acoes')) {
+          return json({ texto: 'Pronto! Anotei.', componente: null, transacaoId: null });
+        }
+        return Promise.resolve(new Response(null, { status: 200 }));
+      });
+      return pedidos;
+    }
+
+    it(
+      'RN-083 RN-086 manda a foto, mostra os lançamentos a confirmar e tira só o que foi tocado',
+      async () => {
+        const pedidos = api();
+        jest.mocked(ImagePicker.launchImageLibraryAsync).mockResolvedValueOnce({
+          canceled: false,
+          assets: [{ uri: 'file:///galeria/cupom.jpg', width: 1200, height: 1600, type: 'image' }],
+        } as unknown as ImagePicker.ImagePickerResult);
+        fetchStreaming.mockResolvedValue(
+          respostaSse([
+            { tipo: 'texto.delta', texto: 'Li o extrato: 2 lançamentos.' },
+            { tipo: 'componente', componente: cartao(0, 'Padaria', 1_250) },
+            { tipo: 'componente', componente: cartao(1, 'Feira', 3_000) },
+            {
+              tipo: 'componente',
+              componente: {
+                tipo: 'botoes',
+                opcoes: [
+                  {
+                    id: 'confirmar-todos',
+                    rotulo: 'Confirmar todos',
+                    acao: { tipo: 'confirmar_importacao', importacaoId: IMPORTACAO, indice: null },
+                  },
+                ],
+              },
+            },
+            { tipo: 'fim', mensagemId: '0199a000-0000-7000-8000-000000000009' },
+          ]),
+        );
+
+        renderizar();
+        fireEvent.press(screen.getByRole('button', { name: 'Mandar foto ou PDF' }));
+        fireEvent.press(
+          await screen.findByRole('button', { name: 'Foto ou print da galeria' }, ESPERA),
+        );
+
+        expect(
+          await screen.findByText('Li o extrato: 2 lançamentos.', {}, ESPERA),
+        ).toBeOnTheScreen();
+        expect(screen.getByText('Foto')).toBeOnTheScreen();
+        const cartoes = screen.getAllByTestId('mony-resumo');
+        expect(cartoes).toHaveLength(2);
+        expect(cartoes[0]).toHaveTextContent(/Despesa para confirmar/);
+        expect(cartoes[0]).toHaveTextContent(/Categoria a escolher · 14\/out · Forma a escolher/);
+        expect(cartoes[1]).toHaveTextContent(/Mercado · 14\/out · Pix/);
+        expect(pedidos[0]).toMatchObject({
+          metodo: 'POST',
+          corpo: { tipo: 'foto', tipoConteudo: 'image/jpeg', tamanho: 250_000 },
+        });
+        expect(corpoJson(fetchStreaming.mock.calls[0]?.[1])).toEqual({ arquivoId: ARQUIVO });
+
+        await waitFor(() => {
+          expect(screen.getAllByRole('button', { name: 'Confirmar' })[0]).toBeEnabled();
+        }, ESPERA);
+        fireEvent.press(screen.getAllByRole('button', { name: 'Confirmar' })[0] as never);
+        expect(await screen.findByText('Pronto! Anotei.', {}, ESPERA)).toBeOnTheScreen();
+        expect(pedidos.at(-1)?.corpo).toEqual({
+          acao: { tipo: 'confirmar_importacao', importacaoId: IMPORTACAO, indice: 0 },
+        });
+        // Só o cartão tocado sai; o outro e o [Confirmar todos] ficam.
+        expect(screen.getAllByTestId('mony-resumo')).toHaveLength(1);
+        expect(screen.getByRole('button', { name: 'Confirmar todos' })).toBeOnTheScreen();
+
+        await waitFor(() => {
+          expect(screen.getByRole('button', { name: 'Confirmar todos' })).toBeEnabled();
+        }, ESPERA);
+        fireEvent.press(screen.getByRole('button', { name: 'Confirmar todos' }));
+        await waitFor(() => {
+          expect(screen.queryAllByTestId('mony-resumo')).toHaveLength(0);
+        }, ESPERA);
+        expect(screen.queryByRole('button', { name: 'Confirmar todos' })).toBeNull();
+      },
+      TEMPO_LIMITE_MS,
+    );
+
+    it(
+      'câmera sem permissão avisa e não envia nada',
+      async () => {
+        jest
+          .mocked(ImagePicker.requestCameraPermissionsAsync)
+          .mockResolvedValueOnce({ granted: false } as ImagePicker.CameraPermissionResponse);
+
+        renderizar();
+        fireEvent.press(screen.getByRole('button', { name: 'Mandar foto ou PDF' }));
+        fireEvent.press(await screen.findByRole('button', { name: 'Tirar foto' }, ESPERA));
+
+        expect(
+          await screen.findByText(
+            'Libere a câmera nas configurações do aparelho para fotografar.',
+            {},
+            ESPERA,
+          ),
+        ).toBeOnTheScreen();
+        expect(fetchStreaming).not.toHaveBeenCalled();
       },
       TEMPO_LIMITE_MS,
     );

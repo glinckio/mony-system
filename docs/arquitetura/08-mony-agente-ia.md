@@ -89,14 +89,14 @@ Cada ferramenta é um objeto com `nome`, `descricao`, `schema` (Zod, convertido 
 | `criar_lembrete` | `LembretesService.criar` | Com canal |
 | `criar_compromisso` | `AgendaService.criarCompromisso` | Na agenda padrão |
 | `consultar_agenda` | `AgendaService.listar` | |
-| `ler_documento` | `DocumentosService.ler` | Foto, print, PDF → lista de lançamentos candidatos |
+| `ler_documento` | `DocumentosMony.ler` | Foto, print, PDF → lista de lançamentos candidatos. Não fica com o modelo da conversa: a mensagem com foto ou PDF vai direto à leitura, que obriga o modelo a responder por esta ferramenta (T-065) |
 | `consultar_nfce` | `NfceService.consultar` | Fallback: leitura da foto |
 | `ajuda_app` | `AjudaService.buscar` | Responde com base em uma base de ajuda do app (markdown versionado) |
 
 Ferramentas que gravam (`criar_*`, `editar_*`, `pagar_fatura`, `definir_orcamento`) passam pela **política de confirmação**:
 
 - Dados completos vindos de texto → grava direto e devolve componente de resumo com [Desfazer] (RN-082).
-- Dados vindos de foto/PDF → devolve cartão(ões) de resumo com [Confirmar]/[Editar], sem gravar (RN-083).
+- Dados vindos de foto/PDF → devolve cartão(ões) de resumo com [Confirmar]/[Descartar], sem gravar (RN-083). Editar fica para a tela completa do chat (T-069); o que falta vira pergunta na confirmação.
 - Exclusão e pagamento → sempre confirmação por botão (RN-092).
 
 **Como está (T-062a e T-062b):**
@@ -105,7 +105,7 @@ Ferramentas que gravam (`criar_*`, `editar_*`, `pagar_fatura`, `definir_orcament
 - `executar(contexto, entrada)` recebe o contexto da Mony (origem `mony`) com a conversa e devolve `{ dados, componentes }`: os `dados` voltam ao modelo em JSON; os componentes saem no SSE depois da resposta e ficam na mensagem gravada, mesmo se uma chamada seguinte ao modelo falhar.
 - `criar_transacao`: receita grava direto (precisa da categoria); despesa segue o rascunho (T-061): completa, grava e devolve o resumo; faltando categoria ou forma, guarda o rascunho e o app pergunta com botões (RN-080). Categoria e cartão de outra pessoa dão `NAO_ENCONTRADO` (RN-092).
 - **Cartão de resumo** (componente `resumo`): tipo, descrição, valor, data, categoria, forma, cartão e parcelas, com [Desfazer] (RN-082). Um por lançamento (RN-086). O fim do rascunho também mostra o resumo. Edição mostra o resumo sem [Desfazer].
-- **Ações por botão** (`POST /mony/acoes { acao }`, `tipo`): `rascunho`, `desfazer` (até 24 h depois de gravar e só para origem `mony`; parcelamento sai cancelado; depois do prazo, 410 `DESFAZER_EXPIRADO`), `excluir_transacao` e `pagar_fatura` (as confirmações pedidas pelas ferramentas; o pagamento vale o valor mostrado no botão, total ou parcial, hoje) e `cancelar`.
+- **Ações por botão** (`POST /mony/acoes { acao }`, `tipo`): `rascunho`, `desfazer` (até 24 h depois de gravar e só para origem `mony` ou `foto`; parcelamento sai cancelado; depois do prazo, 410 `DESFAZER_EXPIRADO`), `excluir_transacao` e `pagar_fatura` (as confirmações pedidas pelas ferramentas; o pagamento vale o valor mostrado no botão, total ou parcial, hoje), `confirmar_importacao` e `descartar_importacao` (um lançamento lido de foto ou PDF pelo `indice`, ou todos com `indice: null`, T-065) e `cancelar`.
 - `definir_orcamento` e `atualizar_meta` gravam direto e respondem em texto, sem cartão de resumo nem [Desfazer] (DECISOES, T-062b).
 
 ## Rascunhos e perguntas com botões
@@ -157,11 +157,20 @@ Por mensagem (do PDF): data de hoje (no fuso do usuário), nome, categorias, car
 | Entrada | Processamento | Fila |
 |---|---|---|
 | Áudio | `TranscricaoProvider` → texto, depois fluxo normal | Na própria requisição (T-064): o texto sai antes da resposta |
-| Foto/print | Modelo com visão + ferramenta `ler_documento` → JSON validado por Zod (estabelecimento, data, itens, total, forma de pagamento) | `mony-midia` |
-| PDF de fatura/extrato | Envio do PDF ao modelo (o provedor recomendado aceita PDF direto) ou extração de texto antes; saída: lista de lançamentos candidatos em `importacoes_documento` | `mony-midia` |
+| Foto/print | Modelo com visão + ferramenta `ler_documento` → JSON validado por Zod (documento, estabelecimento, lançamentos com valor, data, forma, cartão, parcelas e categoria) | Na própria requisição (T-065) |
+| PDF de fatura/extrato | Envio do PDF ao modelo (o provedor recomendado aceita PDF direto); saída: lista de lançamentos candidatos em `importacoes_documento` | Na própria requisição (T-065) |
 | QR Code NFC-e | `NfceService` consulta a nota; falhou → pede foto do cupom | `mony-midia` |
 
 Mídias pesadas são processadas na fila; o chat mostra "lendo seu documento…" pelo SSE e recebe o resultado quando o job termina (o app mantém a conexão SSE ou recebe push se o usuário saiu da tela).
+
+**Como está (T-065):**
+
+- O app envia a foto (reduzida a JPEG), o print ou o PDF em `POST /arquivos` (tipo `foto`, `comprovante` ou `pdf`) e manda o `arquivoId` em `POST /mony/mensagens`. A mensagem do usuário fica com tipo `imagem` ou `pdf`. HEIC e imagem acima de 5 MB são recusados (limite do provedor).
+- `DocumentosMony.ler` chama o modelo com o arquivo pela URL de leitura assinada (o provedor baixa), o prompt de leitura (`prompts/leitura.ts`, com hoje, as categorias e os cartões) e a ferramenta obrigatória `ler_documento`. Tempo limite de 120 s, até 2 retentativas em erro transitório, um `logs_ia` por tentativa (`ferramenta = ler_documento`). Lançamento com campo inválido sai sozinho e é contado ("2 linhas ficaram de fora"); até 50 por documento.
+- Os ids vêm do usuário: categoria pelo nome que o modelo escolheu, senão a preferência do estabelecimento (RN-090); forma pelo documento (fatura é crédito) ou pela preferência; cartão pelo nome ou pelo final, pela preferência ou, com um cartão só, ele. Receita sem categoria vai para "Outros".
+- `importacoes_documento`: `processando` → `aguardando_confirmacao` (ou `descartada` sem lançamentos, `erro` na falha); em `resultado`, cada lançamento com o estado (`pendente`, `gravando`, `confirmado`, `descartado`, `rascunho`). O reenvio da mesma mensagem não lê de novo o que já foi lido.
+- No chat: um cartão `resumo` com `aConfirmar` por lançamento, com [Confirmar] e [Descartar], e [Confirmar todos]/[Descartar todos] quando há mais de um (RN-086). Nada é gravado antes do toque (RN-083).
+- [Confirmar]: a despesa segue o rascunho, que grava quando está completa ou pergunta o que falta com botões (RN-080); a receita grava direto. [Confirmar todos] grava os completos e deixa os outros para o [Confirmar] de cada um. A importação fica travada (`FOR UPDATE`) enquanto os lançamentos são reservados: dois toques não gravam o mesmo lançamento. O gravado fica com origem `foto` e aceita [Desfazer].
 
 ## Provedor de IA
 

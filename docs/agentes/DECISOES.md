@@ -772,3 +772,16 @@ Contexto: o doc 08 manda o áudio pelo `TranscricaoProvider` na fila `mony-midia
 - **`logs_ia` da transcrição**: `ferramenta = transcricao`, tokens 0, modelo do provedor.
 - **App**: gravação AAC mono a 64 kbps (10 minutos ≈ 4,8 MB). O `expo-image-picker` tinha `microphonePermission: false`, que bloqueia o `RECORD_AUDIO` no Android; agora usa o mesmo texto do `expo-audio`. Áudio em segundo plano desligado.
 Reversível: sim (`TRANSCRICAO_PROVEDOR`; o enum `audio` fica).
+
+## 2026-10-12 — T-065 — Foto, print e PDF na Mony
+Contexto: o doc 08 põe a leitura na fila `mony-midia` e `ler_documento` entre as ferramentas da conversa, e fala em [Confirmar]/[Editar]. Decisões:
+- **A leitura não passa pelo modelo da conversa**: mensagem com foto ou PDF vai direto ao `DocumentosMony.ler`, que obriga o modelo a responder pela ferramenta `ler_documento` (`ferramentaObrigatoria`, saída estruturada validada por Zod). Mais previsível e barato que deixar o modelo da conversa decidir.
+- **Na própria requisição do SSE**, como o áudio (T-064), com tempo limite de 120 s; a fila fica para quando um PDF grande passar disso.
+- **Arquivo pela URL assinada** (imagem e PDF em `source.type = url` na Anthropic): a API não baixa o arquivo. HEIC e imagem acima de 5 MB são recusados (limite do provedor); o app já manda JPEG.
+- **Confirmação**: um cartão `resumo` com `aConfirmar` por lançamento, com [Confirmar] e [Descartar], e [Confirmar todos]/[Descartar todos]. [Editar] fica para a T-069; o que falta (categoria, forma, cartão, parcelas) vira as perguntas do rascunho no [Confirmar] (um rascunho por vez, RN-088), e o [Confirmar todos] só grava os completos.
+- **Origem `foto`** no que foi lido de documento (foto ou PDF), pelo `Contexto.deDocumento` e pelo `deDocumento` do rascunho; o [Desfazer] vale para `mony` e `foto`.
+- **Concorrência**: a importação é travada (`SELECT … FOR UPDATE`) para reservar os lançamentos ("gravando") antes de gravar; o que falhar volta a "pendente".
+- **Fatura e extrato**: cada linha vira um lançamento à vista (parcela de compra vira a despesa do valor da parcela, com "(parcela 2/10)" na descrição), sem conferir se já existe. Reconstruir parcelamentos e evitar duplicados fica na T-149.
+- **Ids pelo usuário**: categoria pelo nome que o modelo escolheu na lista do contexto, senão a preferência do estabelecimento (RN-090); cartão pelo nome ou final, pela preferência ou o único cadastrado; receita sem categoria vai para "Outros".
+- **Sem a imagem no lançamento**: o arquivo lido não vira anexo da transação gravada (um documento pode ter vários lançamentos).
+Reversível: sim.
