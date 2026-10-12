@@ -830,3 +830,15 @@ Contexto: o doc 04 põe a central atrás do sino e os "Alertas da Mony" no Perfi
 - **Salvar com botão**, mandando só o que mudou, em vez de gravar a cada chave: uma requisição só e o silêncio validado antes (hora "HH:MM", começo diferente do fim).
 - **Links internos pelo app** (`rotaDoLink`): uma lista de padrões das rotas que existem; o resto (parcelamento, por exemplo) marca como lida e não navega. A T-088 usa a mesma função para o toque no push.
 Reversível: sim.
+
+## 2026-10-12 — T-100 — Cotas do plano gratuito
+Contexto: o doc 05 punha a conta no `@RecursoLimitado`, antes do handler, e o RN-122 descreve um `UPDATE … WHERE quantidade < limite`; o RN-120 diz que o lançamento da Mony também conta. Decisões:
+- **A conta é no Service que grava, dentro da transação dele** (`CotasService.consumir(contexto, recurso, tx)`), não num guard: a Mony chama os Services e não as rotas, e o que não foi gravado não conta (o erro desfaz). O `@RecursoLimitado` ficou só para marcar as rotas no contrato (`x-recurso-limitado`); uma resposta 403 tipada no OpenAPI trocaria o tipo de erro de todas as mutações do cliente gerado. Doc 05 corrigido.
+- **Trava por usuário e recurso** (`pg_advisory_xact_lock`) e soma do dia e do mês em `uso_recursos`: o `UPDATE` de uma linha do RN-122 não confere o limite do mês, que soma vários dias. Só o gratuito é contado; no teste e nos planos pagos, nada é gravado em `uso_recursos`.
+- **Plano que vale agora:** o teste que acabou é o gratuito sem esperar a rotina da T-101; inadimplente continua pago (RN-131); cancelada ou sem assinatura, gratuito.
+- **O que conta:** app e Mony; rotinas, Open Finance e admin não. Parcelamento e recorrência criada contam um lançamento cada (as ocorrências não); lançamento de foto ou PDF, ao confirmar; mensagem de texto ou áudio e leitura de documento, ao chegar; editar, excluir, pagar fatura e aportar não contam.
+- **Relatórios no gratuito:** o período é cortado ao mês atual (a tela de 6 meses e Ano continua funcionando, com um mês), e só a origem `app`; as consultas da Mony e os resumos das rotinas não são "relatórios". Pedido sem nenhum dia no mês atual: 403 com `recurso: relatorio`.
+- **Aviso da Mony (RN-123):** a frase do limite e o botão [Ver planos], de ação `{ tipo: 'abrir', link }`, que o app abre sem chamar a API. O lançamento pelo rascunho é conferido antes da primeira pergunta (não pergunta o que não vai gravar).
+- **Tela "Seu plano"** (`/mais/plano`) já nesta tarefa, para o [Ver planos] levar a algum lugar: o plano e o uso dos limites; a compra entra com a T-103.
+- **Contadores de quantidade** só para cartão; listas de compras e lembretes ativos ganham os deles com a T-123 e a T-084.
+Reversível: sim.

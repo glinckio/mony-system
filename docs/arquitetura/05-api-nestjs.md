@@ -12,7 +12,6 @@ apps/api/
 │  │  ├─ prisma/                 # PrismaService, extensão de soft delete
 │  │  ├─ auth/                   # GuardaAutenticacao, TokensAcesso, @UsuarioAtual(), @Publico(), AdminGuard + 2FA
 │  │  ├─ limites/                # Contadores de tentativas no Redis (RN-008)
-│  │  ├─ planos/                 # @RecursoLimitado('lancamento'), PlanoGuard
 │  │  ├─ idempotencia/           # Interceptor de Idempotency-Key (Redis)
 │  │  ├─ erros/                  # Filtro global, catálogo de códigos de erro
 │  │  ├─ eventos/                # Barramento interno de eventos de domínio
@@ -22,7 +21,7 @@ apps/api/
 │  │  ├─ auditoria/
 │  │  └─ config/
 │  ├─ modulos/                   # Um módulo por domínio
-│  │  ├─ autenticacao/  usuarios/  assinaturas/  planos/
+│  │  ├─ autenticacao/  usuarios/  assinaturas/  planos/   # planos: cotas do gratuito, @RecursoLimitado
 │  │  ├─ categorias/  contas/  transacoes/  recorrencias/
 │  │  ├─ cartoes/  faturas/  parcelamentos/
 │  │  ├─ orcamentos/  metas/  relatorios/  dashboard/
@@ -90,7 +89,7 @@ Regras:
 - Erros sempre no formato:
 
 ```json
-{ "erro": { "codigo": "LIMITE_PLANO_ATINGIDO", "mensagem": "Você atingiu 3 lançamentos hoje.", "detalhes": { "recurso": "lancamento", "renovaEm": "2026-10-09T03:00:00Z" } } }
+{ "erro": { "codigo": "LIMITE_PLANO_ATINGIDO", "mensagem": "Você chegou ao limite de 3 lançamentos por dia do plano gratuito. Amanhã libera de novo.", "detalhes": { "recurso": "lancamento", "periodo": "dia", "limite": 3, "renovaEm": "2026-10-09T03:00:00.000Z" } } }
 ```
 
   Códigos estáveis em `@mony/shared/erros` (o app traduz e decide a UI, por exemplo mostrar [Ver planos]). Mensagens internas e stack só no log (PDF, Segurança).
@@ -345,7 +344,8 @@ Implementado na T-048 (RN-150), sem exportação (RN-151 fica na tarefa de expor
 - Contam lançamentos pagos e pendentes, sem os excluídos, só de natureza `normal`: pagamento de fatura e transferência não são receita nem despesa (RN-037).
 - Categoria e cartão excluídos ainda aparecem com o nome.
 - As somas por mês, ano e dia da semana são SQL (`$queryRaw`), com `excluido_em IS NULL` escrito à mão; as outras são `groupBy` do Prisma.
-- O histórico de preços da NFC-e entra com a T-066, e o limite do plano gratuito (só o mês atual, RN-120) com a T-100.
+- O histórico de preços da NFC-e entra com a T-066.
+- **Plano gratuito (RN-120, T-100):** a tela de relatórios (origem `app`) mostra só o mês atual: o período pedido (ou o padrão) é cortado ao mês de hoje, e o pedido sem nenhum dia nele responde `LIMITE_PLANO_ATINGIDO` (`recurso: relatorio`). As consultas da Mony e os resumos das rotinas não mudam.
 
 ## Orçamentos e metas
 
@@ -409,6 +409,20 @@ Implementado na T-042 (RN-050 a RN-055).
 - **Dias:** mudar o fechamento ou o vencimento vale para as faturas que ainda não existem; as criadas mantêm as datas.
 - **Open Finance (RN-039):** cartão conectado só muda nome, cor, faixas de alerta e conta de pagamento, e sai desconectando o banco.
 
+## Planos e cotas do gratuito
+
+Implementado na T-100 (RN-120 a RN-123, RN-127), em `modulos/planos`. A Stripe, o teste de 3 dias e as telas de compra chegam com a T-101 a T-103.
+
+- **Plano que vale agora** (`planoEfetivo`): `teste` até o `teste_fim` (depois, gratuito, mesmo antes da rotina diária da T-101); `mensal` e `anual`, inclusive inadimplente (RN-131); assinatura cancelada ou ausente, gratuito. Só o gratuito tem limite.
+- **Quem conta:** o que vem do app e da Mony (`contexto.origem` `app` ou `mony`). Rotinas (ocorrências de recorrência), Open Finance e admin não contam.
+- **Onde conta:** no Service que grava, dentro da transação dele (`CotasService.consumir(contexto, recurso, tx)`), e não num guard antes do handler: a Mony chama os Services, não as rotas, e o que não foi gravado não conta (o erro desfaz tudo). Lançamento: `TransacoesService.registrar` (manual, Mony e foto ou PDF confirmado), `ParcelamentosService.registrar` (um parcelamento é um lançamento) e `RecorrenciasService.criar` (a recorrência é um lançamento; as ocorrências não). Mensagem (texto e áudio) e leitura de foto ou PDF: no orquestrador da Mony, ao receber; toque em botão não conta.
+- **Contagem atômica (RN-122):** trava por usuário e recurso até o fim da transação (`pg_advisory_xact_lock`), soma o uso do dia e do mês (do dia 1º a hoje, no fuso do usuário) em `uso_recursos` e grava `+1` na linha do dia (`INSERT … ON CONFLICT DO UPDATE`). O `UPDATE … WHERE quantidade < limite` do RN-122 sozinho não confere o limite do mês, que soma várias linhas.
+- **Quantidade (cartão):** conta os itens que existem (cartões não excluídos) na transação que cria; os que passam do limite continuam visíveis e editáveis (RN-127). Listas de compras e lembretes ativos entram com a T-123 e a T-084.
+- **Erro:** `LIMITE_PLANO_ATINGIDO` (403) com a frase da Mony e `detalhes` `{ recurso, periodo: dia|mes|quantidade, limite, renovaEm }`; `renovaEm` é a meia-noite do dia seguinte ou do dia 1º no fuso do usuário (nulo na quantidade).
+- **Mony (RN-123):** no limite, a Mony responde a frase com o botão [Ver planos] (`{ tipo: 'abrir', link: 'mony://planos' }`, que o app abre sem chamar `POST /mony/acoes`): na mensagem e na leitura, sem chamar o modelo; no lançamento pelo rascunho, antes das perguntas, sem guardar o rascunho; nas ferramentas, o modelo recebe a falha e o botão sai uma vez; no [Confirmar todos] da foto ou PDF, grava até o limite e o resto continua esperando.
+- **`GET /assinatura/uso`:** o plano que vale agora, `limitado`, o fim do teste e, no gratuito, cada limite com `uso`, `limite` e `renovaEm`.
+- **`@RecursoLimitado(recurso)`** marca as rotas que podem responder o 403 (`x-recurso-limitado` no OpenAPI): `POST /transacoes`, `/parcelamentos`, `/recorrencias`, `/cartoes` e os relatórios. A conta não é feita por ele.
+
 ## Guardas e decoradores
 
 | Decorador | Função |
@@ -416,7 +430,7 @@ Implementado na T-042 (RN-050 a RN-055).
 | `@Publico()` | Rota sem token (cadastro, login, webhooks) |
 | `@LiberadaParaVersaoAntiga()` | Rota que responde a app abaixo da versão mínima (`config-app`, health) |
 | `@UsuarioAtual()` | Injeta `{ id, papel, sessaoId, dispositivoId }` do token de acesso |
-| `@RecursoLimitado('lancamento')` | Confere e consome cota do plano gratuito de forma atômica antes do handler (RN-122) |
+| `@RecursoLimitado('lancamento')` | Marca a rota que pode responder `LIMITE_PLANO_ATINGIDO` (`x-recurso-limitado` no OpenAPI); a conta é do `CotasService`, no Service que grava (ver "Planos e cotas do gratuito") |
 | `@ExigePlano('pago')` | Bloqueia Open Finance, detecção de apps e ligação no gratuito (RN-121) |
 | `@Admin()` | Papel admin + sessão de admin com 2FA |
 | `@Webhook('stripe')`, `@Webhook('open-finance')` | Valida assinatura do corpo bruto, registra evento e deduplica |

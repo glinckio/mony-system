@@ -10,6 +10,7 @@ import { textosMony } from '@/features/mony/mony.strings';
 import { textosNotificacoes } from '@/features/notificacoes/notificacoes.strings';
 import { textosOnboarding } from '@/features/onboarding/onboarding.strings';
 import { textosOrcamentos } from '@/features/orcamentos/orcamentos.strings';
+import { textosPlanos } from '@/features/planos/planos.strings';
 import { textosRelatorios } from '@/features/relatorios/relatorios.strings';
 import { textosTransacoes } from '@/features/transacoes/transacoes.strings';
 import { textosUi } from '@/ui/ui.strings';
@@ -34,4 +35,5 @@ export const textosPtBr = {
   orcamentos: textosOrcamentos,
   metas: textosMetas,
   relatorios: textosRelatorios,
+  planos: textosPlanos,
 };

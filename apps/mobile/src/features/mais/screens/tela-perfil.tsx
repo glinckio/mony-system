@@ -25,9 +25,10 @@ function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
 }
 
 /**
- * Perfil e configurações (design, página 9): dados pessoais, biometria (RN-005), alertas da Mony
- * (T-087), permissões, rever o tutorial e sair. Assinatura (Fase 4), exportar e excluir conta
- * (T-140) entram com as tarefas deles; o modo escuro não existe (o app é só escuro, T-017).
+ * Perfil e configurações (design, página 9): dados pessoais, seu plano (T-100), biometria (RN-005),
+ * alertas da Mony (T-087), permissões, rever o tutorial e sair. A compra dos planos (T-103),
+ * exportar e excluir conta (T-140) entram com as tarefas deles; o modo escuro não existe (o app é
+ * só escuro, T-017).
  */
 export default function TelaPerfil() {
   const { t } = useTranslation();
@@ -89,6 +90,13 @@ export default function TelaPerfil() {
             titulo={t('mais.perfilTela.dadosPessoais')}
             aoPressionar={() => {
               router.push('/mais/dados-pessoais');
+            }}
+          />
+          <Linha
+            titulo={t('mais.perfilTela.plano')}
+            ajuda={t('mais.perfilTela.planoAjuda')}
+            aoPressionar={() => {
+              router.push('/mais/plano');
             }}
           />
           {disponivel ? (

@@ -132,6 +132,13 @@ valor ─► categoria ─► forma_pagamento ─► (cartão) ─► (à vista 
 - Gasto novo com valor troca o rascunho ("Deixei de lado o lançamento de R$ 25,00."); "cancela", "esquece" e afins descartam. Texto que não responde vai ao modelo com o rascunho no contexto, e a pergunta pendente volta com os botões depois da resposta.
 - A validade (24 h) conta da última resposta. A limpeza é a rotina `limpar-rascunhos`, às 03:00.
 
+**Limites do plano gratuito (T-100, RN-120, RN-123):** a mensagem (texto ou áudio) e a leitura de foto ou PDF contam ao chegar; o lançamento conta quando é gravado (no Service, como o manual). No limite, a Mony responde a frase do limite ("Você chegou ao limite de 3 lançamentos por dia do plano gratuito. Amanhã libera de novo.") com o botão [Ver planos], de ação `{ tipo: 'abrir', link: 'mony://planos' }`: o app só abre a tela do plano, sem `POST /mony/acoes`.
+
+- Mensagem e leitura no limite: a mensagem fica no histórico com a resposta do limite; o modelo não é chamado.
+- Lançamento novo pelo rascunho: o limite é conferido antes da primeira pergunta, e o rascunho não é guardado; se acabar no meio (outro lançamento gastou o último), o rascunho sai.
+- Ferramentas: o erro `LIMITE_PLANO_ATINGIDO` volta ao modelo (que conta em uma frase) e o [Ver planos] sai uma vez, mesmo com várias ferramentas no limite.
+- [Confirmar todos] da foto ou PDF grava até o limite, avisa e deixa o resto esperando; o [Confirmar] de um no limite também avisa e ele continua esperando.
+
 **Preferências aprendidas (T-063, RN-081, RN-090):** `PreferenciasService`, sobre `preferencias_aprendidas`.
 
 - A chave é o estabelecimento: a descrição do lançamento sem acento, minúscula e só com letras e números (`chaveDoEstabelecimento` em `@mony/shared/rascunhos`; "iFood!" → `ifood`).
