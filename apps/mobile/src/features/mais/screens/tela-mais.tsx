@@ -13,10 +13,11 @@ import { cores } from '@/ui/tokens';
 const ATALHOS: {
   rota: Href;
   icone: NomeIcone;
-  chave: 'orcamentos' | 'metas' | 'categorias' | 'contas' | 'permissoes';
+  chave: 'orcamentos' | 'metas' | 'relatorios' | 'categorias' | 'contas' | 'permissoes';
 }[] = [
   { rota: '/orcamentos', icone: 'chart-pie', chave: 'orcamentos' },
   { rota: '/metas', icone: 'target', chave: 'metas' },
+  { rota: '/relatorios', icone: 'chart-column', chave: 'relatorios' },
   { rota: '/mais/categorias', icone: 'tag', chave: 'categorias' },
   { rota: '/mais/contas', icone: 'landmark', chave: 'contas' },
   { rota: '/mais/permissoes', icone: 'shield', chave: 'permissoes' },

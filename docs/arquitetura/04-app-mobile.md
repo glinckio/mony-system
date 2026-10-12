@@ -247,6 +247,18 @@ Tela em `src/features/inicio`, no design da página 3 (`docs/design`), com uma c
 - **Blocos**: o checklist (RN-024), o resumo (receitas e quanto já entrou, despesas pagas, a pagar), os próximos vencimentos (RN-023, até cinco; a fatura abre a fatura, parcela e conta abrem o lançamento), os cartões (cor, fatura atual, barra do limite e vencimento) e os orçamentos do mês (total e as três categorias mais perto de estourar). Cartões e orçamentos só aparecem quando existem.
 - Puxar para baixo atualiza o Início e o checklist.
 
+## Relatórios (T-054)
+
+Tela em `src/features/relatorios` (`/relatorios`, no grupo `(telas)`, pelo atalho da aba Mais), no design da página 6 (`docs/design`). Cada bloco é uma rota da API (`GET /relatorios/:tipo?inicio=&fim=`, RN-150), e a API faz as contas:
+
+- **Abas**: Mês (o de hoje), 6 meses e Ano (12 meses), sempre com o mês de hoje inteiro.
+- **Receitas × despesas** (`mensal`): quanto sobrou (ou faltou) no mês ou, com mais de um mês, em média por mês, as barras verde e azul de cada mês e os totais.
+- **Por categoria** (`categorias`, despesas): rosca com as quatro maiores e "Outras", nas cores das categorias, o total no meio e os percentuais da API.
+- **Por dia da semana**: sete barras, o dia de mais gastos em destaque e a frase "Você gasta mais às sextas: 41% das despesas do período."
+- **Por cartão** e **por forma de pagamento**: barras horizontais, do maior para o menor, com quantos lançamentos.
+- **Evolução anual** (só na aba Ano): os últimos cinco anos, com receitas, despesas e saldo.
+- O botão de baixar do design é a exportação (RN-151, T-125).
+
 ## Onboarding
 
 Rotas em `(onboarding)` seguindo o PDF: boas-vindas (2–3 telas), primeiro lançamento guiado no chat, cartões (opcional), orçamento inicial, permissões uma a uma, tour pulável. O progresso fica no servidor (`GET/PATCH /v1/me/onboarding`) para o **checklist de primeiros passos** no Início. Dicas contextuais na primeira visita a cada tela usam um registro de "dicas vistas" no servidor (para sobreviver a reinstalação).

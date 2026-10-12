@@ -1,0 +1,60 @@
+export const textosRelatorios = {
+  titulo: 'Relatórios',
+  periodo: 'Período do relatório',
+  abas: {
+    mes: 'Mês',
+    seis: '6 meses',
+    ano: 'Ano',
+  },
+  mensal: {
+    sobrouMes: 'Sobrou em {{mes}}',
+    faltouMes: 'Faltou em {{mes}}',
+    sobrouMedia: 'Sobrou em média por mês',
+    faltouMedia: 'Faltou em média por mês',
+    receitas: 'Receitas',
+    despesas: 'Despesas',
+    grafico: 'Receitas e despesas por mês',
+    coluna: '{{mes}}: receitas {{receitas}}, despesas {{despesas}}',
+  },
+  categorias: {
+    titulo: 'Despesas por categoria',
+    outras: 'Outras',
+    vazio: 'Nenhuma despesa no período.',
+    centroMes: '{{mes}}',
+    centroPeriodo: 'No período',
+    rosca: 'Despesas por categoria: {{lista}}',
+    percentual: '{{percentual}}%',
+  },
+  dias: {
+    titulo: 'Por dia da semana',
+    curtos: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+    maior: 'Você gasta mais {{dia}}: {{percentual}}% das despesas do período.',
+    /** Com a preposição: "aos domingos", "às sextas". */
+    nomes: [
+      'aos domingos',
+      'às segundas',
+      'às terças',
+      'às quartas',
+      'às quintas',
+      'às sextas',
+      'aos sábados',
+    ],
+    coluna: '{{dia}}: {{valor}}',
+    vazio: 'Nenhuma despesa no período.',
+  },
+  cartoes: {
+    titulo: 'Por cartão',
+    vazio: 'Nenhuma compra no cartão no período.',
+  },
+  formas: {
+    titulo: 'Por forma de pagamento',
+    vazio: 'Nenhuma despesa no período.',
+  },
+  anual: {
+    titulo: 'Evolução anual',
+    saldo: 'Saldo {{valor}}',
+  },
+  quantidade: '{{quantidade}} lançamentos',
+  quantidadeUm: '1 lançamento',
+  semConexao: 'Sem conexão. Tente de novo.',
+};
