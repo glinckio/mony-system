@@ -34,6 +34,7 @@ import { BarramentoEventos } from '../../core/eventos/barramento-eventos';
 import { idDeJob } from '../../core/filas/filas';
 import { Rotina } from '../../core/rotinas/rotinas';
 import { CartoesService } from '../cartoes/cartoes.service';
+import { CotasService } from '../planos/cotas.service';
 import { paraDataDoBanco } from '../transacoes/transacoes.repository';
 import {
   type ParcelamentoDoUsuario,
@@ -63,6 +64,7 @@ export class ParcelamentosService {
     private readonly repositorio: ParcelamentosRepository,
     private readonly cartoes: CartoesService,
     private readonly eventos: BarramentoEventos,
+    private readonly cotas: CotasService,
     private readonly clock: Clock,
   ) {}
 
@@ -136,6 +138,8 @@ export class ParcelamentosService {
     const cartaoId = dados.tipo === 'compra_cartao' ? (dados.cartaoId ?? null) : null;
 
     const id = await this.repositorio.emTransacao(async (tx) => {
+      // RN-120: o parcelamento conta como um lançamento na cota do gratuito.
+      await this.cotas.consumir(contexto, 'lancamento', tx);
       const faturas =
         cartaoId === null
           ? null

@@ -15,6 +15,7 @@ import {
 
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
+import { CotasService } from '../planos/cotas.service';
 import { RelatoriosRepository } from './relatorios.repository';
 
 interface Periodo {
@@ -31,6 +32,7 @@ interface Periodo {
 export class RelatoriosService {
   constructor(
     private readonly repositorio: RelatoriosRepository,
+    private readonly cotas: CotasService,
     private readonly clock: Clock,
   ) {}
 
@@ -184,13 +186,19 @@ export class RelatoriosService {
     return { inicio, fim, itens };
   }
 
-  /** O período pedido ou, sem ele, os últimos 12 meses no dia de hoje do usuário. */
+  /**
+   * O período pedido ou, sem ele, os últimos 12 meses no dia de hoje do usuário. No gratuito, só o
+   * mês atual (RN-120).
+   */
   private async periodo(contexto: Contexto, consulta: ConsultaRelatorio): Promise<Periodo> {
     const usuarioId = usuarioDoContexto(contexto);
+    let periodo: { inicio: DataCalendario; fim: DataCalendario };
     if (consulta.inicio !== undefined && consulta.fim !== undefined) {
-      return { usuarioId, inicio: consulta.inicio, fim: consulta.fim };
+      periodo = { inicio: consulta.inicio, fim: consulta.fim };
+    } else {
+      const hoje = dataNoFuso(this.clock.agora(), await this.repositorio.fusoDoUsuario(usuarioId));
+      periodo = periodoPadraoRelatorio(hoje);
     }
-    const hoje = dataNoFuso(this.clock.agora(), await this.repositorio.fusoDoUsuario(usuarioId));
-    return { usuarioId, ...periodoPadraoRelatorio(hoje) };
+    return { usuarioId, ...(await this.cotas.periodoDoRelatorio(contexto, periodo)) };
   }
 }

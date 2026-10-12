@@ -4,6 +4,7 @@ import { EventosModule } from '../../core/eventos/eventos.module';
 import { ArquivosModule } from '../arquivos/arquivos.module';
 import { CartoesModule } from '../cartoes/cartoes.module';
 import { OrcamentosModule } from '../orcamentos/orcamentos.module';
+import { PlanosModule } from '../planos/planos.module';
 import { RecorrenciasModule } from '../recorrencias/recorrencias.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { TransacoesController } from './transacoes.controller';
@@ -18,6 +19,7 @@ import { TransacoesService } from './transacoes.service';
     OrcamentosModule,
     UsuariosModule,
     RecorrenciasModule,
+    PlanosModule,
   ],
   controllers: [TransacoesController],
   providers: [TransacoesService, TransacoesRepository],

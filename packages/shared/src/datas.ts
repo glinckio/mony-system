@@ -179,6 +179,52 @@ export function horaNoFuso(instante: Date, fuso: string = FUSO_PADRAO): string {
   return `${valor('hour')}:${valor('minute')}`;
 }
 
+const formatadoresCompletos = new Map<string, Intl.DateTimeFormat>();
+
+/** O relógio de parede do instante no fuso, lido como se fosse UTC (em ms). */
+function paredeComoUtc(instante: number, fuso: string): number {
+  let formatador = formatadoresCompletos.get(fuso);
+  if (!formatador) {
+    formatador = new Intl.DateTimeFormat('en-US', {
+      timeZone: fuso,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
+    });
+    formatadoresCompletos.set(fuso, formatador);
+  }
+  const partes = formatador.formatToParts(new Date(instante));
+  const valor = (tipo: Intl.DateTimeFormatPartTypes): number =>
+    Number(partes.find((parte) => parte.type === tipo)?.value);
+  return Date.UTC(
+    valor('year'),
+    valor('month') - 1,
+    valor('day'),
+    valor('hour'),
+    valor('minute'),
+    valor('second'),
+  );
+}
+
+/**
+ * O instante em que o dia começa no fuso do usuário (meia-noite local): `2026-10-09` em São Paulo
+ * → `2026-10-09T03:00:00Z`. É quando a cota do dia volta (RN-122, RN-123).
+ */
+export function inicioDoDiaNoFuso(data: DataCalendario, fuso: string = FUSO_PADRAO): Date {
+  const { ano, mes, dia } = partesOuErro(data);
+  const alvo = Date.UTC(ano, mes - 1, dia);
+  // Duas voltas acertam o deslocamento também perto de mudança de horário de verão.
+  let instante = alvo;
+  for (let volta = 0; volta < 2; volta += 1) {
+    instante = alvo - (paredeComoUtc(instante, fuso) - instante);
+  }
+  return new Date(instante);
+}
+
 /** Competência de um instante no fuso do usuário (o "mês atual" dele). */
 export function competenciaNoFuso(instante: Date, fuso: string = FUSO_PADRAO): Competencia {
   return competenciaDe(dataNoFuso(instante, fuso));

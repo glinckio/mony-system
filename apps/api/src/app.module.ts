@@ -23,6 +23,7 @@ import { MonyModule } from './modulos/mony/mony.module';
 import { NotificacoesModule } from './modulos/notificacoes/notificacoes.module';
 import { OrcamentosModule } from './modulos/orcamentos/orcamentos.module';
 import { ParcelamentosModule } from './modulos/parcelamentos/parcelamentos.module';
+import { PlanosModule } from './modulos/planos/planos.module';
 import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
 import { RelatoriosModule } from './modulos/relatorios/relatorios.module';
 import { TransacoesModule } from './modulos/transacoes/transacoes.module';
@@ -54,6 +55,7 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     DashboardModule,
     RelatoriosModule,
     NotificacoesModule,
+    PlanosModule,
   ],
   controllers: [SaudeController],
   providers: [

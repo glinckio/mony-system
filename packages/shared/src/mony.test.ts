@@ -7,6 +7,7 @@ import {
   eventoMonyDoSse,
   formatarEventoSse,
   LeitorSse,
+  linkDoBotao,
 } from './mony.js';
 
 describe('SSE da Mony', () => {
@@ -109,6 +110,16 @@ describe('ação do botão (RN-084)', () => {
     expect(
       esquemaAcaoMony.safeParse({ rascunhoId: id, campo: 'categoria', valor: id }).success,
     ).toBe(false);
+  });
+});
+
+describe('botão que abre uma tela (RN-123)', () => {
+  it('o [Ver planos] só abre o link; ele não é uma ação de POST /mony/acoes', () => {
+    const acao = { tipo: 'abrir', link: 'mony://planos' };
+    expect(linkDoBotao(acao)).toBe('mony://planos');
+    expect(esquemaAcaoMony.safeParse(acao).success).toBe(false);
+    expect(linkDoBotao({ tipo: 'cancelar' })).toBeNull();
+    expect(linkDoBotao({ tipo: 'abrir' })).toBeNull();
   });
 });
 

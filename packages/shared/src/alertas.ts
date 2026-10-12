@@ -133,4 +133,6 @@ export const LINKS_INTERNOS = {
     `mony://orcamentos?competencia=${competencia.slice(0, 7)}`,
   transacao: (transacaoId: string): string => `mony://transacoes/${transacaoId}`,
   parcelamento: (parcelamentoId: string): string => `mony://parcelamentos/${parcelamentoId}`,
+  /** O plano e o uso das cotas (RN-123: [Ver planos]). */
+  planos: (): string => 'mony://planos',
 } as const;

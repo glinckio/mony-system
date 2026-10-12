@@ -7,6 +7,7 @@ import { CategoriasModule } from '../categorias/categorias.module';
 import { MetasModule } from '../metas/metas.module';
 import { OrcamentosModule } from '../orcamentos/orcamentos.module';
 import { ParcelamentosModule } from '../parcelamentos/parcelamentos.module';
+import { PlanosModule } from '../planos/planos.module';
 import { RelatoriosModule } from '../relatorios/relatorios.module';
 import { TransacoesModule } from '../transacoes/transacoes.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
@@ -71,6 +72,7 @@ const FERRAMENTAS = [
     MetasModule,
     OrcamentosModule,
     ParcelamentosModule,
+    PlanosModule,
     RelatoriosModule,
     TransacoesModule,
     UsuariosModule,

@@ -40,6 +40,7 @@ import { esquemaExclusaoTransacao } from '@mony/shared/recorrencias';
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
 import { criarDto } from '../../core/openapi/dto';
+import { RecursoLimitado } from '../planos/recurso-limitado.decorator';
 import { TransacoesService } from './transacoes.service';
 
 class TransacaoDto extends criarDto(esquemaTransacao) {}
@@ -90,6 +91,7 @@ export class TransacoesController {
 
   @Post()
   @Idempotente()
+  @RecursoLimitado('lancamento')
   @ApiCreatedResponse({
     type: RespostaTransacaoDto,
     description: 'Lançamento gravado e o impacto dele no orçamento e no cartão.',

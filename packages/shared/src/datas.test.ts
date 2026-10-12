@@ -9,6 +9,7 @@ import {
   ehCompetencia,
   ehDataCalendario,
   ehFusoValido,
+  inicioDoDiaNoFuso,
   somarMeses,
   ultimoDiaDaCompetencia,
   ultimoDiaDoMes,
@@ -136,5 +137,32 @@ describe('fuso do usuário', () => {
   it('recusa instante inválido e fuso desconhecido', () => {
     expect(() => dataNoFuso(new Date('não é data'))).toThrow(RangeError);
     expect(() => dataNoFuso(instante, 'Brasil/Inventado')).toThrow(RangeError);
+  });
+});
+
+describe('inicioDoDiaNoFuso', () => {
+  it('RN-122 a meia-noite do dia no fuso do usuário, quando a cota volta', () => {
+    expect(inicioDoDiaNoFuso('2026-10-09', 'America/Sao_Paulo').toISOString()).toBe(
+      '2026-10-09T03:00:00.000Z',
+    );
+    expect(inicioDoDiaNoFuso('2026-10-09', 'America/Manaus').toISOString()).toBe(
+      '2026-10-09T04:00:00.000Z',
+    );
+    expect(inicioDoDiaNoFuso('2026-10-09', 'UTC').toISOString()).toBe('2026-10-09T00:00:00.000Z');
+    expect(inicioDoDiaNoFuso('2026-10-09', 'Asia/Tokyo').toISOString()).toBe(
+      '2026-10-08T15:00:00.000Z',
+    );
+  });
+
+  it('acerta o deslocamento de cada lado do horário de verão', () => {
+    expect(inicioDoDiaNoFuso('2026-01-15', 'America/New_York').toISOString()).toBe(
+      '2026-01-15T05:00:00.000Z',
+    );
+    expect(inicioDoDiaNoFuso('2026-07-15', 'America/New_York').toISOString()).toBe(
+      '2026-07-15T04:00:00.000Z',
+    );
+    expect(
+      dataNoFuso(inicioDoDiaNoFuso('2026-03-08', 'America/New_York'), 'America/New_York'),
+    ).toBe('2026-03-08');
   });
 });

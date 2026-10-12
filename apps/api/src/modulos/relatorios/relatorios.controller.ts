@@ -19,6 +19,7 @@ import {
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { criarDto } from '../../core/openapi/dto';
+import { RecursoLimitado } from '../planos/recurso-limitado.decorator';
 import { RelatoriosService } from './relatorios.service';
 
 class ConsultaRelatorioDto extends criarDto(esquemaConsultaRelatorio) {}
@@ -36,6 +37,7 @@ class RelatorioFormasPagamentoDto extends criarDto(esquemaRelatorioFormasPagamen
  */
 @ApiTags('relatorios')
 @ApiBearerAuth()
+@RecursoLimitado('relatorio')
 @Controller('relatorios')
 export class RelatoriosController {
   constructor(private readonly relatorios: RelatoriosService) {}

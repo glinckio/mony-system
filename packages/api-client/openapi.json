@@ -809,7 +809,8 @@
         ],
         "tags": [
           "cartoes"
-        ]
+        ],
+        "x-recurso-limitado": "cartao"
       }
     },
     "/v1/cartoes/{id}": {
@@ -1037,6 +1038,32 @@
         ],
         "tags": [
           "cartoes"
+        ]
+      }
+    },
+    "/v1/assinatura/uso": {
+      "get": {
+        "operationId": "usoAssinatura",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "O plano que vale agora e, no gratuito, o uso de cada limite (RN-120).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsoPlanoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "assinatura"
         ]
       }
     },
@@ -1308,7 +1335,8 @@
         ],
         "tags": [
           "transacoes"
-        ]
+        ],
+        "x-recurso-limitado": "lancamento"
       }
     },
     "/v1/transacoes/totais": {
@@ -1765,7 +1793,8 @@
         ],
         "tags": [
           "recorrencias"
-        ]
+        ],
+        "x-recurso-limitado": "lancamento"
       }
     },
     "/v1/recorrencias/{id}": {
@@ -2330,7 +2359,8 @@
         ],
         "tags": [
           "parcelamentos"
-        ]
+        ],
+        "x-recurso-limitado": "lancamento"
       }
     },
     "/v1/parcelamentos/simular": {
@@ -2593,7 +2623,8 @@
         ],
         "tags": [
           "relatorios"
-        ]
+        ],
+        "x-recurso-limitado": "relatorio"
       }
     },
     "/v1/relatorios/anual": {
@@ -2636,7 +2667,8 @@
         ],
         "tags": [
           "relatorios"
-        ]
+        ],
+        "x-recurso-limitado": "relatorio"
       }
     },
     "/v1/relatorios/categorias": {
@@ -2692,7 +2724,8 @@
         ],
         "tags": [
           "relatorios"
-        ]
+        ],
+        "x-recurso-limitado": "relatorio"
       }
     },
     "/v1/relatorios/dias-da-semana": {
@@ -2735,7 +2768,8 @@
         ],
         "tags": [
           "relatorios"
-        ]
+        ],
+        "x-recurso-limitado": "relatorio"
       }
     },
     "/v1/relatorios/cartoes": {
@@ -2778,7 +2812,8 @@
         ],
         "tags": [
           "relatorios"
-        ]
+        ],
+        "x-recurso-limitado": "relatorio"
       }
     },
     "/v1/relatorios/formas-pagamento": {
@@ -2821,7 +2856,8 @@
         ],
         "tags": [
           "relatorios"
-        ]
+        ],
+        "x-recurso-limitado": "relatorio"
       }
     },
     "/v1/dashboard": {
@@ -5549,6 +5585,90 @@
           "fatura",
           "transacao",
           "impacto"
+        ]
+      },
+      "UsoPlanoDto": {
+        "type": "object",
+        "properties": {
+          "plano": {
+            "type": "string",
+            "enum": [
+              "teste",
+              "gratuito",
+              "mensal",
+              "anual"
+            ]
+          },
+          "limitado": {
+            "type": "boolean"
+          },
+          "testeFim": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "limites": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "recurso": {
+                  "type": "string",
+                  "enum": [
+                    "lancamento",
+                    "mensagem_mony",
+                    "leitura_documento",
+                    "cartao",
+                    "lista_compras",
+                    "lembrete_ativo",
+                    "relatorio"
+                  ]
+                },
+                "periodo": {
+                  "type": "string",
+                  "enum": [
+                    "dia",
+                    "mes",
+                    "quantidade"
+                  ]
+                },
+                "uso": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "limite": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "renovaEm": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "recurso",
+                "periodo",
+                "uso",
+                "limite",
+                "renovaEm"
+              ]
+            }
+          }
+        },
+        "required": [
+          "plano",
+          "limitado",
+          "testeFim",
+          "limites"
         ]
       },
       "NovoArquivoDto": {

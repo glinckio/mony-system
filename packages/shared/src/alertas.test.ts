@@ -104,6 +104,7 @@ describe('links internos (RN-105)', () => {
       LINKS_INTERNOS.transacao(id),
       LINKS_INTERNOS.parcelamento(id),
       LINKS_INTERNOS.mony(),
+      LINKS_INTERNOS.planos(),
     ]) {
       expect(link).toMatch(REGEX_LINK_INTERNO);
     }

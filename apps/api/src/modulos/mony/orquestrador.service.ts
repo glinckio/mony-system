@@ -16,6 +16,8 @@ import {
 } from '../../integracoes/ia/llm.provider';
 import { ErroTranscricao, TranscricaoProvider } from '../../integracoes/ia/transcricao.provider';
 import { type ArquivoMony, ArquivosService } from '../arquivos/arquivos.service';
+import { CotasService } from '../planos/cotas.service';
+import { avisoDoLimite, ehVerPlanos } from './aviso-limite';
 import { ConfigMonyService } from './config.service';
 import { ContextoMonyService } from './contexto.service';
 import { DocumentosMony, type LeituraNoChat } from './documentos.service';
@@ -70,12 +72,15 @@ export class MonyOrquestrador {
     private readonly arquivos: ArquivosService,
     private readonly documentos: DocumentosMony,
     private readonly config: ConfigMonyService,
+    private readonly cotas: CotasService,
   ) {}
 
   /**
    * Os eventos da resposta; terminam com `fim` (o id da resposta gravada). A mesma chave de
    * idempotência repete a resposta já gravada; se a primeira tentativa caiu antes de responder, a
-   * mensagem do usuário não é gravada de novo e a resposta é refeita.
+   * mensagem do usuário não é gravada de novo e a resposta é refeita. No gratuito, a mensagem
+   * (texto ou áudio) e a leitura de foto ou PDF contam na cota (RN-120); passou do limite, a Mony
+   * só avisa, com o [Ver planos] (RN-123).
    */
   async *processar(
     contexto: Contexto,
@@ -110,6 +115,18 @@ export class MonyOrquestrador {
         return;
       }
     }
+    let aviso: ReturnType<typeof avisoDoLimite> = null;
+    if (!pergunta) {
+      try {
+        await this.cotas.consumir(
+          contexto,
+          arquivo === null || arquivo.tipo === 'audio' ? 'mensagem_mony' : 'leitura_documento',
+        );
+      } catch (erro) {
+        aviso = avisoDoLimite(erro);
+        if (aviso === null) throw erro;
+      }
+    }
     pergunta ??= await this.salvar({
       usuarioId,
       conversaId,
@@ -128,9 +145,17 @@ export class MonyOrquestrador {
     let texto = '';
     const componentes: ComponenteMony[] = [];
     let falha: string | null = null;
+    if (aviso) {
+      texto = aviso.texto;
+      componentes.push(aviso.componente);
+      yield { tipo: 'texto.delta', texto };
+      yield { tipo: 'componente', componente: aviso.componente };
+    }
     // T-065: foto, print ou PDF vira lançamentos a confirmar, sem as regras nem a conversa.
     const documento =
-      pergunta.anexoId !== null && (pergunta.tipo === 'imagem' || pergunta.tipo === 'pdf')
+      aviso === null &&
+      pergunta.anexoId !== null &&
+      (pergunta.tipo === 'imagem' || pergunta.tipo === 'pdf')
         ? await this.lerDocumento(contexto, pergunta, pergunta.anexoId, sinal)
         : null;
     if (documento?.erro) {
@@ -145,7 +170,12 @@ export class MonyOrquestrador {
       }
     }
     // T-064: o áudio vira texto antes de tudo; daí em diante é como se a pessoa tivesse escrito.
-    if (pergunta.tipo === 'audio' && pergunta.conteudo === null && pergunta.anexoId !== null) {
+    if (
+      aviso === null &&
+      pergunta.tipo === 'audio' &&
+      pergunta.conteudo === null &&
+      pergunta.anexoId !== null
+    ) {
       const transcrito = yield* this.transcrever(contexto, pergunta, pergunta.anexoId, sinal);
       if (transcrito === null) {
         if (sinal?.aborted) return;
@@ -156,11 +186,11 @@ export class MonyOrquestrador {
     }
     if (sinal?.aborted) return;
     const roteado =
-      falha === null && documento === null && pergunta.conteudo !== null
+      aviso === null && falha === null && documento === null && pergunta.conteudo !== null
         ? await this.regras.responder(contexto, conversaId, pergunta.conteudo)
         : null;
     if (roteado === null) {
-      // Documento lido, ou o arquivo não virou texto: nada de regras nem conversa.
+      // Limite do gratuito, documento lido ou arquivo que não virou texto: sem regras nem conversa.
     } else if (roteado.tipo === 'resposta') {
       texto = roteado.resposta.texto;
       yield { tipo: 'texto.delta', texto };
@@ -381,7 +411,12 @@ export class MonyOrquestrador {
           conteudo: saida.conteudo,
           erro: saida.erro,
         });
-        componentes.push(...saida.componentes);
+        // O [Ver planos] aparece uma vez, mesmo com mais de uma ferramenta no limite.
+        for (const componente of saida.componentes) {
+          if (!ehVerPlanos(componente) || !componentes.some(ehVerPlanos)) {
+            componentes.push(componente);
+          }
+        }
       }
       mensagens.push(
         {

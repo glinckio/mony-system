@@ -10,12 +10,26 @@ import { FAIXAS_ORCAMENTO } from './orcamentos.js';
 import { CAMPOS_RASCUNHO } from './rascunhos.js';
 import { VALOR_MAXIMO_CENTAVOS } from './transacoes.js';
 
-/** Uma opção de botão. O `acao` volta inteiro em `POST /mony/acoes`. */
+/** Uma opção de botão. O `acao` volta inteiro em `POST /mony/acoes`, menos o de abrir uma tela. */
 export const esquemaOpcaoBotao = z.object({
   id: z.string(),
   rotulo: z.string(),
   acao: z.record(z.string(), z.unknown()),
 });
+
+/**
+ * Botão que só abre uma tela do app pelo link interno (`LINKS_INTERNOS`), como o [Ver planos]
+ * (RN-123). O app abre a tela e não manda nada a `POST /mony/acoes`.
+ */
+export const esquemaAcaoAbrir = z.object({ tipo: z.literal('abrir'), link: z.string() });
+
+export type AcaoAbrir = z.infer<typeof esquemaAcaoAbrir>;
+
+/** O link do botão, se ele só abre uma tela. */
+export function linkDoBotao(acao: Record<string, unknown>): string | null {
+  const lida = esquemaAcaoAbrir.safeParse(acao);
+  return lida.success ? lida.data.link : null;
+}
 
 /**
  * RN-089: o efeito do lançamento gravado no orçamento da categoria (no mês da data) e no limite do

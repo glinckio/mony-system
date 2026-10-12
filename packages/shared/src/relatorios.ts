@@ -28,6 +28,21 @@ export function periodoPadraoRelatorio(hoje: DataCalendario): {
   return { inicio: somarMeses(atual, -11), fim: ultimoDiaDaCompetencia(atual) };
 }
 
+/**
+ * RN-120: no plano gratuito, os relatórios mostram só o mês atual. O período pedido fica dentro do
+ * mês de hoje; `null` quando não tem nenhum dia nele.
+ */
+export function periodoNoGratuito(
+  periodo: { inicio: DataCalendario; fim: DataCalendario },
+  hoje: DataCalendario,
+): { inicio: DataCalendario; fim: DataCalendario } | null {
+  const primeiro = competenciaDe(hoje);
+  const ultimo = ultimoDiaDaCompetencia(primeiro);
+  const inicio = periodo.inicio > primeiro ? periodo.inicio : primeiro;
+  const fim = periodo.fim < ultimo ? periodo.fim : ultimo;
+  return inicio <= fim ? { inicio, fim } : null;
+}
+
 /** Competências de `inicio` a `fim`, inclusive, em ordem. */
 export function competenciasEntre(inicio: DataCalendario, fim: DataCalendario): Competencia[] {
   const competencias: Competencia[] = [];

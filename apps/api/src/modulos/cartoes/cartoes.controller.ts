@@ -36,6 +36,7 @@ import {
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
 import { criarDto } from '../../core/openapi/dto';
+import { RecursoLimitado } from '../planos/recurso-limitado.decorator';
 import { CartoesService } from './cartoes.service';
 
 class CartaoDto extends criarDto(esquemaCartao) {}
@@ -73,6 +74,7 @@ export class CartoesController {
   }
 
   @Post()
+  @RecursoLimitado('cartao')
   @ApiCreatedResponse({ type: CartaoDto, description: 'Cartão criado (RN-030).' })
   criar(@ContextoAtual() contexto: Contexto, @Body() dados: NovoCartaoDto): Promise<Cartao> {
     return this.cartoes.criar(contexto, dados);
