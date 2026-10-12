@@ -26,7 +26,8 @@ export const esquemaResumoLancamento = z.object({
   /** No parcelamento, o total. */
   valorCentavos: z.number().int(),
   data: z.string(),
-  categoria: z.string(),
+  /** `null` no lançamento lido de documento que ainda não tem categoria (T-065). */
+  categoria: z.string().nullable(),
   formaPagamento: z.enum(FORMAS_PAGAMENTO).nullable(),
   cartao: z.string().nullable(),
   /** Parcelas da compra; `null` à vista. */
@@ -36,7 +37,9 @@ export const esquemaResumoLancamento = z.object({
 
 /**
  * Componentes do chat (doc 08): botões de uma pergunta ou confirmação, e o cartão de resumo do que
- * foi gravado, com as ações dele ([Desfazer]). Os dois trazem `opcoes`.
+ * foi gravado, com as ações dele ([Desfazer]). Os dois trazem `opcoes`. O resumo com `aConfirmar`
+ * é um lançamento lido de foto ou PDF que ainda não foi gravado (RN-083), com [Confirmar] e
+ * [Descartar].
  */
 export const esquemaComponenteMony = z.discriminatedUnion('tipo', [
   z.object({ tipo: z.literal('botoes'), opcoes: z.array(esquemaOpcaoBotao).min(1) }),
@@ -44,6 +47,7 @@ export const esquemaComponenteMony = z.discriminatedUnion('tipo', [
     tipo: z.literal('resumo'),
     lancamento: esquemaResumoLancamento,
     opcoes: z.array(esquemaOpcaoBotao),
+    aConfirmar: z.boolean().optional(),
   }),
 ]);
 
@@ -64,8 +68,9 @@ export type EventoMony = z.infer<typeof esquemaEventoMony>;
 export type TipoEventoMony = EventoMony['tipo'];
 
 /**
- * A mensagem para a Mony: o texto, ou o áudio já enviado (`POST /arquivos` com tipo `audio`), que a
- * API transcreve (T-064). Um dos dois.
+ * A mensagem para a Mony: o texto, ou o arquivo já enviado em `POST /arquivos`: áudio (tipo `audio`),
+ * que a API transcreve (T-064), ou foto, print ou PDF (tipo `foto`, `comprovante` ou `pdf`), que a
+ * Mony lê e devolve como lançamentos a confirmar (T-065). Um dos dois.
  */
 export const esquemaMensagemMony = z
   .object({
@@ -187,6 +192,9 @@ export function eventoMonyDoSse(evento: EventoSse): EventoMony | null {
   }
 }
 
+/** T-065: lançamentos que a Mony aproveita de uma foto ou PDF (o resto é ignorado e avisado). */
+export const MAXIMO_LANCAMENTOS_DOCUMENTO = 50;
+
 /**
  * A ação de um botão (RN-084), devolvida inteira em `POST /mony/acoes`. O servidor confere tudo de
  * novo contra o rascunho e os dados do usuário.
@@ -195,6 +203,8 @@ export function eventoMonyDoSse(evento: EventoSse): EventoMony | null {
  * - `desfazer`: tira o lançamento que a Mony acabou de gravar, em até 24 h (RN-082).
  * - `excluir_transacao`: a confirmação da exclusão que a Mony pediu (RN-092).
  * - `pagar_fatura`: a confirmação do pagamento da fatura, no valor mostrado no botão (RN-092).
+ * - `confirmar_importacao` / `descartar_importacao`: grava ou descarta um lançamento lido de foto
+ *   ou PDF (`indice`), ou todos os que faltam (`indice: null`), RN-083 e RN-086 (T-065).
  * - `cancelar`: não faz nada.
  */
 export const esquemaAcaoMony = z.discriminatedUnion('tipo', [
@@ -214,6 +224,26 @@ export const esquemaAcaoMony = z.discriminatedUnion('tipo', [
     tipo: z.literal('pagar_fatura'),
     faturaId: z.uuid(),
     valorCentavos: z.number().int().min(1).max(VALOR_MAXIMO_CENTAVOS),
+  }),
+  z.object({
+    tipo: z.literal('confirmar_importacao'),
+    importacaoId: z.uuid(),
+    indice: z
+      .number()
+      .int()
+      .min(0)
+      .max(MAXIMO_LANCAMENTOS_DOCUMENTO - 1)
+      .nullable(),
+  }),
+  z.object({
+    tipo: z.literal('descartar_importacao'),
+    importacaoId: z.uuid(),
+    indice: z
+      .number()
+      .int()
+      .min(0)
+      .max(MAXIMO_LANCAMENTOS_DOCUMENTO - 1)
+      .nullable(),
   }),
   z.object({ tipo: z.literal('cancelar') }),
 ]);

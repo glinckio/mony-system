@@ -8,7 +8,6 @@ export const textosMony = {
   semConexao: 'Não consegui falar com a Mony. Confira a conexão e tente de novo.',
   /** Mensagem de voz (T-064). */
   audio: {
-    titulo: 'Áudio',
     gravar: 'Gravar áudio',
     /** "Gravando 0:07". */
     gravando: 'Gravando {{duracao}}',
@@ -18,9 +17,35 @@ export const textosMony = {
     semPermissao: 'Para falar com a Mony, permita o microfone nos Ajustes do aparelho.',
     falhou: 'Não consegui gravar o áudio. Tente de novo.',
   },
+  /** O arquivo da mensagem da pessoa, no balão. */
+  arquivo: {
+    audio: 'Áudio',
+    foto: 'Foto',
+    pdf: 'PDF',
+  },
+  /** Foto, print e PDF (T-065). */
+  documento: {
+    anexar: 'Mandar foto ou PDF',
+    titulo: 'Mandar para a Mony',
+    ajuda:
+      'Cupom, nota, comprovante, fatura ou extrato. Eu leio e você confirma antes de eu anotar.',
+    camera: 'Tirar foto',
+    galeria: 'Foto ou print da galeria',
+    pdf: 'PDF',
+    erros: {
+      semPermissao: 'Libere a câmera nas configurações do aparelho para fotografar.',
+      grande: 'O arquivo passa de 10 MB.',
+      tipo: 'Escolha um arquivo PDF.',
+      envio: 'Não consegui enviar o arquivo. Tente de novo.',
+    },
+  },
   resumo: {
     despesa: 'Despesa anotada',
     receita: 'Receita anotada',
+    despesaAConfirmar: 'Despesa para confirmar',
+    receitaAConfirmar: 'Receita para confirmar',
+    categoriaAEscolher: 'Categoria a escolher',
+    formaAEscolher: 'Forma a escolher',
     /** "Nubank em 3x de R$ 200,00". */
     cartaoParcelado: '{{cartao}} em {{parcelas}}x de {{valor}}',
   },

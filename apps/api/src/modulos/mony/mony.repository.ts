@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import type { AutorMensagem, FormaPagamento, TipoMensagem } from '@mony/shared/enums';
+import type {
+  AutorMensagem,
+  FormaPagamento,
+  StatusImportacao,
+  TipoImportacao,
+  TipoMensagem,
+} from '@mony/shared/enums';
 
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -53,6 +59,23 @@ export interface NovoLogIa {
   duracaoMs: number;
   erro: string | null;
 }
+
+/** Uma importação de documento (T-065) como sai do banco; `resultado` é validado por quem lê. */
+export interface ImportacaoSalva {
+  id: string;
+  arquivoId: string;
+  tipo: TipoImportacao;
+  status: StatusImportacao;
+  resultado: unknown;
+}
+
+const CAMPOS_IMPORTACAO = {
+  id: true,
+  arquivoId: true,
+  tipo: true,
+  status: true,
+  resultado: true,
+} as const;
 
 /** Um rascunho de lançamento como sai do banco; `dados` é validado por quem lê. */
 export interface RascunhoSalvo {
@@ -279,5 +302,67 @@ export class MonyRepository {
 
   async registrarLogIa(dados: NovoLogIa): Promise<void> {
     await this.prisma.cliente.logIa.create({ data: dados, select: { id: true } });
+  }
+
+  /** A importação do arquivo, se já houve leitura (o reenvio não lê de novo o que deu certo). */
+  importacaoDoArquivo(usuarioId: string, arquivoId: string): Promise<ImportacaoSalva | null> {
+    return this.prisma.cliente.importacaoDocumento.findFirst({
+      where: { usuarioId, arquivoId },
+      orderBy: { criadoEm: 'desc' },
+      select: CAMPOS_IMPORTACAO,
+    });
+  }
+
+  criarImportacao(
+    usuarioId: string,
+    arquivoId: string,
+    tipo: TipoImportacao,
+  ): Promise<ImportacaoSalva> {
+    return this.prisma.cliente.importacaoDocumento.create({
+      data: { usuarioId, arquivoId, tipo },
+      select: CAMPOS_IMPORTACAO,
+    });
+  }
+
+  async salvarImportacao(id: string, status: StatusImportacao, resultado: object): Promise<void> {
+    await this.prisma.cliente.importacaoDocumento.update({
+      where: { id },
+      data: { status, resultado: resultado as Prisma.InputJsonObject },
+      select: { id: true },
+    });
+  }
+
+  /**
+   * Muda a importação com ela travada (`FOR UPDATE`): dois toques ao mesmo tempo não pegam o mesmo
+   * lançamento. `mudar` recebe a importação e devolve o novo estado e o retorno. `null`: não é do
+   * usuário.
+   */
+  async alterarImportacao<T>(
+    usuarioId: string,
+    id: string,
+    mudar: (atual: ImportacaoSalva) => {
+      status: StatusImportacao;
+      resultado: object;
+      retorno: T;
+    },
+  ): Promise<{ retorno: T } | null> {
+    return this.prisma.cliente.$transaction(async (tx) => {
+      const travadas = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM importacoes_documento
+        WHERE id = ${id}::uuid AND usuario_id = ${usuarioId}::uuid
+        FOR UPDATE`;
+      if (travadas.length === 0) return null;
+      const atual = await tx.importacaoDocumento.findUniqueOrThrow({
+        where: { id },
+        select: CAMPOS_IMPORTACAO,
+      });
+      const { status, resultado, retorno } = mudar(atual);
+      await tx.importacaoDocumento.update({
+        where: { id },
+        data: { status, resultado: resultado as Prisma.InputJsonObject },
+        select: { id: true },
+      });
+      return { retorno };
+    });
   }
 }

@@ -128,7 +128,7 @@ export class LancamentosMony {
 
   /**
    * RN-082: [Desfazer] tira o que a Mony gravou, em até 24 horas. Só vale para lançamento de origem
-   * `mony`; parcelamento sai inteiro (cancelado).
+   * `mony` ou `foto` (lido de documento, T-065); parcelamento sai inteiro (cancelado).
    */
   async desfazer(
     contexto: Contexto,
@@ -246,7 +246,7 @@ export class LancamentosMony {
   }
 
   private conferirDesfazer(transacao: Transacao): void {
-    if (transacao.origem !== 'mony') {
+    if (transacao.origem !== 'mony' && transacao.origem !== 'foto') {
       throw new ErroDominio('REQUISICAO_INVALIDA', {
         mensagem: 'Só dá para desfazer o que a Mony lançou.',
       });

@@ -20,7 +20,7 @@ import {
 } from '@mony/shared/transacoes';
 
 import { Clock } from '../../core/clock/clock';
-import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
+import { type Contexto, origemDoLancamento, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { BarramentoEventos } from '../../core/eventos/barramento-eventos';
 import { idDeJob } from '../../core/filas/filas';
@@ -153,7 +153,7 @@ export class TransacoesService {
         data: paraDataDoBanco(data),
         status: dados.status ?? statusPadrao(dados.formaPagamento, data, hoje),
         formaPagamento: dados.formaPagamento ?? null,
-        origem: contexto.origem === 'mony' ? 'mony' : 'manual',
+        origem: origemDoLancamento(contexto),
         observacao: dados.observacao ?? null,
         categoriaId: dados.categoriaId,
         contaId: dados.contaId ?? null,

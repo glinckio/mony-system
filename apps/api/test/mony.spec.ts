@@ -231,6 +231,73 @@ describe('LlmAnthropic', () => {
     ]);
   });
 
+  it('T-065 imagem e PDF vão pela URL, e a ferramenta obrigatória vira tool_choice', async () => {
+    const buscar = vi.fn<Buscar>(() =>
+      Promise.resolve(
+        respostaSse([
+          { type: 'message_start', message: { usage: { input_tokens: 1500 } } },
+          {
+            type: 'content_block_start',
+            index: 0,
+            content_block: { type: 'tool_use', id: 'toolu_1', name: 'ler_documento', input: {} },
+          },
+          {
+            type: 'content_block_delta',
+            index: 0,
+            delta: { type: 'input_json_delta', partial_json: '{"documento":"cupom"}' },
+          },
+          { type: 'content_block_stop', index: 0 },
+          {
+            type: 'message_delta',
+            delta: { stop_reason: 'tool_use' },
+            usage: { output_tokens: 9 },
+          },
+          { type: 'message_stop' },
+        ]),
+      ),
+    );
+    const eventos = await todos(
+      new LlmAnthropic('k', 'claude-sonnet-5-5', buscar).conversar({
+        sistema: ['Leia.'],
+        ferramentas: [
+          { nome: 'ler_documento', descricao: 'Leitura.', esquemaEntrada: { type: 'object' } },
+        ],
+        ferramentaObrigatoria: 'ler_documento',
+        mensagens: [
+          {
+            papel: 'usuario',
+            conteudo: [
+              { tipo: 'imagem', url: 'https://s3.teste/foto.jpg?assinada' },
+              { tipo: 'documento', url: 'https://s3.teste/fatura.pdf?assinada' },
+              { tipo: 'texto', texto: 'Leia este documento.' },
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(eventos[0]).toMatchObject({
+      tipo: 'ferramenta',
+      nome: 'ler_documento',
+      entrada: { documento: 'cupom' },
+    });
+    const corpo = JSON.parse(buscar.mock.calls[0]?.[1]?.body as string) as Record<string, unknown>;
+    expect(corpo.tool_choice).toEqual({ type: 'tool', name: 'ler_documento' });
+    expect(corpo.messages).toEqual([
+      {
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'url', url: 'https://s3.teste/foto.jpg?assinada' } },
+          {
+            type: 'document',
+            source: { type: 'url', url: 'https://s3.teste/fatura.pdf?assinada' },
+          },
+          { type: 'text', text: 'Leia este documento.' },
+        ],
+      },
+    ]);
+  });
+
   it('limite de tokens vira parada "limite"; corpo cortado no meio é transitório', async () => {
     const limite = await todos(
       new LlmAnthropic(

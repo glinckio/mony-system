@@ -30,6 +30,8 @@ export const esquemaDadosRascunho = z.object({
   cartaoId: z.uuid().optional(),
   /** 1 é à vista. Só na compra no cartão de crédito. */
   parcelas: z.number().int().min(1).max(MAXIMO_PARCELAS).optional(),
+  /** Veio de foto ou PDF confirmado (T-065): o lançamento fica com origem `foto`. */
+  deDocumento: z.boolean().optional(),
 });
 
 export type DadosRascunho = z.infer<typeof esquemaDadosRascunho>;

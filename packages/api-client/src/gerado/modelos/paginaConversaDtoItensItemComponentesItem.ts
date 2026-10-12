@@ -29,7 +29,8 @@ export type PaginaConversaDtoItensItemComponentesItem =
          */
         valorCentavos: number;
         data: string;
-        categoria: string;
+        /** @nullable */
+        categoria: string | null;
         formaPagamento: 'cartao_credito' | 'pix' | 'debito' | 'dinheiro' | 'boleto' | null;
         /** @nullable */
         cartao: string | null;
@@ -41,4 +42,5 @@ export type PaginaConversaDtoItensItemComponentesItem =
         rotulo: string;
         acao: { [key: string]: unknown };
       }[];
+      aConfirmar?: boolean;
     };

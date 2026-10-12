@@ -165,6 +165,9 @@ export class LlmAnthropic extends LlmProvider {
             })),
           }
         : {}),
+      ...(pedido.ferramentaObrigatoria
+        ? { tool_choice: { type: 'tool', name: pedido.ferramentaObrigatoria } }
+        : {}),
       messages: pedido.mensagens.map(paraMensagemAnthropic),
       stream: true,
     };
@@ -206,5 +209,9 @@ function paraBlocoAnthropic(bloco: BlocoLlm) {
         content: bloco.conteudo,
         ...(bloco.erro ? { is_error: true } : {}),
       };
+    case 'imagem':
+      return { type: 'image', source: { type: 'url', url: bloco.url } };
+    case 'documento':
+      return { type: 'document', source: { type: 'url', url: bloco.url } };
   }
 }

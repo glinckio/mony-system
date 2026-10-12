@@ -187,7 +187,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-062b · RN-081, RN-090
 - [x] **T-064** Áudio: gravação no app + `TranscricaoProvider` (PR #61)
   - dep: T-060
-- [ ] **T-065** Foto, print e PDF: `ler_documento`, `importacoes_documento`, confirmação obrigatória
+- [x] **T-065** Foto, print e PDF: `ler_documento`, `importacoes_documento`, confirmação obrigatória (PR #62)
   - dep: T-062b · RN-083, RN-086
 - [ ] **T-066** NFC-e: leitura do QR no app, `NfceProvider`, histórico de preços, fallback por foto
   - dep: T-026, T-065 · docs: 10 (NFC-e)
@@ -273,3 +273,6 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 ## Tarefas adicionadas durante o trabalho
 
 (Agentes acrescentam aqui ou no fim da fase certa, com o próximo ID livre da faixa da fase.)
+
+- [ ] **T-149** Importação de fatura e extrato pela Mony: reconhecer a parcela ("02/10") como parte de um parcelamento e não duplicar o que já está lançado (mesmo valor, data e cartão), avisando no cartão a confirmar
+  - dep: T-065 · RN-083 · docs: 08 (Leitura de mídia)

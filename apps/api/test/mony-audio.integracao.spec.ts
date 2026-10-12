@@ -201,7 +201,7 @@ describe.runIf(ativo)('integração: áudio na Mony', () => {
     // O mesmo áudio não vale para outra mensagem.
     const repetido = await conversar(usuario, { arquivoId });
     expect(repetido.eventos).toEqual([
-      { tipo: 'erro', codigo: 'CONFLITO', mensagem: 'Este áudio já foi enviado.' },
+      { tipo: 'erro', codigo: 'CONFLITO', mensagem: 'Este arquivo já foi enviado.' },
     ]);
     expect(await mensagensDo(usuario.usuarioId)).toHaveLength(2);
   });
@@ -227,7 +227,7 @@ describe.runIf(ativo)('integração: áudio na Mony', () => {
     ]);
   });
 
-  it('RN-092 áudio de outra pessoa, que não é áudio ou que não chegou ao S3 não vira mensagem', async () => {
+  it('RN-092 áudio de outra pessoa ou que não chegou ao S3 não vira mensagem', async () => {
     const usuario = await usuarioNovo();
     const outro = await usuarioNovo();
 
@@ -237,18 +237,12 @@ describe.runIf(ativo)('integração: áudio na Mony', () => {
       { tipo: 'erro', codigo: 'NAO_ENCONTRADO', mensagem: expect.any(String) as string },
     ]);
 
-    const comprovante = await audio(usuario, { tipo: 'comprovante', tipoConteudo: 'image/jpeg' });
-    expect((await conversar(usuario, { arquivoId: comprovante })).eventos[0]).toMatchObject({
-      tipo: 'erro',
-      codigo: 'NAO_ENCONTRADO',
-    });
-
     const naoEnviado = await audio(usuario, { enviado: false });
     expect((await conversar(usuario, { arquivoId: naoEnviado })).eventos).toEqual([
       {
         tipo: 'erro',
         codigo: 'REQUISICAO_INVALIDA',
-        mensagem: 'O áudio ainda não terminou de ser enviado.',
+        mensagem: 'O arquivo ainda não terminou de ser enviado.',
       },
     ]);
 

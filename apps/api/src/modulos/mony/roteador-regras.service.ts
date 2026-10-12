@@ -332,8 +332,14 @@ export class RoteadorRegras {
     if (completo.formaPagamento === 'cartao_credito') {
       const [unico, ...outros] = catalogo.cartoes;
       if (!unico) {
-        const { valorCentavos, descricao, data, categoriaId } = completo;
-        completo = { valorCentavos, descricao, data, ...(categoriaId ? { categoriaId } : {}) };
+        const { valorCentavos, descricao, data, categoriaId, deDocumento } = completo;
+        completo = {
+          valorCentavos,
+          descricao,
+          data,
+          ...(categoriaId ? { categoriaId } : {}),
+          ...(deDocumento ? { deDocumento } : {}),
+        };
         avisos.push('Você ainda não tem cartão de crédito cadastrado.');
       } else if (outros.length === 0) {
         completo.cartaoId ??= unico.id;
@@ -433,6 +439,8 @@ export class RoteadorRegras {
     const forma = dados.formaPagamento ?? 'pix';
     const descricao = dados.descricao ?? categoria?.nome ?? 'Gasto';
     const parcelas = dados.parcelas ?? 1;
+    // T-065: o lançamento lido de foto ou PDF fica com origem `foto`.
+    if (dados.deDocumento) contexto = { ...contexto, deDocumento: true };
     const { lancamento, resumo } =
       forma === 'cartao_credito' && dados.cartaoId !== undefined && parcelas > 1
         ? await this.lancamentos.registrarParcelamento(contexto, {
