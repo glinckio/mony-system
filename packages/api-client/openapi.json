@@ -7535,66 +7535,32 @@
         "type": "object",
         "properties": {
           "acao": {
-            "oneOf": [
-              {
-                "type": "object",
-                "properties": {
-                  "etapa": {
-                    "type": "string",
-                    "const": "categoria"
-                  },
-                  "valorCentavos": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 100000000000
-                  },
-                  "categoriaId": {
-                    "type": "string",
-                    "format": "uuid",
-                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                  }
-                },
-                "required": [
-                  "etapa",
-                  "valorCentavos",
-                  "categoriaId"
+            "type": "object",
+            "properties": {
+              "rascunhoId": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "campo": {
+                "type": "string",
+                "enum": [
+                  "categoria",
+                  "forma_pagamento",
+                  "cartao",
+                  "parcelas"
                 ]
               },
-              {
-                "type": "object",
-                "properties": {
-                  "etapa": {
-                    "type": "string",
-                    "const": "forma"
-                  },
-                  "valorCentavos": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 100000000000
-                  },
-                  "categoriaId": {
-                    "type": "string",
-                    "format": "uuid",
-                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                  },
-                  "formaPagamento": {
-                    "type": "string",
-                    "enum": [
-                      "cartao_credito",
-                      "pix",
-                      "debito",
-                      "dinheiro",
-                      "boleto"
-                    ]
-                  }
-                },
-                "required": [
-                  "etapa",
-                  "valorCentavos",
-                  "categoriaId",
-                  "formaPagamento"
-                ]
+              "valor": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 50
               }
+            },
+            "required": [
+              "rascunhoId",
+              "campo",
+              "valor"
             ]
           }
         },

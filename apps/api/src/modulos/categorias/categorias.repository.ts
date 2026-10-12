@@ -41,6 +41,22 @@ export class CategoriasRepository {
     });
   }
 
+  /**
+   * RN-081: as categorias de despesa com mais lançamentos desde `desde` e, no empate (ou sem
+   * lançamentos), pelo nome.
+   */
+  maisUsadas(usuarioId: string, desde: Date, quantidade: number): Promise<CategoriaDoUsuario[]> {
+    return this.prisma.cliente.$queryRaw<CategoriaDoUsuario[]>`
+      SELECT c.id::text AS id, c.nome, c.tipo::text AS tipo, c.cor, c.icone, c.padrao
+      FROM categorias c
+      LEFT JOIN transacoes t
+        ON t.categoria_id = c.id AND t.excluido_em IS NULL AND t.data >= ${desde}::date
+      WHERE c.usuario_id = ${usuarioId}::uuid AND c.tipo = 'despesa' AND c.excluido_em IS NULL
+      GROUP BY c.id
+      ORDER BY count(t.id) DESC, c.nome ASC
+      LIMIT ${quantidade}`;
+  }
+
   buscar(usuarioId: string, id: string): Promise<CategoriaDoUsuario | null> {
     return this.prisma.cliente.categoria.findFirst({
       where: { id, usuarioId },

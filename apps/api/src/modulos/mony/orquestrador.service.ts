@@ -92,19 +92,31 @@ export class MonyOrquestrador {
     let texto = '';
     const componentes: ComponenteMony[] = [];
     let falhou = false;
-    const regra = await this.regras.responder(contexto, dados.texto);
-    if (regra) {
-      texto = regra.texto;
+    const roteado = await this.regras.responder(contexto, conversaId, dados.texto);
+    if (roteado.tipo === 'resposta') {
+      texto = roteado.resposta.texto;
       yield { tipo: 'texto.delta', texto };
-      if (regra.componente) {
-        componentes.push(regra.componente);
-        yield { tipo: 'componente', componente: regra.componente };
+      if (roteado.resposta.componente) {
+        componentes.push(roteado.resposta.componente);
+        yield { tipo: 'componente', componente: roteado.resposta.componente };
       }
     } else {
-      for await (const evento of this.conversarComModelo(contexto, conversaId, pergunta, sinal)) {
+      for await (const evento of this.conversarComModelo(
+        contexto,
+        conversaId,
+        pergunta,
+        roteado.rascunho?.descricao ?? null,
+        sinal,
+      )) {
         if (evento.tipo === 'texto.delta') texto += evento.texto;
         if (evento.tipo === 'erro') falhou = true;
         yield evento;
+      }
+      // RN-080: com rascunho em andamento, a pergunta pendente volta com os botões.
+      const pendente = roteado.rascunho?.pergunta.componente;
+      if (pendente && !sinal?.aborted) {
+        componentes.push(pendente);
+        yield { tipo: 'componente', componente: pendente };
       }
     }
     // O app saiu antes do fim: nada de resposta gravada; a mesma chave refaz a resposta.
@@ -151,6 +163,7 @@ export class MonyOrquestrador {
     contexto: Contexto,
     conversaId: string,
     pergunta: MensagemSalva,
+    rascunho: string | null,
     sinal: AbortSignal | undefined,
   ): AsyncGenerator<EventoMony> {
     const usuarioId = usuarioDoContexto(contexto);
@@ -169,8 +182,12 @@ export class MonyOrquestrador {
       pergunta.conteudo ?? '',
       HISTORICO_CARACTERES,
     );
+    const emAndamento =
+      rascunho === null
+        ? ''
+        : `\n- Lançamento em andamento (rascunho): ${rascunho} Se a mensagem responde a ele, peça para a pessoa tocar num dos botões que aparecem abaixo da sua resposta; não comece outro lançamento (RN-085).`;
     const pedido = {
-      sistema: [PROMPT_SISTEMA, contextoUsuario],
+      sistema: [PROMPT_SISTEMA, contextoUsuario + emAndamento],
       ferramentas: this.ferramentas.paraModelo(),
       mensagens,
     };

@@ -27,6 +27,7 @@ import { criarClientePrisma } from '../src/core/prisma/cliente';
 import { LlmFake, RESPOSTA_FAKE } from '../src/integracoes/ia/llm-fake';
 import { type BlocoLlm, ErroLlm, LlmProvider } from '../src/integracoes/ia/llm.provider';
 import { MENSAGEM_FALHA } from '../src/modulos/mony/orquestrador.service';
+import { RascunhosService } from '../src/modulos/mony/rascunhos.service';
 import { PROMPT_SISTEMA } from '../src/modulos/mony/prompts/sistema';
 
 const ativo = process.env.TESTES_INTEGRACAO === '1';
@@ -154,7 +155,7 @@ describe.runIf(ativo)('integração: Mony', () => {
       },
     });
 
-  it('"gastei 10": texto, botões de categoria (a mais usada primeiro), forma de pagamento e a despesa gravada', async () => {
+  it('RN-080 RN-081 RN-084 "gastei 10": categorias (as mais usadas e [Outra]), forma de pagamento e a despesa gravada', async () => {
     const usuario = await usuarioNovo();
     const categorias = await prisma.categoria.findMany({
       where: { usuarioId: usuario.usuarioId, tipo: 'despesa' },
@@ -175,7 +176,7 @@ describe.runIf(ativo)('integração: Mony', () => {
       })),
     });
 
-    const { resposta, eventos } = await conversar(usuario, 'gastei 10 no mercado');
+    const { resposta, eventos } = await conversar(usuario, 'gastei 10');
     expect(resposta.statusCode).toBe(200);
     expect(resposta.headers['content-type']).toBe('text/event-stream; charset=utf-8');
     expect(resposta.headers['x-request-id']).toBeTruthy();
@@ -185,8 +186,12 @@ describe.runIf(ativo)('integração: Mony', () => {
       texto: `Anotei ${formatarCentavos(1_000)}. Em qual categoria?`,
     });
     const deCategoria = botoes(eventos[1]);
-    expect(deCategoria).toHaveLength(4);
+    expect(deCategoria).toHaveLength(5);
     expect(deCategoria[0]?.rotulo).toBe(preferida.nome);
+    expect(deCategoria.at(-1)?.rotulo).toBe('Outra');
+    expect(await prisma.rascunhoLancamento.count({ where: { usuarioId: usuario.usuarioId } })).toBe(
+      1,
+    );
     // A regra resolve sem o modelo.
     expect(modelo.pedidos).toEqual([]);
 
@@ -196,10 +201,12 @@ describe.runIf(ativo)('integração: Mony', () => {
     expect(forma.statusCode, forma.body).toBe(200);
     const comoPagou = forma.json<RespostaAcaoMony>();
     expect(comoPagou.texto).toBe('Como você pagou?');
+    // Sem cartão cadastrado, sem o crédito.
     expect(botoes(comoPagou.componente).map(({ rotulo }) => rotulo)).toEqual([
       'Pix',
       'Débito',
       'Dinheiro',
+      'Boleto',
     ]);
 
     const pix = botoes(comoPagou.componente)[0];
@@ -209,8 +216,14 @@ describe.runIf(ativo)('integração: Mony', () => {
     expect(fim.texto).toBe(
       `Pronto! Anotei ${formatarCentavos(1_000)} em ${preferida.nome}, no Pix.`,
     );
-    // O mesmo toque repetido (rede ruim) não grava de novo.
+    // O mesmo toque repetido (rede ruim) não grava de novo; outro toque no botão velho, 410.
     expect((await tocar(usuario, pix, chave)).json<RespostaAcaoMony>()).toEqual(fim);
+    const velho = await tocar(usuario, pix);
+    expect(velho.statusCode).toBe(410);
+    expect(velho.json()).toMatchObject({ erro: { codigo: 'RASCUNHO_EXPIRADO' } });
+    expect(await prisma.rascunhoLancamento.count({ where: { usuarioId: usuario.usuarioId } })).toBe(
+      0,
+    );
     const gravadas = await prisma.transacao.findMany({
       where: { usuarioId: usuario.usuarioId, origem: 'mony' },
       select: {
@@ -248,7 +261,7 @@ describe.runIf(ativo)('integração: Mony', () => {
       ['mony', 'texto', 'Como você pagou?', 1],
       ['usuario', 'botao', preferida.nome, 0],
       ['mony', 'texto', `Anotei ${formatarCentavos(1_000)}. Em qual categoria?`, 1],
-      ['usuario', 'texto', 'gastei 10 no mercado', 0],
+      ['usuario', 'texto', 'gastei 10', 0],
     ]);
     expect(pagina.itens[4]?.componentes[0]).toEqual(
       eventos[1]?.tipo === 'componente' && eventos[1].componente,
@@ -465,10 +478,236 @@ describe.runIf(ativo)('integração: Mony', () => {
     });
     expect(vazio.statusCode).toBe(400);
 
+    // Botão do rascunho de outra pessoa: para quem toca, o rascunho não existe.
     const outro = await usuarioNovo();
     const { eventos } = await conversar(outro, 'gastei 25');
     const alheio = botoes(eventos[1])[0];
     if (!alheio) throw new Error('sem botão');
-    expect((await tocar(usuario, alheio)).statusCode).toBe(404);
+    expect((await tocar(usuario, alheio)).statusCode).toBe(410);
+
+    // No próprio rascunho, categoria de outra pessoa não vale.
+    const meu = botoes((await conversar(usuario, 'gastei 30')).eventos[1])[0];
+    if (!meu) throw new Error('sem botão');
+    const trocado = await tocar(usuario, {
+      ...meu,
+      acao: { ...meu.acao, valor: alheio.acao.valor },
+    });
+    expect(trocado.statusCode).toBe(404);
+  });
+
+  async function cartaoNovo(usuario: Usuario, nome: string) {
+    const resposta = await app.inject({
+      method: 'POST',
+      url: '/v1/cartoes',
+      headers: { authorization: `Bearer ${usuario.acesso}` },
+      payload: {
+        nome,
+        limiteTotalCentavos: 500_000,
+        diaFechamento: 3,
+        diaVencimento: 10,
+        cor: '#7C3AED',
+      },
+    });
+    expect(resposta.statusCode, resposta.body).toBe(201);
+    return resposta.json<{ id: string; nome: string }>();
+  }
+
+  const rascunhoDo = (usuarioId: string) =>
+    prisma.rascunhoLancamento.findMany({
+      where: { usuarioId },
+      select: { id: true, dados: true, campoPendente: true, expiraEm: true },
+    });
+
+  it('RN-080 o que a mensagem já diz não vira pergunta: categoria, forma e data saem do texto', async () => {
+    const usuario = await usuarioNovo();
+    const { texto, eventos } = await conversar(usuario, 'gastei 15,50 ontem no mercado no pix');
+    expect(texto).toBe(`Pronto! Anotei ${formatarCentavos(1_550)} em Mercado, no Pix, em 14/10.`);
+    expect(eventos.some(({ tipo }) => tipo === 'componente')).toBe(false);
+    expect(
+      await prisma.transacao.findMany({
+        where: { usuarioId: usuario.usuarioId },
+        select: { descricao: true, valor: true, data: true, formaPagamento: true, origem: true },
+      }),
+    ).toEqual([
+      {
+        descricao: 'Mercado',
+        valor: 1_550n,
+        data: new Date('2026-10-14T00:00:00Z'),
+        formaPagamento: 'pix',
+        origem: 'mony',
+      },
+    ]);
+    expect(await rascunhoDo(usuario.usuarioId)).toEqual([]);
+  });
+
+  it('RN-080 RN-085 no cartão: a resposta em texto completa o rascunho e grava o parcelamento', async () => {
+    const usuario = await usuarioNovo();
+    const nubank = await cartaoNovo(usuario, 'Nubank');
+    await cartaoNovo(usuario, 'Inter');
+
+    const primeira = await conversar(usuario, 'gastei 80 de iFood no nubank em 3x');
+    // Cartão e parcelas vieram no texto; falta a categoria.
+    expect(primeira.texto).toBe(`Anotei ${formatarCentavos(8_000)}. Em qual categoria?`);
+    const [rascunho] = await rascunhoDo(usuario.usuarioId);
+    expect(rascunho).toMatchObject({
+      campoPendente: 'categoria',
+      dados: {
+        valorCentavos: 8_000,
+        descricao: 'iFood',
+        data: '2026-10-15',
+        formaPagamento: 'cartao_credito',
+        cartaoId: nubank.id,
+        parcelas: 3,
+      },
+    });
+    // RN-088: vale 24 horas.
+    expect(rascunho?.expiraEm).toEqual(new Date('2026-10-16T15:00:00Z'));
+
+    const segunda = await conversar(usuario, 'Alimentação');
+    expect(segunda.texto).toMatch(
+      /^Pronto! Anotei R\$\s80,00 de iFood em Alimentação, no Nubank em 3x de R\$\s26,6\d\.$/,
+    );
+    expect(modelo.pedidos).toEqual([]);
+    const parcelamentos = await prisma.parcelamento.findMany({
+      where: { usuarioId: usuario.usuarioId },
+      select: { nome: true, valorTotal: true, totalParcelas: true, cartaoId: true },
+    });
+    expect(parcelamentos).toEqual([
+      { nome: 'iFood', valorTotal: 8_000n, totalParcelas: 3, cartaoId: nubank.id },
+    ]);
+    expect(await rascunhoDo(usuario.usuarioId)).toEqual([]);
+  });
+
+  it('RN-080 crédito pelos botões: forma, cartão (com mais de um) e parcelas', async () => {
+    const usuario = await usuarioNovo();
+    await cartaoNovo(usuario, 'Nubank');
+    const inter = await cartaoNovo(usuario, 'Inter');
+    const categoria = botoes((await conversar(usuario, 'paguei 120 na farmácia')).eventos[1]);
+    const saude = categoria.find(({ rotulo }) => rotulo === 'Outra');
+    if (!saude) throw new Error('sem [Outra]');
+    const todas = (await tocar(usuario, saude)).json<RespostaAcaoMony>();
+    expect(todas.texto).toBe('Escolha a categoria:');
+    expect(botoes(todas.componente)).toHaveLength(11);
+    const escolhida = botoes(todas.componente).find(({ rotulo }) => rotulo === 'Saúde');
+    if (!escolhida) throw new Error('sem Saúde');
+
+    const forma = (await tocar(usuario, escolhida)).json<RespostaAcaoMony>();
+    expect(botoes(forma.componente).map(({ rotulo }) => rotulo)).toEqual([
+      'Pix',
+      'Débito',
+      'Crédito',
+      'Dinheiro',
+      'Boleto',
+    ]);
+    const credito = botoes(forma.componente).find(({ rotulo }) => rotulo === 'Crédito');
+    if (!credito) throw new Error('sem crédito');
+    const qualCartao = (await tocar(usuario, credito)).json<RespostaAcaoMony>();
+    expect(qualCartao.texto).toBe('Em qual cartão?');
+    const botaoInter = botoes(qualCartao.componente).find(({ rotulo }) => rotulo === 'Inter');
+    if (!botaoInter) throw new Error('sem Inter');
+    const parcelas = (await tocar(usuario, botaoInter)).json<RespostaAcaoMony>();
+    expect(parcelas.texto).toBe('À vista ou parcelado?');
+    expect(botoes(parcelas.componente).map(({ rotulo }) => rotulo)).toEqual([
+      'À vista',
+      '2x',
+      '3x',
+      '4x',
+      '5x',
+      '6x',
+      '10x',
+      '12x',
+    ]);
+    const aVista = botoes(parcelas.componente)[0];
+    if (!aVista) throw new Error('sem à vista');
+    const fim = (await tocar(usuario, aVista)).json<RespostaAcaoMony>();
+    expect(fim.texto).toBe(
+      `Pronto! Anotei ${formatarCentavos(12_000)} de Farmácia em Saúde, no Inter.`,
+    );
+    expect(
+      await prisma.transacao.findUnique({
+        where: { id: fim.transacaoId ?? '' },
+        select: { cartaoId: true, formaPagamento: true, status: true, descricao: true },
+      }),
+    ).toEqual({
+      cartaoId: inter.id,
+      formaPagamento: 'cartao_credito',
+      status: 'pendente',
+      descricao: 'Farmácia',
+    });
+    // Botão de uma pergunta já respondida.
+    const repetido = await tocar(usuario, credito);
+    expect(repetido.statusCode).toBe(410);
+  });
+
+  it('RN-085 texto que não responde vai ao modelo com o rascunho, e a pergunta volta com os botões', async () => {
+    const usuario = await usuarioNovo();
+    const pergunta = await conversar(usuario, 'gastei 25');
+    const botoesDaPergunta = botoes(pergunta.eventos[1]);
+
+    modelo.roteirizar({ texto: 'Escolha a categoria nos botões abaixo.' });
+    const desvio = await conversar(usuario, 'hmm, não sei');
+    expect(desvio.texto).toBe('Escolha a categoria nos botões abaixo.');
+    expect(desvio.eventos.map(({ tipo }) => tipo).slice(-2)).toEqual(['componente', 'fim']);
+    expect(botoes(desvio.eventos.at(-2))).toEqual(botoesDaPergunta);
+    expect(modelo.pedidos[0]?.sistema[1]).toContain(
+      `Lançamento em andamento (rascunho): ${formatarCentavos(2_500)}; falta a categoria.`,
+    );
+
+    // Botão da pergunta anterior respondido por texto: o rascunho andou, a pergunta não é mais essa.
+    const porTexto = await conversar(usuario, 'lazer');
+    expect(porTexto.texto).toBe('Como você pagou?');
+    const primeiroBotao = botoesDaPergunta[0];
+    if (!primeiroBotao) throw new Error('sem botão');
+    const velho = await tocar(usuario, primeiroBotao);
+    expect(velho.statusCode).toBe(409);
+
+    const cancelado = await conversar(usuario, 'cancela');
+    expect(cancelado.texto).toBe(
+      `Tudo bem, deixei de lado o lançamento de ${formatarCentavos(2_500)}.`,
+    );
+    expect(await rascunhoDo(usuario.usuarioId)).toEqual([]);
+    expect(await prisma.transacao.count({ where: { usuarioId: usuario.usuarioId } })).toBe(0);
+  });
+
+  it('RN-088 gasto novo troca o rascunho; vencido não vale e a limpeza diária apaga', async () => {
+    const usuario = await usuarioNovo();
+    await conversar(usuario, 'gastei 25');
+    const novo = await conversar(usuario, 'gastei 30');
+    expect(novo.texto).toBe(
+      `Deixei de lado o lançamento de ${formatarCentavos(2_500)}. Anotei ${formatarCentavos(3_000)}. Em qual categoria?`,
+    );
+    const rascunhos = await rascunhoDo(usuario.usuarioId);
+    expect(rascunhos).toHaveLength(1);
+    expect(rascunhos[0]?.dados).toMatchObject({ valorCentavos: 3_000 });
+
+    // Vencido: o botão dá 410 e o texto vai ao modelo sem rascunho.
+    await prisma.rascunhoLancamento.updateMany({
+      where: { usuarioId: usuario.usuarioId },
+      data: { expiraEm: new Date('2026-10-15T14:59:00Z') },
+    });
+    const botao = botoes(novo.eventos[1])[0];
+    if (!botao) throw new Error('sem botão');
+    expect((await tocar(usuario, botao)).statusCode).toBe(410);
+    expect(await rascunhoDo(usuario.usuarioId)).toEqual([]);
+
+    // A limpeza apaga os vencidos de todo mundo e deixa os que valem.
+    const outro = await usuarioNovo();
+    await conversar(outro, 'gastei 40');
+    await conversar(usuario, 'gastei 50');
+    await prisma.rascunhoLancamento.updateMany({
+      where: { usuarioId: usuario.usuarioId },
+      data: { expiraEm: new Date('2026-10-15T10:00:00Z') },
+    });
+    await app.get(RascunhosService).limpar(new Date('2026-10-15T15:00:00Z'));
+    expect(await rascunhoDo(usuario.usuarioId)).toEqual([]);
+    expect(await rascunhoDo(outro.usuarioId)).toHaveLength(1);
+  });
+
+  it('crédito sem cartão cadastrado avisa e pergunta a forma de novo', async () => {
+    const usuario = await usuarioNovo();
+    const { texto } = await conversar(usuario, 'gastei 50 no mercado no crédito');
+    expect(texto).toBe(
+      `Anotei ${formatarCentavos(5_000)}. Você ainda não tem cartão de crédito cadastrado. Como você pagou?`,
+    );
   });
 });

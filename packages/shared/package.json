@@ -70,6 +70,10 @@
       "types": "./dist/mony.d.ts",
       "default": "./dist/mony.js"
     },
+    "./rascunhos": {
+      "types": "./dist/rascunhos.d.ts",
+      "default": "./dist/rascunhos.js"
+    },
     "./notificacoes": {
       "types": "./dist/notificacoes.d.ts",
       "default": "./dist/notificacoes.js"

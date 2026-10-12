@@ -43,8 +43,8 @@ export class MonyService {
    */
   async agir(contexto: Contexto, acao: AcaoMony): Promise<RespostaAcaoMony> {
     const usuarioId = usuarioDoContexto(contexto);
-    const { resposta, toque } = await this.regras.agir(contexto, acao);
     const conversaId = await this.repositorio.conversaAtual(usuarioId);
+    const { resposta, toque } = await this.regras.agir(contexto, conversaId, acao);
     const chave = contexto.idempotencyKey;
     await this.repositorio.salvarMensagem({
       usuarioId,

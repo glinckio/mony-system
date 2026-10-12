@@ -5,26 +5,15 @@
  * API do app Monitorizze e da assistente Mony.
  * OpenAPI spec version: 1
  */
+import type { PedidoAcaoMonyDtoAcaoCampo } from './pedidoAcaoMonyDtoAcaoCampo';
 
-export type PedidoAcaoMonyDtoAcao =
-  | {
-      etapa: 'categoria';
-      /**
-       * @minimum 1
-       * @maximum 100000000000
-       */
-      valorCentavos: number;
-      /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
-      categoriaId: string;
-    }
-  | {
-      etapa: 'forma';
-      /**
-       * @minimum 1
-       * @maximum 100000000000
-       */
-      valorCentavos: number;
-      /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
-      categoriaId: string;
-      formaPagamento: 'cartao_credito' | 'pix' | 'debito' | 'dinheiro' | 'boleto';
-    };
+export type PedidoAcaoMonyDtoAcao = {
+  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+  rascunhoId: string;
+  campo: PedidoAcaoMonyDtoAcaoCampo;
+  /**
+   * @minLength 1
+   * @maxLength 50
+   */
+  valor: string;
+};
