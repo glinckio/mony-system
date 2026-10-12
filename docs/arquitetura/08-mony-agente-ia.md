@@ -38,7 +38,7 @@ sequenceDiagram
 
 - `POST /mony/mensagens` responde em SSE: `texto.delta`, `componente`, `erro`, `fim` (com o id da resposta gravada). Contrato e leitor SSE em `@mony/shared/mony`.
 - `MonyOrquestrador` grava a mensagem, tenta o `RoteadorRegras` (rascunho do lançamento, com botões em `POST /mony/acoes`) e, sem regra, chama o `LlmProvider` (`fake` ou `anthropic`, por `IA_PROVEDOR`) com o prompt local (`prompts/sistema.ts`), o contexto do usuário, o histórico e as ferramentas. Pedido de ferramenta → executa → devolve o resultado ao modelo, até 5 chamadas por mensagem.
-- Ferramentas registradas: `listar_categorias`. As de finanças vêm na T-062.
+- Ferramentas registradas: as de lançamento (T-062a, ver "Ferramentas"). As de consulta e planejamento vêm na T-062b.
 - Rascunhos de lançamento (T-061): ver "Rascunhos e perguntas com botões".
 - Toda mensagem, toque em botão e resposta vai para `mensagens`; `GET /mony/conversa` devolve o histórico por cursor, com busca no texto.
 - Cada chamada ao modelo grava um `logs_ia` (modelo, tokens, ferramentas pedidas, duração, erro), ligado à mensagem do usuário.
@@ -98,6 +98,14 @@ Ferramentas que gravam (`criar_*`, `editar_*`, `pagar_fatura`, `definir_orcament
 - Dados vindos de foto/PDF → devolve cartão(ões) de resumo com [Confirmar]/[Editar], sem gravar (RN-083).
 - Exclusão e pagamento → sempre confirmação por botão (RN-092).
 
+**Como está (T-062a):**
+
+- Registradas: `listar_categorias`, `listar_cartoes`, `criar_categoria` (cor e ícone padrão), `criar_transacao`, `criar_parcelamento`, `editar_transacao`, `excluir_transacao` e `consultar_transacoes` (até 20, com os totais do filtro). As de consulta e planejamento (`resumo_periodo`, `consultar_cartao`, `pagar_fatura`, orçamentos e metas) são da T-062b.
+- `executar(contexto, entrada)` recebe o contexto da Mony (origem `mony`) com a conversa e devolve `{ dados, componentes }`: os `dados` voltam ao modelo em JSON; os componentes saem no SSE depois da resposta e ficam na mensagem gravada, mesmo se uma chamada seguinte ao modelo falhar.
+- `criar_transacao`: receita grava direto (precisa da categoria); despesa segue o rascunho (T-061): completa, grava e devolve o resumo; faltando categoria ou forma, guarda o rascunho e o app pergunta com botões (RN-080). Categoria e cartão de outra pessoa dão `NAO_ENCONTRADO` (RN-092).
+- **Cartão de resumo** (componente `resumo`): tipo, descrição, valor, data, categoria, forma, cartão e parcelas, com [Desfazer] (RN-082). Um por lançamento (RN-086). O fim do rascunho também mostra o resumo. Edição mostra o resumo sem [Desfazer].
+- **Ações por botão** (`POST /mony/acoes { acao }`, `tipo`): `rascunho`, `desfazer` (até 24 h depois de gravar e só para origem `mony`; parcelamento sai cancelado; depois do prazo, 410 `DESFAZER_EXPIRADO`), `excluir_transacao` (a confirmação pedida pela ferramenta) e `cancelar`.
+
 ## Rascunhos e perguntas com botões
 
 O rascunho (`rascunhos_lancamento`) guarda `dados` parciais e `campo_pendente`. Ele é a máquina de estado do fluxo "gastei 10":
@@ -116,8 +124,8 @@ valor ─► categoria ─► forma_pagamento ─► (cartão) ─► (à vista 
 
 - "gastei/paguei/comprei" com valor abre o rascunho: `valorDoGasto` (com "R$" vale o número dele; pergunta e "quanto" ficam fora), a descrição ("no mercado" → Mercado; "de iFood no Nubank" → iFood), a data ("ontem", "anteontem"), a categoria pelo nome (na descrição ou no texto), a forma ("no pix", "no crédito"), o cartão pelo nome (já diz crédito) e as parcelas ("em 3x"; parcelado é no crédito). O que o texto já diz não vira pergunta.
 - Perguntas: "Em qual categoria?" (as 4 mais usadas em 90 dias e [Outra], que lista todas); "Como você pagou?" (Pix, Débito, Crédito só com cartão, Dinheiro, Boleto); "Em qual cartão?" (com um cartão só, ele vale sem perguntar); "À vista ou parcelado?" (À vista, 2x a 6x, 10x e 12x; outra quantidade por texto).
-- A ação do botão é `{ rascunhoId, campo, valor }`. Rascunho que não existe mais (gravado, trocado, vencido ou de outra pessoa) dá 410 `RASCUNHO_EXPIRADO`; botão de pergunta já respondida dá 409.
-- Completo, grava a despesa (ou o parcelamento no cartão) com origem `mony` e responde o resumo em texto ("Pronto! Anotei R$ 80,00 de iFood em Alimentação, no Nubank em 3x de R$ 26,67."). O cartão de resumo com [Desfazer] é da T-062.
+- A ação do botão é `{ tipo: 'rascunho', rascunhoId, campo, valor }`. Rascunho que não existe mais (gravado, trocado, vencido ou de outra pessoa) dá 410 `RASCUNHO_EXPIRADO`; botão de pergunta já respondida dá 409.
+- Completo, grava a despesa (ou o parcelamento no cartão) com origem `mony` e responde o resumo em texto ("Pronto! Anotei R$ 80,00 de iFood em Alimentação, no Nubank em 3x de R$ 26,67."). Desde a T-062a, também o cartão de resumo com [Desfazer].
 - Gasto novo com valor troca o rascunho ("Deixei de lado o lançamento de R$ 25,00."); "cancela", "esquece" e afins descartam. Texto que não responde vai ao modelo com o rascunho no contexto, e a pergunta pendente volta com os botões depois da resposta.
 - A validade (24 h) conta da última resposta. A limpeza é a rotina `limpar-rascunhos`, às 03:00.
 

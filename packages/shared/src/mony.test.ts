@@ -64,18 +64,26 @@ describe('SSE da Mony', () => {
 });
 
 describe('ação do botão (RN-084)', () => {
-  it('responde um campo do rascunho; o servidor confere o resto', () => {
-    const base = { rascunhoId: '0199a000-0000-7000-8000-000000000001', valor: 'pix' };
-    expect(esquemaAcaoMony.safeParse({ ...base, campo: 'forma_pagamento' }).success).toBe(true);
-    expect(esquemaAcaoMony.safeParse({ ...base, campo: 'valor' }).success).toBe(false);
-    expect(esquemaAcaoMony.safeParse({ ...base, campo: 'cartao', valor: '' }).success).toBe(false);
-    // O formato da PoC (estado no botão) não vale mais.
+  const id = '0199a000-0000-7000-8000-000000000001';
+
+  it('responde o rascunho, desfaz, confirma exclusão ou cancela; o servidor confere o resto', () => {
+    const rascunho = { tipo: 'rascunho', rascunhoId: id, valor: 'pix' };
+    expect(esquemaAcaoMony.safeParse({ ...rascunho, campo: 'forma_pagamento' }).success).toBe(true);
+    expect(esquemaAcaoMony.safeParse({ ...rascunho, campo: 'valor' }).success).toBe(false);
+    expect(esquemaAcaoMony.safeParse({ ...rascunho, campo: 'cartao', valor: '' }).success).toBe(
+      false,
+    );
+    expect(esquemaAcaoMony.safeParse({ tipo: 'desfazer', alvo: 'transacao', id }).success).toBe(
+      true,
+    );
+    expect(esquemaAcaoMony.safeParse({ tipo: 'desfazer', alvo: 'meta', id }).success).toBe(false);
+    expect(esquemaAcaoMony.safeParse({ tipo: 'excluir_transacao', transacaoId: id }).success).toBe(
+      true,
+    );
+    expect(esquemaAcaoMony.safeParse({ tipo: 'cancelar' }).success).toBe(true);
+    // Sem tipo (formato da T-061) ou com o estado no botão (PoC) não vale mais.
     expect(
-      esquemaAcaoMony.safeParse({
-        etapa: 'categoria',
-        valorCentavos: 1_000,
-        categoriaId: base.rascunhoId,
-      }).success,
+      esquemaAcaoMony.safeParse({ rascunhoId: id, campo: 'categoria', valor: id }).success,
     ).toBe(false);
   });
 });

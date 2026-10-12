@@ -2,9 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { TIPOS_CATEGORIA } from '@mony/shared/enums';
 import { z } from 'zod';
 
-import type { Contexto } from '../../../core/contexto/contexto';
 import { CategoriasService } from '../../categorias/categorias.service';
-import type { Ferramenta } from './registro';
+import type { ContextoFerramenta, Ferramenta, SaidaFerramenta } from './registro';
 
 const esquema = z.object({
   tipo: z
@@ -23,11 +22,14 @@ export class ListarCategoriasTool implements Ferramenta<typeof esquema> {
 
   constructor(private readonly categorias: CategoriasService) {}
 
-  async executar(contexto: Contexto, entrada: z.output<typeof esquema>) {
+  async executar(
+    contexto: ContextoFerramenta,
+    entrada: z.output<typeof esquema>,
+  ): Promise<SaidaFerramenta> {
     const { itens } = await this.categorias.listar(
       contexto,
       entrada.tipo ? { tipo: entrada.tipo } : {},
     );
-    return { categorias: itens.map(({ id, nome, tipo }) => ({ id, nome, tipo })) };
+    return { dados: { categorias: itens.map(({ id, nome, tipo }) => ({ id, nome, tipo })) } };
   }
 }

@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { ComponenteMony } from '@mony/shared/mony';
 import { z } from 'zod';
 
 import type { Contexto } from '../../../core/contexto/contexto';
@@ -14,21 +15,35 @@ export interface Ferramenta<TEsquema extends z.ZodType = z.ZodType> {
   readonly nome: string;
   readonly descricao: string;
   readonly esquema: TEsquema;
-  executar(contexto: Contexto, entrada: z.output<TEsquema>): Promise<unknown>;
+  executar(contexto: ContextoFerramenta, entrada: z.output<TEsquema>): Promise<SaidaFerramenta>;
+}
+
+/** O contexto da Mony (origem `mony`) e a conversa, para quem mexe no rascunho. */
+export type ContextoFerramenta = Contexto & { readonly conversaId: string };
+
+/**
+ * O que a ferramenta devolve: os `dados` vão ao modelo em JSON; os `componentes` (resumo com
+ * [Desfazer], botões de confirmação ou de pergunta) vão ao app depois da resposta.
+ */
+export interface SaidaFerramenta {
+  dados: unknown;
+  componentes?: readonly ComponenteMony[];
 }
 
 /** As ferramentas registradas no módulo (provedor do Nest). */
 export const FERRAMENTAS_MONY = Symbol('FERRAMENTAS_MONY');
 
-/** O que volta ao modelo: o resultado em JSON, ou a falha com o motivo. */
+/** O que volta ao modelo (o resultado em JSON, ou a falha com o motivo) e os componentes. */
 export interface ResultadoFerramenta {
   conteudo: string;
   erro: boolean;
+  componentes: readonly ComponenteMony[];
 }
 
 const falha = (motivo: unknown): ResultadoFerramenta => ({
   conteudo: JSON.stringify({ erro: motivo }),
   erro: true,
+  componentes: [],
 });
 
 /** Guarda as ferramentas, mostra-as ao modelo e executa os pedidos dele. */
@@ -63,7 +78,10 @@ export class RegistroFerramentas {
    * ao modelo como falha, para ele corrigir ou contar ao usuário (RN-087); erro inesperado vai ao
    * log e volta como falha genérica.
    */
-  async executar(contexto: Contexto, chamada: ChamadaFerramenta): Promise<ResultadoFerramenta> {
+  async executar(
+    contexto: ContextoFerramenta,
+    chamada: ChamadaFerramenta,
+  ): Promise<ResultadoFerramenta> {
     const ferramenta = this.porNome.get(chamada.nome);
     if (!ferramenta) return falha(`A ferramenta ${chamada.nome} não existe.`);
     const entrada = ferramenta.esquema.safeParse(chamada.entrada);
@@ -71,8 +89,8 @@ export class RegistroFerramentas {
       return falha({ codigo: 'REQUISICAO_INVALIDA', detalhes: z.prettifyError(entrada.error) });
     }
     try {
-      const resultado = await ferramenta.executar(contexto, entrada.data);
-      return { conteudo: JSON.stringify(resultado ?? null), erro: false };
+      const { dados, componentes = [] } = await ferramenta.executar(contexto, entrada.data);
+      return { conteudo: JSON.stringify(dados ?? null), erro: false, componentes };
     } catch (erro) {
       if (erro instanceof ErroDominio) {
         return falha({ codigo: erro.codigo, mensagem: erro.message });

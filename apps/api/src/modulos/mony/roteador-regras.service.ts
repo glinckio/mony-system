@@ -30,9 +30,8 @@ import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { CartoesService } from '../cartoes/cartoes.service';
 import { CategoriasService } from '../categorias/categorias.service';
-import { ParcelamentosService } from '../parcelamentos/parcelamentos.service';
-import { TransacoesService } from '../transacoes/transacoes.service';
 import { UsuariosService } from '../usuarios/usuarios.service';
+import { LancamentosMony } from './lancamentos.service';
 import { type Rascunho, RascunhosService } from './rascunhos.service';
 
 /** RN-081: quantas categorias viram botão, além do [Outra]. */
@@ -86,6 +85,9 @@ const CANCELAR = /^(cancela(r)?|deixa (pra|para) la|esquece|desisto|nao quero ma
 const reais = (centavos: number) => formatarCentavos(centavos);
 const rotuloParcelas = (parcelas: number) => (parcelas === 1 ? 'À vista' : `${String(parcelas)}x`);
 
+/** A ação de um botão de pergunta do rascunho. */
+export type AcaoRascunho = Extract<AcaoMony, { tipo: 'rascunho' }>;
+
 /** Resposta sem o modelo: o texto da Mony, a próxima pergunta e o lançamento gravado. */
 export interface RespostaRegra {
   texto: string;
@@ -121,8 +123,7 @@ export class RoteadorRegras {
     private readonly rascunhos: RascunhosService,
     private readonly categorias: CategoriasService,
     private readonly cartoes: CartoesService,
-    private readonly transacoes: TransacoesService,
-    private readonly parcelamentos: ParcelamentosService,
+    private readonly lancamentos: LancamentosMony,
     private readonly usuarios: UsuariosService,
     private readonly clock: Clock,
   ) {}
@@ -179,7 +180,9 @@ export class RoteadorRegras {
     if (atual.campoPendente && proximoCampo(dados) !== atual.campoPendente) {
       return {
         tipo: 'resposta',
-        resposta: await this.avancar(contexto, conversaId, dados, catalogo),
+        resposta: await this.avancar(contexto, conversaId, dados, catalogo, {
+          rascunhoId: atual.id,
+        }),
       };
     }
     return {
@@ -192,13 +195,30 @@ export class RoteadorRegras {
   }
 
   /**
+   * Lançamento de despesa pedido pelo modelo (ferramenta `criar_transacao`): segue o mesmo caminho
+   * do rascunho. Completo, grava e devolve o resumo (RN-082); senão, guarda o rascunho (trocando o
+   * que houver) e devolve a pergunta do que falta, com botões (RN-080).
+   */
+  async iniciar(
+    contexto: Contexto,
+    conversaId: string,
+    dados: DadosRascunho,
+  ): Promise<RespostaRegra & { pendente: CampoRascunho | null }> {
+    const catalogo = await this.catalogo(contexto);
+    const resposta = await this.avancar(contexto, conversaId, dados, catalogo);
+    if (resposta.componente?.tipo === 'resumo') return { ...resposta, pendente: null };
+    const rascunho = await this.rascunhos.ativo(conversaId);
+    return { ...resposta, pendente: rascunho?.campoPendente ?? null };
+  }
+
+  /**
    * Toque num botão (RN-084): responde o campo pendente do rascunho, sem o modelo. Devolve também o
    * rótulo do botão, que vai para o histórico.
    */
   async agir(
     contexto: Contexto,
     conversaId: string,
-    acao: AcaoMony,
+    acao: AcaoRascunho,
   ): Promise<{ resposta: RespostaAcaoMony; toque: string }> {
     const atual = await this.rascunhos.ativo(conversaId);
     if (!atual || atual.id !== acao.rascunhoId) throw new ErroDominio('RASCUNHO_EXPIRADO');
@@ -247,7 +267,10 @@ export class RoteadorRegras {
         break;
       }
     }
-    return { toque, resposta: await this.avancar(contexto, conversaId, dados, catalogo) };
+    return {
+      toque,
+      resposta: await this.avancar(contexto, conversaId, dados, catalogo, { rascunhoId: atual.id }),
+    };
   }
 
   private async catalogo(contexto: Contexto): Promise<Catalogo> {
@@ -299,7 +322,7 @@ export class RoteadorRegras {
     conversaId: string,
     dados: DadosRascunho,
     catalogo: Catalogo,
-    abertura: { antes: string; anotei: string } = { antes: '', anotei: '' },
+    opcoes: { antes?: string; anotei?: string; rascunhoId?: string } = {},
   ): Promise<RespostaRegra> {
     let completo = { ...dados };
     const avisos: string[] = [];
@@ -316,10 +339,10 @@ export class RoteadorRegras {
     const campo = proximoCampo(completo);
     if (campo === null) {
       const gravado = await this.gravar(contexto, completo, catalogo);
-      const atual = await this.rascunhos.ativo(conversaId);
-      if (atual) await this.rascunhos.descartar(atual.id);
+      // Só o rascunho que acabou de ser completado sai; um lançamento novo não mexe em outro.
+      if (opcoes.rascunhoId) await this.rascunhos.descartar(opcoes.rascunhoId);
       // O resumo já diz o valor: sem o "Anotei" da abertura.
-      return { ...gravado, texto: juntar([abertura.antes, ...avisos, gravado.texto]) };
+      return { ...gravado, texto: juntar([opcoes.antes ?? '', ...avisos, gravado.texto]) };
     }
     const rascunho = await this.rascunhos.salvar(
       usuarioDoContexto(contexto),
@@ -330,7 +353,7 @@ export class RoteadorRegras {
     const pergunta = await this.pergunta(contexto, rascunho, catalogo);
     return {
       ...pergunta,
-      texto: juntar([abertura.antes, abertura.anotei, ...avisos, pergunta.texto]),
+      texto: juntar([opcoes.antes ?? '', opcoes.anotei ?? '', ...avisos, pergunta.texto]),
     };
   }
 
@@ -345,7 +368,7 @@ export class RoteadorRegras {
     const botao = (valor: string, rotulo: string): OpcaoBotao => ({
       id: valor,
       rotulo,
-      acao: { rascunhoId: rascunho.id, campo, valor },
+      acao: { tipo: 'rascunho', rascunhoId: rascunho.id, campo, valor },
     });
     let botoes: OpcaoBotao[];
     let texto = PERGUNTAS[campo];
@@ -387,52 +410,49 @@ export class RoteadorRegras {
     dados: DadosRascunho,
     catalogo: Catalogo,
   ): Promise<RespostaRegra> {
-    const doMony: Contexto = { ...contexto, origem: 'mony' };
     const categoria = catalogo.categorias.find(({ id }) => id === dados.categoriaId);
     const categoriaId = dados.categoriaId ?? '';
     const forma = dados.formaPagamento ?? 'pix';
     const descricao = dados.descricao ?? categoria?.nome ?? 'Gasto';
-    const cartao = catalogo.cartoes.find(({ id }) => id === dados.cartaoId);
     const parcelas = dados.parcelas ?? 1;
-    let transacaoId: string | null;
-    let onde: string;
-    if (forma === 'cartao_credito' && dados.cartaoId !== undefined && parcelas > 1) {
-      const { parcelamento } = await this.parcelamentos.registrar(doMony, {
-        tipo: 'compra_cartao',
-        nome: descricao.slice(0, 100),
-        valorCentavos: dados.valorCentavos,
-        totalParcelas: parcelas,
-        dataInicio: dados.data,
-        categoriaId,
-        cartaoId: dados.cartaoId,
-      });
-      const [primeira] = parcelamento.parcelas;
-      transacaoId = primeira?.transacaoId ?? null;
-      onde = `no ${cartao?.nome ?? 'cartão'} em ${String(parcelas)}x de ${reais(primeira?.valorCentavos ?? 0)}`;
-    } else {
-      const { transacao } = await this.transacoes.registrar(doMony, {
-        tipo: 'despesa',
-        descricao,
-        valorCentavos: dados.valorCentavos,
-        data: dados.data,
-        categoriaId,
-        formaPagamento: forma,
-        ...(forma === 'cartao_credito' && dados.cartaoId !== undefined
-          ? { cartaoId: dados.cartaoId }
-          : {}),
-      });
-      transacaoId = transacao.id;
-      onde = forma === 'cartao_credito' ? `no ${cartao?.nome ?? 'cartão'}` : NA_FRASE[forma];
-    }
+    const { lancamento, resumo } =
+      forma === 'cartao_credito' && dados.cartaoId !== undefined && parcelas > 1
+        ? await this.lancamentos.registrarParcelamento(contexto, {
+            tipo: 'compra_cartao',
+            nome: descricao.slice(0, 100),
+            valorCentavos: dados.valorCentavos,
+            totalParcelas: parcelas,
+            dataInicio: dados.data,
+            categoriaId,
+            cartaoId: dados.cartaoId,
+          })
+        : await this.lancamentos.registrarTransacao(contexto, {
+            tipo: 'despesa',
+            descricao,
+            valorCentavos: dados.valorCentavos,
+            data: dados.data,
+            categoriaId,
+            formaPagamento: forma,
+            ...(forma === 'cartao_credito' && dados.cartaoId !== undefined
+              ? { cartaoId: dados.cartaoId }
+              : {}),
+          });
+    const noCartao = `no ${lancamento.cartao ?? 'cartão'}`;
+    const onde =
+      forma !== 'cartao_credito'
+        ? NA_FRASE[forma]
+        : lancamento.parcelas
+          ? `${noCartao} em ${String(lancamento.parcelas)}x de ${reais(lancamento.valorParcelaCentavos ?? 0)}`
+          : noCartao;
     const deQue = categoria && descricao !== categoria.nome ? ` de ${descricao}` : '';
     const quando =
       dados.data === catalogo.hoje
         ? ''
         : `, em ${dados.data.slice(8, 10)}/${dados.data.slice(5, 7)}`;
     return {
-      texto: `Pronto! Anotei ${reais(dados.valorCentavos)}${deQue} em ${categoria?.nome ?? 'Outros'}, ${onde}${quando}.`,
-      componente: null,
-      transacaoId,
+      texto: `Pronto! Anotei ${reais(dados.valorCentavos)}${deQue} em ${lancamento.categoria}, ${onde}${quando}.`,
+      componente: resumo,
+      transacaoId: lancamento.transacaoId,
     };
   }
 

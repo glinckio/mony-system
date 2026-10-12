@@ -118,6 +118,7 @@ describe('leitura do texto livre', () => {
     ['gastei 80 de iFood no Nubank', 'iFood'],
     ['comprei pão 7,50', 'Pão'],
     ['comprei um tênis por 300 em 3x', 'Tênis'],
+    ['comprei um fone de 600 em 3x', 'Fone'],
     ['gastei 45 reais com farmácia ontem', 'Farmácia'],
     ['paguei 120 na conta de luz, no débito', 'Conta de luz'],
     ['gastei 10', null],

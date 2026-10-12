@@ -47,6 +47,7 @@ function corpoJson(opcoes: RequestInit | undefined): unknown {
 /** A ação do botão responde o campo pendente do rascunho no servidor (T-061). */
 const RASCUNHO = '0199a000-0000-7000-8000-0000000000a1';
 const MERCADO = {
+  tipo: 'rascunho',
   rascunhoId: RASCUNHO,
   campo: 'categoria',
   valor: '0199a000-0000-7000-8000-000000000001',
@@ -104,7 +105,12 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
                   {
                     id: 'pix',
                     rotulo: 'Pix',
-                    acao: { rascunhoId: RASCUNHO, campo: 'forma_pagamento', valor: 'pix' },
+                    acao: {
+                      tipo: 'rascunho',
+                      rascunhoId: RASCUNHO,
+                      campo: 'forma_pagamento',
+                      valor: 'pix',
+                    },
                   },
                 ],
               },
@@ -234,6 +240,84 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
       expect(
         await screen.findByText('Entre na sua conta para continuar.', {}, ESPERA),
       ).toBeOnTheScreen();
+    },
+    TEMPO_LIMITE_MS,
+  );
+  it(
+    'RN-082 o cartão de resumo mostra o que foi gravado, e o [Desfazer] pede à API',
+    async () => {
+      const transacaoId = '0199a000-0000-7000-8000-0000000000f1';
+      fetchStreaming.mockResolvedValue(
+        respostaSse([
+          { tipo: 'texto.delta', texto: 'Anotei o fone.' },
+          {
+            tipo: 'componente',
+            componente: {
+              tipo: 'resumo',
+              lancamento: {
+                transacaoId,
+                parcelamentoId: '0199a000-0000-7000-8000-0000000000f2',
+                tipo: 'despesa',
+                descricao: 'Fone',
+                valorCentavos: 60_000,
+                data: '2026-10-14',
+                categoria: 'Compras',
+                formaPagamento: 'cartao_credito',
+                cartao: 'Nubank',
+                parcelas: 3,
+                valorParcelaCentavos: 20_000,
+              },
+              opcoes: [
+                {
+                  id: 'desfazer',
+                  rotulo: 'Desfazer',
+                  acao: { tipo: 'desfazer', alvo: 'parcelamento', id: transacaoId },
+                },
+              ],
+            },
+          },
+          { tipo: 'fim', mensagemId: '0199a000-0000-7000-8000-000000000009' },
+        ]),
+      );
+      const fetchApi = jest.fn<typeof fetch>(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({
+              texto: 'Pronto, desfiz: Fone em 3x saiu dos seus lançamentos.',
+              componente: null,
+              transacaoId: null,
+            }),
+            { status: 200 },
+          ),
+        ),
+      );
+      globalThis.fetch = fetchApi;
+
+      render(<TelaMony />);
+      fireEvent.changeText(screen.getByLabelText('Mensagem para a Mony'), 'comprei um fone');
+      fireEvent.press(screen.getByRole('button', { name: 'Enviar' }));
+
+      const resumo = await screen.findByTestId('mony-resumo', {}, ESPERA);
+      expect(resumo).toHaveTextContent(/Despesa anotada/);
+      expect(resumo).toHaveTextContent(/R\$\s600,00 · Fone/);
+      expect(resumo).toHaveTextContent(/Compras · 14\/out · Nubank em 3x de R\$\s200,00/);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Desfazer' })).toBeEnabled();
+      }, ESPERA);
+      fireEvent.press(screen.getByRole('button', { name: 'Desfazer' }));
+      expect(
+        await screen.findByText(
+          'Pronto, desfiz: Fone em 3x saiu dos seus lançamentos.',
+          {},
+          ESPERA,
+        ),
+      ).toBeOnTheScreen();
+      expect(corpoJson(fetchApi.mock.calls[0]?.[1])).toEqual({
+        acao: { tipo: 'desfazer', alvo: 'parcelamento', id: transacaoId },
+      });
+      // Tocado, o resumo sai da conversa da PoC (a tela completa é a T-069).
+      expect(screen.queryByTestId('mony-resumo')).toBeNull();
     },
     TEMPO_LIMITE_MS,
   );

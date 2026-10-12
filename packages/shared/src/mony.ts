@@ -5,7 +5,7 @@
  */
 import { z } from 'zod';
 
-import { AUTORES_MENSAGEM, TIPOS_MENSAGEM } from './enums.js';
+import { AUTORES_MENSAGEM, FORMAS_PAGAMENTO, TIPOS_MENSAGEM, TIPOS_TRANSACAO } from './enums.js';
 import { CAMPOS_RASCUNHO } from './rascunhos.js';
 
 /** Uma opção de botão. O `acao` volta inteiro em `POST /mony/acoes`. */
@@ -15,8 +15,35 @@ export const esquemaOpcaoBotao = z.object({
   acao: z.record(z.string(), z.unknown()),
 });
 
+/** RN-082: o que a Mony gravou, no cartão de resumo. */
+export const esquemaResumoLancamento = z.object({
+  /** A despesa ou receita; no parcelamento, a primeira parcela. */
+  transacaoId: z.uuid().nullable(),
+  parcelamentoId: z.uuid().nullable(),
+  tipo: z.enum(TIPOS_TRANSACAO),
+  descricao: z.string(),
+  /** No parcelamento, o total. */
+  valorCentavos: z.number().int(),
+  data: z.string(),
+  categoria: z.string(),
+  formaPagamento: z.enum(FORMAS_PAGAMENTO).nullable(),
+  cartao: z.string().nullable(),
+  /** Parcelas da compra; `null` à vista. */
+  parcelas: z.number().int().nullable(),
+  valorParcelaCentavos: z.number().int().nullable(),
+});
+
+/**
+ * Componentes do chat (doc 08): botões de uma pergunta ou confirmação, e o cartão de resumo do que
+ * foi gravado, com as ações dele ([Desfazer]). Os dois trazem `opcoes`.
+ */
 export const esquemaComponenteMony = z.discriminatedUnion('tipo', [
   z.object({ tipo: z.literal('botoes'), opcoes: z.array(esquemaOpcaoBotao).min(1) }),
+  z.object({
+    tipo: z.literal('resumo'),
+    lancamento: esquemaResumoLancamento,
+    opcoes: z.array(esquemaOpcaoBotao),
+  }),
 ]);
 
 /** Doc 04: os eventos do SSE de `POST /mony/mensagens`, um por bloco `event:`/`data:`. */
@@ -29,6 +56,7 @@ export const esquemaEventoMony = z.discriminatedUnion('tipo', [
 
 export type OpcaoBotao = z.infer<typeof esquemaOpcaoBotao>;
 export type ComponenteMony = z.infer<typeof esquemaComponenteMony>;
+export type ResumoLancamento = z.infer<typeof esquemaResumoLancamento>;
 export type EventoMony = z.infer<typeof esquemaEventoMony>;
 export type TipoEventoMony = EventoMony['tipo'];
 
@@ -148,18 +176,35 @@ export function eventoMonyDoSse(evento: EventoSse): EventoMony | null {
 }
 
 /**
- * A ação de um botão (RN-084): responde o campo pendente do rascunho (T-061). `valor` é o id da
- * categoria (ou `outra`, para ver todas), a forma de pagamento, o id do cartão ou o número de
- * parcelas (1 é à vista). O servidor confere tudo de novo contra o rascunho e os dados do usuário.
+ * A ação de um botão (RN-084), devolvida inteira em `POST /mony/acoes`. O servidor confere tudo de
+ * novo contra o rascunho e os dados do usuário.
+ * - `rascunho`: responde o campo pendente (T-061). `valor` é o id da categoria (ou `outra`, para
+ *   ver todas), a forma de pagamento, o id do cartão ou o número de parcelas (1 é à vista).
+ * - `desfazer`: tira o lançamento que a Mony acabou de gravar, em até 24 h (RN-082).
+ * - `excluir_transacao`: a confirmação da exclusão que a Mony pediu (RN-092).
+ * - `cancelar`: não faz nada.
  */
-export const esquemaAcaoMony = z.object({
-  rascunhoId: z.uuid(),
-  campo: z.enum(CAMPOS_RASCUNHO),
-  valor: z.string().min(1).max(50),
-});
+export const esquemaAcaoMony = z.discriminatedUnion('tipo', [
+  z.object({
+    tipo: z.literal('rascunho'),
+    rascunhoId: z.uuid(),
+    campo: z.enum(CAMPOS_RASCUNHO),
+    valor: z.string().min(1).max(50),
+  }),
+  z.object({
+    tipo: z.literal('desfazer'),
+    alvo: z.enum(['transacao', 'parcelamento']),
+    id: z.uuid(),
+  }),
+  z.object({ tipo: z.literal('excluir_transacao'), transacaoId: z.uuid() }),
+  z.object({ tipo: z.literal('cancelar') }),
+]);
 
 /** Valor de `acao.valor` que pede a lista de todas as categorias (RN-081: [Outra]). */
 export const VALOR_OUTRA_CATEGORIA = 'outra';
+
+/** RN-082 (decisão técnica): o [Desfazer] vale por 24 horas depois de gravar. */
+export const PRAZO_DESFAZER_MS = 24 * 60 * 60 * 1000;
 
 export const esquemaPedidoAcaoMony = z.object({ acao: esquemaAcaoMony });
 

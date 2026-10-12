@@ -6,12 +6,40 @@
  * OpenAPI spec version: 1
  */
 
-export type RespostaAcaoMonyDtoComponente = {
-  tipo: 'botoes';
-  /** @minItems 1 */
-  opcoes: {
-    id: string;
-    rotulo: string;
-    acao: { [key: string]: unknown };
-  }[];
-} | null;
+export type RespostaAcaoMonyDtoComponente =
+  | {
+      tipo: 'botoes';
+      /** @minItems 1 */
+      opcoes: {
+        id: string;
+        rotulo: string;
+        acao: { [key: string]: unknown };
+      }[];
+    }
+  | {
+      tipo: 'resumo';
+      lancamento: {
+        transacaoId: string | null;
+        parcelamentoId: string | null;
+        tipo: 'receita' | 'despesa';
+        descricao: string;
+        /**
+         * @minimum -9007199254740991
+         * @maximum 9007199254740991
+         */
+        valorCentavos: number;
+        data: string;
+        categoria: string;
+        formaPagamento: 'cartao_credito' | 'pix' | 'debito' | 'dinheiro' | 'boleto' | null;
+        /** @nullable */
+        cartao: string | null;
+        parcelas: number | null;
+        valorParcelaCentavos: number | null;
+      };
+      opcoes: {
+        id: string;
+        rotulo: string;
+        acao: { [key: string]: unknown };
+      }[];
+    }
+  | null;

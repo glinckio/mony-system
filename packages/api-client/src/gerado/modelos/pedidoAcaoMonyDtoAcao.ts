@@ -5,15 +5,30 @@
  * API do app Monitorizze e da assistente Mony.
  * OpenAPI spec version: 1
  */
-import type { PedidoAcaoMonyDtoAcaoCampo } from './pedidoAcaoMonyDtoAcaoCampo';
 
-export type PedidoAcaoMonyDtoAcao = {
-  /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
-  rascunhoId: string;
-  campo: PedidoAcaoMonyDtoAcaoCampo;
-  /**
-   * @minLength 1
-   * @maxLength 50
-   */
-  valor: string;
-};
+export type PedidoAcaoMonyDtoAcao =
+  | {
+      tipo: 'rascunho';
+      /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+      rascunhoId: string;
+      campo: 'categoria' | 'forma_pagamento' | 'cartao' | 'parcelas';
+      /**
+       * @minLength 1
+       * @maxLength 50
+       */
+      valor: string;
+    }
+  | {
+      tipo: 'desfazer';
+      alvo: 'transacao' | 'parcelamento';
+      /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+      id: string;
+    }
+  | {
+      tipo: 'excluir_transacao';
+      /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
+      transacaoId: string;
+    }
+  | {
+      tipo: 'cancelar';
+    };

@@ -6,4 +6,10 @@ export const textosMony = {
   enviar: 'Enviar',
   escrevendo: 'Mony está escrevendo…',
   semConexao: 'Não consegui falar com a Mony. Confira a conexão e tente de novo.',
+  resumo: {
+    despesa: 'Despesa anotada',
+    receita: 'Receita anotada',
+    /** "Nubank em 3x de R$ 200,00". */
+    cartaoParcelado: '{{cartao}} em {{parcelas}}x de {{valor}}',
+  },
 };
