@@ -8,16 +8,16 @@ import {
   type RespostaAcaoMony,
 } from '@mony/shared/mony';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { createZodDto } from 'nestjs-zod';
 
 import { CABECALHO_ID_REQUISICAO } from '../../configurar-app';
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
+import { criarDto } from '../../core/openapi/dto';
 import { MonyService } from './mony.service';
 
-class MensagemMonyDto extends createZodDto(esquemaMensagemMony) {}
-class PedidoAcaoMonyDto extends createZodDto(esquemaPedidoAcaoMony) {}
-class RespostaAcaoMonyDto extends createZodDto(esquemaRespostaAcaoMony) {}
+class MensagemMonyDto extends criarDto(esquemaMensagemMony) {}
+class PedidoAcaoMonyDto extends criarDto(esquemaPedidoAcaoMony) {}
+class RespostaAcaoMonyDto extends criarDto(esquemaRespostaAcaoMony) {}
 
 /** Comentário SSE a cada 15 s: o ALB e proxies não derrubam a conexão parada (doc 08). */
 const INTERVALO_PING_MS = 15_000;

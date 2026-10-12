@@ -7,14 +7,14 @@ import {
   esquemaNovoArquivo,
   type LeituraArquivo,
 } from '@mony/shared/arquivos';
-import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
+import { criarDto } from '../../core/openapi/dto';
 import { ArquivosService } from './arquivos.service';
 
-class NovoArquivoDto extends createZodDto(esquemaNovoArquivo) {}
-class EnvioArquivoDto extends createZodDto(esquemaEnvioArquivo) {}
-class LeituraArquivoDto extends createZodDto(esquemaLeituraArquivo) {}
+class NovoArquivoDto extends criarDto(esquemaNovoArquivo) {}
+class EnvioArquivoDto extends criarDto(esquemaEnvioArquivo) {}
+class LeituraArquivoDto extends criarDto(esquemaLeituraArquivo) {}
 
 /** Rotas de arquivos (doc 05): só URLs assinadas; o arquivo não passa pela API. */
 @ApiTags('arquivos')

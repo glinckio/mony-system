@@ -32,20 +32,20 @@ import {
   type ListaFaturas,
   type RespostaPagamentoFatura,
 } from '@mony/shared/cartoes';
-import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
+import { criarDto } from '../../core/openapi/dto';
 import { CartoesService } from './cartoes.service';
 
-class CartaoDto extends createZodDto(esquemaCartao) {}
-class ListaCartoesDto extends createZodDto(esquemaListaCartoes) {}
-class NovoCartaoDto extends createZodDto(esquemaNovoCartao) {}
-class AtualizacaoCartaoDto extends createZodDto(esquemaAtualizacaoCartao) {}
-class ListaFaturasDto extends createZodDto(esquemaListaFaturas) {}
-class DetalheFaturaDto extends createZodDto(esquemaDetalheFatura) {}
-class PagamentoFaturaDto extends createZodDto(esquemaPagamentoFatura) {}
-class RespostaPagamentoFaturaDto extends createZodDto(esquemaRespostaPagamentoFatura) {}
+class CartaoDto extends criarDto(esquemaCartao) {}
+class ListaCartoesDto extends criarDto(esquemaListaCartoes) {}
+class NovoCartaoDto extends criarDto(esquemaNovoCartao) {}
+class AtualizacaoCartaoDto extends criarDto(esquemaAtualizacaoCartao) {}
+class ListaFaturasDto extends criarDto(esquemaListaFaturas) {}
+class DetalheFaturaDto extends criarDto(esquemaDetalheFatura) {}
+class PagamentoFaturaDto extends criarDto(esquemaPagamentoFatura) {}
+class RespostaPagamentoFaturaDto extends criarDto(esquemaRespostaPagamentoFatura) {}
 
 /** Rotas de cartões (doc 05). A compra no cartão entra por `POST /transacoes`. */
 @ApiTags('cartoes')

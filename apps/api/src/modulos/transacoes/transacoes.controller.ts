@@ -36,23 +36,23 @@ import {
   type Transacao,
 } from '@mony/shared/transacoes';
 import { esquemaExclusaoTransacao } from '@mony/shared/recorrencias';
-import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
+import { criarDto } from '../../core/openapi/dto';
 import { TransacoesService } from './transacoes.service';
 
-class TransacaoDto extends createZodDto(esquemaTransacao) {}
-class RespostaTransacaoDto extends createZodDto(esquemaRespostaTransacao) {}
-class NovaTransacaoDto extends createZodDto(esquemaNovaTransacao) {}
-class AtualizacaoTransacaoDto extends createZodDto(esquemaAtualizacaoTransacao) {}
-class FiltroTransacoesDto extends createZodDto(esquemaFiltroTransacoes) {}
-class ConsultaTransacoesDto extends createZodDto(esquemaConsultaTransacoes) {}
-class PaginaTransacoesDto extends createZodDto(esquemaPaginaTransacoes) {}
-class TotaisTransacoesDto extends createZodDto(esquemaTotaisTransacoes) {}
-class LoteTransacoesDto extends createZodDto(esquemaLoteTransacoes) {}
-class ResultadoLoteDto extends createZodDto(esquemaResultadoLote) {}
-class ExclusaoTransacaoDto extends createZodDto(esquemaExclusaoTransacao) {}
+class TransacaoDto extends criarDto(esquemaTransacao) {}
+class RespostaTransacaoDto extends criarDto(esquemaRespostaTransacao) {}
+class NovaTransacaoDto extends criarDto(esquemaNovaTransacao) {}
+class AtualizacaoTransacaoDto extends criarDto(esquemaAtualizacaoTransacao) {}
+class FiltroTransacoesDto extends criarDto(esquemaFiltroTransacoes) {}
+class ConsultaTransacoesDto extends criarDto(esquemaConsultaTransacoes) {}
+class PaginaTransacoesDto extends criarDto(esquemaPaginaTransacoes) {}
+class TotaisTransacoesDto extends criarDto(esquemaTotaisTransacoes) {}
+class LoteTransacoesDto extends criarDto(esquemaLoteTransacoes) {}
+class ResultadoLoteDto extends criarDto(esquemaResultadoLote) {}
+class ExclusaoTransacaoDto extends criarDto(esquemaExclusaoTransacao) {}
 
 /** Rotas de transações (docs/arquitetura/05). */
 @ApiTags('transacoes')

@@ -16,19 +16,19 @@ import {
   type RelatorioFormasPagamento,
   type RelatorioMensal,
 } from '@mony/shared/relatorios';
-import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
+import { criarDto } from '../../core/openapi/dto';
 import { RelatoriosService } from './relatorios.service';
 
-class ConsultaRelatorioDto extends createZodDto(esquemaConsultaRelatorio) {}
-class ConsultaRelatorioCategoriasDto extends createZodDto(esquemaConsultaRelatorioCategorias) {}
-class RelatorioMensalDto extends createZodDto(esquemaRelatorioMensal) {}
-class RelatorioAnualDto extends createZodDto(esquemaRelatorioAnual) {}
-class RelatorioCategoriasDto extends createZodDto(esquemaRelatorioCategorias) {}
-class RelatorioDiasDaSemanaDto extends createZodDto(esquemaRelatorioDiasDaSemana) {}
-class RelatorioCartoesDto extends createZodDto(esquemaRelatorioCartoes) {}
-class RelatorioFormasPagamentoDto extends createZodDto(esquemaRelatorioFormasPagamento) {}
+class ConsultaRelatorioDto extends criarDto(esquemaConsultaRelatorio) {}
+class ConsultaRelatorioCategoriasDto extends criarDto(esquemaConsultaRelatorioCategorias) {}
+class RelatorioMensalDto extends criarDto(esquemaRelatorioMensal) {}
+class RelatorioAnualDto extends criarDto(esquemaRelatorioAnual) {}
+class RelatorioCategoriasDto extends criarDto(esquemaRelatorioCategorias) {}
+class RelatorioDiasDaSemanaDto extends criarDto(esquemaRelatorioDiasDaSemana) {}
+class RelatorioCartoesDto extends criarDto(esquemaRelatorioCartoes) {}
+class RelatorioFormasPagamentoDto extends criarDto(esquemaRelatorioFormasPagamento) {}
 
 /**
  * Relatórios (doc 05, `GET /relatorios/:tipo?inicio=&fim=`; RN-150). Uma rota por tipo, para

@@ -1,13 +1,13 @@
 import { Controller, Get, Injectable, Module } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { type ConfigApp, esquemaConfigApp, SUGESTOES_CHAT_PADRAO } from '@mony/shared/config-app';
-import { createZodDto } from 'nestjs-zod';
 
 import { Publico } from '../../core/auth/publico.decorator';
 import { Configuracao } from '../../core/config/configuracao';
+import { criarDto } from '../../core/openapi/dto';
 import { LiberadaParaVersaoAntiga } from '../../core/versao-app/versao-app';
 
-class ConfigAppDto extends createZodDto(esquemaConfigApp) {}
+class ConfigAppDto extends criarDto(esquemaConfigApp) {}
 
 /**
  * O que o app precisa saber ao abrir (doc 04): versão mínima, recursos ligados e sugestões do

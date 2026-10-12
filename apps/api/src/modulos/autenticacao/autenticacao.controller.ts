@@ -19,24 +19,24 @@ import {
   esquemaVinculoSocial,
   type Sessao,
 } from '@mony/shared/autenticacao';
-import { createZodDto } from 'nestjs-zod';
 
 import { Publico } from '../../core/auth/publico.decorator';
 import type { UsuarioAutenticado } from '../../core/auth/tokens-acesso';
 import { UsuarioAtual } from '../../core/auth/usuario-atual.decorator';
+import { criarDto } from '../../core/openapi/dto';
 import { AutenticacaoService } from './autenticacao.service';
 import { LoginSocialService } from './login-social.service';
 import { RecuperacaoSenhaService } from './recuperacao-senha.service';
 
-class CadastroDto extends createZodDto(esquemaCadastro) {}
-class LoginDto extends createZodDto(esquemaLogin) {}
-class RenovacaoDto extends createZodDto(esquemaRenovacao) {}
-class SessaoDto extends createZodDto(esquemaSessao) {}
-class PedidoCodigoDto extends createZodDto(esquemaPedidoCodigo) {}
-class ConferenciaCodigoDto extends createZodDto(esquemaConferenciaCodigo) {}
-class RedefinicaoSenhaDto extends createZodDto(esquemaRedefinicaoSenha) {}
-class LoginSocialDto extends createZodDto(esquemaLoginSocial) {}
-class VinculoSocialDto extends createZodDto(esquemaVinculoSocial) {}
+class CadastroDto extends criarDto(esquemaCadastro) {}
+class LoginDto extends criarDto(esquemaLogin) {}
+class RenovacaoDto extends criarDto(esquemaRenovacao) {}
+class SessaoDto extends criarDto(esquemaSessao) {}
+class PedidoCodigoDto extends criarDto(esquemaPedidoCodigo) {}
+class ConferenciaCodigoDto extends criarDto(esquemaConferenciaCodigo) {}
+class RedefinicaoSenhaDto extends criarDto(esquemaRedefinicaoSenha) {}
+class LoginSocialDto extends criarDto(esquemaLoginSocial) {}
+class VinculoSocialDto extends criarDto(esquemaVinculoSocial) {}
 
 /** Rotas de autenticação (docs/arquitetura/05). Só fazem HTTP; a regra está no Service. */
 @ApiTags('autenticacao')

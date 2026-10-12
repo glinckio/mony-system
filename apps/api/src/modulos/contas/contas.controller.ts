@@ -25,15 +25,15 @@ import {
   esquemaNovaConta,
   type ListaContas,
 } from '@mony/shared/contas';
-import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
+import { criarDto } from '../../core/openapi/dto';
 import { ContasService } from './contas.service';
 
-class ContaDto extends createZodDto(esquemaConta) {}
-class ListaContasDto extends createZodDto(esquemaListaContas) {}
-class NovaContaDto extends createZodDto(esquemaNovaConta) {}
-class AtualizacaoContaDto extends createZodDto(esquemaAtualizacaoConta) {}
+class ContaDto extends criarDto(esquemaConta) {}
+class ListaContasDto extends criarDto(esquemaListaContas) {}
+class NovaContaDto extends criarDto(esquemaNovaConta) {}
+class AtualizacaoContaDto extends criarDto(esquemaAtualizacaoConta) {}
 
 /** Rotas de contas (proposta do doc 05). */
 @ApiTags('contas')

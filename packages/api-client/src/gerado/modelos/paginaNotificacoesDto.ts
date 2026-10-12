@@ -9,7 +9,7 @@ import type { PaginaNotificacoesDtoItensItem } from './paginaNotificacoesDtoIten
 
 export interface PaginaNotificacoesDto {
   itens: PaginaNotificacoesDtoItensItem[];
-  proximoCursor: string[];
+  proximoCursor: string | null;
   /**
    * @minimum -9007199254740991
    * @maximum 9007199254740991

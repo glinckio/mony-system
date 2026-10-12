@@ -35,22 +35,22 @@ import {
   type RespostaParcelamento,
   type ResultadoSimulacao,
 } from '@mony/shared/parcelamentos';
-import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
+import { criarDto } from '../../core/openapi/dto';
 import { ParcelamentosService } from './parcelamentos.service';
 
-class ListaParcelamentosDto extends createZodDto(esquemaListaParcelamentos) {}
-class FiltroParcelamentosDto extends createZodDto(esquemaFiltroParcelamentos) {}
-class DetalheParcelamentoDto extends createZodDto(esquemaDetalheParcelamento) {}
-class NovoParcelamentoDto extends createZodDto(esquemaNovoParcelamento) {}
-class RespostaParcelamentoDto extends createZodDto(esquemaRespostaParcelamento) {}
-class AtualizacaoParcelamentoDto extends createZodDto(esquemaAtualizacaoParcelamento) {}
-class SimulacaoParcelamentoDto extends createZodDto(esquemaSimulacaoParcelamento) {}
-class ResultadoSimulacaoDto extends createZodDto(esquemaResultadoSimulacao) {}
-class PagamentoParcelaDto extends createZodDto(esquemaPagamentoParcela) {}
-class RespostaParcelaDto extends createZodDto(esquemaRespostaParcela) {}
+class ListaParcelamentosDto extends criarDto(esquemaListaParcelamentos) {}
+class FiltroParcelamentosDto extends criarDto(esquemaFiltroParcelamentos) {}
+class DetalheParcelamentoDto extends criarDto(esquemaDetalheParcelamento) {}
+class NovoParcelamentoDto extends criarDto(esquemaNovoParcelamento) {}
+class RespostaParcelamentoDto extends criarDto(esquemaRespostaParcelamento) {}
+class AtualizacaoParcelamentoDto extends criarDto(esquemaAtualizacaoParcelamento) {}
+class SimulacaoParcelamentoDto extends criarDto(esquemaSimulacaoParcelamento) {}
+class ResultadoSimulacaoDto extends criarDto(esquemaResultadoSimulacao) {}
+class PagamentoParcelaDto extends criarDto(esquemaPagamentoParcela) {}
+class RespostaParcelaDto extends criarDto(esquemaRespostaParcela) {}
 
 /** Rotas de parcelamentos e dívidas (doc 05; RN-050 a RN-055). */
 @ApiTags('parcelamentos')

@@ -9,17 +9,17 @@ import {
   type Onboarding,
   type Perfil,
 } from '@mony/shared/usuario';
-import { createZodDto } from 'nestjs-zod';
 
 import type { UsuarioAutenticado } from '../../core/auth/tokens-acesso';
 import { UsuarioAtual } from '../../core/auth/usuario-atual.decorator';
+import { criarDto } from '../../core/openapi/dto';
 import { UsuariosService } from './usuarios.service';
 
-class PerfilDto extends createZodDto(esquemaPerfil) {}
-class AtualizacaoPerfilDto extends createZodDto(esquemaAtualizacaoPerfil) {}
-class RegistroDispositivoDto extends createZodDto(esquemaRegistroDispositivo) {}
-class OnboardingDto extends createZodDto(esquemaOnboarding) {}
-class AtualizacaoOnboardingDto extends createZodDto(esquemaAtualizacaoOnboarding) {}
+class PerfilDto extends criarDto(esquemaPerfil) {}
+class AtualizacaoPerfilDto extends criarDto(esquemaAtualizacaoPerfil) {}
+class RegistroDispositivoDto extends criarDto(esquemaRegistroDispositivo) {}
+class OnboardingDto extends criarDto(esquemaOnboarding) {}
+class AtualizacaoOnboardingDto extends criarDto(esquemaAtualizacaoOnboarding) {}
 
 /** Rotas do usuário logado (docs/arquitetura/05). */
 @ApiTags('usuario')

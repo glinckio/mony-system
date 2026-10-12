@@ -3475,19 +3475,27 @@
             "type": "string"
           },
           "telefone": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "telefoneVerificado": {
             "type": "boolean"
           },
           "fotoUrl": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "fusoHorario": {
             "type": "string"
@@ -4201,16 +4209,24 @@
             "type": "string"
           },
           "bandeira": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "final": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "cor": {
             "type": "string"
@@ -5793,10 +5809,14 @@
             }
           },
           "proximoCursor": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -5915,10 +5935,14 @@
             ]
           },
           "observacao": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "categoriaId": {
             "type": "string",
@@ -6934,16 +6958,24 @@
             "type": "string"
           },
           "dataFim": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "proximaGeracao": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "ativa": {
             "type": "boolean"
@@ -7431,10 +7463,14 @@
             "maximum": 31
           },
           "dataFim": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -7962,19 +7998,27 @@
             "maximum": 9007199254740991
           },
           "taxaJurosMensal": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "dataInicio": {
             "type": "string"
           },
           "observacao": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "categoriaId": {
             "type": "string",
@@ -9076,10 +9120,14 @@
             "maximum": 9007199254740991
           },
           "prazo": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "concluida": {
             "type": "boolean"
@@ -9183,10 +9231,14 @@
             "maximum": 9007199254740991
           },
           "prazo": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "concluida": {
             "type": "boolean"
@@ -9217,10 +9269,14 @@
             "maximum": 100000000000
           },
           "prazo": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "concluida": {
             "type": "boolean"
@@ -9933,10 +9989,14 @@
             }
           },
           "proximoCursor": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "naoLidas": {
             "type": "integer",

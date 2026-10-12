@@ -65,7 +65,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
 - [x] **T-017** 👤 Tokens e ícones do design do cliente no lugar dos provisórios (e modo escuro, se o design trouxer) (PR #40; só escuro; logo provisório do PDF)
   - dep: T-011 · docs: 04 (Design system) · 👤 design do cliente
   - Só `src/ui/tokens.ts` e os ícones mudam: os componentes e as telas já usam só os tokens.
-- [ ] **T-018** Contrato OpenAPI: campos `string | null` de topo saem como `string[]`
+- [x] **T-018** Contrato OpenAPI: campos `string | null` de topo saem como `string[]` (PR #46)
   - dep: T-009 · docs: 02, 05
   - O `nestjs-zod` gera `type: ['string', 'null']` (JSON Schema 2020-12) para `z.string().nullable()` sem formato, e o `@nestjs/swagger` lê o `type` em lista como array. Exemplos no `openapi.json`: `PaginaTransacoesDto.proximoCursor`, `TransacaoDto.observacao`, `PerfilDto.telefone`, `CartaoDto.bandeira`.
   - Aceite: esses campos saem `string | null` no contrato e no cliente gerado; teste que falha se um campo `nullable` virar array; o app tira as conversões `as unknown as` de `src/features/transacoes/hooks/use-transacoes.ts`.

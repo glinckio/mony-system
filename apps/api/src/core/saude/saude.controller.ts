@@ -1,14 +1,14 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 import { Publico } from '../auth/publico.decorator';
+import { criarDto } from '../openapi/dto';
 import { LiberadaParaVersaoAntiga } from '../versao-app/versao-app';
 
 const esquemaSaude = z.object({ status: z.literal('ok') });
 
-class SaudeDto extends createZodDto(esquemaSaude) {}
+class SaudeDto extends criarDto(esquemaSaude) {}
 
 /** Verificação de saúde para o balanceador (ALB) e para o ambiente local. */
 @ApiTags('saude')

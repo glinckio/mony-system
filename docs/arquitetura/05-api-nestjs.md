@@ -68,6 +68,7 @@ modulos/cartoes/
 
 Regras:
 - **Controller → Service → Repository.** Controller nunca chama Prisma.
+- **DTOs com `criarDto`** (`src/core/openapi/dto.ts`), e não com o `createZodDto` do `nestjs-zod` (o ESLint barra): ele acerta no contrato os campos de topo que aceitam nulo, que o `@nestjs/swagger` leria como lista (T-018).
 - **Cálculos são funções puras** em `dominio/`, testadas sem banco (datas de fatura, Price, projeção, faixas).
 - **A Mony chama Services**, nunca Controllers nem Prisma (regra de arquitetura do PDF). Todo Service recebe um `Contexto` com `usuarioId`, `origem` (`app`, `mony`, `open_finance`, `admin`, `sistema`) e `idempotencyKey`.
 - Comunicação entre módulos: chamada direta ao Service exportado quando é síncrona e transacional (criar transação + atualizar fatura). Efeitos colaterais (alertas, preferências aprendidas, analítica) por **evento de domínio** → fila BullMQ, para não deixar a resposta lenta.

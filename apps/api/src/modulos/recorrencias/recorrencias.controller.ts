@@ -27,17 +27,17 @@ import {
   type Recorrencia,
   type RespostaRecorrencia,
 } from '@mony/shared/recorrencias';
-import { createZodDto } from 'nestjs-zod';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
+import { criarDto } from '../../core/openapi/dto';
 import { RecorrenciasService } from './recorrencias.service';
 
-class RecorrenciaDto extends createZodDto(esquemaRecorrencia) {}
-class ListaRecorrenciasDto extends createZodDto(esquemaListaRecorrencias) {}
-class NovaRecorrenciaDto extends createZodDto(esquemaNovaRecorrencia) {}
-class AtualizacaoRecorrenciaDto extends createZodDto(esquemaAtualizacaoRecorrencia) {}
-class RespostaRecorrenciaDto extends createZodDto(esquemaRespostaRecorrencia) {}
+class RecorrenciaDto extends criarDto(esquemaRecorrencia) {}
+class ListaRecorrenciasDto extends criarDto(esquemaListaRecorrencias) {}
+class NovaRecorrenciaDto extends criarDto(esquemaNovaRecorrencia) {}
+class AtualizacaoRecorrenciaDto extends criarDto(esquemaAtualizacaoRecorrencia) {}
+class RespostaRecorrenciaDto extends criarDto(esquemaRespostaRecorrencia) {}
 
 /** Rotas de recorrências (docs/arquitetura/05, RN-043). */
 @ApiTags('recorrencias')

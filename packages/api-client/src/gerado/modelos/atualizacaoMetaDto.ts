@@ -17,6 +17,6 @@ export interface AtualizacaoMetaDto {
    * @maximum 100000000000
    */
   valorAlvoCentavos?: number;
-  prazo?: string[];
+  prazo?: string | null;
   concluida?: boolean;
 }
