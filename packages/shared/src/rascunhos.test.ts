@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   acharPorNome,
+  chaveDoEstabelecimento,
   type DadosRascunho,
   descricaoDoGasto,
   diasAtras,
@@ -9,6 +10,7 @@ import {
   formaDoTexto,
   normalizar,
   parcelasDoTexto,
+  preferidosPrimeiro,
   proximoCampo,
   valorDoGasto,
 } from './rascunhos.js';
@@ -125,5 +127,44 @@ describe('leitura do texto livre', () => {
     ['gastei 10 no pix', null],
   ])('descrição: %s → %s', (texto, descricao) => {
     expect(descricaoDoGasto(texto, ['Nubank'])).toBe(descricao);
+  });
+});
+
+describe('preferências aprendidas (RN-081, RN-090)', () => {
+  it.each([
+    ['iFood', 'ifood'],
+    ['  Pão de Açúcar  ', 'pao de acucar'],
+    ['Uber*Trip 123', 'uber trip 123'],
+    ['!!!', null],
+  ])('chave de %s → %s', (descricao, chave) => {
+    expect(chaveDoEstabelecimento(descricao)).toBe(chave);
+  });
+
+  it('a chave tem no máximo 100 letras', () => {
+    expect(chaveDoEstabelecimento('a'.repeat(150))?.length).toBe(100);
+  });
+
+  it('os preferidos vêm na frente, na ordem deles, sem repetir', () => {
+    const itens = ['pix', 'debito', 'cartao_credito', 'dinheiro'];
+    const proprio = (item: string) => item;
+    expect(preferidosPrimeiro(itens, proprio, ['dinheiro'])).toEqual([
+      'dinheiro',
+      'pix',
+      'debito',
+      'cartao_credito',
+    ]);
+    expect(preferidosPrimeiro(itens, proprio, [null, 'boleto', 'debito', 'pix'])).toEqual([
+      'debito',
+      'pix',
+      'cartao_credito',
+      'dinheiro',
+    ]);
+    expect(preferidosPrimeiro(itens, proprio, [])).toEqual(itens);
+    // Mesma chave em objetos diferentes (a categoria da preferência e a das mais usadas) sai uma vez.
+    const categorias = [{ id: 'c2' }, { id: 'c1' }, { id: 'c2' }];
+    expect(preferidosPrimeiro(categorias, ({ id }) => id, ['c2'])).toEqual([
+      { id: 'c2' },
+      { id: 'c1' },
+    ]);
   });
 });

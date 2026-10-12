@@ -20,6 +20,7 @@ import {
   formaDoTexto,
   normalizar,
   parcelasDoTexto,
+  preferidosPrimeiro,
   proximoCampo,
   valorDoGasto,
 } from '@mony/shared/rascunhos';
@@ -32,6 +33,7 @@ import { CartoesService } from '../cartoes/cartoes.service';
 import { CategoriasService } from '../categorias/categorias.service';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import { LancamentosMony } from './lancamentos.service';
+import { PreferenciasService } from './preferencias.service';
 import { type Rascunho, RascunhosService } from './rascunhos.service';
 
 /** RN-081: quantas categorias viram botão, além do [Outra]. */
@@ -124,6 +126,7 @@ export class RoteadorRegras {
     private readonly categorias: CategoriasService,
     private readonly cartoes: CartoesService,
     private readonly lancamentos: LancamentosMony,
+    private readonly preferencias: PreferenciasService,
     private readonly usuarios: UsuariosService,
     private readonly clock: Clock,
   ) {}
@@ -372,28 +375,43 @@ export class RoteadorRegras {
     });
     let botoes: OpcaoBotao[];
     let texto = PERGUNTAS[campo];
+    // RN-081: o que a pessoa já confirmou para este estabelecimento vem primeiro (RN-090).
+    const preferida = await this.preferencias.doEstabelecimento(contexto, rascunho.dados.descricao);
     switch (campo) {
       case 'categoria': {
+        const primeiro = (lista: readonly { id: string; nome: string }[]) =>
+          preferidosPrimeiro(lista, ({ id }) => id, [preferida?.categoriaId]);
         if (opcoes.todasAsCategorias) {
           texto = 'Escolha a categoria:';
-          botoes = catalogo.categorias.map(({ id, nome }) => botao(id, nome));
+          botoes = primeiro(catalogo.categorias).map(({ id, nome }) => botao(id, nome));
         } else {
           const desde = somarDias(catalogo.hoje, -DIAS_DE_USO);
           const maisUsadas = await this.categorias.maisUsadas(contexto, desde, CATEGORIAS_EM_BOTAO);
+          const daPreferencia = catalogo.categorias.filter(
+            ({ id }) => id === preferida?.categoriaId,
+          );
           botoes = [
-            ...maisUsadas.map(({ id, nome }) => botao(id, nome)),
+            ...primeiro([...daPreferencia, ...maisUsadas])
+              .slice(0, CATEGORIAS_EM_BOTAO)
+              .map(({ id, nome }) => botao(id, nome)),
             botao(VALOR_OUTRA_CATEGORIA, 'Outra'),
           ];
         }
         break;
       }
       case 'forma_pagamento':
-        botoes = FORMAS_EM_BOTAO.filter(
-          (forma) => forma !== 'cartao_credito' || catalogo.cartoes.length > 0,
+        botoes = preferidosPrimeiro(
+          FORMAS_EM_BOTAO.filter(
+            (forma) => forma !== 'cartao_credito' || catalogo.cartoes.length > 0,
+          ),
+          (forma) => forma,
+          [preferida?.formaPagamento],
         ).map((forma) => botao(forma, ROTULO_FORMA[forma]));
         break;
       case 'cartao':
-        botoes = catalogo.cartoes.map(({ id, nome }) => botao(id, nome));
+        botoes = preferidosPrimeiro(catalogo.cartoes, ({ id }) => id, [preferida?.cartaoId]).map(
+          ({ id, nome }) => botao(id, nome),
+        );
         break;
       case 'parcelas':
         botoes = PARCELAS_EM_BOTAO.map((parcelas) =>

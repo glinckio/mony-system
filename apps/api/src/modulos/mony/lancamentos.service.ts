@@ -17,6 +17,7 @@ import { CartoesService } from '../cartoes/cartoes.service';
 import { CategoriasService } from '../categorias/categorias.service';
 import { ParcelamentosService } from '../parcelamentos/parcelamentos.service';
 import { TransacoesService } from '../transacoes/transacoes.service';
+import { PreferenciasService } from './preferencias.service';
 
 const reais = (centavos: number) => formatarCentavos(centavos);
 
@@ -38,12 +39,18 @@ export class LancamentosMony {
     private readonly parcelamentos: ParcelamentosService,
     private readonly categorias: CategoriasService,
     private readonly cartoes: CartoesService,
+    private readonly preferencias: PreferenciasService,
     private readonly clock: Clock,
   ) {}
 
   /** Grava a despesa ou receita (RN-082: sem perguntas, quando os dados estão completos). */
   async registrarTransacao(contexto: Contexto, dados: DadosNovaTransacao): Promise<Gravado> {
     const { transacao } = await this.transacoes.registrar({ ...contexto, origem: 'mony' }, dados);
+    await this.preferencias.aprender(contexto, transacao.descricao, {
+      categoriaId: transacao.categoriaId,
+      cartaoId: transacao.cartaoId,
+      formaPagamento: transacao.formaPagamento,
+    });
     return this.resumoDaTransacao(contexto, transacao, { comDesfazer: true });
   }
 
@@ -54,6 +61,11 @@ export class LancamentosMony {
       dados,
     );
     const [primeira] = parcelamento.parcelas;
+    await this.preferencias.aprender(contexto, parcelamento.nome, {
+      categoriaId: parcelamento.categoriaId,
+      cartaoId: parcelamento.cartaoId,
+      formaPagamento: parcelamento.cartaoId ? 'cartao_credito' : (dados.formaPagamento ?? 'boleto'),
+    });
     const [categoria, cartao] = await Promise.all([
       this.categorias.buscar(contexto, parcelamento.categoriaId),
       parcelamento.cartaoId ? this.cartoes.buscar(contexto, parcelamento.cartaoId) : null,

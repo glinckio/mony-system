@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { AutorMensagem, TipoMensagem } from '@mony/shared/enums';
+import type { AutorMensagem, FormaPagamento, TipoMensagem } from '@mony/shared/enums';
 
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -59,6 +59,26 @@ export interface RascunhoSalvo {
 }
 
 const CAMPOS_RASCUNHO = { id: true, dados: true, campoPendente: true, expiraEm: true } as const;
+
+/** Estabelecimento → categoria, cartão e forma de pagamento (RN-090). */
+export interface Combinacao {
+  categoriaId: string | null;
+  cartaoId: string | null;
+  formaPagamento: FormaPagamento | null;
+}
+
+export interface PreferenciaSalva extends Combinacao {
+  chave: string;
+  contagem: number;
+}
+
+const CAMPOS_PREFERENCIA = {
+  chave: true,
+  categoriaId: true,
+  cartaoId: true,
+  formaPagamento: true,
+  contagem: true,
+} as const;
 
 /** Mensagens antes de uma posição: mais antigas pela criação e, no empate, pelo id (UUIDv7). */
 function antesDe(posicao: PosicaoMensagem): Prisma.MensagemWhereInput {
@@ -200,6 +220,46 @@ export class MonyRepository {
       where: { expiraEm: { lte: agora } },
     });
     return count;
+  }
+
+  preferencia(usuarioId: string, chave: string): Promise<PreferenciaSalva | null> {
+    return this.prisma.cliente.preferenciaAprendida.findUnique({
+      where: { usuarioId_chave: { usuarioId, chave } },
+      select: CAMPOS_PREFERENCIA,
+    });
+  }
+
+  /** As preferências com mais confirmações (e, no empate, as mais recentes). */
+  preferenciasPrincipais(usuarioId: string, quantidade: number): Promise<PreferenciaSalva[]> {
+    return this.prisma.cliente.preferenciaAprendida.findMany({
+      where: { usuarioId },
+      orderBy: [{ contagem: 'desc' }, { atualizadoEm: 'desc' }],
+      take: quantidade,
+      select: CAMPOS_PREFERENCIA,
+    });
+  }
+
+  /**
+   * RN-090: a combinação confirmada para o estabelecimento. A mesma de antes soma 1 na contagem;
+   * outra toma o lugar e começa do 1.
+   */
+  async aprenderPreferencia(
+    usuarioId: string,
+    chave: string,
+    combinacao: Combinacao,
+  ): Promise<PreferenciaSalva> {
+    const atual = await this.preferencia(usuarioId, chave);
+    const mesma =
+      atual !== null &&
+      atual.categoriaId === combinacao.categoriaId &&
+      atual.cartaoId === combinacao.cartaoId &&
+      atual.formaPagamento === combinacao.formaPagamento;
+    return this.prisma.cliente.preferenciaAprendida.upsert({
+      where: { usuarioId_chave: { usuarioId, chave } },
+      create: { usuarioId, chave, ...combinacao, contagem: 1 },
+      update: mesma ? { contagem: { increment: 1 } } : { ...combinacao, contagem: 1 },
+      select: CAMPOS_PREFERENCIA,
+    });
   }
 
   async registrarLogIa(dados: NovoLogIa): Promise<void> {

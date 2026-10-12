@@ -130,6 +130,13 @@ valor ─► categoria ─► forma_pagamento ─► (cartão) ─► (à vista 
 - Gasto novo com valor troca o rascunho ("Deixei de lado o lançamento de R$ 25,00."); "cancela", "esquece" e afins descartam. Texto que não responde vai ao modelo com o rascunho no contexto, e a pergunta pendente volta com os botões depois da resposta.
 - A validade (24 h) conta da última resposta. A limpeza é a rotina `limpar-rascunhos`, às 03:00.
 
+**Preferências aprendidas (T-063, RN-081, RN-090):** `PreferenciasService`, sobre `preferencias_aprendidas`.
+
+- A chave é o estabelecimento: a descrição do lançamento sem acento, minúscula e só com letras e números (`chaveDoEstabelecimento` em `@mony/shared/rascunhos`; "iFood!" → `ifood`).
+- Todo lançamento confirmado pela Mony (fim do rascunho, `criar_transacao`, `criar_parcelamento`) grava a combinação categoria, cartão e forma: a mesma de antes soma 1 na contagem; outra toma o lugar e começa do 1.
+- Nas perguntas do rascunho, o que a pessoa confirmou para o estabelecimento vem primeiro: a categoria (mesmo fora das 4 mais usadas), a forma e o cartão (`preferidosPrimeiro`).
+- O contexto do modelo leva os 10 hábitos com mais confirmações ("cinema → Lazer, Pix").
+
 ## Contexto enviado ao modelo
 
 Por mensagem (do PDF): data de hoje (no fuso do usuário), nome, categorias, cartões, orçamentos do mês e as últimas mensagens da conversa. Complementos **(decisão técnica)**: rascunho pendente, plano e consumo de cota, top preferências aprendidas.

@@ -30,6 +30,7 @@ import { MonyController } from './mony.controller';
 import { LancamentosMony } from './lancamentos.service';
 import { MonyService } from './mony.service';
 import { MonyOrquestrador } from './orquestrador.service';
+import { PreferenciasService } from './preferencias.service';
 import { RascunhosModule } from './rascunhos.module';
 import { RoteadorRegras } from './roteador-regras.service';
 
@@ -76,6 +77,7 @@ const FERRAMENTAS = [
     MonyService,
     RoteadorRegras,
     LancamentosMony,
+    PreferenciasService,
     ContextoMonyService,
     RegistroFerramentas,
     ...FERRAMENTAS,
