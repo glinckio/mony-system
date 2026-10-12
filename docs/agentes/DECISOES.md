@@ -785,3 +785,12 @@ Contexto: o doc 08 põe a leitura na fila `mony-midia` e `ler_documento` entre a
 - **Ids pelo usuário**: categoria pelo nome que o modelo escolheu na lista do contexto, senão a preferência do estabelecimento (RN-090); cartão pelo nome ou final, pela preferência ou o único cadastrado; receita sem categoria vai para "Outros".
 - **Sem a imagem no lançamento**: o arquivo lido não vira anexo da transação gravada (um documento pode ter vários lançamentos).
 Reversível: sim.
+
+## 2026-10-12 — T-067 — Consultoria pós-lançamento
+Contexto: a RN-089 pede que a Mony comente o impacto no orçamento da categoria e no limite do cartão depois de cada lançamento, sem dizer onde nem como. Decisões:
+- **No cartão de resumo, não no texto**: o impacto vai em `lancamento.impacto` (dados e a frase pronta) e o cartão mostra a frase na cor da faixa; o texto da regra fica como estava, e o modelo recebe o impacto no resultado da ferramenta com a instrução de não repetir os números e só alertar em atenção ou estouro. Assim a frase é a mesma em todo caminho (regra, ferramenta, documento) e não depende do modelo.
+- **Mês do orçamento**: o da data da despesa; no parcelamento, o da primeira parcela (no cartão, a data da compra; fora dele, o vencimento).
+- **Faixas**: as do orçamento (RN-062: atenção a partir de 80%, estourado a partir de 100%); no cartão, "estourado" só quando o disponível fica negativo, e 100% exato é "chegou ao limite".
+- **Receita** não tem orçamento; só comenta o cartão quando houver. [Confirmar todos] de documento responde só o total, sem o impacto de cada lançamento.
+- **Falha no cálculo** vai ao log e o lançamento fica sem o comentário.
+Reversível: sim.

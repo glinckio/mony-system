@@ -17,6 +17,7 @@ import { CartoesService } from '../cartoes/cartoes.service';
 import { CategoriasService } from '../categorias/categorias.service';
 import { ParcelamentosService } from '../parcelamentos/parcelamentos.service';
 import { TransacoesService } from '../transacoes/transacoes.service';
+import { ConsultoriaMony, type LancamentoParaImpacto } from './consultoria.service';
 import { PreferenciasService } from './preferencias.service';
 
 const reais = (centavos: number) => formatarCentavos(centavos);
@@ -40,10 +41,14 @@ export class LancamentosMony {
     private readonly categorias: CategoriasService,
     private readonly cartoes: CartoesService,
     private readonly preferencias: PreferenciasService,
+    private readonly consultoria: ConsultoriaMony,
     private readonly clock: Clock,
   ) {}
 
-  /** Grava a despesa ou receita (RN-082: sem perguntas, quando os dados estão completos). */
+  /**
+   * Grava a despesa ou receita (RN-082: sem perguntas, quando os dados estão completos), com o
+   * impacto no orçamento e no cartão (RN-089).
+   */
   async registrarTransacao(contexto: Contexto, dados: DadosNovaTransacao): Promise<Gravado> {
     const { transacao } = await this.transacoes.registrar({ ...contexto, origem: 'mony' }, dados);
     await this.preferencias.aprender(contexto, transacao.descricao, {
@@ -51,7 +56,13 @@ export class LancamentosMony {
       cartaoId: transacao.cartaoId,
       formaPagamento: transacao.formaPagamento,
     });
-    return this.resumoDaTransacao(contexto, transacao, { comDesfazer: true });
+    const gravado = await this.resumoDaTransacao(contexto, transacao, { comDesfazer: true });
+    return this.comImpacto(contexto, gravado, {
+      tipo: transacao.tipo,
+      categoriaId: transacao.categoriaId,
+      data: transacao.data,
+      cartaoId: transacao.cartaoId,
+    });
   }
 
   /** Grava o parcelamento (compra no cartão ou dívida) e o resumo com a primeira parcela. */
@@ -83,14 +94,41 @@ export class LancamentosMony {
       parcelas: parcelamento.totalParcelas,
       valorParcelaCentavos: primeira?.valorCentavos ?? null,
     };
-    return {
-      lancamento,
-      resumo: {
-        tipo: 'resumo',
+    return this.comImpacto(
+      contexto,
+      {
         lancamento,
-        opcoes: [desfazer('parcelamento', parcelamento.id)],
+        resumo: {
+          tipo: 'resumo',
+          lancamento,
+          opcoes: [desfazer('parcelamento', parcelamento.id)],
+        },
       },
-    };
+      {
+        tipo: 'despesa',
+        categoriaId: parcelamento.categoriaId,
+        // A primeira parcela: no cartão, na data da compra; fora dele, no vencimento.
+        data: parcelamento.cartaoId
+          ? parcelamento.dataInicio
+          : (primeira?.vencimento ?? parcelamento.dataInicio),
+        cartaoId: parcelamento.cartaoId,
+      },
+    );
+  }
+
+  /** RN-089: o impacto no resumo (o cartão mostra e as ferramentas passam ao modelo). */
+  private async comImpacto(
+    contexto: Contexto,
+    gravado: Gravado,
+    lancamento: Omit<LancamentoParaImpacto, 'categoria'>,
+  ): Promise<Gravado> {
+    const impacto = await this.consultoria.doLancamento(contexto, {
+      ...lancamento,
+      categoria: gravado.lancamento.categoria ?? '',
+    });
+    if (impacto === null || gravado.resumo.tipo !== 'resumo') return gravado;
+    const comImpacto = { ...gravado.lancamento, impacto };
+    return { lancamento: comImpacto, resumo: { ...gravado.resumo, lancamento: comImpacto } };
   }
 
   /** O cartão de resumo de uma transação; o [Desfazer] só para o que acabou de ser gravado. */

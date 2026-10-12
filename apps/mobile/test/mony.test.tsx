@@ -294,7 +294,7 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
     TEMPO_LIMITE_MS,
   );
   it(
-    'RN-082 o cartão de resumo mostra o que foi gravado, e o [Desfazer] pede à API',
+    'RN-082 RN-089 o cartão de resumo mostra o que foi gravado e o impacto, e o [Desfazer] pede à API',
     async () => {
       const transacaoId = '0199a000-0000-7000-8000-0000000000f1';
       fetchStreaming.mockResolvedValue(
@@ -316,6 +316,16 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
                 cartao: 'Nubank',
                 parcelas: 3,
                 valorParcelaCentavos: 20_000,
+                impacto: {
+                  orcamento: null,
+                  cartao: {
+                    cartao: 'Nubank',
+                    percentualUsado: 85,
+                    disponivelCentavos: 75_000,
+                    faixa: 'atencao',
+                  },
+                  comentario: 'Atenção: o Nubank já usa 85% do limite; restam R$ 750,00.',
+                },
               },
               opcoes: [
                 {
@@ -351,6 +361,10 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
       expect(resumo).toHaveTextContent(/Despesa anotada/);
       expect(resumo).toHaveTextContent(/R\$\s600,00 · Fone/);
       expect(resumo).toHaveTextContent(/Compras · 14\/out · Nubank em 3x de R\$\s200,00/);
+      // RN-089: o impacto no cartão, na cor da atenção.
+      expect(screen.getByTestId('mony-impacto')).toHaveTextContent(
+        'Atenção: o Nubank já usa 85% do limite; restam R$ 750,00.',
+      );
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: 'Desfazer' })).toBeEnabled();

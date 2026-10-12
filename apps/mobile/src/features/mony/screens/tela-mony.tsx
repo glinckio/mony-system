@@ -1,5 +1,6 @@
 import { agirMony, ErroApi, type PedidoAcaoMonyDto } from '@mony/api-client';
 import type { ComponenteMony, EventoMony, OpcaoBotao, ResumoLancamento } from '@mony/shared/mony';
+import type { FaixaOrcamento } from '@mony/shared/orcamentos';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
@@ -24,6 +25,7 @@ import {
   Campo,
   Card,
   Chip,
+  type CorTexto,
   cores,
   Folha,
   Icone,
@@ -494,6 +496,12 @@ function Opcoes({
   );
 }
 
+const COR_DA_FAIXA: Record<FaixaOrcamento, CorTexto> = {
+  normal: 'suave',
+  atencao: 'atencao',
+  estourado: 'perigo',
+};
+
 /** O que a Mony gravou (RN-082): valor, descrição, categoria, data e forma, com o [Desfazer]. */
 function CartaoResumo({
   lancamento,
@@ -525,6 +533,14 @@ function CartaoResumo({
         : null;
   const categoria =
     lancamento.categoria ?? (aConfirmar ? t('mony.resumo.categoriaAEscolher') : null);
+  // RN-089: o impacto no orçamento e no cartão, na cor da faixa mais alta.
+  const impacto = lancamento.impacto ?? null;
+  const faixas = [impacto?.orcamento?.faixa, impacto?.cartao?.faixa];
+  const faixa: FaixaOrcamento = faixas.includes('estourado')
+    ? 'estourado'
+    : faixas.includes('atencao')
+      ? 'atencao'
+      : 'normal';
   return (
     <Card className="gap-2" style={{ maxWidth: '85%' }} testID="mony-resumo">
       <Texto variante="corpo-sm" cor="suave">
@@ -542,6 +558,11 @@ function CartaoResumo({
       <Texto variante="corpo-sm" cor="suave">
         {[categoria, dataCurta(lancamento.data), forma].filter(Boolean).join(' · ')}
       </Texto>
+      {impacto ? (
+        <Texto variante="corpo-sm" cor={COR_DA_FAIXA[faixa]} testID="mony-impacto">
+          {impacto.comentario}
+        </Texto>
+      ) : null}
       <Opcoes opcoes={opcoes} aoTocar={aoTocar} />
     </Card>
   );

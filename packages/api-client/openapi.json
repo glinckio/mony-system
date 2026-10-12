@@ -7886,6 +7886,108 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "impacto": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "orcamento": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "categoria": {
+                                            "type": "string"
+                                          },
+                                          "competencia": {
+                                            "type": "string"
+                                          },
+                                          "percentualUsado": {
+                                            "type": "integer",
+                                            "minimum": -9007199254740991,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "restanteCentavos": {
+                                            "type": "integer",
+                                            "minimum": -9007199254740991,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "faixa": {
+                                            "type": "string",
+                                            "enum": [
+                                              "normal",
+                                              "atencao",
+                                              "estourado"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "categoria",
+                                          "competencia",
+                                          "percentualUsado",
+                                          "restanteCentavos",
+                                          "faixa"
+                                        ]
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "cartao": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "cartao": {
+                                            "type": "string"
+                                          },
+                                          "percentualUsado": {
+                                            "type": "integer",
+                                            "minimum": -9007199254740991,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "disponivelCentavos": {
+                                            "type": "integer",
+                                            "minimum": -9007199254740991,
+                                            "maximum": 9007199254740991
+                                          },
+                                          "faixa": {
+                                            "type": "string",
+                                            "enum": [
+                                              "normal",
+                                              "atencao",
+                                              "estourado"
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "cartao",
+                                          "percentualUsado",
+                                          "disponivelCentavos",
+                                          "faixa"
+                                        ]
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  "comentario": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "orcamento",
+                                  "cartao",
+                                  "comentario"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         },
                         "required": [
@@ -8143,6 +8245,108 @@
                                     "type": "integer",
                                     "minimum": -9007199254740991,
                                     "maximum": 9007199254740991
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "impacto": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "orcamento": {
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "categoria": {
+                                                "type": "string"
+                                              },
+                                              "competencia": {
+                                                "type": "string"
+                                              },
+                                              "percentualUsado": {
+                                                "type": "integer",
+                                                "minimum": -9007199254740991,
+                                                "maximum": 9007199254740991
+                                              },
+                                              "restanteCentavos": {
+                                                "type": "integer",
+                                                "minimum": -9007199254740991,
+                                                "maximum": 9007199254740991
+                                              },
+                                              "faixa": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "normal",
+                                                  "atencao",
+                                                  "estourado"
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "categoria",
+                                              "competencia",
+                                              "percentualUsado",
+                                              "restanteCentavos",
+                                              "faixa"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "cartao": {
+                                        "anyOf": [
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "cartao": {
+                                                "type": "string"
+                                              },
+                                              "percentualUsado": {
+                                                "type": "integer",
+                                                "minimum": -9007199254740991,
+                                                "maximum": 9007199254740991
+                                              },
+                                              "disponivelCentavos": {
+                                                "type": "integer",
+                                                "minimum": -9007199254740991,
+                                                "maximum": 9007199254740991
+                                              },
+                                              "faixa": {
+                                                "type": "string",
+                                                "enum": [
+                                                  "normal",
+                                                  "atencao",
+                                                  "estourado"
+                                                ]
+                                              }
+                                            },
+                                            "required": [
+                                              "cartao",
+                                              "percentualUsado",
+                                              "disponivelCentavos",
+                                              "faixa"
+                                            ]
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      },
+                                      "comentario": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "orcamento",
+                                      "cartao",
+                                      "comentario"
+                                    ]
                                   },
                                   {
                                     "type": "null"

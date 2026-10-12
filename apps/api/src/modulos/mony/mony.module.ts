@@ -10,6 +10,7 @@ import { ParcelamentosModule } from '../parcelamentos/parcelamentos.module';
 import { RelatoriosModule } from '../relatorios/relatorios.module';
 import { TransacoesModule } from '../transacoes/transacoes.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
+import { ConsultoriaMony } from './consultoria.service';
 import { ContextoMonyService } from './contexto.service';
 import { DocumentosMony } from './documentos.service';
 import { AtualizarMetaTool } from './ferramentas/atualizar-meta.tool';
@@ -80,6 +81,7 @@ const FERRAMENTAS = [
     MonyService,
     RoteadorRegras,
     LancamentosMony,
+    ConsultoriaMony,
     DocumentosMony,
     PreferenciasService,
     ContextoMonyService,

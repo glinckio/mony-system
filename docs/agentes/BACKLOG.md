@@ -191,7 +191,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-062b · RN-083, RN-086
 - [ ] **T-066** NFC-e: leitura do QR no app, `NfceProvider`, histórico de preços, fallback por foto
   - dep: T-026, T-065 · docs: 10 (NFC-e)
-- [ ] **T-067** Consultoria pós-lançamento (impacto no orçamento e no cartão)
+- [x] **T-067** Consultoria pós-lançamento (impacto no orçamento e no cartão) (PR #63)
   - dep: T-062b · RN-089
 - [ ] **T-068** Prompt versionado (`mony_config`) e avaliação com frases de teste no CI
   - dep: T-062b · docs: 08 (Controle de custo e qualidade)

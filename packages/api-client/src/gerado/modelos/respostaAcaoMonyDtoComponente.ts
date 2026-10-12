@@ -36,6 +36,38 @@ export type RespostaAcaoMonyDtoComponente =
         cartao: string | null;
         parcelas: number | null;
         valorParcelaCentavos: number | null;
+        impacto?: {
+          orcamento: {
+            categoria: string;
+            competencia: string;
+            /**
+             * @minimum -9007199254740991
+             * @maximum 9007199254740991
+             */
+            percentualUsado: number;
+            /**
+             * @minimum -9007199254740991
+             * @maximum 9007199254740991
+             */
+            restanteCentavos: number;
+            faixa: 'normal' | 'atencao' | 'estourado';
+          } | null;
+          cartao: {
+            cartao: string;
+            /**
+             * @minimum -9007199254740991
+             * @maximum 9007199254740991
+             */
+            percentualUsado: number;
+            /**
+             * @minimum -9007199254740991
+             * @maximum 9007199254740991
+             */
+            disponivelCentavos: number;
+            faixa: 'normal' | 'atencao' | 'estourado';
+          } | null;
+          comentario: string;
+        } | null;
       };
       opcoes: {
         id: string;
