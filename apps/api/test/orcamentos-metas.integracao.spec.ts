@@ -245,6 +245,17 @@ describe.runIf(ativo)('integração: orçamentos e metas', () => {
     const usuario = await usuarioNovo();
     const outro = await usuarioNovo();
     const criado = await definir(usuario, { competencia: '2026-11-01' });
+    // O primeiro orçamento conclui a etapa do onboarding (RN-024).
+    expect((await chamar('GET', '/me/onboarding', usuario.acesso)).json()).toMatchObject({
+      etapas: expect.arrayContaining([
+        expect.objectContaining({ etapa: 'orcamento', situacao: 'concluida' }),
+      ]) as unknown,
+    });
+    expect((await chamar('GET', '/me/onboarding', outro.acesso)).json()).toMatchObject({
+      etapas: expect.arrayContaining([
+        expect.objectContaining({ etapa: 'orcamento', situacao: 'pendente' }),
+      ]) as unknown,
+    });
     const mudado = await definir(usuario, {
       competencia: '2026-11-01',
       valorLimiteCentavos: 70_000,

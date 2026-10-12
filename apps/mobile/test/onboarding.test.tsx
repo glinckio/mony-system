@@ -230,8 +230,13 @@ describe('onboarding (T-046)', () => {
       fireEvent.press(screen.getByRole('button', { name: 'Continuar' }));
       const folha = await screen.findByTestId('folha-checklist', {}, ESPERA);
       const orcamento = within(folha).getByTestId('etapa-orcamento');
-      // O orçamento ainda não tem tela (T-052): só dá para dispensar.
-      expect(within(orcamento).queryByRole('button', { name: 'Fazer agora' })).toBeNull();
+      // O orçamento abre a tela dele (T-052); o tour não tem tela e só dá para dispensar.
+      expect(within(orcamento).getByRole('button', { name: 'Fazer agora' })).toBeOnTheScreen();
+      expect(
+        within(within(folha).getByTestId('etapa-tour')).queryByRole('button', {
+          name: 'Fazer agora',
+        }),
+      ).toBeNull();
       fireEvent.press(within(orcamento).getByRole('button', { name: 'Dispensar' }));
       expect(await within(orcamento).findByText('Dispensado', {}, ESPERA)).toBeOnTheScreen();
       await waitFor(() => {

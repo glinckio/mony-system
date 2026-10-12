@@ -11,6 +11,15 @@ import type { VarianteTexto } from './tokens';
 /** O que aparece no lugar do valor com o modo privacidade ligado. */
 export const VALOR_OCULTO = 'R$ •••••';
 
+/**
+ * Para valores dentro de uma frase ("de R$ 3.500,00 planejados"): o texto formatado, ou o oculto
+ * com o modo privacidade ligado (RN-022).
+ */
+export function useTextoDoValor(): (centavos: number) => string {
+  const oculto = usePrivacidade((estado) => estado.ocultarValores);
+  return (centavos) => (oculto ? VALOR_OCULTO : formatarCentavos(centavos));
+}
+
 export type TipoValor = 'neutro' | 'receita' | 'despesa';
 
 const COR_DO_TIPO: Record<TipoValor, CorTexto> = {

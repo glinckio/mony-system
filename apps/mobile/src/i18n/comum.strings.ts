@@ -19,6 +19,8 @@ export const textosComuns = {
   mesesCurtos: ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'],
   /** "14/out". */
   dataCurta: '{{dia}}/{{mes}}',
+  /** "dez/2027". */
+  mesAnoCurto: '{{mes}}/{{ano}}',
   /** "Outubro 2026". */
   mesAno: '{{mes}} {{ano}}',
   naoEncontrada: {

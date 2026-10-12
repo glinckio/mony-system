@@ -23,6 +23,7 @@ import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { Rotina } from '../../core/rotinas/rotinas';
+import { UsuariosService } from '../usuarios/usuarios.service';
 import {
   type GastoDaCategoria,
   type OrcamentoDoUsuario,
@@ -39,6 +40,7 @@ export class OrcamentosService {
 
   constructor(
     private readonly repositorio: OrcamentosRepository,
+    private readonly usuarios: UsuariosService,
     private readonly clock: Clock,
   ) {}
 
@@ -62,7 +64,10 @@ export class OrcamentosService {
     };
   }
 
-  /** RN-060: cria ou muda o orçamento da categoria na competência (sem ela, a do mês de hoje). */
+  /**
+   * RN-060: cria ou muda o orçamento da categoria na competência (sem ela, a do mês de hoje). O
+   * primeiro orçamento conclui a etapa `orcamento` do onboarding.
+   */
   async definir(contexto: Contexto, dados: DadosDefinicaoOrcamento): Promise<Orcamento> {
     const usuarioId = usuarioDoContexto(contexto);
     const categoria = await this.repositorio.categoria(usuarioId, dados.categoriaId);
@@ -84,6 +89,7 @@ export class OrcamentosService {
       valorLimite: BigInt(dados.valorLimiteCentavos),
       repetirMensal: dados.repetirMensal,
     });
+    await this.usuarios.concluirEtapa(usuarioId, 'orcamento');
     const [resposta] = await this.comGasto(usuarioId, competencia, [orcamento], hoje);
     if (!resposta) throw new ErroDominio('NAO_ENCONTRADO');
     return resposta;

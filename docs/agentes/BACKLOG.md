@@ -141,7 +141,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Separada da T-040 pelo mesmo motivo da T-049.
 - [x] **T-051** Recorrência no cartão de crédito (assinaturas): ocorrências entram nas faturas e editar ou excluir a recorrência refaz as faturas (PR #30)
   - dep: T-040 · RN-043, RN-031
-- [ ] **T-052** Telas de orçamentos e metas no app (barras por faixa, projeção, definir orçamento, metas com aportes e sugestão de concluir)
+- [x] **T-052** Telas de orçamentos e metas no app (barras por faixa, projeção, definir orçamento, metas com aportes e sugestão de concluir) (PR #45)
   - dep: T-043, T-011, T-034 · docs: 04 · RN-060 a RN-063
   - Separada da T-043 pelo mesmo motivo da T-049.
 - [ ] **T-053** Tela Início no app (seletor de período, resumo, próximos vencimentos, cartões, orçamentos, checklist e modo privacidade)
@@ -165,6 +165,9 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-059** Recorrência no app: "repetir" no formulário do lançamento (`POST /recorrencias`), editar e parar a recorrência
   - dep: T-045, T-038, T-051 · docs: 04, 05 (Recorrências) · RN-043
   - Separada da T-045: a lista já mostra "todo mês" e a exclusão pergunta o escopo, mas criar e editar a recorrência usam outras rotas.
+- [ ] **T-147** Metas: quanto foi guardado no mês (total e por meta) no `GET /metas` e, no app, o "+ R$ 450 este mês" e a "Dica da Mony" da tela de metas ("Guardando R$ 450 por mês, sua reserva fica completa em 19 meses")
+  - dep: T-043, T-052 · docs: 04, 05 (Orçamentos e metas) · RN-063
+  - Achada na T-052: o design (página 5) mostra os dois, mas a lista de metas não traz os aportes. A conta do ritmo fica na API, como as outras.
 
 ## Fase 2 — Mony
 

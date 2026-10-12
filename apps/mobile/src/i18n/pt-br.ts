@@ -4,8 +4,10 @@ import { textosCategorias } from '@/features/categorias/categorias.strings';
 import { textosContas } from '@/features/contas/contas.strings';
 import { textosInicio } from '@/features/inicio/inicio.strings';
 import { textosMais } from '@/features/mais/mais.strings';
+import { textosMetas } from '@/features/metas/metas.strings';
 import { textosMony } from '@/features/mony/mony.strings';
 import { textosOnboarding } from '@/features/onboarding/onboarding.strings';
+import { textosOrcamentos } from '@/features/orcamentos/orcamentos.strings';
 import { textosTransacoes } from '@/features/transacoes/transacoes.strings';
 import { textosUi } from '@/ui/ui.strings';
 
@@ -24,4 +26,6 @@ export const textosPtBr = {
   mais: textosMais,
   categorias: textosCategorias,
   contas: textosContas,
+  orcamentos: textosOrcamentos,
+  metas: textosMetas,
 };

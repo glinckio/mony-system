@@ -1,12 +1,10 @@
 import type { Cartao, Fatura } from '@mony/shared/cartoes';
-import { formatarCentavos } from '@mony/shared/dinheiro';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, useWindowDimensions, View } from 'react-native';
 
 import { useDataCurta, useMesCapitalizado, useNomeDoMes } from '@/lib/datas-texto';
-import { usePrivacidade } from '@/stores/privacidade';
 import {
   BarraProgresso,
   Botao,
@@ -18,8 +16,8 @@ import {
   Skeleton,
   Tela,
   Texto,
+  useTextoDoValor,
   Valor,
-  VALOR_OCULTO,
   Vazio,
 } from '@/ui';
 
@@ -39,9 +37,9 @@ function juntarFaixas(faixas: readonly number[]): string {
 
 function ResumoLimite({ cartao }: { cartao: Cartao }) {
   const { t } = useTranslation();
-  const oculto = usePrivacidade((estado) => estado.ocultarValores);
+  const textoDoValor = useTextoDoValor();
   const acima = cartao.limiteDisponivelCentavos < 0;
-  const total = oculto ? VALOR_OCULTO : formatarCentavos(cartao.limiteTotalCentavos);
+  const total = textoDoValor(cartao.limiteTotalCentavos);
   return (
     <Card className="gap-2">
       <View className="flex-row items-center justify-between gap-2">

@@ -42,3 +42,13 @@ export function useDataCurta(): (data: DataCalendario) => string {
     return t('comum.dataCurta', { dia, mes: meses[mes - 1] ?? '' });
   };
 }
+
+/** "dez/2027", para prazos. */
+export function useMesAnoCurto(): (data: DataCalendario) => string {
+  const { t } = useTranslation();
+  const meses = t('comum.mesesCurtos', { returnObjects: true });
+  return (data) => {
+    const { ano, mes } = partes(data);
+    return t('comum.mesAnoCurto', { mes: meses[mes - 1] ?? '', ano });
+  };
+}

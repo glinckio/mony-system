@@ -1,6 +1,6 @@
 /** Design system do app (doc 04): telas usam só estes componentes e os tokens. */
 export { AnelProgresso, type PropsAnelProgresso } from './anel-progresso';
-export { BarraProgresso, type PropsBarraProgresso } from './barra-progresso';
+export { BarraProgresso, type CorBarra, type PropsBarraProgresso } from './barra-progresso';
 export { Botao, type PropsBotao, type VarianteBotao } from './botao';
 export { BotaoIcone, type PropsBotaoIcone } from './botao-icone';
 export { Cabecalho, type PropsCabecalho } from './cabecalho';
@@ -19,6 +19,7 @@ export { Icone, type NomeIcone, type PropsIcone } from './icone';
 export { Logo, type PropsLogo } from './logo';
 export { Skeleton, type PropsSkeleton } from './skeleton';
 export { type OpcaoSegmentado, type PropsSegmentado, Segmentado } from './segmentado';
+export { type PropsSeletorMes, SeletorMes } from './seletor-mes';
 export { type PropsTela, Tela } from './tela';
 export { type CorTexto, type PropsTexto, Texto } from './texto';
 export {
@@ -31,5 +32,12 @@ export {
   tipografia,
   TOQUE_MINIMO,
 } from './tokens';
-export { BotaoPrivacidade, type PropsValor, type TipoValor, Valor, VALOR_OCULTO } from './valor';
+export {
+  BotaoPrivacidade,
+  type PropsValor,
+  type TipoValor,
+  useTextoDoValor,
+  Valor,
+  VALOR_OCULTO,
+} from './valor';
 export { Vazio, type PropsVazio } from './vazio';

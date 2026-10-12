@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -11,12 +12,23 @@ export interface PropsAnelProgresso {
   rotulo: string;
   /** Diâmetro em pt. */
   tamanho?: number;
+  /** Cor do arco (dos tokens); sem ela, a primária. */
+  cor?: string;
+  /** O que vai no meio; sem ele, "2/5". */
+  conteudo?: ReactNode;
 }
 
 const ESPESSURA = 6;
 
 /** Anel de progresso com "2/5" no meio, como no "Termine de configurar" do design. */
-export function AnelProgresso({ feitos, total, rotulo, tamanho = 56 }: PropsAnelProgresso) {
+export function AnelProgresso({
+  feitos,
+  total,
+  rotulo,
+  tamanho = 56,
+  cor = cores.primaria,
+  conteudo,
+}: PropsAnelProgresso) {
   const raio = (tamanho - ESPESSURA) / 2;
   const centro = tamanho / 2;
   const circunferencia = 2 * Math.PI * raio;
@@ -48,7 +60,7 @@ export function AnelProgresso({ feitos, total, rotulo, tamanho = 56 }: PropsAnel
           cx={centro}
           cy={centro}
           r={raio}
-          stroke={cores.primaria}
+          stroke={cor}
           strokeWidth={ESPESSURA}
           fill="none"
           strokeLinecap="round"
@@ -56,9 +68,11 @@ export function AnelProgresso({ feitos, total, rotulo, tamanho = 56 }: PropsAnel
           strokeDashoffset={circunferencia * (1 - fracao)}
         />
       </Svg>
-      <Texto variante="corpo-sm" className="font-negrito">
-        {`${String(feitos)}/${String(total)}`}
-      </Texto>
+      {conteudo ?? (
+        <Texto variante="corpo-sm" className="font-negrito">
+          {`${String(feitos)}/${String(total)}`}
+        </Texto>
+      )}
     </View>
   );
 }

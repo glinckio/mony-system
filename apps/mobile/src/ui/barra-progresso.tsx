@@ -10,18 +10,28 @@ const CLASSE_DA_FAIXA: Record<FaixaOrcamento, string> = {
   estourado: 'bg-estourado',
 };
 
+/** Cores fixas, para barras que não são de orçamento nem de limite (ex.: metas). */
+const CLASSE_DA_COR = {
+  receita: 'bg-receita',
+  link: 'bg-link',
+  primaria: 'bg-primaria',
+} as const;
+export type CorBarra = keyof typeof CLASSE_DA_COR;
+
 export interface PropsBarraProgresso {
   /** Percentual usado; passa de 100 quando estoura. */
   percentual: number;
   /** O que a barra mede, para o leitor de tela (ex.: "Mercado"). */
   rotulo?: string;
+  /** Cor fixa no lugar da cor da faixa. */
+  cor?: CorBarra;
 }
 
 /**
  * Barra de orçamento ou de limite, com a cor da faixa (RN-062): até 79% normal, de 80% a 99%
  * atenção, 100% ou mais estourado. Acima de 100%, a barra fica cheia.
  */
-export function BarraProgresso({ percentual, rotulo }: PropsBarraProgresso) {
+export function BarraProgresso({ percentual, rotulo, cor }: PropsBarraProgresso) {
   const { t } = useTranslation();
   const faixa = faixaDoOrcamento(percentual);
   const preenchido = Math.min(100, Math.max(0, percentual));
@@ -40,8 +50,11 @@ export function BarraProgresso({ percentual, rotulo }: PropsBarraProgresso) {
       className="h-1.5 overflow-hidden rounded-total bg-vidro"
     >
       <View
-        testID={`barra-${faixa}`}
-        className={juntarClasses('h-full rounded-total', CLASSE_DA_FAIXA[faixa])}
+        testID={`barra-${cor ?? faixa}`}
+        className={juntarClasses(
+          'h-full rounded-total',
+          cor === undefined ? CLASSE_DA_FAIXA[faixa] : CLASSE_DA_COR[cor],
+        )}
         style={{ width: largura }}
       />
     </View>

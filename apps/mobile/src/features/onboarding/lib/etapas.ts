@@ -7,12 +7,12 @@ import type { Href } from 'expo-router';
 
 /**
  * Para onde leva o "Fazer agora" de cada passo do checklist. Sem rota, o passo só pode ser
- * dispensado: o orçamento ganha tela na T-052, e o tour é concluído ao fechar a primeira dica.
+ * dispensado: o tour é concluído ao fechar a primeira dica.
  */
 export const ROTA_DA_ETAPA: Record<EtapaOnboarding, Href | null> = {
   'primeiro-lancamento': '/transacoes/nova',
   cartoes: '/cartoes',
-  orcamento: null,
+  orcamento: '/orcamentos',
   permissoes: '/mais/permissoes',
   tour: null,
 };

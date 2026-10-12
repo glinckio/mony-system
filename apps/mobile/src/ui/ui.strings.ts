@@ -13,4 +13,6 @@ export const textosUi = {
   progresso: '{{percentual}}% usado',
   fechar: 'Fechar',
   limparBusca: 'Limpar busca',
+  mesAnterior: 'Mês anterior',
+  proximoMes: 'Próximo mês',
 };

@@ -608,3 +608,16 @@ Contexto: o design (página 4) traz a aba Cartões com o carrossel, o limite, a 
 - **Nomes dos meses** (`comum.meses`, `comum.mesesCurtos`) saíram das strings de transações para `comum`, com os ganchos em `src/lib/datas-texto.ts`, porque cartões também usam.
 - **Token novo** `chip-cartao` (dourado do chip no cartão), para não usar cor solta na tela.
 Reversível: sim.
+
+## 2026-10-12 — T-052 — Orçamentos e metas no app
+Contexto: o design (página 5) traz as telas de orçamentos e de metas; a folha de orçamento, o detalhe e o formulário da meta não têm design. Decisões:
+- **Grupo `(telas)`** na raiz, ao lado de `(tabs)` e no mesmo `Stack.Protected`: telas com voltar e sem a barra de abas, como no design, e com as rotas dos alertas (`mony://orcamentos?competencia=AAAA-MM`) sem tradução. Fica protegido, que era o problema das rotas na raiz na T-049. As próximas telas desse tipo (parcelamentos, relatórios, lembretes…) entram aqui.
+- **Mês com setas** em Orçamentos, que o design não mostra: o link do alerta abre outro mês, e ver o mês passado é útil. "Faltam N dias" só no mês de hoje; nos outros, "mês fechado" ou "ainda não começou", sem projeção.
+- **Projeção do mês** = soma das projeções que a API manda por categoria (o total dela não traz a projeção). O percentual do anel usa `percentualDoOrcamento` do `@mony/shared` sobre os totais da API.
+- **O lápis liga a edição**: no modo normal o item só mostra, como no design; no de edição, tocar abre a folha para mudar ou tirar.
+- **Metas sem ícone nem cor próprios** (a API não tem esses campos): todas com o ícone de alvo, em verde e azul alternados, como as duas do design. O percentual é o da API (para baixo): 6.400 de 15.000 é 42%, e não os 43% do design.
+- **"+ R$ 450 este mês" e "Dica da Mony"** ficaram para a T-147: a lista de metas não traz os aportes, e buscar o detalhe de cada meta para somar seria uma chamada por meta.
+- **Etapa `orcamento` do onboarding concluída pela API** no primeiro `PUT /orcamentos` (como cartões e primeiro lançamento), e o "Fazer agora" do checklist abre `/orcamentos`.
+- **Componentes**: `SeletorMes` saiu de transações para `src/ui`; `AnelProgresso` aceita cor e conteúdo no meio; `BarraProgresso`, uma cor fixa; `Botao`, `compacto` e `rotulo`; `Etiqueta`, o alinhamento; `useTextoDoValor` dá o valor (ou o oculto) para frases.
+- **API rodando nesta sessão**: Postgres 16 e Redis locais, e o Prisma gerado sem baixar engines (`PRISMA_SCHEMA_ENGINE_BINARY` apontando para um arquivo vazio, só para o `generate`; as migrações aplicadas com `psql`). Os 312 testes da API, com os de integração, passaram aqui.
+Reversível: sim.

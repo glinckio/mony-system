@@ -1,0 +1,51 @@
+export const textosOrcamentos = {
+  titulo: 'Orçamentos',
+  editar: 'Editar orçamentos',
+  pronto: 'Pronto',
+  resumo: {
+    /** "Outubro · faltam 22 dias". */
+    faltam: '{{mes}} · faltam {{dias}} dias',
+    faltaUm: '{{mes}} · falta 1 dia',
+    ultimoDia: '{{mes}} · último dia',
+    encerrado: '{{mes}} · mês fechado',
+    futuro: '{{mes}} · ainda não começou',
+    usado: 'usado',
+    rotuloAnel: '{{percentual}}% do planejado usado',
+    planejado: 'de {{total}} planejados',
+    projecao: 'Projeção: {{valor}}',
+  },
+  item: {
+    /** "R$ 312,00 de R$ 300,00". */
+    valores: '{{gasto}} de {{limite}}',
+    passou: 'Passou {{valor}}',
+    percentual: '{{percentual}}%',
+    rotulo: '{{categoria}}: {{percentual}}% usado',
+    semCategoria: 'Categoria',
+    editarDica: 'Toque para mudar ou tirar',
+  },
+  adicionar: 'Adicionar orçamento',
+  vazio: {
+    titulo: 'Nenhum orçamento em {{mes}}',
+    descricao: 'Defina quanto quer gastar em cada categoria e acompanhe o mês.',
+  },
+  folha: {
+    novo: 'Novo orçamento',
+    editar: 'Orçamento de {{categoria}}',
+    categoria: 'Categoria',
+    semCategorias: 'Todas as categorias de despesa já têm orçamento neste mês.',
+    limite: 'Quanto quer gastar no mês',
+    repetir: 'Repetir todo mês',
+    repetirAjuda: 'No dia 1, o mesmo valor vale para o mês novo.',
+    salvar: 'Salvar',
+    cancelar: 'Cancelar',
+    tirar: 'Tirar orçamento',
+    tirarConfirmar: 'Tirar o orçamento de {{categoria}}?',
+    tirarTexto: 'Os lançamentos continuam. Se ele repetia, os próximos meses não o recebem.',
+    tirarSim: 'Tirar',
+    validacao: {
+      categoria: 'Escolha a categoria.',
+      limite: 'Informe quanto quer gastar.',
+    },
+  },
+  semConexao: 'Sem conexão. Tente de novo.',
+};
