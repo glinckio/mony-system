@@ -804,3 +804,11 @@ Contexto: o doc 08 pede o prompt em `mony_config` com uma versão ativa, publica
 - **Sem painel ainda**: criar, avaliar e ativar versão é pelo script `mony:avaliar` até a T-141. O workflow da avaliação não é obrigatório para mergear e roda só quando muda o que afeta a Mony.
 - **Testes de integração** que olham o prompt fixam a configuração local (`fixar(CONFIG_LOCAL)`): os arquivos rodam em paralelo no mesmo banco e um deles ativa uma versão.
 Reversível: sim.
+
+## 2026-10-12 — T-069 — Tela de chat completa da Mony
+Contexto: o doc 04 pede o histórico com FlashList invertida, busca e atalhos vindos da API (`sugestoes`), sem dizer quais atalhos. Decisões:
+- **`FlatList` invertida**, não FlashList: sem dependência nativa nova agora; a troca é local à tela se uma conversa longa pesar.
+- **Histórico lido uma vez por abertura** (`staleTime` infinito, `gcTime` 0): o que se conversa depois fica na tela; buscar de novo mostraria a mesma mensagem duas vezes. Os botões do histórico respondem como os novos (a API confere o estado: botão velho dá o erro dela no balão).
+- **Atalhos pelo que a pessoa tem**, calculados na API só na primeira página sem busca: o mês, a fatura do primeiro cartão (ou anotar um gasto), os orçamentos (ou criar um) e as metas abertas. Nenhum atalho é um lançamento pronto ("gastei 25"), para um toque não gravar sem querer.
+- **Busca numa folha**, a partir de 2 letras, só leitura: tocar no resultado não pula para a mensagem (fica para quando a conversa tiver âncora por id).
+Reversível: sim.

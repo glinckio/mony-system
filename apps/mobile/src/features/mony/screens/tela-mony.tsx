@@ -1,254 +1,49 @@
-import { agirMony, ErroApi, type PedidoAcaoMonyDto } from '@mony/api-client';
-import type { ComponenteMony, EventoMony, OpcaoBotao, ResumoLancamento } from '@mony/shared/mony';
-import type { FaixaOrcamento } from '@mony/shared/orcamentos';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
 
-import {
-  duracaoParaTexto,
-  TIPO_CONTEUDO_GRAVACAO,
-  useGravador,
-} from '@/features/mony/lib/gravador';
+import { Atalhos } from '@/features/mony/components/atalhos';
+import { Balao } from '@/features/mony/components/balao';
+import { FolhaBusca } from '@/features/mony/components/folha-busca';
+import { FolhaDocumento } from '@/features/mony/components/folha-documento';
+import { useChatMony } from '@/features/mony/hooks/use-chat-mony';
+import { useHistoricoMony } from '@/features/mony/hooks/use-conversa-mony';
+import { duracaoParaTexto, useGravador } from '@/features/mony/lib/gravador';
+import { daConversa } from '@/features/mony/lib/mensagens';
 import { Dica } from '@/features/onboarding/components/dica';
-import {
-  enviarAnexo,
-  escolherFoto,
-  escolherPdf,
-  FalhaAnexo,
-} from '@/features/transacoes/lib/anexos';
-import { useDataCurta } from '@/lib/datas-texto';
-import { chaveDoToque, enviarMensagemMony } from '@/lib/mony/conversa';
-import {
-  Botao,
-  BotaoIcone,
-  Campo,
-  Card,
-  Chip,
-  type CorTexto,
-  cores,
-  Folha,
-  Icone,
-  type NomeIcone,
-  juntarClasses,
-  Tela,
-  Texto,
-  useTextoDoValor,
-} from '@/ui';
-
-interface Mensagem {
-  id: string;
-  autor: 'usuario' | 'mony';
-  texto: string;
-  /** Botões de pergunta ou confirmação e cartões de resumo (RN-082), na ordem em que chegaram. */
-  componentes: ComponenteMony[];
-  erro: boolean;
-  /**
-   * O arquivo da mensagem da pessoa: voz (T-064), com o texto que a Mony entendeu, ou foto e PDF
-   * (T-065), que a Mony lê e devolve como lançamentos a confirmar.
-   */
-  arquivo: TipoArquivo | null;
-}
-
-type TipoArquivo = 'audio' | 'foto' | 'pdf';
-
-const ICONE_ARQUIVO: Record<TipoArquivo, NomeIcone> = {
-  audio: 'mic',
-  foto: 'camera',
-  pdf: 'paperclip',
-};
-
-/** O botão tocado: a mensagem e o componente dela. */
-interface Toque {
-  mensagemId: string;
-  indice: number;
-  opcao: OpcaoBotao;
-}
+import { Botao, BotaoIcone, Campo, cores, Icone, Tela, Texto } from '@/ui';
 
 /**
- * Tira da mensagem o componente tocado (a pergunta respondida, o resumo desfeito, o lançamento lido
- * confirmado). [Confirmar todos] e [Descartar todos] tiram os cartões da mesma leitura; sem
- * cartão, o [Confirmar todos] sai também.
- */
-function semOTocado(componentes: readonly ComponenteMony[], toque: Toque): ComponenteMony[] {
-  const importacao = (componente: ComponenteMony) =>
-    componente.opcoes.find(({ acao }) => typeof acao.importacaoId === 'string')?.acao.importacaoId;
-  const daLeitura = toque.opcao.acao.importacaoId;
-  const todos = typeof daLeitura === 'string' && toque.opcao.acao.indice === null;
-  const restantes = componentes.filter(
-    (componente, indice) =>
-      indice !== toque.indice && !(todos && importacao(componente) === daLeitura),
-  );
-  if (typeof daLeitura !== 'string') return restantes;
-  const cartoes = restantes.some(
-    (componente) => componente.tipo === 'resumo' && importacao(componente) === daLeitura,
-  );
-  return cartoes
-    ? restantes
-    : restantes.filter((componente) => importacao(componente) !== daLeitura);
-}
-
-/**
- * Chat da Mony (PoC T-020, doc 04): a resposta chega em SSE e aparece enquanto é escrita; os
- * botões respondem a pergunta sem texto livre (RN-084). Com o campo vazio, o microfone grava uma
- * mensagem de voz (T-064). A tela completa é a T-069.
+ * Chat da Mony (doc 04, T-069): abre com o histórico (`GET /mony/conversa`, mais antigas ao subir),
+ * a resposta chega em SSE e aparece enquanto é escrita, os botões respondem sem texto livre
+ * (RN-084), inclusive os do histórico. Com o campo vazio, os atalhos da API, o clipe (foto, print
+ * ou PDF, T-065) e o microfone (T-064). A lupa busca no histórico.
  */
 export default function TelaMony() {
   const { t } = useTranslation();
-  const [mensagens, definirMensagens] = useState<Mensagem[]>([]);
+  const historico = useHistoricoMony();
+  const doServidor = (historico.data?.pages ?? []).flatMap(({ itens }) => itens.map(daConversa));
+  const sugestoes = historico.data?.pages[0]?.sugestoes ?? [];
+  const chat = useChatMony(doServidor);
   const [texto, definirTexto] = useState('');
-  const [ocupada, definirOcupada] = useState(false);
   const [escolhendo, definirEscolhendo] = useState(false);
-  const ultimoId = useRef(0);
-  const rolagem = useRef<ScrollView>(null);
+  const [buscando, definirBuscando] = useState(false);
 
-  function nova(
-    autor: Mensagem['autor'],
-    conteudo = '',
-    arquivo: TipoArquivo | null = null,
-  ): Mensagem {
-    ultimoId.current += 1;
-    return {
-      id: String(ultimoId.current),
-      autor,
-      texto: conteudo,
-      componentes: [],
-      erro: false,
-      arquivo,
-    };
-  }
+  // No limite de 10 minutos, o gravador envia sozinho.
+  const gravacao = useGravador((uri) => void chat.enviarAudio(uri));
 
-  /** Aviso da Mony sem ida à API (microfone negado, gravação que falhou). */
-  function avisar(conteudo: string) {
-    definirMensagens((lista) => [...lista, { ...nova('mony', conteudo), erro: true }]);
-  }
-
-  function atualizar(id: string, mudar: (mensagem: Mensagem) => Mensagem) {
-    definirMensagens((lista) =>
-      lista.map((mensagem) => (mensagem.id === id ? mudar(mensagem) : mensagem)),
-    );
-  }
-
-  function aplicar(id: string, evento: EventoMony) {
-    if (evento.tipo === 'texto.delta') {
-      atualizar(id, (mensagem) => ({ ...mensagem, texto: mensagem.texto + evento.texto }));
-    } else if (evento.tipo === 'componente') {
-      atualizar(id, (mensagem) => ({
-        ...mensagem,
-        componentes: [...mensagem.componentes, evento.componente],
-      }));
-    } else if (evento.tipo === 'erro') {
-      atualizar(id, (mensagem) => ({ ...mensagem, texto: evento.mensagem, erro: true }));
-    }
-  }
-
-  function falhou(id: string, erro: unknown) {
-    const mensagem =
-      erro instanceof ErroApi
-        ? erro.message
-        : erro instanceof FalhaAnexo
-          ? t(`mony.documento.erros.${erro.motivo}`)
-          : t('mony.semConexao');
-    atualizar(id, (atual) => ({ ...atual, texto: mensagem, erro: true }));
-  }
-
-  async function conversar(
-    toque: Toque | null,
-    minha: Mensagem,
-    pedir: (respostaId: string) => Promise<void>,
-  ) {
-    const resposta = nova('mony');
-    definirMensagens((lista) => [
-      ...lista.map((mensagem) =>
-        toque && mensagem.id === toque.mensagemId
-          ? { ...mensagem, componentes: semOTocado(mensagem.componentes, toque) }
-          : mensagem,
-      ),
-      minha,
-      resposta,
-    ]);
-    definirOcupada(true);
-    try {
-      await pedir(resposta.id);
-    } catch (erro) {
-      falhou(resposta.id, erro);
-    } finally {
-      definirOcupada(false);
-    }
-  }
-
-  async function enviar() {
-    const conteudo = texto.trim();
-    if (conteudo === '' || ocupada) return;
+  async function enviar(conteudo = texto) {
+    if (conteudo.trim() === '' || chat.ocupada) return;
     definirTexto('');
-    await conversar(null, nova('usuario', conteudo), (respostaId) =>
-      enviarMensagemMony({ texto: conteudo }, (evento) => {
-        aplicar(respostaId, evento);
-      }),
-    );
+    await chat.enviarTexto(conteudo);
   }
-
-  /** Envia o áudio ao S3 (`POST /arquivos`) e o id à Mony; a transcrição vira o texto do balão. */
-  async function enviarAudio(uri: string) {
-    const minha = nova('usuario', t('mony.audio.entendendo'), 'audio');
-    const progresso = { transcrito: false };
-    await conversar(null, minha, async (respostaId) => {
-      try {
-        const { id } = await enviarAnexo({
-          uri,
-          tipo: 'audio',
-          tipoConteudo: TIPO_CONTEUDO_GRAVACAO,
-        });
-        await enviarMensagemMony({ arquivoId: id }, (evento) => {
-          if (evento.tipo === 'transcricao') {
-            progresso.transcrito = true;
-            atualizar(minha.id, (mensagem) => ({ ...mensagem, texto: evento.texto }));
-          } else {
-            aplicar(respostaId, evento);
-          }
-        });
-      } finally {
-        if (!progresso.transcrito) {
-          atualizar(minha.id, (mensagem) => ({ ...mensagem, texto: '' }));
-        }
-      }
-    });
-  }
-
-  /**
-   * Foto, print ou PDF (T-065): sobe ao S3 e vai à Mony, que responde com os lançamentos lidos para
-   * confirmar (RN-083).
-   */
-  async function enviarDocumento(origem: 'camera' | 'galeria' | 'pdf') {
-    definirEscolhendo(false);
-    if (ocupada) return;
-    let arquivo: Awaited<ReturnType<typeof escolherPdf>>;
-    try {
-      arquivo = origem === 'pdf' ? await escolherPdf() : await escolherFoto(origem);
-    } catch (erro) {
-      avisar(t(`mony.documento.erros.${erro instanceof FalhaAnexo ? erro.motivo : 'envio'}`));
-      return;
-    }
-    if (arquivo === null) return;
-    const escolhido = arquivo;
-    const tipo = escolhido.tipo === 'pdf' ? 'pdf' : 'foto';
-    await conversar(null, nova('usuario', '', tipo), async (respostaId) => {
-      const { id } = await enviarAnexo(escolhido);
-      await enviarMensagemMony({ arquivoId: id }, (evento) => {
-        aplicar(respostaId, evento);
-      });
-    });
-  }
-
-  // Depois de `enviarAudio`: no limite de 10 minutos, o gravador envia sozinho.
-  const gravacao = useGravador((uri) => void enviarAudio(uri));
 
   async function gravar() {
-    if (ocupada || gravacao.gravando) return;
+    if (chat.ocupada || gravacao.gravando) return;
     try {
-      if ((await gravacao.comecar()) === 'semPermissao') avisar(t('mony.audio.semPermissao'));
+      if ((await gravacao.comecar()) === 'semPermissao') chat.avisar(t('mony.audio.semPermissao'));
     } catch {
-      avisar(t('mony.audio.falhou'));
+      chat.avisar(t('mony.audio.falhou'));
     }
   }
 
@@ -257,31 +52,14 @@ export default function TelaMony() {
     try {
       uri = await gravacao.parar();
     } catch {
-      avisar(t('mony.audio.falhou'));
+      chat.avisar(t('mony.audio.falhou'));
       return;
     }
-    if (uri) await enviarAudio(uri);
+    if (uri) await chat.enviarAudio(uri);
   }
 
-  async function cancelarGravacao() {
-    await gravacao.parar().catch(() => null);
-  }
-
-  async function tocar(pergunta: Mensagem, indice: number, opcao: OpcaoBotao) {
-    if (ocupada) return;
-    const toque = { mensagemId: pergunta.id, indice, opcao };
-    await conversar(toque, nova('usuario', opcao.rotulo), async (respostaId) => {
-      const resposta = await agirMony(
-        { acao: opcao.acao as PedidoAcaoMonyDto['acao'] },
-        { headers: { 'idempotency-key': chaveDoToque() } },
-      );
-      atualizar(respostaId, (mensagem) => ({
-        ...mensagem,
-        texto: resposta.texto,
-        componentes: resposta.componente ? [resposta.componente] : [],
-      }));
-    });
-  }
+  const vazia = chat.mensagens.length === 0;
+  const livre = texto.trim() === '' && !chat.ocupada;
 
   return (
     <Tela degrade={false}>
@@ -289,31 +67,75 @@ export default function TelaMony() {
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Texto variante="titulo-lg" accessibilityRole="header" className="px-4 pt-4">
-          {t('mony.titulo')}
-        </Texto>
-        <ScrollView
-          ref={rolagem}
-          className="flex-1"
-          contentContainerClassName="gap-3 p-4"
-          onContentSizeChange={() => rolagem.current?.scrollToEnd({ animated: true })}
-        >
-          <Dica chave="mony.primeira-conversa" />
-          {mensagens.length === 0 ? <Texto cor="suave">{t('mony.boasVindas')}</Texto> : null}
-          {mensagens.map((mensagem) => (
-            <Balao
-              key={mensagem.id}
-              mensagem={mensagem}
-              aoTocar={(indice, opcao) => void tocar(mensagem, indice, opcao)}
+        <View className="flex-row items-center justify-between px-4 pt-4">
+          <Texto variante="titulo-lg" accessibilityRole="header">
+            {t('mony.titulo')}
+          </Texto>
+          <BotaoIcone
+            icone="search"
+            rotulo={t('mony.busca.abrir')}
+            aoPressionar={() => {
+              definirBuscando(true);
+            }}
+          />
+        </View>
+        {historico.isError ? (
+          <View className="flex-row items-center gap-2 px-4">
+            <Texto variante="corpo-sm" cor="perigo" className="flex-1">
+              {t('mony.historico.erro')}
+            </Texto>
+            <Botao
+              variante="fantasma"
+              compacto
+              titulo={t('mony.historico.tentarDeNovo')}
+              aoPressionar={() => void historico.refetch()}
             />
-          ))}
-        </ScrollView>
+          </View>
+        ) : null}
+        {vazia ? (
+          <View className="flex-1 gap-3 p-4">
+            <Dica chave="mony.primeira-conversa" />
+            {historico.isPending ? (
+              <ActivityIndicator color={cores.texto} />
+            ) : (
+              <Texto cor="suave">{t('mony.boasVindas')}</Texto>
+            )}
+          </View>
+        ) : (
+          // Invertida: a mais nova embaixo, e as mais antigas chegam ao subir até o topo.
+          <FlatList
+            inverted
+            testID="mony-lista"
+            data={chat.mensagens}
+            keyExtractor={(mensagem) => mensagem.id}
+            className="flex-1"
+            contentContainerClassName="gap-3 p-4"
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) => (
+              <Balao
+                mensagem={item}
+                aoTocar={(indice, opcao) => void chat.tocar(item, indice, opcao)}
+              />
+            )}
+            onEndReached={() => {
+              if (historico.hasNextPage && !historico.isFetchingNextPage) {
+                void historico.fetchNextPage();
+              }
+            }}
+            ListFooterComponent={
+              historico.isFetchingNextPage ? <ActivityIndicator color={cores.texto} /> : null
+            }
+          />
+        )}
+        {livre && !gravacao.gravando ? (
+          <Atalhos sugestoes={sugestoes} aoEscolher={(sugestao) => void enviar(sugestao)} />
+        ) : null}
         {gravacao.gravando ? (
           <View className="flex-row items-center gap-2 bg-fundo p-3">
             <BotaoIcone
               icone="x"
               rotulo={t('mony.audio.cancelar')}
-              aoPressionar={() => void cancelarGravacao()}
+              aoPressionar={() => void gravacao.parar().catch(() => null)}
             />
             <View className="flex-1 flex-row items-center gap-2">
               <Icone nome="mic" cor={cores.perigo} />
@@ -339,7 +161,7 @@ export default function TelaMony() {
                 onSubmitEditing={() => void enviar()}
               />
             </View>
-            {texto.trim() === '' && !ocupada ? (
+            {livre ? (
               <>
                 <BotaoIcone
                   icone="paperclip"
@@ -361,209 +183,28 @@ export default function TelaMony() {
                 titulo={t('mony.enviar')}
                 aoPressionar={() => void enviar()}
                 desabilitado={texto.trim() === ''}
-                carregando={ocupada}
+                carregando={chat.ocupada}
               />
             )}
           </View>
         )}
       </KeyboardAvoidingView>
-      <Folha
+      <FolhaDocumento
         visivel={escolhendo}
-        titulo={t('mony.documento.titulo')}
         aoFechar={() => {
           definirEscolhendo(false);
         }}
-      >
-        <View className="gap-2">
-          <Texto cor="suave">{t('mony.documento.ajuda')}</Texto>
-          <Botao
-            variante="secundaria"
-            icone="camera"
-            larguraTotal
-            titulo={t('mony.documento.camera')}
-            aoPressionar={() => void enviarDocumento('camera')}
-          />
-          <Botao
-            variante="secundaria"
-            icone="scan-text"
-            larguraTotal
-            titulo={t('mony.documento.galeria')}
-            aoPressionar={() => void enviarDocumento('galeria')}
-          />
-          <Botao
-            variante="secundaria"
-            icone="paperclip"
-            larguraTotal
-            titulo={t('mony.documento.pdf')}
-            aoPressionar={() => void enviarDocumento('pdf')}
-          />
-        </View>
-      </Folha>
+        aoEscolher={(origem) => {
+          definirEscolhendo(false);
+          void chat.enviarDocumento(origem);
+        }}
+      />
+      <FolhaBusca
+        visivel={buscando}
+        aoFechar={() => {
+          definirBuscando(false);
+        }}
+      />
     </Tela>
-  );
-}
-
-function Balao({
-  mensagem,
-  aoTocar,
-}: {
-  mensagem: Mensagem;
-  aoTocar: (indice: number, opcao: OpcaoBotao) => void;
-}) {
-  const { t } = useTranslation();
-  const minha = mensagem.autor === 'usuario';
-  const semTexto = mensagem.texto === '' && !mensagem.erro && mensagem.arquivo === null;
-  const escrevendo = !minha && semTexto && mensagem.componentes.length === 0;
-  return (
-    <View className={juntarClasses('gap-2', minha ? 'items-end' : 'items-start')}>
-      {semTexto && !escrevendo ? null : (
-        <View
-          style={{ maxWidth: '85%' }}
-          className={juntarClasses(
-            'rounded-md px-4 py-3',
-            minha && 'bg-balao-usuario',
-            !minha && !mensagem.erro && 'bg-superficie-alta',
-            mensagem.erro && 'bg-perigo-suave',
-          )}
-        >
-          {mensagem.arquivo ? (
-            <View className="flex-row items-center gap-1">
-              <Icone
-                nome={ICONE_ARQUIVO[mensagem.arquivo]}
-                tamanho={14}
-                cor={cores['texto-suave']}
-              />
-              <Texto variante="corpo-sm" cor="suave">
-                {t(`mony.arquivo.${mensagem.arquivo}`)}
-              </Texto>
-            </View>
-          ) : null}
-          {mensagem.texto === '' && !escrevendo ? null : (
-            <Texto
-              cor={minha ? 'texto' : mensagem.erro ? 'perigo' : escrevendo ? 'suave' : 'texto'}
-            >
-              {escrevendo ? t('mony.escrevendo') : mensagem.texto}
-            </Texto>
-          )}
-        </View>
-      )}
-      {mensagem.componentes.map((componente, indice) =>
-        componente.tipo === 'resumo' ? (
-          <CartaoResumo
-            // Os componentes não guardam estado: o índice basta como chave.
-            key={indice}
-            lancamento={componente.lancamento}
-            aConfirmar={componente.aConfirmar ?? false}
-            opcoes={componente.opcoes}
-            aoTocar={(opcao) => {
-              aoTocar(indice, opcao);
-            }}
-          />
-        ) : (
-          <Opcoes
-            key={indice}
-            opcoes={componente.opcoes}
-            aoTocar={(opcao) => {
-              aoTocar(indice, opcao);
-            }}
-          />
-        ),
-      )}
-    </View>
-  );
-}
-
-function Opcoes({
-  opcoes,
-  aoTocar,
-}: {
-  opcoes: readonly OpcaoBotao[];
-  aoTocar: (opcao: OpcaoBotao) => void;
-}) {
-  if (opcoes.length === 0) return null;
-  return (
-    <View className="flex-row flex-wrap gap-2">
-      {opcoes.map((opcao) => (
-        <Chip
-          key={opcao.id}
-          rotulo={opcao.rotulo}
-          aoPressionar={() => {
-            aoTocar(opcao);
-          }}
-        />
-      ))}
-    </View>
-  );
-}
-
-const COR_DA_FAIXA: Record<FaixaOrcamento, CorTexto> = {
-  normal: 'suave',
-  atencao: 'atencao',
-  estourado: 'perigo',
-};
-
-/** O que a Mony gravou (RN-082): valor, descrição, categoria, data e forma, com o [Desfazer]. */
-function CartaoResumo({
-  lancamento,
-  aConfirmar,
-  opcoes,
-  aoTocar,
-}: {
-  lancamento: ResumoLancamento;
-  /** Lido de foto ou PDF e ainda não gravado (RN-083): o que falta aparece "a escolher". */
-  aConfirmar: boolean;
-  opcoes: readonly OpcaoBotao[];
-  aoTocar: (opcao: OpcaoBotao) => void;
-}) {
-  const { t } = useTranslation();
-  const textoDoValor = useTextoDoValor();
-  const dataCurta = useDataCurta();
-  const forma = lancamento.cartao
-    ? lancamento.parcelas
-      ? t('mony.resumo.cartaoParcelado', {
-          cartao: lancamento.cartao,
-          parcelas: String(lancamento.parcelas),
-          valor: textoDoValor(lancamento.valorParcelaCentavos ?? 0),
-        })
-      : lancamento.cartao
-    : lancamento.formaPagamento
-      ? t(`transacoes.formas.${lancamento.formaPagamento}`)
-      : aConfirmar && lancamento.tipo === 'despesa'
-        ? t('mony.resumo.formaAEscolher')
-        : null;
-  const categoria =
-    lancamento.categoria ?? (aConfirmar ? t('mony.resumo.categoriaAEscolher') : null);
-  // RN-089: o impacto no orçamento e no cartão, na cor da faixa mais alta.
-  const impacto = lancamento.impacto ?? null;
-  const faixas = [impacto?.orcamento?.faixa, impacto?.cartao?.faixa];
-  const faixa: FaixaOrcamento = faixas.includes('estourado')
-    ? 'estourado'
-    : faixas.includes('atencao')
-      ? 'atencao'
-      : 'normal';
-  return (
-    <Card className="gap-2" style={{ maxWidth: '85%' }} testID="mony-resumo">
-      <Texto variante="corpo-sm" cor="suave">
-        {aConfirmar
-          ? t(
-              lancamento.tipo === 'receita'
-                ? 'mony.resumo.receitaAConfirmar'
-                : 'mony.resumo.despesaAConfirmar',
-            )
-          : t(lancamento.tipo === 'receita' ? 'mony.resumo.receita' : 'mony.resumo.despesa')}
-      </Texto>
-      <Texto className="font-forte">
-        {`${textoDoValor(lancamento.valorCentavos)} · ${lancamento.descricao}`}
-      </Texto>
-      <Texto variante="corpo-sm" cor="suave">
-        {[categoria, dataCurta(lancamento.data), forma].filter(Boolean).join(' · ')}
-      </Texto>
-      {impacto ? (
-        <Texto variante="corpo-sm" cor={COR_DA_FAIXA[faixa]} testID="mony-impacto">
-          {impacto.comentario}
-        </Texto>
-      ) : null}
-      <Opcoes opcoes={opcoes} aoTocar={aoTocar} />
-    </Card>
   );
 }

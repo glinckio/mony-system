@@ -41,7 +41,7 @@ sequenceDiagram
 - `MonyOrquestrador` grava a mensagem, tenta o `RoteadorRegras` (rascunho do lançamento, com botões em `POST /mony/acoes`) e, sem regra, chama o `LlmProvider` (`fake` ou `anthropic`, por `IA_PROVEDOR`) com o prompt local (`prompts/sistema.ts`), o contexto do usuário, o histórico e as ferramentas. Pedido de ferramenta → executa → devolve o resultado ao modelo, até 5 chamadas por mensagem.
 - Ferramentas registradas: as de finanças (T-062a e T-062b, ver "Ferramentas").
 - Rascunhos de lançamento (T-061): ver "Rascunhos e perguntas com botões".
-- Toda mensagem, toque em botão e resposta vai para `mensagens`; `GET /mony/conversa` devolve o histórico por cursor, com busca no texto.
+- Toda mensagem, toque em botão e resposta vai para `mensagens`; `GET /mony/conversa` devolve o histórico por cursor, com busca no texto, e na primeira página sem busca os atalhos (`sugestoes`, T-069): "Quanto gastei este mês?", a fatura do primeiro cartão (ou "Quero anotar um gasto"), os orçamentos (ou "Quero criar um orçamento") e as metas, se houver meta aberta. Nenhum atalho grava sozinho.
 - Cada chamada ao modelo grava um `logs_ia` (modelo, tokens, ferramentas pedidas, duração, erro), ligado à mensagem do usuário.
 - Erro transitório: até 2 retentativas (400 ms e 1.200 ms) enquanto nada saiu para o app; tempo limite de 60 s por chamada. Falha: evento `erro` com "Não consegui responder agora…" (RN-087).
 - `Idempotency-Key` opcional: o reenvio repete a resposta gravada (decisões da T-060 em `DECISOES.md`).

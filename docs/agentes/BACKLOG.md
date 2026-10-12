@@ -195,7 +195,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-062b · RN-089
 - [x] **T-068** Prompt versionado (`mony_config`) e avaliação com frases de teste no CI (PR #64)
   - dep: T-062b · docs: 08 (Controle de custo e qualidade)
-- [ ] **T-069** Tela de chat completa no app (componentes, atalhos, busca no histórico)
+- [x] **T-069** Tela de chat completa no app (componentes, atalhos, busca no histórico) (PR #65)
   - dep: T-061, T-034
 
 ## Fase 3 — Alertas, lembretes e agenda

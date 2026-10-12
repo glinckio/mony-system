@@ -17,6 +17,22 @@ export const textosMony = {
     semPermissao: 'Para falar com a Mony, permita o microfone nos Ajustes do aparelho.',
     falhou: 'Não consegui gravar o áudio. Tente de novo.',
   },
+  /** Atalhos acima do campo (T-069). */
+  atalhos: 'Sugestões',
+  historico: {
+    erro: 'Não consegui carregar as mensagens antigas.',
+    tentarDeNovo: 'Tentar de novo',
+  },
+  busca: {
+    abrir: 'Buscar na conversa',
+    titulo: 'Buscar na conversa',
+    campo: 'Buscar mensagem',
+    ajuda: 'Digite pelo menos 2 letras.',
+    vazia: 'Nenhuma mensagem com esse texto.',
+    erro: 'Não consegui buscar agora. Tente de novo.',
+    voce: 'Você',
+    mony: 'Mony',
+  },
   /** O arquivo da mensagem da pessoa, no balão. */
   arquivo: {
     audio: 'Áudio',

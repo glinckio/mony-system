@@ -10,4 +10,5 @@ import type { PaginaConversaDtoItensItem } from './paginaConversaDtoItensItem';
 export interface PaginaConversaDto {
   itens: PaginaConversaDtoItensItem[];
   proximoCursor: string | null;
+  sugestoes: string[];
 }

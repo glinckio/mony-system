@@ -8,6 +8,9 @@ import type {
 
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
+import { CartoesService } from '../cartoes/cartoes.service';
+import { MetasService } from '../metas/metas.service';
+import { OrcamentosService } from '../orcamentos/orcamentos.service';
 import { DocumentosMony } from './documentos.service';
 import { paraMensagemConversa } from './historico';
 import { LancamentosMony } from './lancamentos.service';
@@ -22,23 +25,48 @@ export class MonyService {
     private readonly regras: RoteadorRegras,
     private readonly lancamentos: LancamentosMony,
     private readonly documentos: DocumentosMony,
+    private readonly cartoes: CartoesService,
+    private readonly orcamentos: OrcamentosService,
+    private readonly metas: MetasService,
   ) {}
 
-  /** `GET /mony/conversa`: da mais nova para a mais antiga, por cursor, com busca no texto. */
+  /**
+   * `GET /mony/conversa`: da mais nova para a mais antiga, por cursor, com busca no texto. A
+   * primeira página sem busca traz os atalhos (T-069).
+   */
   async conversa(contexto: Contexto, consulta: ConsultaConversa): Promise<PaginaConversa> {
     const usuarioId = usuarioDoContexto(contexto);
-    const linhas = await this.repositorio.historico(
-      usuarioId,
-      consulta.texto,
-      consulta.cursor === undefined ? null : lerCursor(consulta.cursor),
-      consulta.limite + 1,
-    );
+    const primeira = consulta.cursor === undefined && consulta.texto === undefined;
+    const [linhas, sugestoes] = await Promise.all([
+      this.repositorio.historico(
+        usuarioId,
+        consulta.texto,
+        consulta.cursor === undefined ? null : lerCursor(consulta.cursor),
+        consulta.limite + 1,
+      ),
+      primeira ? this.sugestoes(contexto) : [],
+    ]);
     const pagina = linhas.slice(0, consulta.limite);
     const ultima = pagina.at(-1);
     return {
       itens: pagina.map(paraMensagemConversa),
       proximoCursor: linhas.length > consulta.limite && ultima ? escreverCursor(ultima) : null,
+      sugestoes,
     };
+  }
+
+  /** Os atalhos pelo que a pessoa já tem: cartão, orçamentos e metas. Nenhum grava sozinho. */
+  private async sugestoes(contexto: Contexto): Promise<string[]> {
+    const [cartoes, orcamentos, metas] = await Promise.all([
+      this.cartoes.listar(contexto),
+      this.orcamentos.listar(contexto),
+      this.metas.listar(contexto),
+    ]);
+    return sugestoesDaMony({
+      cartao: cartoes.itens[0]?.nome ?? null,
+      temOrcamentos: orcamentos.itens.length > 0,
+      temMetas: metas.itens.some(({ concluida }) => !concluida),
+    });
   }
 
   /**
@@ -105,6 +133,23 @@ export class MonyService {
         };
     }
   }
+}
+
+/**
+ * Atalhos da conversa (doc 04): uma consulta do mês, o cartão (ou anotar um gasto), os orçamentos
+ * (ou criar um) e as metas. Frases que levam ao modelo ou às perguntas, nunca um lançamento pronto.
+ */
+export function sugestoesDaMony(estado: {
+  cartao: string | null;
+  temOrcamentos: boolean;
+  temMetas: boolean;
+}): string[] {
+  return [
+    'Quanto gastei este mês?',
+    estado.cartao ? `Como está a fatura do ${estado.cartao}?` : 'Quero anotar um gasto',
+    estado.temOrcamentos ? 'Como estão meus orçamentos?' : 'Quero criar um orçamento',
+    ...(estado.temMetas ? ['Como estão minhas metas?'] : []),
+  ];
 }
 
 /** Cursor opaco: criação e id da última mensagem da página. */
