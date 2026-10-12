@@ -136,7 +136,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-049** Telas de categorias e contas no app (lista, criar, editar, excluir escolhendo para onde mover os lançamentos) (PR #43)
   - dep: T-035, T-036, T-011, T-034 · docs: 04 · RN-065, RN-066
   - Separada da T-035 e da T-036: as telas dependem do esqueleto do app (T-010), do design system (T-011) e da sessão no app (T-034), que ainda não existiam.
-- [ ] **T-050** Telas de cartões e faturas no app (lista com limite, cadastro e edição, fatura atual, lista de faturas, detalhe da fatura com as compras)
+- [x] **T-050** Telas de cartões e faturas no app (lista com limite, cadastro e edição, fatura atual, lista de faturas, detalhe da fatura com as compras) (PR #44)
   - dep: T-040, T-011, T-034 · docs: 04 · RN-030 a RN-034
   - Separada da T-040 pelo mesmo motivo da T-049.
 - [x] **T-051** Recorrência no cartão de crédito (assinaturas): ocorrências entram nas faturas e editar ou excluir a recorrência refaz as faturas (PR #30)

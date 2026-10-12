@@ -52,6 +52,8 @@ export const cores = {
   alerta: '#FF8A3D',
   /** Véu escuro atrás das folhas (bottom sheet). */
   veu: 'rgba(0, 0, 0, 0.56)',
+  /** O chip dourado do cartão desenhado (design, página 4). */
+  'chip-cartao': '#D8C68A',
 } as const;
 
 export type Cor = keyof typeof cores;
