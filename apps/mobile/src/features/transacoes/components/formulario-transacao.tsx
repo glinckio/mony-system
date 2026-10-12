@@ -46,6 +46,8 @@ import {
   valoresIniciais,
 } from '../lib/formulario';
 import { dataParaTexto, mascararData, somarDias, textoParaData } from '../lib/periodo';
+import type { AnexoNaTela } from '../lib/anexos';
+import { SecaoAnexos } from './secao-anexos';
 
 export interface PropsFormularioTransacao {
   /** `null` para lançamento novo. */
@@ -79,6 +81,7 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
   const [chaveIdempotencia] = useState(() => randomUUID());
   const [erroEnvio, definirErroEnvio] = useState<string | null>(null);
   const [confirmandoExclusao, definirConfirmandoExclusao] = useState(false);
+  const [anexos, definirAnexos] = useState<AnexoNaTela[]>(() => [...(original?.anexos ?? [])]);
 
   const trava = original === null ? null : motivoDaTrava(original);
   const travada = trava !== null;
@@ -378,6 +381,17 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
             mensagemErro=""
             multiline
             maxLength={1000}
+          />
+
+          <SecaoAnexos
+            anexos={anexos}
+            aoMudar={(novos) => {
+              definirAnexos(novos);
+              mudar(
+                'anexoIds',
+                novos.map(({ id }) => id),
+              );
+            }}
           />
 
           {erroEnvio === null ? null : (

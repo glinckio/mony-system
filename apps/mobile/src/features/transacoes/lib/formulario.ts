@@ -26,6 +26,8 @@ export interface ValoresFormulario {
   /** `null`: a pessoa não mexeu, e vale o status padrão da RN-042 (decidido pela API). */
   pago: boolean | null;
   observacao: string;
+  /** Os anexos que ficam no lançamento (RN-040), já enviados ao S3. */
+  anexoIds: string[];
 }
 
 export type CampoFormulario = keyof ValoresFormulario;
@@ -50,6 +52,7 @@ export function valoresIniciais(hoje: string, original: Transacao | null): Valor
       contaId: null,
       pago: null,
       observacao: '',
+      anexoIds: [],
     };
   }
   return {
@@ -63,6 +66,7 @@ export function valoresIniciais(hoje: string, original: Transacao | null): Valor
     contaId: original.contaId,
     pago: original.status === 'pago',
     observacao: original.observacao ?? '',
+    anexoIds: original.anexos.map(({ id }) => id),
   };
 }
 
@@ -90,13 +94,19 @@ export function montarNovaTransacao(valores: ValoresFormulario): DadosNovaTransa
     ...(!noCartao && valores.contaId !== null ? { contaId: valores.contaId } : {}),
     ...(!noCartao && valores.pago !== null ? { status: valores.pago ? 'pago' : 'pendente' } : {}),
     ...(observacao === '' ? {} : { observacao }),
+    ...(valores.anexoIds.length === 0 ? {} : { anexoIds: valores.anexoIds }),
   };
+}
+
+/** A mesma lista de anexos, em qualquer ordem. */
+function mesmosAnexos(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((id) => b.includes(id));
 }
 
 /**
  * O corpo do `PATCH /transacoes/:id`: só o que mudou. Lançamento travado (do banco, parcela,
- * pagamento de fatura, transferência ou compra em fatura paga) só manda descrição, categoria e
- * observação (RN-045, RN-046; doc 05).
+ * pagamento de fatura, transferência ou compra em fatura paga) só manda descrição, categoria,
+ * observação e anexos (RN-045, RN-046; doc 05). `anexoIds` substitui a lista inteira.
  */
 export function montarAtualizacao(
   valores: ValoresFormulario,
@@ -108,6 +118,12 @@ export function montarAtualizacao(
     ...(nova.descricao === original.descricao ? {} : { descricao: nova.descricao }),
     ...(nova.categoriaId === original.categoriaId ? {} : { categoriaId: nova.categoriaId }),
     ...(observacao === original.observacao ? {} : { observacao }),
+    ...(mesmosAnexos(
+      valores.anexoIds,
+      original.anexos.map(({ id }) => id),
+    )
+      ? {}
+      : { anexoIds: valores.anexoIds }),
   };
   if (motivoDaTrava(original) !== null) return basicos;
 
@@ -143,6 +159,7 @@ const CAMPO_DO_ERRO: Partial<Record<string, CampoFormulario>> = {
   contaId: 'formaPagamento',
   status: 'formaPagamento',
   observacao: 'observacao',
+  anexoIds: 'anexoIds',
 };
 
 /**

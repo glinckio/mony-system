@@ -673,3 +673,12 @@ Contexto: o design traz a aba Mais (página 8: perfil, grade de nove atalhos e t
 - **Iniciais** num `Avatar` do design system e o `iniciais` em `src/lib/nomes.ts`; o nome que muda no Perfil vai para a sessão (`mudarNome`).
 - Conferido em tela (export web temporário, Playwright, API falsa), fora do repositório.
 Reversível: sim.
+
+## 2026-10-12 — T-058 — Anexos no formulário do lançamento
+Contexto: a API já tem `POST /arquivos` (URL assinada de `PUT`), `GET /arquivos/:id` e `anexoIds` na transação (T-037); faltava o app. Decisões:
+- **Três módulos nativos novos** nas versões do SDK 57 (`expo-image-picker`, `expo-document-picker`, `expo-image-manipulator`): mudam o fingerprint do runtime, mas ainda não há build publicado (o projeto do EAS é a T-010), então nada quebra no EAS Update. O próximo build de desenvolvimento já sai com eles.
+- **Envio na hora da escolha**, não no salvar: a pessoa vê que o anexo subiu (ou o erro) antes de terminar o formulário, e o salvar continua uma chamada só. Anexo enviado e abandonado (formulário fechado sem salvar) fica sem lançamento no S3; a limpeza de órfãos é da retenção de arquivos (T-140).
+- **Foto reduzida no aparelho** (lado maior até 2.000 px, JPEG 0,8, doc 04), PDF como veio; acima de 10 MB (`TAMANHO_MAXIMO_ANEXO`) não vai. Os tipos `foto` e `pdf`; `comprovante` fica para a leitura de documentos da Mony (T-065).
+- **Abrir anexo** pela URL de leitura no navegador do aparelho (`Linking`), sem visualizador próprio.
+- **Galeria sem pedir permissão**: o seletor do sistema (PHPicker no iOS, Photo Picker no Android) não precisa; só a câmera pede.
+Reversível: sim.

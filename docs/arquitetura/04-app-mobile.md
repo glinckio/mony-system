@@ -199,7 +199,8 @@ Telas em `src/features/transacoes`, no design da página 4 (`docs/design`):
   - lançamento do banco, parcela, pagamento de fatura, transferência e compra em fatura paga só mudam descrição, categoria e observação (`motivoDaTrava`, espelho do doc 05);
   - a `Idempotency-Key` é uma por formulário;
   - excluir pede confirmação, e na ocorrência de recorrência pergunta só esta, esta e as próximas, ou todas (RN-043). Parcela, transferência e compra em fatura paga não têm o botão.
-- **Ainda não:** anexos e recorrência no formulário (tarefas próprias no BACKLOG).
+- **Anexos** (T-058, RN-040): câmera, galeria ou PDF, até cinco por lançamento. A foto é reduzida no aparelho (`expo-image-manipulator`, lado maior até 2.000 px, JPEG); o PDF vem do `expo-document-picker`. Cada anexo vai direto ao S3 ao ser escolhido (`POST /arquivos` com tipo e tamanho, depois o `PUT` na URL assinada com os cabeçalhos dela) e só fica no lançamento quando ele é salvo (`anexoIds`; na edição, a lista inteira, só se mudou, inclusive no lançamento travado). O que já está no lançamento abre pela URL de leitura (`GET /arquivos/:id`) e pode sair. Os textos dos pedidos de câmera e fotos vão no plugin do `expo-image-picker`.
+- **Ainda não:** recorrência no formulário (tarefa própria no BACKLOG).
 
 ## Categorias e contas (T-049)
 

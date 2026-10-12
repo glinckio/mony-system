@@ -161,6 +161,17 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
       // O cofre fica fora do backup do Android: a chave do Keystore não vai junto, e o valor
       // restaurado em outro aparelho não abriria.
       ['expo-secure-store', { faceIDPermission: PEDIDO_FACE_ID, configureAndroidBackup: true }],
+      // Anexos do lançamento (RN-040, T-058): os textos dos pedidos de câmera e fotos no iOS. O
+      // microfone fica de fora: o app não grava vídeo.
+      [
+        'expo-image-picker',
+        {
+          photosPermission:
+            'O Mony usa suas fotos para anexar comprovantes e notas aos lançamentos.',
+          cameraPermission: 'O Mony usa a câmera para fotografar comprovantes e notas.',
+          microphonePermission: false,
+        },
+      ],
       // Envio de source maps no build do EAS: precisa de SENTRY_AUTH_TOKEN (segredo no EAS) ou
       // SENTRY_DISABLE_AUTO_UPLOAD=true.
       [
