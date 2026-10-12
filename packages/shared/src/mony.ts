@@ -7,6 +7,7 @@ import { z } from 'zod';
 
 import { AUTORES_MENSAGEM, FORMAS_PAGAMENTO, TIPOS_MENSAGEM, TIPOS_TRANSACAO } from './enums.js';
 import { CAMPOS_RASCUNHO } from './rascunhos.js';
+import { VALOR_MAXIMO_CENTAVOS } from './transacoes.js';
 
 /** Uma opção de botão. O `acao` volta inteiro em `POST /mony/acoes`. */
 export const esquemaOpcaoBotao = z.object({
@@ -182,6 +183,7 @@ export function eventoMonyDoSse(evento: EventoSse): EventoMony | null {
  *   ver todas), a forma de pagamento, o id do cartão ou o número de parcelas (1 é à vista).
  * - `desfazer`: tira o lançamento que a Mony acabou de gravar, em até 24 h (RN-082).
  * - `excluir_transacao`: a confirmação da exclusão que a Mony pediu (RN-092).
+ * - `pagar_fatura`: a confirmação do pagamento da fatura, no valor mostrado no botão (RN-092).
  * - `cancelar`: não faz nada.
  */
 export const esquemaAcaoMony = z.discriminatedUnion('tipo', [
@@ -197,6 +199,11 @@ export const esquemaAcaoMony = z.discriminatedUnion('tipo', [
     id: z.uuid(),
   }),
   z.object({ tipo: z.literal('excluir_transacao'), transacaoId: z.uuid() }),
+  z.object({
+    tipo: z.literal('pagar_fatura'),
+    faturaId: z.uuid(),
+    valorCentavos: z.number().int().min(1).max(VALOR_MAXIMO_CENTAVOS),
+  }),
   z.object({ tipo: z.literal('cancelar') }),
 ]);
 

@@ -743,3 +743,12 @@ Reversível: sim.
 
 ## 2026-10-12 — T-HOTFIX — Patches do SDK 57 do Expo
 Contexto: o Expo publicou patches do SDK 57 (`expo` 57.0.28 e afins) e o passo "App com as versões do SDK do Expo" (`expo install --check`) do CI passou a falhar em todo PR, inclusive na `main`. O pnpm 12 só instala versão publicada há mais de um dia (`minimumReleaseAge`). Decisão: subir os pacotes para as versões exigidas, fixas, com as versões novas do Expo na lista `minimumReleaseAgeExclude` do `pnpm-workspace.yaml` (o pnpm acrescenta sozinho ao instalar). Alternativa: esperar um dia com o CI vermelho. As exceções podem sair da lista quando as versões passarem de um dia. Reversível: sim.
+
+## 2026-10-12 — T-062b — Ferramentas de consulta e planejamento da Mony
+Contexto: segunda parte da T-062. Decisões:
+- **`resumo_periodo`**: sem datas, do dia 1 do mês até hoje (no fuso do usuário). A comparação é com o período anterior do mesmo tamanho, logo antes (1 a 15/10 compara com 16 a 30/09), e não com o mês anterior inteiro, para não comparar meio mês com um mês. Totais pelo `TransacoesService.totais` (RN-047) e categorias pelo `RelatoriosService.categorias` (que passou a ser exportado).
+- **`pagar_fatura`** segue a `excluir_transacao`: só devolve [Pagar R$ X] e [Cancelar]; o valor vai no botão (sem ele, o que falta pagar; acima disso, recusa) e o pagamento é de hoje, pelo `CartoesService.pagar`, com a conta de pagamento do cartão (RN-036, RN-092).
+- **`definir_orcamento` e `atualizar_meta` gravam direto e respondem em texto**, sem cartão de resumo nem [Desfazer]: o doc 08 pede o resumo com [Desfazer] para lançamentos, e mudar um orçamento ou uma meta se corrige pedindo de novo ou no app. `atualizar_meta` faz o aporte de hoje e repassa o `sugerirConclusao` (RN-063) para a Mony perguntar.
+- `consultar_cartao` devolve as faturas com saldo, a aberta e a última paga, não o histórico todo.
+- O `LlmFake` guarda uma cópia da conversa de cada pedido: o orquestrador continua a mesma lista nas voltas de ferramenta.
+Reversível: sim.

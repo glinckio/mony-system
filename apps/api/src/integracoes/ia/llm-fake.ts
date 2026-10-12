@@ -43,7 +43,8 @@ export class LlmFake extends LlmProvider {
   }
 
   async *conversar(pedido: PedidoLlm): AsyncIterable<EventoLlm> {
-    this.pedidos.push(pedido);
+    // Cópia da conversa: o orquestrador continua a mesma lista nas voltas de ferramenta.
+    this.pedidos.push({ ...pedido, mensagens: [...pedido.mensagens] });
     const turno = this.roteiro.shift() ?? { texto: RESPOSTA_FAKE };
     if ('erro' in turno) throw turno.erro;
     const texto = turno.texto ?? '';

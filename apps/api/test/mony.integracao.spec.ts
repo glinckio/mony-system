@@ -296,6 +296,13 @@ describe.runIf(ativo)('integração: Mony', () => {
       'editar_transacao',
       'excluir_transacao',
       'consultar_transacoes',
+      'resumo_periodo',
+      'consultar_cartao',
+      'pagar_fatura',
+      'consultar_orcamentos',
+      'definir_orcamento',
+      'consultar_metas',
+      'atualizar_meta',
     ]);
 
     const mensagens = await mensagensDo(usuario.usuarioId);
@@ -1087,5 +1094,230 @@ describe.runIf(ativo)('integração: Mony', () => {
         select: { status: true },
       }),
     ).toEqual({ status: 'cancelada' });
+  });
+  it('resumo_periodo: totais do mês até hoje, categorias e o período anterior do mesmo tamanho', async () => {
+    const usuario = await usuarioNovo();
+    const mercado = await categoriaDo(usuario, 'Mercado', 'despesa');
+    const lazer = await categoriaDo(usuario, 'Lazer', 'despesa');
+    const salario = await categoriaDo(usuario, 'Salário', 'receita');
+    const lancar = (dados: Record<string, unknown>) =>
+      prisma.transacao.create({
+        data: {
+          usuarioId: usuario.usuarioId,
+          descricao: 'Teste',
+          status: 'pago',
+          formaPagamento: 'pix',
+          ...dados,
+        } as Parameters<typeof prisma.transacao.create>[0]['data'],
+      });
+    await lancar({
+      tipo: 'despesa',
+      valor: 30_000n,
+      data: new Date('2026-10-02T00:00:00Z'),
+      categoriaId: mercado,
+    });
+    await lancar({
+      tipo: 'despesa',
+      valor: 10_000n,
+      data: new Date('2026-10-10T00:00:00Z'),
+      categoriaId: lazer,
+    });
+    await lancar({
+      tipo: 'receita',
+      valor: 500_000n,
+      data: new Date('2026-10-05T00:00:00Z'),
+      categoriaId: salario,
+    });
+    await lancar({
+      tipo: 'despesa',
+      valor: 20_000n,
+      data: new Date('2026-09-20T00:00:00Z'),
+      categoriaId: lazer,
+    });
+    // Fora dos dois períodos.
+    await lancar({
+      tipo: 'despesa',
+      valor: 99_000n,
+      data: new Date('2026-09-01T00:00:00Z'),
+      categoriaId: lazer,
+    });
+
+    modelo.roteirizar(
+      { ferramentas: [{ nome: 'resumo_periodo', entrada: {} }] },
+      { texto: 'Você gastou R$ 400,00 neste mês.' },
+    );
+    await conversar(usuario, 'como estou neste mês?');
+    expect(resultadosDaFerramenta(1)).toEqual([
+      {
+        erro: false,
+        dados: {
+          periodo: { de: '2026-10-01', ate: '2026-10-15' },
+          receitasCentavos: 500_000,
+          despesasCentavos: 40_000,
+          saldoCentavos: 460_000,
+          categorias: [
+            { nome: 'Mercado', totalCentavos: 30_000, percentual: 75 },
+            { nome: 'Lazer', totalCentavos: 10_000, percentual: 25 },
+          ],
+          anterior: {
+            periodo: { de: '2026-09-16', ate: '2026-09-30' },
+            receitasCentavos: 0,
+            despesasCentavos: 20_000,
+            saldoCentavos: -20_000,
+          },
+        },
+      },
+    ]);
+  });
+
+  it('RN-092 consultar_cartao e pagar_fatura: o pagamento só acontece no toque em [Pagar]', async () => {
+    const usuario = await usuarioNovo();
+    const nubank = await cartaoNovo(usuario, 'Nubank');
+    const compra = await app.inject({
+      method: 'POST',
+      url: '/v1/transacoes',
+      headers: { authorization: `Bearer ${usuario.acesso}`, 'idempotency-key': randomUUID() },
+      payload: {
+        tipo: 'despesa',
+        descricao: 'Tênis',
+        valorCentavos: 30_000,
+        data: '2026-10-01',
+        categoriaId: await categoriaDo(usuario, 'Compras', 'despesa'),
+        formaPagamento: 'cartao_credito',
+        cartaoId: nubank.id,
+      },
+    });
+    expect(compra.statusCode, compra.body).toBe(201);
+
+    modelo.roteirizar(
+      { ferramentas: [{ nome: 'consultar_cartao', entrada: { cartaoId: nubank.id } }] },
+      { texto: 'Sua fatura tem R$ 300,00.' },
+    );
+    await conversar(usuario, 'como está o nubank?');
+    const [consulta] = resultadosDaFerramenta(1);
+    expect(consulta).toMatchObject({
+      erro: false,
+      dados: {
+        cartao: { nome: 'Nubank', limiteUsadoCentavos: 30_000, limiteDisponivelCentavos: 470_000 },
+        faturas: [{ saldoCentavos: 30_000, dataVencimento: '2026-10-10' }],
+      },
+    });
+    const faturaId = (consulta?.dados as { faturas: { id: string }[] }).faturas[0]?.id ?? '';
+
+    modelo.roteirizar(
+      { ferramentas: [{ nome: 'pagar_fatura', entrada: { faturaId, valorCentavos: 10_000 } }] },
+      { texto: 'Confirma o pagamento?' },
+    );
+    const pedido = await conversar(usuario, 'paga 100 da fatura');
+    const [pagar, cancelar] = botoes(pedido.eventos.at(-2));
+    expect([pagar?.rotulo, cancelar?.rotulo]).toEqual([
+      `Pagar ${formatarCentavos(10_000)}`,
+      'Cancelar',
+    ]);
+    const pagamentos = () =>
+      prisma.transacao.count({
+        where: { usuarioId: usuario.usuarioId, natureza: 'pagamento_fatura', excluidoEm: null },
+      });
+    expect(await pagamentos()).toBe(0);
+    if (!pagar) throw new Error('sem [Pagar]');
+
+    const pago = await tocar(usuario, pagar);
+    expect(pago.statusCode, pago.body).toBe(200);
+    expect(pago.json<RespostaAcaoMony>().texto).toBe(
+      `Pronto, registrei o pagamento de ${formatarCentavos(10_000)} da fatura do Nubank. Ainda faltam ${formatarCentavos(20_000)} nessa fatura.`,
+    );
+    expect(await pagamentos()).toBe(1);
+
+    // Mais do que falta, ou cartão de outra pessoa: a ferramenta recusa.
+    const outro = await usuarioNovo();
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          { nome: 'pagar_fatura', entrada: { faturaId, valorCentavos: 50_000 } },
+          { nome: 'consultar_cartao', entrada: { cartaoId: nubank.id } },
+        ],
+      },
+      { texto: 'Não deu.' },
+    );
+    await conversar(usuario, 'paga 500');
+    expect(resultadosDaFerramenta(5)).toMatchObject([
+      { erro: true, dados: { erro: { codigo: 'REQUISICAO_INVALIDA' } } },
+      { erro: false },
+    ]);
+    modelo.roteirizar(
+      { ferramentas: [{ nome: 'consultar_cartao', entrada: { cartaoId: nubank.id } }] },
+      { texto: 'Não achei.' },
+    );
+    await conversar(outro, 'e o nubank?');
+    expect(resultadosDaFerramenta(7)).toMatchObject([
+      { erro: true, dados: { erro: { codigo: 'NAO_ENCONTRADO' } } },
+    ]);
+  });
+
+  it('definir_orcamento, consultar_orcamentos, consultar_metas e atualizar_meta', async () => {
+    const usuario = await usuarioNovo();
+    const mercado = await categoriaDo(usuario, 'Mercado', 'despesa');
+    await conversar(usuario, 'gastei 150 no mercado no pix');
+    const meta = await app.inject({
+      method: 'POST',
+      url: '/v1/metas',
+      headers: { authorization: `Bearer ${usuario.acesso}` },
+      payload: { titulo: 'Viagem', valorAlvoCentavos: 100_000 },
+    });
+    const metaId = meta.json<{ id: string }>().id;
+
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          { nome: 'definir_orcamento', entrada: { categoriaId: mercado, limiteCentavos: 50_000 } },
+          { nome: 'atualizar_meta', entrada: { metaId, aporteCentavos: 100_000 } },
+        ],
+      },
+      {
+        ferramentas: [
+          { nome: 'consultar_orcamentos', entrada: {} },
+          { nome: 'consultar_metas', entrada: {} },
+        ],
+      },
+      { texto: 'Feito.' },
+    );
+    await conversar(usuario, 'limite de 500 no mercado e guardei mil na viagem');
+    expect(resultadosDaFerramenta(1)).toMatchObject([
+      {
+        erro: false,
+        dados: { definido: true, mes: '2026-10', limiteCentavos: 50_000, gastoCentavos: 15_000 },
+      },
+      {
+        erro: false,
+        dados: { meta: { valorAtualCentavos: 100_000, percentual: 100 }, sugerirConclusao: true },
+      },
+    ]);
+    expect(resultadosDaFerramenta(2)).toMatchObject([
+      {
+        erro: false,
+        dados: {
+          mes: '2026-10',
+          orcamentos: [
+            { categoria: 'Mercado', gastoCentavos: 15_000, percentualUsado: 30, faixa: 'normal' },
+          ],
+        },
+      },
+      {
+        erro: false,
+        dados: {
+          metas: [{ id: metaId, valorAtualCentavos: 100_000 }],
+          guardadoNoMesCentavos: 100_000,
+        },
+      },
+    ]);
+
+    modelo.roteirizar(
+      { ferramentas: [{ nome: 'atualizar_meta', entrada: { metaId, concluida: true } }] },
+      { texto: 'Meta concluída!' },
+    );
+    await conversar(usuario, 'pode concluir');
+    expect(resultadosDaFerramenta(4)).toMatchObject([
+      { erro: false, dados: { meta: { concluida: true }, sugerirConclusao: false } },
+    ]);
   });
 });

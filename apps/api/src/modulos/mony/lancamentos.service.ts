@@ -28,8 +28,8 @@ export interface Gravado {
 
 /**
  * Lançamentos feitos pela Mony (doc 08), pelo rascunho ou pelas ferramentas: grava pelos Services
- * com origem `mony`, monta o cartão de resumo com [Desfazer] (RN-082), desfaz em até 24 h e exclui
- * só depois da confirmação por botão (RN-092).
+ * com origem `mony`, monta o cartão de resumo com [Desfazer] (RN-082), desfaz em até 24 h, e exclui
+ * e paga fatura só depois da confirmação por botão (RN-092).
  */
 @Injectable()
 export class LancamentosMony {
@@ -173,6 +173,63 @@ export class LancamentosMony {
       texto: `Pronto, excluí ${transacao.descricao} (${reais(transacao.valorCentavos)}).`,
       componente: null,
       transacaoId: null,
+    };
+  }
+
+  /**
+   * RN-092: os botões que confirmam o pagamento da fatura, no valor pedido (sem ele, o que falta
+   * pagar). Não paga nada.
+   */
+  async pedirPagamento(
+    contexto: Contexto,
+    faturaId: string,
+    valorCentavos: number | undefined,
+  ): Promise<{ componente: ComponenteMony; valorCentavos: number; cartao: string }> {
+    const { fatura, cartao } = await this.cartoes.fatura(contexto, faturaId);
+    if (fatura.saldoCentavos <= 0) {
+      throw new ErroDominio('CONFLITO', { mensagem: 'Esta fatura já está paga.' });
+    }
+    const valor = valorCentavos ?? fatura.saldoCentavos;
+    if (valor > fatura.saldoCentavos) {
+      throw new ErroDominio('REQUISICAO_INVALIDA', {
+        mensagem: `O valor passa do que falta pagar (${reais(fatura.saldoCentavos)}).`,
+      });
+    }
+    return {
+      valorCentavos: valor,
+      cartao: cartao.nome,
+      componente: {
+        tipo: 'botoes',
+        opcoes: [
+          {
+            id: 'pagar',
+            rotulo: `Pagar ${reais(valor)}`,
+            acao: { tipo: 'pagar_fatura', faturaId, valorCentavos: valor },
+          },
+          { id: 'cancelar', rotulo: 'Cancelar', acao: { tipo: 'cancelar' } },
+        ],
+      },
+    };
+  }
+
+  /** RN-092: o pagamento confirmado pelo botão (RN-036: total ou parcial), hoje. */
+  async pagarFatura(
+    contexto: Contexto,
+    faturaId: string,
+    valorCentavos: number,
+  ): Promise<RespostaAcaoMony> {
+    const { cartao } = await this.cartoes.fatura(contexto, faturaId);
+    const { fatura, transacao } = await this.cartoes.pagar(
+      { ...contexto, origem: 'mony' },
+      faturaId,
+      { valorCentavos },
+    );
+    const restante =
+      fatura.saldoCentavos > 0 ? ` Ainda faltam ${reais(fatura.saldoCentavos)} nessa fatura.` : '';
+    return {
+      texto: `Pronto, registrei o pagamento de ${reais(valorCentavos)} da fatura do ${cartao.nome}.${restante}`,
+      componente: null,
+      transacaoId: transacao.id,
     };
   }
 

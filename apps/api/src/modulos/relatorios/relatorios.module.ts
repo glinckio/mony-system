@@ -7,5 +7,6 @@ import { RelatoriosService } from './relatorios.service';
 @Module({
   controllers: [RelatoriosController],
   providers: [RelatoriosService, RelatoriosRepository],
+  exports: [RelatoriosService],
 })
 export class RelatoriosModule {}
