@@ -3,17 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
 
 import { useSessao } from '@/stores/sessao';
-import { BotaoIcone, Icone, Texto } from '@/ui';
+import { Avatar, BotaoIcone, Icone, Texto } from '@/ui';
 import { cores } from '@/ui/tokens';
-
-/** "Lúcia Martins" → "LM"; um nome só → as duas primeiras letras. */
-export function iniciais(nome: string): string {
-  const partes = nome.trim().split(/\s+/).filter(Boolean);
-  const primeira = partes[0] ?? '';
-  const ultima = partes.length > 1 ? (partes.at(-1) ?? '') : '';
-  const letras = ultima === '' ? primeira.slice(0, 2) : `${primeira[0] ?? ''}${ultima[0] ?? ''}`;
-  return letras.toUpperCase();
-}
 
 interface PropsTopoInicio {
   notificacoesNaoLidas: number;
@@ -21,7 +12,7 @@ interface PropsTopoInicio {
 }
 
 /**
- * O topo do Início (design, página 3): as iniciais (vão para a aba Mais, onde fica o perfil), a
+ * O topo do Início (design, página 3): as iniciais (abrem o Perfil), a
  * busca (abre os lançamentos), o período e o sino com o ponto das notificações não lidas.
  */
 export function TopoInicio({ notificacoesNaoLidas, aoEscolherPeriodo }: PropsTopoInicio) {
@@ -40,13 +31,11 @@ export function TopoInicio({ notificacoesNaoLidas, aoEscolherPeriodo }: PropsTop
         accessibilityRole="button"
         accessibilityLabel={t('inicio.perfil')}
         onPress={() => {
-          router.push('/mais');
+          router.push('/mais/perfil');
         }}
-        className="min-h-toque min-w-toque items-center justify-center rounded-total border border-vidro-forte bg-superficie active:opacity-70"
+        className="active:opacity-70"
       >
-        <Texto variante="corpo-sm" className="font-negrito">
-          {iniciais(nome)}
-        </Texto>
+        <Avatar nome={nome} />
       </Pressable>
       <Pressable
         accessibilityRole="button"

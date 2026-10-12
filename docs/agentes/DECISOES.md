@@ -662,3 +662,14 @@ Contexto: a API já recusa versão antiga (426 `VERSAO_APP_DESATUALIZADA`, T-033
 - **Store só em memória**: a próxima abertura confere de novo, e a versão nova não fica presa na tela.
 - **T-055 pulada e registrada em BLOQUEIOS**: os botões do Google e da Apple dependem dos clientes OAuth (bloqueio da T-032) e de módulos nativos novos, que só dão para testar num build de desenvolvimento no aparelho.
 Reversível: sim.
+
+## 2026-10-12 — T-057 — Aba Mais e Perfil
+Contexto: o design traz a aba Mais (página 8: perfil, grade de nove atalhos e três linhas) e o Perfil (página 9: conta, preferências e privacidade). Boa parte aponta para telas que ainda não existem. Decisões:
+- **Só o que funciona**: a grade mostra Orçamentos, Metas, Relatórios, Categorias e Contas; Assinatura, "Teste grátis", Alertas da Mony, Exportar e Excluir conta, Planos e Ajuda ficam para as tarefas deles (anotado na T-087 e na T-140). Botão que não faz nada é pior que botão que ainda não está lá; a mesma escolha dos atalhos do Início (T-053).
+- **Contas manuais na grade** até "Bancos" (Open Finance, T-120).
+- **Biometria e "Sair" saíram da aba Mais para o Perfil**, como no design; "Sair deste aparelho" virou "Sair da conta" (o texto de ajuda diz que é só deste aparelho).
+- **Rever tutorial** reaproveita as boas-vindas do onboarding (`revisao`), sem as permissões, numa rota fora do grupo do onboarding (que só existe com o onboarding pendente).
+- **Modo escuro** do design não vira chave: o app é só escuro (decisão do cliente, T-017).
+- **Iniciais** num `Avatar` do design system e o `iniciais` em `src/lib/nomes.ts`; o nome que muda no Perfil vai para a sessão (`mudarNome`).
+- Conferido em tela (export web temporário, Playwright, API falsa), fora do repositório.
+Reversível: sim.

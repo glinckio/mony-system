@@ -156,7 +156,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-056** Tela de atualização obrigatória no app (426 `VERSAO_APP_DESATUALIZADA` e `versaoMinima` do `GET /v1/config-app`), com link para a loja (PR #49)
   - dep: T-033, T-034 · docs: 04
   - Separada da T-034: a sessão já manda a versão do app, mas a tela de atualização não estava em nenhuma tarefa.
-- [ ] **T-057** Telas Mais (grade de atalhos) e Perfil no app: dados pessoais, assinatura, biometria, alertas, permissões, rever tutorial, exportar dados, sair e excluir conta
+- [x] **T-057** Telas Mais (grade de atalhos) e Perfil no app: dados pessoais, assinatura, biometria, alertas, permissões, rever tutorial, exportar dados, sair e excluir conta (PR #50; assinatura, alertas, exportar e excluir entram com a Fase 4, a T-087 e a T-140)
   - dep: T-033, T-034, T-017 · docs: 04, `docs/design` (página 9)
   - O design trouxe as duas telas, que não estavam em nenhuma tarefa. Exportar e excluir conta só abrem o fluxo da T-140, e as preferências de alerta são da T-087.
 - [ ] **T-058** Anexos no formulário do lançamento no app (foto, PDF ou comprovante: `POST /arquivos`, envio direto ao S3 e `anexoIds`)
@@ -214,6 +214,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-087** Preferências de alerta e horário de silêncio no app; central de notificações
   - dep: T-081, T-011, T-034 · docs: 04
   - Tela do app: depende do design system (T-011) e da sessão no app (T-034), como a T-049.
+  - "Alertas da Mony" (com o horário de silêncio, "silêncio 22h às 7h") entra no Perfil (T-057), e o sino do Início (T-053) passa a abrir a central.
 - [ ] **T-088** Push no app: permissão, registro do token (`POST /me/dispositivos` ao abrir e ao trocar), canais do Android, categorias de ação ([Paguei], [Feito], [Adiar]) e abrir o `linkInterno` ao tocar
   - dep: T-081, T-010, T-034 · docs: 04, 09
   - Separada da T-081 pelo mesmo motivo da T-049. Os canais (`CANAIS_ANDROID`) precisam existir antes do primeiro push: o Android não mostra push de canal que o app não criou.
@@ -250,6 +251,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 
 - [ ] **T-140** LGPD: aceites de termos, consentimentos, exportar dados, excluir conta, retenção de arquivos
   - dep: T-120, T-102 · docs: 11 · RN-160 a RN-162
+  - No app, "Exportar meus dados" e "Excluir conta" entram na seção Privacidade do Perfil (T-057).
 - [ ] **T-141** Admin completo: usuários, assinaturas, métricas, novidades, Mony (prompt e custos), auditoria, filas
   - dep: T-104, T-068 · docs: 13
 - [ ] **T-142** Monitoramento e alertas (Sentry, métricas, alarmes de fila, webhook, custo de IA, backup)

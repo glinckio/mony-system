@@ -99,9 +99,9 @@ Regras de cache:
   - `iniciando`: na abertura, procura a renovação guardada. Sem renovação, vai para o login. Com biometria ligada, `bloqueada`. Senão, renova e fica `pronta`.
   - A renovação recusada (400, 401, 403) sai do aparelho. Sem rede, 5xx, 426 ou 429, o token fica para a próxima abertura.
   - A restauração roda uma vez só: duas renovações com o mesmo token seriam reuso (RN-004). Cofre ilegível vai para o login, e o erro vai para o Sentry.
-  - "Sair deste aparelho" (aba Mais) revoga a renovação na API e apaga o cofre, mesmo sem rede.
+  - "Sair da conta" (Perfil) revoga a renovação na API e apaga o cofre, mesmo sem rede.
 - **Telas** em `(auth)`: login, cadastro (com o aceite dos termos e da política nas versões de `VERSOES_DOCUMENTOS`) e recuperação de senha (código de 6 dígitos e senha nova, que já entra no app). Formulários com React Hook Form e os esquemas Zod do `@mony/shared/autenticacao`; o erro da API aparece com a mensagem do catálogo.
-- **Biometria** (RN-005): ligada na aba Mais, depois de uma confirmação. Na abertura, a tela de bloqueio pede a biometria e só então renova. Quem desiste entra de novo com e-mail e senha. O texto do Face ID vem do plugin do `expo-local-authentication`.
+- **Biometria** (RN-005): ligada no Perfil, depois de uma confirmação. Na abertura, a tela de bloqueio pede a biometria e só então renova. Quem desiste entra de novo com e-mail e senha. O texto do Face ID vem do plugin do `expo-local-authentication`.
 - **Chat da Mony:** o SSE pelo `expo/fetch` manda os mesmos cabeçalhos e, em 401, espera a mesma renovação única e tenta de novo uma vez.
 - **Atualização obrigatória (T-056):** na abertura, o app confere a `versaoMinima` do `GET /config-app` (rota pública, que responde até para versão antiga) com a `versaoAbaixoDaMinima` do `@mony/shared`. Abaixo dela, ou com qualquer 426 `VERSAO_APP_DESATUALIZADA` (o `aoErro` do cliente gerado e o chat da Mony avisam o store `useAtualizacao`), a raiz troca o app inteiro pela tela "Atualize o Monitorizze", sem voltar. O botão abre a página do app na loja (`urlLoja` no `extra`): no Google Play pelo identificador; na App Store pelo `EXPO_PUBLIC_APP_STORE_ID`, que sai na publicação (T-146), e até lá pela busca do nome. O store fica só em memória: a próxima abertura confere de novo.
 - **Ainda não:** botões do Google e da Apple (T-055). Sem rede na abertura, o app mostra o login, e a renovação guardada vale na próxima abertura.
@@ -203,7 +203,7 @@ Telas em `src/features/transacoes`, no design da página 4 (`docs/design`):
 
 ## Categorias e contas (T-049)
 
-Telas na aba Mais (`/mais/categorias`, `/mais/contas`), abertas pelos atalhos da aba até a grade da T-057:
+Telas na aba Mais (`/mais/categorias`, `/mais/contas`), abertas pela grade da aba:
 
 - **Categorias** (design, página 8): abas Despesas e Receitas com a quantidade, ícone e cor de cada uma e o "+" que cria no tipo da aba. O formulário mostra a prévia, o nome, o tipo (só ao criar), 14 cores e 21 ícones (os das categorias padrão e outros para categorias novas), validado pelo `esquemaNovaCategoria`; a edição manda só o que mudou. Nome repetido volta com a mensagem da API (RN-065).
 - **Excluir categoria** (RN-066) pede a categoria do mesmo tipo para onde vão os lançamentos, avisa que os orçamentos dela saem e não oferece excluir a única do tipo.
@@ -224,7 +224,7 @@ Telas em `src/features/cartoes`, no design da página 4 (`docs/design`), nas rot
 
 ## Orçamentos e metas (T-052)
 
-Telas em `src/features/orcamentos` e `src/features/metas`, no design da página 5 (`docs/design`), no grupo `(telas)`: abrem por cima das abas, com a seta de voltar, pelos atalhos da aba Mais (até a grade da T-057) e, o orçamento, pelo checklist e pelo link dos alertas.
+Telas em `src/features/orcamentos` e `src/features/metas`, no design da página 5 (`docs/design`), no grupo `(telas)`: abrem por cima das abas, com a seta de voltar, pela grade da aba Mais e, o orçamento, pelo checklist e pelo link dos alertas.
 
 - **Orçamentos** (`/orcamentos`, e `mony://orcamentos?competencia=AAAA-MM` no mês do alerta):
   - o mês com setas, como em Transações;
@@ -241,7 +241,7 @@ Telas em `src/features/orcamentos` e `src/features/metas`, no design da página 
 
 Tela em `src/features/inicio`, no design da página 3 (`docs/design`), com uma chamada (`GET /dashboard`):
 
-- **Topo**: as iniciais do nome (abrem a aba Mais, onde fica o perfil), "Pesquisar" (abre Transações, que tem a busca), o calendário do período e o sino com o ponto das não lidas. O sino só avisa até a central de notificações (T-087).
+- **Topo**: as iniciais do nome (abrem o Perfil), "Pesquisar" (abre Transações, que tem a busca), o calendário do período e o sino com o ponto das não lidas. O sino só avisa até a central de notificações (T-087).
 - **Saldo do período** (RN-020) grande, com os centavos menores, o olho do modo privacidade (RN-022) e "Ver o mês" (abre Transações). O título da tela ("Início") é só para o leitor de tela: o design não tem título visível.
 - **Período** (RN-021): folha com "Este mês", "Mês passado" e "Escolher" (de e até, `DD/MM/AAAA`), validada pelo `esquemaConsultaDashboard`. Ao trocar, a tela segue com o período anterior até o novo chegar.
 - **Atalhos**: Lançar, Orçamentos e Metas. Os do design que ainda não têm tela (Ler nota, Lista, Lembrete) entram com as tarefas deles.
@@ -250,7 +250,7 @@ Tela em `src/features/inicio`, no design da página 3 (`docs/design`), com uma c
 
 ## Relatórios (T-054)
 
-Tela em `src/features/relatorios` (`/relatorios`, no grupo `(telas)`, pelo atalho da aba Mais), no design da página 6 (`docs/design`). Cada bloco é uma rota da API (`GET /relatorios/:tipo?inicio=&fim=`, RN-150), e a API faz as contas:
+Tela em `src/features/relatorios` (`/relatorios`, no grupo `(telas)`, pela grade da aba Mais), no design da página 6 (`docs/design`). Cada bloco é uma rota da API (`GET /relatorios/:tipo?inicio=&fim=`, RN-150), e a API faz as contas:
 
 - **Abas**: Mês (o de hoje), 6 meses e Ano (12 meses), sempre com o mês de hoje inteiro.
 - **Receitas × despesas** (`mensal`): quanto sobrou (ou faltou) no mês ou, com mais de um mês, em média por mês, as barras verde e azul de cada mês e os totais.
@@ -259,6 +259,16 @@ Tela em `src/features/relatorios` (`/relatorios`, no grupo `(telas)`, pelo atalh
 - **Por cartão** e **por forma de pagamento**: barras horizontais, do maior para o menor, com quantos lançamentos.
 - **Evolução anual** (só na aba Ano): os últimos cinco anos, com receitas, despesas e saldo.
 - O botão de baixar do design é a exportação (RN-151, T-125).
+
+## Aba Mais e Perfil (T-057)
+
+Telas em `src/features/mais`, no design das páginas 8 e 9 (`docs/design`):
+
+- **Mais** (`/mais`): o cartão do perfil (iniciais e nome, abre o Perfil), a grade de atalhos e "Configurações". A grade só mostra as telas que já existem (Orçamentos, Metas, Relatórios, Categorias e Contas); Parcelamentos, Listas, Lembretes, Agenda e Bancos entram com as tarefas deles, e Contas sai quando Bancos (Open Finance) chegar.
+- **Perfil** (`/mais/perfil`, também pelas iniciais do Início): iniciais, nome e e-mail (`GET /me`); Dados pessoais; Entrar com biometria (RN-005, quando o aparelho tem); Permissões e apps de compra; Rever tutorial; Sair da conta.
+- **Dados pessoais** (`/mais/dados-pessoais`): nome e celular (`PATCH /me`, validado pelo `esquemaAtualizacaoPerfil`), só o que mudou; o e-mail só aparece. O nome novo vai para a sessão, e as iniciais do app acompanham.
+- **Rever tutorial** (`/tutorial`, no grupo `(telas)`): as duas boas-vindas do onboarding, sem as permissões no fim; "Entendi" volta ao Perfil.
+- **Ainda não** (com as tarefas deles): assinatura e o selo "Teste grátis" (Fase 4), Alertas da Mony (T-087), Exportar meus dados e Excluir conta (T-140), Planos e assinatura e Ajuda e suporte. O modo escuro do design não vira chave: o app é só escuro (T-017).
 
 ## Onboarding
 

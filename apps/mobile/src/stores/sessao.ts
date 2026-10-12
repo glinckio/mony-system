@@ -24,6 +24,8 @@ interface EstadoSessao {
   definirEstado: (estado: EstadoDaSessao) => void;
   /** O onboarding terminou no servidor: a navegação passa para as abas. */
   concluirOnboarding: () => void;
+  /** O nome mudou no perfil (`PATCH /me`): as iniciais do Início e da aba Mais acompanham. */
+  mudarNome: (nome: string) => void;
 }
 
 export const useSessao = create<EstadoSessao>()((definir) => ({
@@ -43,5 +45,8 @@ export const useSessao = create<EstadoSessao>()((definir) => ({
     definir(({ usuario }) =>
       usuario ? { usuario: { ...usuario, onboardingConcluido: true } } : {},
     );
+  },
+  mudarNome: (nome) => {
+    definir(({ usuario }) => (usuario ? { usuario: { ...usuario, nome } } : {}));
   },
 }));
