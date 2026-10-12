@@ -153,7 +153,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-055** 👤 Botões de entrar com Google e com Apple no app (`POST /v1/auth/social` com o `id_token`)
   - dep: T-032, T-034 · docs: 04 · RN-002 · requer os clientes OAuth (BLOQUEIOS, T-032) e build de desenvolvimento no aparelho
   - Separada da T-034: sem os clientes OAuth do cliente, não há como testar o login social de ponta a ponta.
-- [ ] **T-056** Tela de atualização obrigatória no app (426 `VERSAO_APP_DESATUALIZADA` e `versaoMinima` do `GET /v1/config-app`), com link para a loja
+- [x] **T-056** Tela de atualização obrigatória no app (426 `VERSAO_APP_DESATUALIZADA` e `versaoMinima` do `GET /v1/config-app`), com link para a loja (PR #49)
   - dep: T-033, T-034 · docs: 04
   - Separada da T-034: a sessão já manda a versão do app, mas a tela de atualização não estava em nenhuma tarefa.
 - [ ] **T-057** Telas Mais (grade de atalhos) e Perfil no app: dados pessoais, assinatura, biometria, alertas, permissões, rever tutorial, exportar dados, sair e excluir conta

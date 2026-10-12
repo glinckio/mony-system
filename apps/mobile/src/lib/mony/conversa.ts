@@ -6,6 +6,7 @@ import { fetch } from 'expo/fetch';
 
 import { cabecalhosDoApp } from '@/lib/auth/aparelho';
 import { configApp } from '@/lib/config';
+import { aoErroDaApi } from '@/lib/versao';
 import { useSessao } from '@/stores/sessao';
 
 /** Abre o SSE com o token da sessão e os cabeçalhos do app, como o cliente gerado. */
@@ -43,7 +44,9 @@ export async function enviarMensagemMony(
   }
   if (!resposta.ok || !resposta.body) {
     const corpo: unknown = await resposta.json().catch(() => undefined);
-    throw new ErroApi(resposta.status, ehRespostaErro(corpo) ? corpo : undefined);
+    const erro = new ErroApi(resposta.status, ehRespostaErro(corpo) ? corpo : undefined);
+    aoErroDaApi(erro);
+    throw erro;
   }
   const leitor = new LeitorSse();
   const decodificador = new TextDecoder();

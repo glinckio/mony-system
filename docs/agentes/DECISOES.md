@@ -652,3 +652,13 @@ Contexto: o design (página 6) traz Mês, 6 meses e Ano, as barras de receitas �
 - **Sem o botão de baixar**: a exportação é a T-125.
 - Conferido em tela (export web temporário, Playwright, API falsa), fora do repositório.
 Reversível: sim.
+
+## 2026-10-12 — T-056 — Atualização obrigatória no app
+Contexto: a API já recusa versão antiga (426 `VERSAO_APP_DESATUALIZADA`, T-033) e manda a `versaoMinima` no `GET /config-app`. Decisões:
+- **Duas portas**: na abertura, o app confere o `GET /config-app`; e qualquer 426, de qualquer chamada, também abre a tela. O 426 é a garantia (a API recusa), e a conferência na abertura evita a pessoa preencher um formulário para só então descobrir.
+- **Gancho no cliente gerado** (`aoErro` no `configurarCliente`), chamado com todo erro da API antes de a chamada falhar. O chat da Mony, que usa o `expo/fetch` direto, chama o mesmo tratamento.
+- **Tela no lugar do app inteiro**, como a de bloqueio da biometria, sem voltar nem abas. A sessão guardada fica: depois de atualizar, a pessoa entra direto.
+- **Link da loja no `app.config`** (`urlLoja` no `extra`): Google Play pelo identificador; App Store pelo número do app (`EXPO_PUBLIC_APP_STORE_ID`, que só existe na publicação, T-146), e até lá a busca por "Monitorizze". Alternativa: a API mandar o link no `GET /config-app`; ficou no app porque a versão antiga que precisa do link é justamente a que já está instalada.
+- **Store só em memória**: a próxima abertura confere de novo, e a versão nova não fica presa na tela.
+- **T-055 pulada e registrada em BLOQUEIOS**: os botões do Google e da Apple dependem dos clientes OAuth (bloqueio da T-032) e de módulos nativos novos, que só dão para testar num build de desenvolvimento no aparelho.
+Reversível: sim.

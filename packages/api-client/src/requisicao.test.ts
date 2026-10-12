@@ -43,6 +43,30 @@ describe('requisicao', () => {
     expect(cabecalhos.get('content-type')).toBe('application/json');
   });
 
+  it('avisa o erro da API antes de falhar (a atualização obrigatória do app)', async () => {
+    const aoErro = vi.fn<(erro: ErroApi) => void>();
+    configurarCliente({ urlBase: 'https://api.teste', aoErro });
+    fetchFalso.mockResolvedValue(
+      responder(426, {
+        erro: {
+          codigo: 'VERSAO_APP_DESATUALIZADA',
+          mensagem: 'Atualize o app.',
+          detalhes: { plataforma: 'ios', versaoMinima: '1.2.0' },
+        },
+      }),
+    );
+    await expect(requisicao('/v1/teste')).rejects.toMatchObject({
+      status: 426,
+      codigo: 'VERSAO_APP_DESATUALIZADA',
+    });
+    expect(aoErro).toHaveBeenCalledTimes(1);
+    expect(aoErro.mock.calls[0]?.[0]).toBeInstanceOf(ErroApi);
+
+    fetchFalso.mockResolvedValue(responder(200, { ok: true }));
+    await requisicao('/v1/teste');
+    expect(aoErro).toHaveBeenCalledTimes(1);
+  });
+
   it('resposta vazia (204) vira undefined', async () => {
     fetchFalso.mockResolvedValue(new Response(null, { status: 204 }));
     await expect(requisicao('/v1/teste', { method: 'DELETE' })).resolves.toBeUndefined();

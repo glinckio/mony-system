@@ -4,11 +4,13 @@ import { AppState } from 'react-native';
 
 import { cabecalhosDoApp } from '@/lib/auth/aparelho';
 import { renovarSessao } from '@/lib/auth/sessao';
+import { aoErroDaApi } from '@/lib/versao';
 import { useSessao } from '@/stores/sessao';
 
 /**
  * Aponta o cliente gerado (`@mony/api-client`) para a API do ambiente, com o token da sessão, os
- * cabeçalhos do app e a renovação única quando o token vence (doc 04).
+ * cabeçalhos do app, a renovação única quando o token vence (doc 04) e a atualização obrigatória
+ * quando a API recusa a versão (426).
  */
 export function configurarApi(urlApi: string): void {
   configurarCliente({
@@ -16,6 +18,7 @@ export function configurarApi(urlApi: string): void {
     obterToken: () => useSessao.getState().tokenAcesso,
     cabecalhos: cabecalhosDoApp,
     renovarSessao,
+    aoErro: aoErroDaApi,
   });
 }
 

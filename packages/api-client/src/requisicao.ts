@@ -12,6 +12,11 @@ export interface ConfiguracaoCliente {
    * repetida uma vez. Várias requisições recusadas ao mesmo tempo esperam uma renovação só.
    */
   renovarSessao?: () => Promise<boolean>;
+  /**
+   * Chamado com todo erro da API, antes de a chamada falhar. No app, um 426
+   * `VERSAO_APP_DESATUALIZADA` troca tudo pela atualização obrigatória.
+   */
+  aoErro?: (erro: ErroApi) => void;
 }
 
 /** Rotas de sessão (login, renovação, saída): o 401 delas não dispara renovação. */
@@ -75,7 +80,9 @@ export async function requisicao<T>(caminho: string, opcoes: RequestInit = {}): 
   const texto = await resposta.text();
   const corpo: unknown = texto === '' ? undefined : JSON.parse(texto);
   if (!resposta.ok) {
-    throw new ErroApi(resposta.status, ehRespostaErro(corpo) ? corpo : undefined);
+    const erro = new ErroApi(resposta.status, ehRespostaErro(corpo) ? corpo : undefined);
+    configuracao.aoErro?.(erro);
+    throw erro;
   }
   return corpo as T;
 }
