@@ -18,6 +18,7 @@ import {
   Erro,
   Folha,
   GrupoOpcoes,
+  SeletorMes,
   Skeleton,
   Tela,
   Texto,
@@ -28,7 +29,6 @@ import { cores, espacos } from '@/ui/tokens';
 import { FolhaFiltros } from '../components/folha-filtros';
 import { ItemTransacao } from '../components/item-transacao';
 import { ResumoTotais } from '../components/resumo-totais';
-import { SeletorMes } from '../components/seletor-mes';
 import { useLoteTransacoes } from '../hooks/use-mutacoes';
 import { useDetalhesDoItem, useRotuloDoDia, useValorFalado } from '../hooks/use-textos';
 import { useCatalogos, useListaTransacoes, useTotais } from '../hooks/use-transacoes';

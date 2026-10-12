@@ -42,6 +42,10 @@ export interface PropsBotao {
   desabilitado?: boolean;
   icone?: NomeIcone;
   larguraTotal?: boolean;
+  /** Mais baixo, para ações dentro de um card (ex.: "Guardar" na meta). */
+  compacto?: boolean;
+  /** Para o leitor de tela, quando o título sozinho não diz qual é (ex.: "Guardar em Viagem"). */
+  rotulo?: string;
   testID?: string;
 }
 
@@ -54,19 +58,22 @@ export function Botao({
   desabilitado = false,
   icone,
   larguraTotal = false,
+  compacto = false,
+  rotulo,
   testID,
 }: PropsBotao) {
   const inativo = desabilitado || carregando;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={titulo}
+      accessibilityLabel={rotulo ?? titulo}
       accessibilityState={{ disabled: inativo, busy: carregando }}
       disabled={inativo}
       onPress={aoPressionar}
       testID={testID}
       className={juntarClasses(
-        'min-h-botao flex-row items-center justify-center gap-2 rounded-total px-5 active:opacity-80',
+        'flex-row items-center justify-center gap-2 rounded-total active:opacity-80',
+        compacto ? 'min-h-toque px-4' : 'min-h-botao px-5',
         FUNDO[variante],
         larguraTotal && 'self-stretch',
         inativo && 'opacity-50',
@@ -77,7 +84,11 @@ export function Botao({
       ) : icone ? (
         <Icone nome={icone} tamanho={18} cor={COR_ICONE[variante]} />
       ) : null}
-      <Texto cor={COR_TEXTO[variante]} className="font-forte">
+      <Texto
+        variante={compacto ? 'corpo-sm' : 'corpo'}
+        cor={COR_TEXTO[variante]}
+        className="font-forte"
+      >
         {titulo}
       </Texto>
     </Pressable>

@@ -16,8 +16,8 @@ import { cores } from '@/ui/tokens';
 /**
  * Raiz do app. Na abertura, procura a sessão guardada (com biometria, se ligada). Depois, cada
  * grupo de rotas só existe para quem pode vê-lo: sem sessão, `(auth)`; com sessão e onboarding
- * pendente, `(onboarding)`; senão, `(tabs)`. Quando a sessão muda, o Expo Router leva o usuário
- * para o grupo liberado.
+ * pendente, `(onboarding)`; senão, `(tabs)` e as telas que abrem por cima delas (`(telas)`).
+ * Quando a sessão muda, o Expo Router leva o usuário para o grupo liberado.
  */
 function LayoutRaiz() {
   const estado = useSessao((atual) => atual.estado);
@@ -55,6 +55,7 @@ function LayoutRaiz() {
         </Stack.Protected>
         <Stack.Protected guard={destino === 'tabs'}>
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="(telas)" />
         </Stack.Protected>
       </Stack>
     </Provedores>

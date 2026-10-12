@@ -7,8 +7,6 @@ export const textosTransacoes = {
   // Sem as chaves de plural do i18next: o Hermes não tem `Intl.PluralRules` em todas as versões.
   filtrosUmAtivo: 'Filtros, 1 ativo',
   filtrosAtivos: 'Filtros, {{quantidade}} ativos',
-  mesAnterior: 'Mês anterior',
-  proximoMes: 'Próximo mês',
   mes: '{{mes}} {{ano}}',
   totais: {
     receitas: 'Receitas',

@@ -365,6 +365,7 @@ Implementado na T-043 (RN-060 a RN-063).
 - **Faixa (RN-062):** até 79% `normal`, de 80% a 99% `atencao`, 100% ou mais `estourado`.
 - **Repetir (RN-060):**
   - Orçamento novo repete todo mês, salvo `repetirMensal: false`.
+  - O primeiro orçamento conclui a etapa `orcamento` do onboarding (T-052).
   - A rotina `repetir-orcamentos` roda no dia 1, às 00:15 de São Paulo (`15 0 1 * *`). Ela copia do mês anterior os que repetem, de categorias que ainda existem, e não mexe no que já existe no mês novo.
 - **Metas (RN-063):**
   - O valor atual é a soma dos aportes, refeita com a meta travada (`FOR UPDATE`).

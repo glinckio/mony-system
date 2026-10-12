@@ -21,9 +21,9 @@ apps/mobile/
 │  │  ├─ mony.tsx
 │  │  ├─ cartoes/
 │  │  └─ mais/
-│  ├─ parcelamentos/  orcamentos/  metas/  relatorios/  listas/
-│  ├─ lembretes/  agenda/  notificacoes/  contas-bancarias/  categorias/
-│  ├─ perfil/  assinatura/  configuracoes/
+│  ├─ (telas)/                   # Por cima das abas, com voltar e sem a barra; só com sessão
+│  │  ├─ orcamentos.tsx  metas/
+│  │  └─ parcelamentos/  relatorios/  listas/  lembretes/  agenda/  notificacoes/  perfil/ …
 │  └─ +not-found.tsx
 ├─ src/
 │  ├─ features/                  # Um diretório por módulo de domínio
@@ -222,6 +222,22 @@ Telas em `src/features/cartoes`, no design da página 4 (`docs/design`), nas rot
 - **Cadastro e edição** (`/cartoes/novo`, `/cartoes/<id>/editar`): nome, bandeira, últimos 4 dígitos, limite, dias de fechamento e vencimento (RN-030), 10 cores, faixas de aviso (50, 70, 80, 90 e 100%, RN-038) e conta de pagamento, validados pelo `esquemaNovoCartao`; a edição manda só o que mudou. Cartão do banco (Open Finance) só muda nome, cor, avisos e conta. Excluir pede confirmação e mostra a recusa da API quando há fatura em aberto.
 - **Contrato**: criar e editar devolvem o cartão sozinho, cujo tipo gerado tem `bandeira` e `final` como `string[]` (T-018); o app usa o tipo do `@mony/shared`.
 
+## Orçamentos e metas (T-052)
+
+Telas em `src/features/orcamentos` e `src/features/metas`, no design da página 5 (`docs/design`), no grupo `(telas)`: abrem por cima das abas, com a seta de voltar, pelos atalhos da aba Mais (até a grade da T-057) e, o orçamento, pelo checklist e pelo link dos alertas.
+
+- **Orçamentos** (`/orcamentos`, e `mony://orcamentos?competencia=AAAA-MM` no mês do alerta):
+  - o mês com setas, como em Transações;
+  - o resumo: anel com o percentual do planejado já gasto (na cor da faixa), o gasto, o planejado, "faltam N dias" e, no mês de hoje, a projeção (soma das projeções da API, RN-061), em laranja quando passa do planejado;
+  - cada categoria com a barra na cor da faixa (RN-062), "R$ 312 de R$ 300" e o selo: "Passou R$ 12" quando estoura, o percentual em destaque na atenção, só o percentual no normal;
+  - o lápis liga a edição: tocar no item muda o valor, liga ou desliga "repetir todo mês" ou tira o orçamento do mês (RN-060). "Adicionar orçamento" oferece só as categorias de despesa sem orçamento no mês.
+- **Metas** (`/metas`): o total guardado em todas e cada meta com o prazo ("até dez/2027"), o percentual, a barra (verde e azul, alternados) e "Guardar".
+  - **Guardar** (RN-063): folha com o valor e a data (até hoje), uma `Idempotency-Key` por abertura. Se a API mandar `sugerirConclusao`, a folha pergunta se é para concluir a meta.
+  - **A meta** (`/metas/<id>`): guardado, falta, prazo, os aportes (cada um pode sair, com confirmação), "Guardar" e "Marcar como concluída" ou "Reabrir meta".
+  - **Cadastro e edição** (`/metas/nova`, `/metas/<id>/editar`): nome, valor alvo e prazo opcional (`DD/MM/AAAA`), validados pelo `esquemaNovaMeta`; a edição manda só o que mudou, e apagar o prazo manda `prazo: null`. Excluir pede confirmação.
+- **Ainda não** (tarefa própria no BACKLOG): o "+ R$ 450 este mês" e a "Dica da Mony" da tela de metas, que pedem à API o quanto foi guardado no mês.
+- **Contrato**: o `prazo` de topo da meta sozinha (detalhe, criar, editar e o corpo da edição) vem tipado como `string[]` no cliente gerado (T-018); o app usa os tipos do `@mony/shared`.
+
 ## Onboarding
 
 Rotas em `(onboarding)` seguindo o PDF: boas-vindas (2–3 telas), primeiro lançamento guiado no chat, cartões (opcional), orçamento inicial, permissões uma a uma, tour pulável. O progresso fica no servidor (`GET/PATCH /v1/me/onboarding`) para o **checklist de primeiros passos** no Início. Dicas contextuais na primeira visita a cada tela usam um registro de "dicas vistas" no servidor (para sobreviver a reinstalação).
@@ -232,7 +248,7 @@ Rotas em `(onboarding)` seguindo o PDF: boas-vindas (2–3 telas), primeiro lan�
   - "Concluir" grava `{ concluido: true, etapas: { permissoes: 'concluida' } }`; "Configurar depois" grava só `concluido`, e o passo fica no checklist. Com a resposta, a sessão marca `onboardingConcluido` e a navegação passa para as abas.
   - Primeiro lançamento, cartões e orçamento não são telas do fluxo: viram passos do checklist, como no design do Início.
 - **Checklist** (`CartaoChecklist`, RN-024), no Início provisório até a T-053: anel com os passos feitos, a frase dos dois próximos ("Cadastre seus cartões e defina os orçamentos do mês.") e "Continuar", que abre a folha com os cinco passos.
-  - Cada passo pendente tem "Fazer agora" (primeiro gasto → `/transacoes/nova`, cartões → `/cartoes`, avisos → `/mais/permissoes`) e "Dispensar". Orçamento ainda não tem tela (T-052) e o tour não tem tela própria: os dois só são dispensados.
+  - Cada passo pendente tem "Fazer agora" (primeiro gasto → `/transacoes/nova`, cartões → `/cartoes`, orçamento → `/orcamentos`, avisos → `/mais/permissoes`) e "Dispensar". O tour não tem tela própria: só é dispensado.
   - O primeiro lançamento e o primeiro cartão são marcados pela API; avisos, pelo "Concluir" ou pelo "Pronto" da tela de Permissões; o tour, ao fechar a primeira dica.
   - A mudança aparece na hora (`useAtualizarOnboarding` atualiza o cache antes da resposta e volta se a API recusar).
 - **Dicas** (`Dica`): uma por tela, só depois que o progresso chega da API e só se a chave não está em `dicasVistas`. Fechar grava a chave no servidor. Hoje: `transacoes.selecao` e `mony.primeira-conversa`; dica nova entra no tipo `ChaveDica` e nos textos.

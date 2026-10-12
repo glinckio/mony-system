@@ -7,6 +7,8 @@ export const textosMais = {
   cancelar: 'Cancelar',
   sair: 'Sair deste aparelho',
   atalhos: {
+    orcamentos: 'Orçamentos',
+    metas: 'Metas',
     categorias: 'Categorias',
     contas: 'Contas',
     permissoes: 'Permissões',

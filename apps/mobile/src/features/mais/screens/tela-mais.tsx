@@ -10,7 +10,13 @@ import { Botao, Card, Icone, type NomeIcone, Tela, Texto } from '@/ui';
 import { cores } from '@/ui/tokens';
 
 /** Os cadastros que já têm tela; a grade completa da aba é a T-057. */
-const ATALHOS: { rota: Href; icone: NomeIcone; chave: 'categorias' | 'contas' | 'permissoes' }[] = [
+const ATALHOS: {
+  rota: Href;
+  icone: NomeIcone;
+  chave: 'orcamentos' | 'metas' | 'categorias' | 'contas' | 'permissoes';
+}[] = [
+  { rota: '/orcamentos', icone: 'chart-pie', chave: 'orcamentos' },
+  { rota: '/metas', icone: 'target', chave: 'metas' },
   { rota: '/mais/categorias', icone: 'tag', chave: 'categorias' },
   { rota: '/mais/contas', icone: 'landmark', chave: 'contas' },
   { rota: '/mais/permissoes', icone: 'shield', chave: 'permissoes' },
