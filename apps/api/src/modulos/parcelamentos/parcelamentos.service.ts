@@ -23,7 +23,12 @@ import {
 import type { Impacto } from '@mony/shared/transacoes';
 
 import { Clock } from '../../core/clock/clock';
-import { type Contexto, contextoDoSistema, usuarioDoContexto } from '../../core/contexto/contexto';
+import {
+  type Contexto,
+  contextoDoSistema,
+  origemDoLancamento,
+  usuarioDoContexto,
+} from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { BarramentoEventos } from '../../core/eventos/barramento-eventos';
 import { idDeJob } from '../../core/filas/filas';
@@ -171,7 +176,7 @@ export class ParcelamentosService {
               status: 'pendente',
               formaPagamento:
                 fatura === null ? (dados.formaPagamento ?? 'boleto') : 'cartao_credito',
-              origem: contexto.origem === 'mony' ? 'mony' : 'manual',
+              origem: origemDoLancamento(contexto),
               categoriaId: dados.categoriaId,
               contaId: dados.contaId ?? null,
               cartaoId,

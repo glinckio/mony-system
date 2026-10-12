@@ -7656,6 +7656,68 @@
                 "properties": {
                   "tipo": {
                     "type": "string",
+                    "const": "confirmar_importacao"
+                  },
+                  "importacaoId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "indice": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 49
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "tipo",
+                  "importacaoId",
+                  "indice"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "tipo": {
+                    "type": "string",
+                    "const": "descartar_importacao"
+                  },
+                  "importacaoId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "indice": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 49
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "tipo",
+                  "importacaoId",
+                  "indice"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "tipo": {
+                    "type": "string",
                     "const": "cancelar"
                   }
                 },
@@ -7773,7 +7835,10 @@
                             "type": "string"
                           },
                           "categoria": {
-                            "type": "string"
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           },
                           "formaPagamento": {
                             "anyOf": [
@@ -7862,6 +7927,9 @@
                             "acao"
                           ]
                         }
+                      },
+                      "aConfirmar": {
+                        "type": "boolean"
                       }
                     },
                     "required": [
@@ -8029,7 +8097,10 @@
                                 "type": "string"
                               },
                               "categoria": {
-                                "type": "string"
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
                               },
                               "formaPagamento": {
                                 "anyOf": [
@@ -8118,6 +8189,9 @@
                                 "acao"
                               ]
                             }
+                          },
+                          "aConfirmar": {
+                            "type": "boolean"
                           }
                         },
                         "required": [

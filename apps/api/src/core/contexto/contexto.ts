@@ -1,5 +1,5 @@
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
-import type { OrigemContexto } from '@mony/shared/enums';
+import type { OrigemContexto, OrigemTransacao } from '@mony/shared/enums';
 import type { FastifyRequest } from 'fastify';
 
 import type { UsuarioAutenticado } from '../auth/tokens-acesso';
@@ -24,6 +24,14 @@ export interface Contexto {
   readonly idempotencyKey?: string | undefined;
   /** Id da requisição HTTP (`x-request-id`), para correlacionar logs. */
   readonly requisicaoId?: string | undefined;
+  /** Lançamento da Mony lido de foto ou PDF e confirmado (T-065): a origem fica `foto`. */
+  readonly deDocumento?: boolean | undefined;
+}
+
+/** A origem da transação gravada: manual, pela Mony, ou de foto ou PDF lido pela Mony. */
+export function origemDoLancamento(contexto: Contexto): OrigemTransacao {
+  if (contexto.origem !== 'mony') return 'manual';
+  return contexto.deDocumento ? 'foto' : 'mony';
 }
 
 export const CABECALHO_IDEMPOTENCIA = 'idempotency-key';

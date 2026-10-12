@@ -9,6 +9,7 @@ import {
   VALIDADE_URL_ENVIO_SEGUNDOS,
   VALIDADE_URL_LEITURA_SEGUNDOS,
 } from '@mony/shared/arquivos';
+import type { TipoAnexo } from '@mony/shared/enums';
 
 import { ArmazenamentoArquivos } from '../../core/arquivos/armazenamento-arquivos';
 import { Clock } from '../../core/clock/clock';
@@ -31,6 +32,32 @@ const EXTENSOES: Record<DadosNovoArquivo['tipoConteudo'], string> = {
 const TIPO_DA_EXTENSAO = new Map(
   Object.entries(EXTENSOES).map(([tipoConteudo, extensao]) => [extensao, tipoConteudo]),
 );
+
+/** O que a Mony faz com o arquivo: transcreve o áudio, lê a imagem ou o PDF. */
+export interface ArquivoMony {
+  tipo: 'audio' | 'imagem' | 'pdf';
+  url: string;
+  tipoConteudo: string;
+}
+
+/** T-065: o provedor de IA lê imagem de até 5 MB, em JPEG, PNG ou WebP. */
+export const TAMANHO_MAXIMO_IMAGEM_LEITURA = 5 * 1024 * 1024;
+const IMAGENS_LIDAS = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+function tipoParaMony(tipo: TipoAnexo, tipoConteudo: string): ArquivoMony['tipo'] {
+  if (tipo === 'audio') {
+    if (tipoConteudo.startsWith('audio/')) return 'audio';
+  } else if (tipoConteudo === 'application/pdf') {
+    return 'pdf';
+  } else if (IMAGENS_LIDAS.has(tipoConteudo)) {
+    return 'imagem';
+  } else if (tipoConteudo === 'image/heic') {
+    throw new ErroDominio('REQUISICAO_INVALIDA', {
+      mensagem: 'A Mony ainda não lê fotos em HEIC. Mande em JPEG ou PNG.',
+    });
+  }
+  throw new ErroDominio('REQUISICAO_INVALIDA', { mensagem: 'A Mony não lê este tipo de arquivo.' });
+}
 
 /**
  * Anexos (doc 05, doc 11). O app pede a URL de envio, manda o arquivo direto para o S3 e depois
@@ -127,31 +154,35 @@ export class ArquivosService {
   }
 
   /**
-   * Áudio de uma mensagem para a Mony (T-064): do usuário, do tipo `audio`, fora de lançamento e já
-   * no S3 dentro do tamanho máximo. Devolve a URL de leitura (15 min) para a transcrição.
+   * O arquivo de uma mensagem para a Mony: do usuário, fora de lançamento e já no S3 dentro do
+   * tamanho máximo. Áudio vai para a transcrição (T-064); foto, print ou PDF, para a leitura
+   * (T-065), que não aceita HEIC nem imagem acima de 5 MB. Devolve a URL de leitura (15 min).
    */
-  async audioParaMony(
-    contexto: Contexto,
-    id: string,
-  ): Promise<{ url: string; tipoConteudo: string }> {
+  async arquivoParaMony(contexto: Contexto, id: string): Promise<ArquivoMony> {
     const anexo = await this.repositorio.buscar(usuarioDoContexto(contexto), id);
-    if (anexo?.tipo !== 'audio' || anexo.transacaoId !== null) {
-      throw new ErroDominio('NAO_ENCONTRADO');
-    }
+    if (!anexo || anexo.transacaoId !== null) throw new ErroDominio('NAO_ENCONTRADO');
     const objeto = await this.armazenamento.consultar(anexo.arquivoUrl);
     if (objeto === null) {
       throw new ErroDominio('REQUISICAO_INVALIDA', {
-        mensagem: 'O áudio ainda não terminou de ser enviado.',
+        mensagem: 'O arquivo ainda não terminou de ser enviado.',
       });
     }
     if (objeto.tamanho > TAMANHO_MAXIMO_ANEXO) {
       await this.armazenamento.apagar(anexo.arquivoUrl);
-      throw new ErroDominio('REQUISICAO_INVALIDA', { mensagem: 'O áudio passa de 10 MB.' });
+      throw new ErroDominio('REQUISICAO_INVALIDA', { mensagem: 'O arquivo passa de 10 MB.' });
     }
     const extensao = anexo.arquivoUrl.slice(anexo.arquivoUrl.lastIndexOf('.') + 1);
+    const tipoConteudo = objeto.tipoConteudo ?? TIPO_DA_EXTENSAO.get(extensao) ?? '';
+    const tipo = tipoParaMony(anexo.tipo, tipoConteudo);
+    if (tipo === 'imagem' && objeto.tamanho > TAMANHO_MAXIMO_IMAGEM_LEITURA) {
+      throw new ErroDominio('REQUISICAO_INVALIDA', {
+        mensagem: 'A imagem passa de 5 MB. Mande uma foto menor.',
+      });
+    }
     return {
+      tipo,
+      tipoConteudo,
       url: await this.armazenamento.urlDeLeitura(anexo.arquivoUrl, VALIDADE_URL_LEITURA_SEGUNDOS),
-      tipoConteudo: objeto.tipoConteudo ?? TIPO_DA_EXTENSAO.get(extensao) ?? 'audio/mp4',
     };
   }
 

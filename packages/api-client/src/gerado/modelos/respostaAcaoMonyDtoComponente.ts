@@ -29,7 +29,8 @@ export type RespostaAcaoMonyDtoComponente =
          */
         valorCentavos: number;
         data: string;
-        categoria: string;
+        /** @nullable */
+        categoria: string | null;
         formaPagamento: 'cartao_credito' | 'pix' | 'debito' | 'dinheiro' | 'boleto' | null;
         /** @nullable */
         cartao: string | null;
@@ -41,5 +42,6 @@ export type RespostaAcaoMonyDtoComponente =
         rotulo: string;
         acao: { [key: string]: unknown };
       }[];
+      aConfirmar?: boolean;
     }
   | null;

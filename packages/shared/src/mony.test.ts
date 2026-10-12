@@ -89,6 +89,22 @@ describe('ação do botão (RN-084)', () => {
       esquemaAcaoMony.safeParse({ tipo: 'pagar_fatura', faturaId: id, valorCentavos: 0 }).success,
     ).toBe(false);
     expect(esquemaAcaoMony.safeParse({ tipo: 'cancelar' }).success).toBe(true);
+    // T-065: confirmar ou descartar um lançamento lido (indice) ou todos (null).
+    const importacao = { importacaoId: id };
+    expect(
+      esquemaAcaoMony.safeParse({ tipo: 'confirmar_importacao', ...importacao, indice: 0 }).success,
+    ).toBe(true);
+    expect(
+      esquemaAcaoMony.safeParse({ tipo: 'descartar_importacao', ...importacao, indice: null })
+        .success,
+    ).toBe(true);
+    expect(
+      esquemaAcaoMony.safeParse({ tipo: 'confirmar_importacao', ...importacao, indice: 50 })
+        .success,
+    ).toBe(false);
+    expect(esquemaAcaoMony.safeParse({ tipo: 'confirmar_importacao', ...importacao }).success).toBe(
+      false,
+    );
     // Sem tipo (formato da T-061) ou com o estado no botão (PoC) não vale mais.
     expect(
       esquemaAcaoMony.safeParse({ rascunhoId: id, campo: 'categoria', valor: id }).success,

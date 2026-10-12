@@ -11,6 +11,7 @@ import { RelatoriosModule } from '../relatorios/relatorios.module';
 import { TransacoesModule } from '../transacoes/transacoes.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { ContextoMonyService } from './contexto.service';
+import { DocumentosMony } from './documentos.service';
 import { AtualizarMetaTool } from './ferramentas/atualizar-meta.tool';
 import { ConsultarCartaoTool } from './ferramentas/consultar-cartao.tool';
 import { ConsultarMetasTool } from './ferramentas/consultar-metas.tool';
@@ -79,6 +80,7 @@ const FERRAMENTAS = [
     MonyService,
     RoteadorRegras,
     LancamentosMony,
+    DocumentosMony,
     PreferenciasService,
     ContextoMonyService,
     RegistroFerramentas,

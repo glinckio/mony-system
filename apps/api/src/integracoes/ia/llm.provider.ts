@@ -13,11 +13,16 @@ export interface ChamadaFerramenta {
   entrada: unknown;
 }
 
-/** Um pedaço de mensagem: texto, pedido de ferramenta (assistente) ou resultado (usuário). */
+/**
+ * Um pedaço de mensagem: texto, pedido de ferramenta (assistente), resultado (usuário), ou uma
+ * imagem ou PDF (usuário, T-065), pela URL de leitura assinada: o provedor baixa o arquivo.
+ */
 export type BlocoLlm =
   | { tipo: 'texto'; texto: string }
   | ({ tipo: 'ferramenta' } & ChamadaFerramenta)
-  | { tipo: 'resultado'; id: string; conteudo: string; erro: boolean };
+  | { tipo: 'resultado'; id: string; conteudo: string; erro: boolean }
+  | { tipo: 'imagem'; url: string }
+  | { tipo: 'documento'; url: string };
 
 /** Uma mensagem da conversa enviada ao modelo. */
 export interface MensagemLlm {
@@ -34,6 +39,8 @@ export interface PedidoLlm {
   sistema: readonly string[];
   mensagens: readonly MensagemLlm[];
   ferramentas?: readonly FerramentaLlm[];
+  /** Obriga o modelo a responder chamando esta ferramenta (saída estruturada, T-065). */
+  ferramentaObrigatoria?: string;
   maximoTokens?: number;
   /** Cancela a chamada quando o app fecha a conexão ou o tempo acaba. */
   sinal?: AbortSignal;

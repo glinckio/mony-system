@@ -15,8 +15,9 @@ import {
   type PedidoLlm,
 } from '../../integracoes/ia/llm.provider';
 import { ErroTranscricao, TranscricaoProvider } from '../../integracoes/ia/transcricao.provider';
-import { ArquivosService } from '../arquivos/arquivos.service';
+import { type ArquivoMony, ArquivosService } from '../arquivos/arquivos.service';
 import { ContextoMonyService } from './contexto.service';
+import { DocumentosMony, type LeituraNoChat } from './documentos.service';
 import { type ContextoFerramenta, RegistroFerramentas } from './ferramentas/registro';
 import { componentesDaMensagem, conversaParaModelo } from './historico';
 import { type MensagemSalva, MonyRepository } from './mony.repository';
@@ -37,7 +38,9 @@ export const MENSAGEM_FALHA = 'Não consegui responder agora. Tente de novo em i
 export const MENSAGEM_AUDIO_FALHOU =
   'Não consegui entender o áudio agora. Tente de novo ou escreva a mensagem.';
 export const MENSAGEM_AUDIO_VAZIO = 'Não ouvi nada no áudio. Tente de novo ou escreva a mensagem.';
-const AUDIO_JA_ENVIADO = 'Este áudio já foi enviado.';
+const ARQUIVO_JA_ENVIADO = 'Este arquivo já foi enviado.';
+/** O tipo da mensagem do usuário pelo arquivo. */
+const TIPO_DA_MENSAGEM = { audio: 'audio', imagem: 'imagem', pdf: 'pdf' } as const;
 /** Tempo máximo da transcrição de um áudio (até 10 minutos de fala). */
 const TEMPO_LIMITE_TRANSCRICAO_MS = 60_000;
 
@@ -65,6 +68,7 @@ export class MonyOrquestrador {
     private readonly llm: LlmProvider,
     private readonly transcricao: TranscricaoProvider,
     private readonly arquivos: ArquivosService,
+    private readonly documentos: DocumentosMony,
   ) {}
 
   /**
@@ -90,12 +94,14 @@ export class MonyOrquestrador {
       }
       pergunta = await this.repositorio.mensagemPorChave(conversaId, chave);
     }
+    let arquivo: ArquivoMony | null = null;
     if (!pergunta && dados.arquivoId !== undefined) {
-      // Áudio de outra pessoa, já usado ou que não chegou: erro antes de gravar qualquer coisa.
+      // Arquivo de outra pessoa, já usado, que não chegou ou que a Mony não lê: erro antes de
+      // gravar qualquer coisa.
       try {
-        await this.arquivos.audioParaMony(contexto, dados.arquivoId);
+        arquivo = await this.arquivos.arquivoParaMony(contexto, dados.arquivoId);
         if (await this.repositorio.mensagemDoAnexo(dados.arquivoId)) {
-          throw new ErroDominio('CONFLITO', { mensagem: AUDIO_JA_ENVIADO });
+          throw new ErroDominio('CONFLITO', { mensagem: ARQUIVO_JA_ENVIADO });
         }
       } catch (erro) {
         if (!(erro instanceof ErroDominio)) throw erro;
@@ -107,22 +113,38 @@ export class MonyOrquestrador {
       usuarioId,
       conversaId,
       autor: 'usuario',
-      tipo: dados.arquivoId === undefined ? 'texto' : 'audio',
+      tipo: arquivo === null ? 'texto' : TIPO_DA_MENSAGEM[arquivo.tipo],
       conteudo: dados.texto ?? null,
       componentes: [],
       anexoId: dados.arquivoId,
       idempotencyKey: chave,
     });
     if (!pergunta) {
-      yield { tipo: 'erro', codigo: 'CONFLITO', mensagem: AUDIO_JA_ENVIADO };
+      yield { tipo: 'erro', codigo: 'CONFLITO', mensagem: ARQUIVO_JA_ENVIADO };
       return;
     }
 
     let texto = '';
     const componentes: ComponenteMony[] = [];
     let falha: string | null = null;
+    // T-065: foto, print ou PDF vira lançamentos a confirmar, sem as regras nem a conversa.
+    const documento =
+      pergunta.anexoId !== null && (pergunta.tipo === 'imagem' || pergunta.tipo === 'pdf')
+        ? await this.lerDocumento(contexto, pergunta, pergunta.anexoId, sinal)
+        : null;
+    if (documento?.erro) {
+      falha = documento.erro.mensagem;
+      yield { tipo: 'erro', ...documento.erro };
+    } else if (documento) {
+      texto = documento.texto;
+      yield { tipo: 'texto.delta', texto };
+      for (const componente of documento.componentes) {
+        componentes.push(componente);
+        yield { tipo: 'componente', componente };
+      }
+    }
     // T-064: o áudio vira texto antes de tudo; daí em diante é como se a pessoa tivesse escrito.
-    if (pergunta.conteudo === null && pergunta.anexoId !== null) {
+    if (pergunta.tipo === 'audio' && pergunta.conteudo === null && pergunta.anexoId !== null) {
       const transcrito = yield* this.transcrever(contexto, pergunta, pergunta.anexoId, sinal);
       if (transcrito === null) {
         if (sinal?.aborted) return;
@@ -131,12 +153,13 @@ export class MonyOrquestrador {
         pergunta = { ...pergunta, conteudo: transcrito };
       }
     }
+    if (sinal?.aborted) return;
     const roteado =
-      falha === null
-        ? await this.regras.responder(contexto, conversaId, pergunta.conteudo ?? '')
+      falha === null && documento === null && pergunta.conteudo !== null
+        ? await this.regras.responder(contexto, conversaId, pergunta.conteudo)
         : null;
     if (roteado === null) {
-      // O áudio não virou texto: só a falha.
+      // Documento lido, ou o arquivo não virou texto: nada de regras nem conversa.
     } else if (roteado.tipo === 'resposta') {
       texto = roteado.resposta.texto;
       yield { tipo: 'texto.delta', texto };
@@ -209,6 +232,30 @@ export class MonyOrquestrador {
   }
 
   /**
+   * T-065: lê a foto, o print ou o PDF da mensagem (os lançamentos a confirmar). `null`: o app
+   * cancelou.
+   */
+  private async lerDocumento(
+    contexto: Contexto,
+    pergunta: MensagemSalva,
+    anexoId: string,
+    sinal: AbortSignal | undefined,
+  ): Promise<LeituraNoChat | null> {
+    let arquivo: ArquivoMony;
+    try {
+      arquivo = await this.arquivos.arquivoParaMony(contexto, anexoId);
+    } catch (erro) {
+      if (!(erro instanceof ErroDominio)) throw erro;
+      return {
+        texto: '',
+        componentes: [],
+        erro: { codigo: erro.codigo, mensagem: erro.message },
+      };
+    }
+    return this.documentos.ler(contexto, pergunta.id, anexoId, arquivo, sinal);
+  }
+
+  /**
    * T-064: transcreve o áudio da mensagem, grava o texto nela e avisa o app (`transcricao`). Um
    * `logs_ia` por chamada. `null`: não deu (o evento de erro já saiu) ou o app cancelou.
    */
@@ -234,7 +281,7 @@ export class MonyOrquestrador {
       });
     let texto: string;
     try {
-      const audio = await this.arquivos.audioParaMony(contexto, anexoId);
+      const audio = await this.arquivos.arquivoParaMony(contexto, anexoId);
       ({ texto } = await this.transcricao.transcrever({
         ...audio,
         sinal: sinal ? AbortSignal.any([sinal, tempo]) : tempo,
