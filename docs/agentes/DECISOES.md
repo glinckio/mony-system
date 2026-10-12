@@ -576,3 +576,15 @@ Contexto: primeira tela do app com dados da API, seguindo a página 4 do design.
 - **Contrato**: o cliente gerado tipa `string | null` de topo como `string[]` (`proximoCursor`, `observacao`). A tela converte as respostas da lista e do lançamento para os tipos do `@mony/shared`; a correção na geração virou a T-018.
 - **Fora daqui**: anexos (T-058, módulos nativos) e criar ou editar recorrência no formulário (T-059).
 Reversível: sim.
+
+## 2026-10-11 — T-046 — Onboarding, checklist e dicas
+Contexto: o design (página 2) traz duas telas do onboarding: a primeira boas-vindas e as permissões ("Etapa 3 de 3"). O doc 04 previa também primeiro lançamento, cartões, orçamento e tour como telas do fluxo. Decisões:
+- **Fluxo curto, como o design**: duas boas-vindas e as permissões. Primeiro lançamento, cartões, orçamento e tour viram passos do checklist do Início, como no "Termine de configurar" do design. A segunda boas-vindas (avisos de limite e fatura) não tem design e segue o visual da primeira.
+- **"Concluir" marca o passo das permissões; "Configurar depois" não**: os dois terminam o fluxo (`concluido`), e o passo pendente continua no checklist.
+- **Permissões sem módulo nativo neste build**: notificações (T-088), agenda (T-085), apps de compra (T-121) e banco (T-120) pedem módulos que ainda não estão no app, e adicioná-los mudaria o runtime do EAS Update. A tela segue o design, com "Em breve" no lugar da chave enquanto `PEDIDOS_DE_PERMISSAO` não tem o pedido; cada tarefa só registra o seu.
+- **Checklist no Início provisório**: o Início de verdade é a T-053, que só reaproveita o `CartaoChecklist`. Os passos sem tela (orçamento até a T-052, tour) só têm "Dispensar".
+- **Tour = primeira dica**: o passo "Conhecer o app" é concluído ao fechar a primeira dica contextual; não há tour em telas, que o design não trouxe.
+- **Atualização otimista** do `GET /me/onboarding` (`aplicarAtualizacao` espelha a `montarOnboarding` da API: concluída vale mais que dispensada, nada volta a pendente), para a dica sumir e o passo mudar na hora.
+- **Contraste**: "Pular" e "Etapa 3 de 3" em branco e negrito, porque o azul de link e o texto suave somem no topo claro do degradê. Pelo mesmo motivo, o formulário de lançamento (T-045) passou a usar fundo sólido: os rótulos dele começam no topo.
+- **Conferido em tela** com um export web temporário (Playwright, 390 × 844, API falsa e cofre em memória), fora do repositório.
+Reversível: sim.

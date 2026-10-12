@@ -35,7 +35,7 @@ export default function TelaPermissoesOnboarding() {
         atual={TOTAL_ETAPAS}
         total={TOTAL_ETAPAS}
         direita={
-          <Texto variante="corpo-sm" cor="suave" className="font-forte">
+          <Texto variante="corpo-sm" className="font-negrito">
             {t('onboarding.etapa', { atual: TOTAL_ETAPAS, total: TOTAL_ETAPAS })}
           </Texto>
         }

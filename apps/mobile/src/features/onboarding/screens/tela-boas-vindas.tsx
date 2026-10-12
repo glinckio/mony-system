@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 
 import { Botao, Tela, Texto } from '@/ui';
 
@@ -37,11 +37,16 @@ export default function TelaBoasVindas() {
         atual={indice + 1}
         total={TOTAL_ETAPAS}
         direita={
-          <Botao
-            variante="fantasma"
-            titulo={t('onboarding.pular')}
-            aoPressionar={irParaPermissoes}
-          />
+          // Branco e em negrito: no topo claro do degradê, o azul de link some (design).
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('onboarding.pular')}
+            onPress={irParaPermissoes}
+            hitSlop={8}
+            className="min-h-toque justify-center px-2 active:opacity-70"
+          >
+            <Texto className="font-negrito">{t('onboarding.pular')}</Texto>
+          </Pressable>
         }
       />
       <ScrollView className="flex-1" contentContainerClassName="grow justify-end gap-8 py-6">

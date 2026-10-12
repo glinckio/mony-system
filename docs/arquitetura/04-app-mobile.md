@@ -139,6 +139,8 @@ Config plugins em `plugins/` adicionam permissões, entitlements, App Groups e e
 
 Pedidas uma por vez, com tela explicativa antes do diálogo do sistema (onboarding passo 5): notificações, agenda, detecção de apps de compra, conexão bancária. Recusa nunca bloqueia o app; a tela de Permissões em Configurações mostra o estado e leva às configurações do sistema.
 
+**Como está (T-046):** `src/lib/permissoes.ts` lista as quatro permissões e guarda, em `PEDIDOS_DE_PERMISSAO`, quem sabe ver o estado e pedir cada uma. O quadro (`ListaPermissoes`) aparece no onboarding e em `/mais/permissoes`: chave para notificações, agenda e apps de compra, botão "Conectar" para o banco, e a explicação de onde liberar quando a pessoa recusa. Sem o pedido no build, o item mostra "Em breve". Cada módulo nativo entra na sua tarefa: notificações na T-088, agenda na T-085, apps de compra na T-121 e banco na T-120.
+
 ## Design system
 
 O cliente vai entregar as telas. Fluxo para receber o design:
@@ -200,6 +202,17 @@ Telas em `src/features/transacoes`, no design da página 4 (`docs/design`):
 ## Onboarding
 
 Rotas em `(onboarding)` seguindo o PDF: boas-vindas (2–3 telas), primeiro lançamento guiado no chat, cartões (opcional), orçamento inicial, permissões uma a uma, tour pulável. O progresso fica no servidor (`GET/PATCH /v1/me/onboarding`) para o **checklist de primeiros passos** no Início. Dicas contextuais na primeira visita a cada tela usam um registro de "dicas vistas" no servidor (para sobreviver a reinstalação).
+
+**Como está (T-046), com o design (página 2):**
+
+- **Fluxo inicial** em `(onboarding)`: duas telas de boas-vindas (`/boas-vindas`, etapas 1 e 2 de 3; a segunda não tem design próprio e segue o mesmo visual) e as permissões (`/permissoes`, etapa 3). "Pular" leva às permissões.
+  - "Concluir" grava `{ concluido: true, etapas: { permissoes: 'concluida' } }`; "Configurar depois" grava só `concluido`, e o passo fica no checklist. Com a resposta, a sessão marca `onboardingConcluido` e a navegação passa para as abas.
+  - Primeiro lançamento, cartões e orçamento não são telas do fluxo: viram passos do checklist, como no design do Início.
+- **Checklist** (`CartaoChecklist`, RN-024), no Início provisório até a T-053: anel com os passos feitos, a frase dos dois próximos ("Cadastre seus cartões e defina os orçamentos do mês.") e "Continuar", que abre a folha com os cinco passos.
+  - Cada passo pendente tem "Fazer agora" (primeiro gasto → `/transacoes/nova`, cartões → `/cartoes`, avisos → `/mais/permissoes`) e "Dispensar". Orçamento ainda não tem tela (T-052) e o tour não tem tela própria: os dois só são dispensados.
+  - O primeiro lançamento e o primeiro cartão são marcados pela API; avisos, pelo "Concluir" ou pelo "Pronto" da tela de Permissões; o tour, ao fechar a primeira dica.
+  - A mudança aparece na hora (`useAtualizarOnboarding` atualiza o cache antes da resposta e volta se a API recusar).
+- **Dicas** (`Dica`): uma por tela, só depois que o progresso chega da API e só se a chave não está em `dicasVistas`. Fechar grava a chave no servidor. Hoje: `transacoes.selecao` e `mony.primeira-conversa`; dica nova entra no tipo `ChaveDica` e nos textos.
 
 ## Performance e qualidade
 
