@@ -6,6 +6,7 @@ import { aplicarPadroesDoUsuario } from '../../core/dados-iniciais/padroes';
 import type { ClientePrisma } from '../../core/prisma/cliente';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { Prisma } from '../../generated/prisma/client';
+import type { ControleDoTeste } from '../planos/dominio/teste';
 
 /** Dados do usuário que a sessão devolve ao app. */
 const CAMPOS_USUARIO = {
@@ -36,6 +37,8 @@ export interface NovaConta {
   testeInicio: Date;
   testeFim: Date;
   loginSocial?: { provedor: ProvedorLoginSocial; idExterno: string };
+  /** RN-125: o e-mail, o login social e o aparelho; se algum já teve teste, a conta é gratuita. */
+  controlesTeste: ControleDoTeste[];
 }
 
 export type ResultadoVinculo = 'vinculado' | 'ja-vinculado' | 'de-outra-conta';
@@ -55,7 +58,8 @@ export class AutenticacaoRepository {
    * RN-001, RN-006, RN-007: cria o usuário (e o vínculo do login social, se veio por ele), grava
    * os aceites, abre o teste grátis, aplica os padrões (categorias, alertas, apps) e já abre a
    * sessão do aparelho, tudo numa transação. Devolve `null` se o e-mail ou o login social já
-   * existem.
+   * existem. RN-125: grava os controles do teste; se algum já existia (inclusive de um cadastro
+   * ao mesmo tempo, pela chave única), a conta começa no gratuito.
    */
   async criarConta(
     conta: NovaConta,
@@ -87,13 +91,20 @@ export class AutenticacaoRepository {
         if (conta.loginSocial) {
           await tx.loginSocial.create({ data: { usuarioId: usuario.id, ...conta.loginSocial } });
         }
+        const novos = await tx.controleTeste.createMany({
+          data: conta.controlesTeste,
+          skipDuplicates: true,
+        });
+        const temTeste = novos.count === conta.controlesTeste.length;
         await tx.assinatura.create({
-          data: {
-            usuarioId: usuario.id,
-            plano: 'teste',
-            testeInicio: conta.testeInicio,
-            testeFim: conta.testeFim,
-          },
+          data: temTeste
+            ? {
+                usuarioId: usuario.id,
+                plano: 'teste',
+                testeInicio: conta.testeInicio,
+                testeFim: conta.testeFim,
+              }
+            : { usuarioId: usuario.id, plano: 'gratuito' },
         });
         await aplicarPadroesDoUsuario(tx, usuario.id);
         const aberta = await this.abrirSessaoNaTransacao(

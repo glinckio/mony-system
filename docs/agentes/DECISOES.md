@@ -842,3 +842,14 @@ Contexto: o doc 05 punha a conta no `@RecursoLimitado`, antes do handler, e o RN
 - **Tela "Seu plano"** (`/mais/plano`) já nesta tarefa, para o [Ver planos] levar a algum lugar: o plano e o uso dos limites; a compra entra com a T-103.
 - **Contadores de quantidade** só para cartão; listas de compras e lembretes ativos ganham os deles com a T-123 e a T-084.
 Reversível: sim.
+
+## 2026-10-13 — T-101 — Teste grátis de 3 dias
+Contexto: o RN-125 pede um teste por pessoa pelo e-mail, pela conta Google/Apple e pelo aparelho, em resumo na `controle_teste`; o doc 09 põe os avisos do RN-124 na rotina das 01:15. Decisões:
+- **Controle no cadastro, na mesma transação**, com `ON CONFLICT DO NOTHING`: se algum dos resumos já existia, a conta começa no `gratuito` (sem datas de teste). A chave única resolve dois cadastros ao mesmo tempo. Os resumos ficam também quando a conta é gratuita, e ficam depois de excluir a conta (T-140 deve mantê-los: sem eles, excluir e cadastrar de novo daria outro teste).
+- **E-mail pela caixa de entrada**: minúsculo, sem `+etiqueta` e, no Gmail, sem pontos. Só para o controle; o login continua pelo e-mail digitado.
+- **SHA-256 sem segredo**, como os outros resumos do banco (e-mail no limite de tentativas, tokens): trocar um segredo apagaria o controle. O aparelho é o identificador que o app manda no cadastro.
+- **Avisos às 09:00 de cada pessoa**, na `alertas-diarios`, e não às 01:15 (push de madrugada): o 2º dia, o último (faltando menos de 24 horas, para o aviso sair antes do fim mesmo para quem se cadastrou cedo) e o do fim, na primeira rodada depois dele. Push, central e Mony; não urgentes (esperam o silêncio). O do fim é o "fim de teste" que o doc 09 já listava no tipo `assinatura`.
+- **Encerramento às 01:15**, como no doc 09, só gravando `gratuito` (as datas ficam, para o aviso do fim e o histórico); antes dele, o teste vencido já vale como gratuito (T-100).
+- **Selo "Teste grátis"** na linha "Seu plano" do Perfil.
+- **Contas antigas** (antes da T-101) não ganham controles: ainda não há usuários reais.
+Reversível: sim.

@@ -55,7 +55,7 @@ Cada avaliador é uma classe com `tipo`, `avaliar(contexto) → AlertaCandidato[
 | `compromisso` | Antecedência do usuário | `compromisso:<id>` | sim | não |
 | `resumo_periodo` | Segunda e dia 1 | `resumo:<semana ou mes>` | não | sim |
 | `open_finance` | Consentimento perto de vencer ou erro | `of:<conexao>:<motivo>:<data>` | não | sim |
-| `assinatura` | Pagamento recusado, renovação, cancelamento, fim de teste | `assinatura:<evento_id>` | sim | sim |
+| `assinatura` | Pagamento recusado, renovação, cancelamento; teste no 2º dia, no último e no fim (T-101, não urgentes) | `assinatura:<evento_id>`; `assinatura:teste:<segundo-dia, ultimo-dia ou fim>` | sim (os do teste, não) | sim |
 | `novidade` | Publicação no admin (push opcional) | `novidade:<id>` | não | não |
 
 Regras de envio: RN-100 a RN-108 em [07](07-regras-de-negocio.md#alertas-e-notificações). Tipos de consultoria (`gasto_fora_padrao`, `projecao_mes`, dicas) contam para o limite diário de 3. `assinatura` não pode ser desligado.
@@ -92,7 +92,7 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 | Gerar transações recorrentes | De hora em hora, no minuto 30 | Materializa ocorrências dos próximos 35 dias (RN-043), no fuso de cada usuário. Implementada na T-038 |
 | Fechar faturas e atrasar (`atualizar-faturas`) | De hora em hora, no minuto 45 | No fuso de cada usuário, a fatura que fechou ganha o status do dia (`fechada`, `parcial`, `paga` ou `atrasada`) e publica `fatura.fechada` se tem valor; a que venceu sem o total pago vira `atrasada` e publica `fatura.atrasada`. Implementada na T-047 |
 | Marcar atrasos (`marcar-atrasos`) | De hora em hora, no minuto 0 | Parcelas pendentes vencidas → `atrasado`; o status guardado dos parcelamentos tocados e dos que estavam atrasados é refeito. Parcela de dívida publica `parcela.atrasada`. Implementada na T-047 |
-| Encerrar testes | Diária 01:15 | Testes vencidos → gratuito; avisos do 2º e do último dia (RN-124, RN-126) |
+| Encerrar testes (`encerrar-testes`) | Diária 01:15 | Testes vencidos → gratuito (RN-126). Os avisos do 2º dia, do último e do fim (RN-124) saem na `alertas-diarios`, às 09:00 de cada pessoa. Implementada na T-101 |
 | Alertas de vencimento e projeção (`alertas-diarios`) | De hora em hora, no minuto 5, para quem está às 09:00 | `fatura_vencimento`, `vencimento_pendente`, `projecao_mes`. Implementada na T-082 |
 | Resumo semanal e mensal | Segunda e dia 1, 09:00 (na `alertas-diarios`) | Mensagem da Mony no chat + push. Implementada na T-083 |
 | Repetir orçamentos | Dia 1, 00:15 | Copia do mês anterior os orçamentos com `repetir_mensal` (RN-060); o mês é o de São Paulo (T-043) |

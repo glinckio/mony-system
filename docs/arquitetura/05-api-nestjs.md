@@ -411,7 +411,7 @@ Implementado na T-042 (RN-050 a RN-055).
 
 ## Planos e cotas do gratuito
 
-Implementado na T-100 (RN-120 a RN-123, RN-127), em `modulos/planos`. A Stripe, o teste de 3 dias e as telas de compra chegam com a T-101 a T-103.
+Implementado na T-100 (RN-120 a RN-123, RN-127), em `modulos/planos`; o teste de 3 dias na T-101 (ver "Teste grátis"). A Stripe e as telas de compra chegam com a T-102 e a T-103.
 
 - **Plano que vale agora** (`planoEfetivo`): `teste` até o `teste_fim` (depois, gratuito, mesmo antes da rotina diária da T-101); `mensal` e `anual`, inclusive inadimplente (RN-131); assinatura cancelada ou ausente, gratuito. Só o gratuito tem limite.
 - **Quem conta:** o que vem do app e da Mony (`contexto.origem` `app` ou `mony`). Rotinas (ocorrências de recorrência), Open Finance e admin não contam.
@@ -422,6 +422,15 @@ Implementado na T-100 (RN-120 a RN-123, RN-127), em `modulos/planos`. A Stripe, 
 - **Mony (RN-123):** no limite, a Mony responde a frase com o botão [Ver planos] (`{ tipo: 'abrir', link: 'mony://planos' }`, que o app abre sem chamar `POST /mony/acoes`): na mensagem e na leitura, sem chamar o modelo; no lançamento pelo rascunho, antes das perguntas, sem guardar o rascunho; nas ferramentas, o modelo recebe a falha e o botão sai uma vez; no [Confirmar todos] da foto ou PDF, grava até o limite e o resto continua esperando.
 - **`GET /assinatura/uso`:** o plano que vale agora, `limitado`, o fim do teste e, no gratuito, cada limite com `uso`, `limite` e `renovaEm`.
 - **`@RecursoLimitado(recurso)`** marca as rotas que podem responder o 403 (`x-recurso-limitado` no OpenAPI): `POST /transacoes`, `/parcelamentos`, `/recorrencias`, `/cartoes` e os relatórios. A conta não é feita por ele.
+
+## Teste grátis
+
+Implementado na T-101 (RN-124 a RN-126), em `modulos/planos` (`dominio/teste.ts`, `TesteGratis`).
+
+- **Início:** o cadastro (e-mail e senha ou login social, `abrirContaNova`) abre o teste de 3 dias (`teste_inicio`, `teste_fim`).
+- **Um por pessoa (RN-125):** na mesma transação do cadastro, grava em `controle_teste` o SHA-256 do e-mail como caixa de entrada (minúsculo, sem `+etiqueta` e, no Gmail, sem pontos), do login do Google ou da Apple (o `sub`) e do identificador do aparelho, com `ON CONFLICT DO NOTHING` (`createMany` com `skipDuplicates`). Se algum já existia, a conta começa no `gratuito`, sem datas de teste. Dois cadastros ao mesmo tempo esperam a chave única um do outro: só um ganha o teste.
+- **Avisos (RN-124):** na rotina `alertas-diarios` (09:00 de cada pessoa), tipo `assinatura`, com push, central e mensagem da Mony, abrindo `mony://planos`: no 2º dia do teste; no último (faltando menos de 24 horas: "acaba hoje às 12:00" ou "amanhã às 07:00"), com o que a pessoa já registrou (lançamentos e despesas, cartões, orçamentos e metas); e na primeira rodada depois do fim, para quem não assinou. Chaves `assinatura:teste:segundo-dia`, `:ultimo-dia` e `:fim`. Não são urgentes: esperam o fim do horário de silêncio.
+- **Encerramento (RN-126):** a rotina `encerrar-testes`, todo dia às 01:15, passa para o `gratuito` o teste que acabou (as datas ficam). Antes dela, o teste vencido já vale como gratuito (`planoEfetivo`).
 
 ## Guardas e decoradores
 

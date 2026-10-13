@@ -13,6 +13,7 @@ import { RascunhosService } from '../src/modulos/mony/rascunhos.service';
 import { MotorAlertas } from '../src/modulos/notificacoes/motor-alertas';
 import { OrcamentosService } from '../src/modulos/orcamentos/orcamentos.service';
 import { ParcelamentosService } from '../src/modulos/parcelamentos/parcelamentos.service';
+import { TesteGratis } from '../src/modulos/planos/teste.service';
 import { RecorrenciasService } from '../src/modulos/recorrencias/recorrencias.service';
 
 const AGORA = new Date('2026-10-10T03:30:00Z');
@@ -97,6 +98,14 @@ describe('rotinas agendadas (doc 09)', () => {
     expect(Reflect.getMetadata(ROTINA, metodo)).toEqual({
       nome: 'limpar-rascunhos',
       padrao: '0 3 * * *',
+    });
+  });
+
+  it('RN-126 o encerramento dos testes vencidos roda todo dia às 01:15', () => {
+    const metodo = Reflect.get(TesteGratis.prototype, 'encerrar') as object;
+    expect(Reflect.getMetadata(ROTINA, metodo)).toEqual({
+      nome: 'encerrar-testes',
+      padrao: '15 1 * * *',
     });
   });
 
