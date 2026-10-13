@@ -27,6 +27,7 @@ import { ErroDominio } from '../../core/erros/erro-dominio';
 import { BarramentoEventos } from '../../core/eventos/barramento-eventos';
 import { idDeJob } from '../../core/filas/filas';
 import { Rotina } from '../../core/rotinas/rotinas';
+import { CotasService } from '../planos/cotas.service';
 import { paraDataDoBanco, paraResposta } from '../transacoes/transacoes.repository';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import {
@@ -80,6 +81,7 @@ export class CartoesService {
     private readonly repositorio: CartoesRepository,
     private readonly usuarios: UsuariosService,
     private readonly eventos: BarramentoEventos,
+    private readonly cotas: CotasService,
     private readonly clock: Clock,
   ) {}
 
@@ -107,24 +109,32 @@ export class CartoesService {
     return this.montar(usuarioId, await this.exigir(usuarioId, id));
   }
 
-  /** RN-030. O primeiro cartão conclui a etapa `cartoes` do onboarding. */
+  /**
+   * RN-030. O primeiro cartão conclui a etapa `cartoes` do onboarding. RN-120: no gratuito, só
+   * cria se ainda cabe no limite de cartões.
+   */
   async criar(contexto: Contexto, dados: DadosNovoCartao): Promise<Cartao> {
     const usuarioId = usuarioDoContexto(contexto);
     if (dados.contaPagamentoId !== undefined) {
       await this.conferirConta(usuarioId, dados.contaPagamentoId);
     }
-    const cartao = await this.repositorio.criar({
-      usuarioId,
-      nome: dados.nome,
-      bandeira: dados.bandeira ?? null,
-      final: dados.final ?? null,
-      limiteTotal: BigInt(dados.limiteTotalCentavos),
-      diaFechamento: dados.diaFechamento,
-      diaVencimento: dados.diaVencimento,
-      cor: dados.cor,
-      faixasAlerta: ordenarFaixas(dados.faixasAlerta ?? FAIXAS_ALERTA_PADRAO),
-      contaPagamentoId: dados.contaPagamentoId ?? null,
-    });
+    const cartao = await this.repositorio.criar(
+      async (tx) => {
+        await this.cotas.conferirQuantidade(contexto, 'cartao', tx);
+      },
+      {
+        usuarioId,
+        nome: dados.nome,
+        bandeira: dados.bandeira ?? null,
+        final: dados.final ?? null,
+        limiteTotal: BigInt(dados.limiteTotalCentavos),
+        diaFechamento: dados.diaFechamento,
+        diaVencimento: dados.diaVencimento,
+        cor: dados.cor,
+        faixasAlerta: ordenarFaixas(dados.faixasAlerta ?? FAIXAS_ALERTA_PADRAO),
+        contaPagamentoId: dados.contaPagamentoId ?? null,
+      },
+    );
     await this.usuarios.concluirEtapa(usuarioId, 'cartoes');
     return this.montar(usuarioId, cartao);
   }

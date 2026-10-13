@@ -160,8 +160,15 @@ export class CartoesRepository {
     return usuario.fusoHorario;
   }
 
-  criar(dados: Prisma.CartaoUncheckedCreateInput): Promise<CartaoDoUsuario> {
-    return this.prisma.cliente.cartao.create({ data: dados, select: CAMPOS_CARTAO });
+  /** Cria o cartão na mesma transação de `antes` (a cota do gratuito, RN-120). */
+  criar(
+    antes: (tx: TransacaoCartoes) => Promise<void>,
+    dados: Prisma.CartaoUncheckedCreateInput,
+  ): Promise<CartaoDoUsuario> {
+    return this.prisma.cliente.$transaction(async (tx) => {
+      await antes(tx);
+      return tx.cartao.create({ data: dados, select: CAMPOS_CARTAO });
+    });
   }
 
   emTransacao<T>(operacao: (tx: TransacaoCartoes) => Promise<T>): Promise<T> {

@@ -1,3 +1,5 @@
+import { linkDoBotao, type OpcaoBotao } from '@mony/shared/mony';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
@@ -9,18 +11,21 @@ import { FolhaDocumento } from '@/features/mony/components/folha-documento';
 import { useChatMony } from '@/features/mony/hooks/use-chat-mony';
 import { useHistoricoMony } from '@/features/mony/hooks/use-conversa-mony';
 import { duracaoParaTexto, useGravador } from '@/features/mony/lib/gravador';
-import { daConversa } from '@/features/mony/lib/mensagens';
+import { daConversa, type Mensagem } from '@/features/mony/lib/mensagens';
 import { Dica } from '@/features/onboarding/components/dica';
+import { rotaDoLink } from '@/lib/links-internos';
 import { Botao, BotaoIcone, Campo, cores, Icone, Tela, Texto } from '@/ui';
 
 /**
  * Chat da Mony (doc 04, T-069): abre com o histórico (`GET /mony/conversa`, mais antigas ao subir),
  * a resposta chega em SSE e aparece enquanto é escrita, os botões respondem sem texto livre
  * (RN-084), inclusive os do histórico. Com o campo vazio, os atalhos da API, o clipe (foto, print
- * ou PDF, T-065) e o microfone (T-064). A lupa busca no histórico.
+ * ou PDF, T-065) e o microfone (T-064). A lupa busca no histórico. O botão que só abre uma tela
+ * ([Ver planos], RN-123) abre a tela, sem ir à API.
  */
 export default function TelaMony() {
   const { t } = useTranslation();
+  const router = useRouter();
   const historico = useHistoricoMony();
   const doServidor = (historico.data?.pages ?? []).flatMap(({ itens }) => itens.map(daConversa));
   const sugestoes = historico.data?.pages[0]?.sugestoes ?? [];
@@ -31,6 +36,16 @@ export default function TelaMony() {
 
   // No limite de 10 minutos, o gravador envia sozinho.
   const gravacao = useGravador((uri) => void chat.enviarAudio(uri));
+
+  function tocar(mensagem: Mensagem, indice: number, opcao: OpcaoBotao) {
+    const link = linkDoBotao(opcao.acao);
+    if (link === null) {
+      void chat.tocar(mensagem, indice, opcao);
+      return;
+    }
+    const rota = rotaDoLink(link);
+    if (rota !== null) router.push(rota);
+  }
 
   async function enviar(conteudo = texto) {
     if (conteudo.trim() === '' || chat.ocupada) return;
@@ -114,7 +129,9 @@ export default function TelaMony() {
             renderItem={({ item }) => (
               <Balao
                 mensagem={item}
-                aoTocar={(indice, opcao) => void chat.tocar(item, indice, opcao)}
+                aoTocar={(indice, opcao) => {
+                  tocar(item, indice, opcao);
+                }}
               />
             )}
             onEndReached={() => {

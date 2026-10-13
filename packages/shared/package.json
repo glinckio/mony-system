@@ -86,6 +86,10 @@
       "types": "./dist/parcelamentos.d.ts",
       "default": "./dist/parcelamentos.js"
     },
+    "./planos": {
+      "types": "./dist/planos.d.ts",
+      "default": "./dist/planos.js"
+    },
     "./recorrencias": {
       "types": "./dist/recorrencias.d.ts",
       "default": "./dist/recorrencias.js"

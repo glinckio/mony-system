@@ -31,6 +31,7 @@ import {
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
 import { criarDto } from '../../core/openapi/dto';
+import { RecursoLimitado } from '../planos/recurso-limitado.decorator';
 import { RecorrenciasService } from './recorrencias.service';
 
 class RecorrenciaDto extends criarDto(esquemaRecorrencia) {}
@@ -63,6 +64,7 @@ export class RecorrenciasController {
 
   @Post()
   @Idempotente()
+  @RecursoLimitado('lancamento')
   @ApiCreatedResponse({
     type: RespostaRecorrenciaDto,
     description: 'Recorrência criada e as ocorrências dos próximos 35 dias.',

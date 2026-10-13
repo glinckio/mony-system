@@ -12,6 +12,8 @@ export const textosMais = {
   perfilTela: {
     titulo: 'Perfil',
     conta: 'Conta',
+    plano: 'Seu plano',
+    planoAjuda: 'O plano e o uso dos limites.',
     preferencias: 'Preferências',
     privacidade: 'Privacidade',
     dadosPessoais: 'Dados pessoais',

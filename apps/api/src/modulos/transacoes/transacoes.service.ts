@@ -27,6 +27,7 @@ import { idDeJob } from '../../core/filas/filas';
 import { ArquivosService } from '../arquivos/arquivos.service';
 import { type CartaoTravado, CartoesService } from '../cartoes/cartoes.service';
 import { OrcamentosService } from '../orcamentos/orcamentos.service';
+import { CotasService } from '../planos/cotas.service';
 import { RecorrenciasService } from '../recorrencias/recorrencias.service';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import {
@@ -75,6 +76,7 @@ export class TransacoesService {
     private readonly usuarios: UsuariosService,
     private readonly recorrencias: RecorrenciasService,
     private readonly eventos: BarramentoEventos,
+    private readonly cotas: CotasService,
     private readonly clock: Clock,
   ) {}
 
@@ -143,6 +145,8 @@ export class TransacoesService {
     const hoje = await this.hoje(usuarioId);
     const data = dados.data ?? hoje;
     const { id } = await this.repositorio.emTransacao(async (tx) => {
+      // RN-120 e RN-122: no gratuito, conta na cota do dia e do mês; passou, nada é gravado.
+      await this.cotas.consumir(contexto, 'lancamento', tx);
       const faturaId =
         cartaoId === null ? null : await this.entrarNaFatura(tx, usuarioId, cartaoId, data, hoje);
       const criada = await this.repositorio.criar(tx, {

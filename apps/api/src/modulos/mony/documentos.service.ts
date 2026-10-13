@@ -29,6 +29,7 @@ import type { ArquivoMony } from '../arquivos/arquivos.service';
 import { CartoesService } from '../cartoes/cartoes.service';
 import { CategoriasService } from '../categorias/categorias.service';
 import { UsuariosService } from '../usuarios/usuarios.service';
+import { avisoDoLimite, botaoVerPlanos } from './aviso-limite';
 import { LancamentosMony } from './lancamentos.service';
 import {
   esquemaLeitura,
@@ -266,7 +267,8 @@ export class DocumentosMony {
 
   /**
    * Um lançamento: a despesa segue pelo rascunho, que grava quando está completa ou pergunta o que
-   * falta (RN-080); a receita grava direto.
+   * falta (RN-080); a receita grava direto. No limite do gratuito, ele volta a esperar e a Mony
+   * avisa com o [Ver planos] (RN-123).
    */
   private async confirmar(
     contexto: Contexto,
@@ -283,6 +285,10 @@ export class DocumentosMony {
         return resposta.resposta;
       }
       const resposta = await this.regras.iniciar(contexto, conversaId, paraRascunho(item));
+      if (resposta.limiteAtingido) {
+        await this.concluir(contexto, importacaoId, new Map([[indice, { estado: 'pendente' }]]));
+        return { texto: resposta.texto, componente: resposta.componente, transacaoId: null };
+      }
       const final: Partial<ItemImportacao> =
         resposta.componente?.tipo === 'resumo'
           ? {
@@ -299,11 +305,16 @@ export class DocumentosMony {
       };
     } catch (erro) {
       await this.concluir(contexto, importacaoId, new Map([[indice, { estado: 'pendente' }]]));
+      const aviso = avisoDoLimite(erro);
+      if (aviso) return aviso;
       throw erro;
     }
   }
 
-  /** Grava todos os que estão completos; os que pedem pergunta ficam para o [Confirmar] de cada um. */
+  /**
+   * Grava todos os que estão completos; os que pedem pergunta ficam para o [Confirmar] de cada um.
+   * No limite do gratuito, para: os que faltam continuam esperando a confirmação (RN-123).
+   */
   private async confirmarTodos(
     contexto: Contexto,
     conversaId: string,
@@ -314,6 +325,7 @@ export class DocumentosMony {
     const finais = new Map<number, Partial<ItemImportacao>>();
     let total = 0;
     let falhas = 0;
+    let limite: string | null = null;
     try {
       for (const item of reservados) {
         if (!item.completo) continue;
@@ -322,6 +334,10 @@ export class DocumentosMony {
             finais.set(item.indice, (await this.gravarReceita(contexto, item)).final);
           } else {
             const resposta = await this.regras.iniciar(contexto, conversaId, paraRascunho(item));
+            if (resposta.limiteAtingido) {
+              limite = resposta.texto;
+              break;
+            }
             finais.set(item.indice, {
               estado: 'confirmado',
               transacaoId: resposta.transacaoId,
@@ -333,6 +349,11 @@ export class DocumentosMony {
           }
           total += item.valorCentavos;
         } catch (erro) {
+          const aviso = avisoDoLimite(erro);
+          if (aviso) {
+            limite = aviso.texto;
+            break;
+          }
           if (!(erro instanceof ErroDominio)) throw erro;
           this.log.warn(`Lançamento de documento não gravado: ${erro.message}`);
           falhas += 1;
@@ -362,7 +383,14 @@ export class DocumentosMony {
         `${plural(falhas, 'lançamento não deu', 'lançamentos não deram')} para gravar; tente de novo.`,
       );
     }
-    return { texto: partes.join(' '), componente: null, transacaoId: null };
+    if (limite !== null) {
+      partes.push(limite, 'Os que faltam continuam aqui para confirmar depois.');
+    }
+    return {
+      texto: partes.join(' '),
+      componente: limite === null ? null : botaoVerPlanos(),
+      transacaoId: null,
+    };
   }
 
   private async descartar(

@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
 
 import { EventosModule } from '../../core/eventos/eventos.module';
+import { PlanosModule } from '../planos/planos.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { CartoesController, FaturasController } from './cartoes.controller';
 import { CartoesRepository } from './cartoes.repository';
 import { CartoesService } from './cartoes.service';
 
 @Module({
-  imports: [EventosModule, UsuariosModule],
+  imports: [EventosModule, UsuariosModule, PlanosModule],
   controllers: [CartoesController, FaturasController],
   providers: [CartoesService, CartoesRepository],
   exports: [CartoesService],

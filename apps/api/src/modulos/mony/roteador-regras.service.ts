@@ -31,7 +31,9 @@ import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { CartoesService } from '../cartoes/cartoes.service';
 import { CategoriasService } from '../categorias/categorias.service';
+import { CotasService } from '../planos/cotas.service';
 import { UsuariosService } from '../usuarios/usuarios.service';
+import { avisoDoLimite } from './aviso-limite';
 import { LancamentosMony } from './lancamentos.service';
 import { PreferenciasService } from './preferencias.service';
 import { type Rascunho, RascunhosService } from './rascunhos.service';
@@ -95,6 +97,8 @@ export interface RespostaRegra {
   texto: string;
   componente: ComponenteMony | null;
   transacaoId: string | null;
+  /** RN-123: não gravou porque o gratuito chegou ao limite; o componente é o [Ver planos]. */
+  limiteAtingido?: true;
 }
 
 /**
@@ -128,6 +132,7 @@ export class RoteadorRegras {
     private readonly lancamentos: LancamentosMony,
     private readonly preferencias: PreferenciasService,
     private readonly usuarios: UsuariosService,
+    private readonly cotas: CotasService,
     private readonly clock: Clock,
   ) {}
 
@@ -320,12 +325,37 @@ export class RoteadorRegras {
    * rascunho e faz a próxima pergunta. Crédito sem cartão cadastrado volta para a forma de
    * pagamento; com um cartão só, ele já vale.
    */
+  /**
+   * RN-123: o lançamento que não cabe no limite do gratuito não é gravado nem perguntado; o
+   * rascunho dele sai e a Mony avisa com o [Ver planos].
+   */
   private async avancar(
     contexto: Contexto,
     conversaId: string,
     dados: DadosRascunho,
     catalogo: Catalogo,
     opcoes: { antes?: string; anotei?: string; rascunhoId?: string } = {},
+  ): Promise<RespostaRegra> {
+    try {
+      return await this.avancarNoLimite(contexto, conversaId, dados, catalogo, opcoes);
+    } catch (erro) {
+      const aviso = avisoDoLimite(erro);
+      if (aviso === null) throw erro;
+      if (opcoes.rascunhoId) await this.rascunhos.descartar(opcoes.rascunhoId);
+      return {
+        ...aviso,
+        texto: juntar([opcoes.antes ?? '', aviso.texto]),
+        limiteAtingido: true,
+      };
+    }
+  }
+
+  private async avancarNoLimite(
+    contexto: Contexto,
+    conversaId: string,
+    dados: DadosRascunho,
+    catalogo: Catalogo,
+    opcoes: { antes?: string; anotei?: string; rascunhoId?: string },
   ): Promise<RespostaRegra> {
     let completo = { ...dados };
     const avisos: string[] = [];
@@ -353,6 +383,8 @@ export class RoteadorRegras {
       // O resumo já diz o valor: sem o "Anotei" da abertura.
       return { ...gravado, texto: juntar([opcoes.antes ?? '', ...avisos, gravado.texto]) };
     }
+    // Um lançamento novo que não daria para gravar hoje: avisa antes das perguntas (RN-123).
+    if (!opcoes.rascunhoId) await this.cotas.conferir(contexto, 'lancamento');
     const rascunho = await this.rascunhos.salvar(
       usuarioDoContexto(contexto),
       conversaId,

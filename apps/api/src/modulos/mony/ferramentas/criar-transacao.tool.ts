@@ -112,6 +112,17 @@ export class CriarTransacaoTool implements Ferramenta<typeof esquema> {
     if (dados.cartaoId !== undefined) dados.formaPagamento ??= 'cartao_credito';
     const resposta = await this.regras.iniciar(contexto, contexto.conversaId, dados);
     const componentes = resposta.componente ? [resposta.componente] : [];
+    if (resposta.limiteAtingido) {
+      return {
+        dados: {
+          gravado: false,
+          erro: { codigo: 'LIMITE_PLANO_ATINGIDO', mensagem: resposta.texto },
+          orientacao:
+            'Não gravou: o plano gratuito chegou ao limite. Diga isso em uma frase, com quando volta; o botão [Ver planos] aparece abaixo da sua resposta.',
+        },
+        componentes,
+      };
+    }
     if (resposta.componente?.tipo === 'resumo') {
       return {
         dados: { gravado: true, lancamento: resposta.componente.lancamento },

@@ -5,6 +5,8 @@ import { z } from 'zod';
 import type { Contexto } from '../../../core/contexto/contexto';
 import { ErroDominio } from '../../../core/erros/erro-dominio';
 import type { ChamadaFerramenta, FerramentaLlm } from '../../../integracoes/ia/llm.provider';
+import { ehErroDeLimite } from '../../planos/dominio/cotas';
+import { botaoVerPlanos } from '../aviso-limite';
 
 /**
  * Uma ferramenta da Mony (doc 08): o modelo escolhe pelo `nome` e pela `descricao` e manda a
@@ -83,7 +85,7 @@ export class RegistroFerramentas {
   /**
    * Executa um pedido do modelo. Ferramenta que não existe, entrada inválida e erro de regra voltam
    * ao modelo como falha, para ele corrigir ou contar ao usuário (RN-087); erro inesperado vai ao
-   * log e volta como falha genérica.
+   * log e volta como falha genérica. O limite do gratuito também traz o [Ver planos] (RN-123).
    */
   async executar(
     contexto: ContextoFerramenta,
@@ -99,6 +101,12 @@ export class RegistroFerramentas {
       const { dados, componentes = [] } = await ferramenta.executar(contexto, entrada.data);
       return { conteudo: JSON.stringify(dados ?? null), erro: false, componentes };
     } catch (erro) {
+      if (ehErroDeLimite(erro)) {
+        return {
+          ...falha({ codigo: erro.codigo, mensagem: erro.message }),
+          componentes: [botaoVerPlanos()],
+        };
+      }
       if (erro instanceof ErroDominio) {
         return falha({ codigo: erro.codigo, mensagem: erro.message });
       }

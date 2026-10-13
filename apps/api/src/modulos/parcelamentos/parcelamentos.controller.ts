@@ -39,6 +39,7 @@ import {
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
 import { criarDto } from '../../core/openapi/dto';
+import { RecursoLimitado } from '../planos/recurso-limitado.decorator';
 import { ParcelamentosService } from './parcelamentos.service';
 
 class ListaParcelamentosDto extends criarDto(esquemaListaParcelamentos) {}
@@ -89,6 +90,7 @@ export class ParcelamentosController {
 
   @Post()
   @Idempotente()
+  @RecursoLimitado('lancamento')
   @ApiCreatedResponse({
     type: RespostaParcelamentoDto,
     description: 'Parcelamento com as parcelas e as despesas pendentes delas (RN-050, RN-051).',

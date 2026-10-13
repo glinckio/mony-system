@@ -210,6 +210,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-080, T-062b
 - [ ] **T-084** Lembretes: CRUD, recorrência RRULE, soneca, feito pela notificação, alarme local
   - dep: T-081, T-023 · RN-075 a RN-077
+  - Limite do gratuito (RN-120, 5 ativos): contar em `CotasRepository.contarItens` e chamar `CotasService.conferirQuantidade(contexto, 'lembrete_ativo', tx)` ao criar e ao reativar.
 - [ ] **T-085** 👤 Agendas Google e Outlook (OAuth no servidor) e agenda do aparelho
   - dep: T-084 · RN-079 · requer verificação do app no Google
 - [ ] **T-086** Ferramentas da Mony: lembretes, compromissos, agenda, `ajuda_app`
@@ -224,14 +225,16 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 
 ## Fase 4 — Planos e cobrança
 
-- [ ] **T-100** Cotas do plano gratuito: `@RecursoLimitado`, contagem atômica, `GET /assinatura/uso`, aviso com [Ver planos]
+- [x] **T-100** Cotas do plano gratuito: `@RecursoLimitado`, contagem atômica, `GET /assinatura/uso`, aviso com [Ver planos] (PR #68)
   - dep: T-062b · RN-120, RN-122, RN-123, RN-127
 - [ ] **T-101** Teste de 3 dias: início no cadastro, controle de um teste por pessoa, avisos, encerramento automático
   - dep: T-100, T-080 · RN-124, RN-125, RN-126
+  - A T-100 já trata o teste vencido como gratuito (`planoEfetivo`); a rotina só grava a troca e avisa.
 - [ ] **T-102** 👤 Stripe: `BillingProvider`, checkout, webhooks idempotentes, portal, inadimplência
   - dep: T-024, T-101 · RN-128, RN-131 · docs: 10 (Stripe)
 - [ ] **T-103** Telas de planos e assinatura no app
   - dep: T-102
+  - Parte de "Seu plano" (`/mais/plano`, T-100), que o [Ver planos] da Mony abre; os formulários que recebem `LIMITE_PLANO_ATINGIDO` e os relatórios no gratuito podem mostrar o [Ver planos] também.
 - [ ] **T-104** Admin: preços (novo Price na Stripe), limites, duração do teste, cupons, histórico
   - dep: T-102, T-012 · RN-129, RN-130
 
@@ -245,10 +248,12 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-084, T-102 · RN-078
 - [ ] **T-123** Listas de compras com preço por NFC-e e geração de despesa
   - dep: T-066 · RN-070 a RN-073
+  - Limite do gratuito (RN-120): contar as listas em `CotasRepository.contarItens` e chamar `CotasService.conferirQuantidade(contexto, 'lista_compras', tx)` ao criar.
 - [ ] **T-124** Compartilhamento de listas e lembretes em tempo real (WebSocket)
   - dep: T-123, T-084 · RN-074
 - [ ] **T-125** Exportação de relatórios PDF e XLSX no worker
   - dep: T-048, T-100 · RN-151
+  - No gratuito, sem exportação (RN-120): `LIMITE_PLANO_ATINGIDO` com `recurso: relatorio`.
 
 ## Fase 6 — Lançamento
 

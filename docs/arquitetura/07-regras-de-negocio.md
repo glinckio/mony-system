@@ -161,8 +161,10 @@ Legenda: **(PDF)** está na especificação · **(decisão técnica)** definido 
   | `relatorio` | só mês atual, sem exportação |
 
   Limites de quantidade (cartão, lista, lembrete) contam itens existentes, não uso. Toque em botão da Mony não conta como mensagem **(decisão técnica)**. Lançamento importado por Open Finance não conta (não existe no gratuito).
+
+  Também **(decisões técnicas, T-100)**: um parcelamento conta como um lançamento, e uma recorrência criada também (as ocorrências que ela gera, não); lançamento lido de foto ou PDF conta quando é confirmado; o "só mês atual" vale para a tela de relatórios (as consultas da Mony e os resumos não mudam); o teste que acabou já conta como gratuito, mesmo antes da rotina diária (RN-126).
 - **RN-121 (PDF)** Open Finance, detecção de apps de compra e lembrete por ligação não estão no gratuito.
-- **RN-122 (PDF)** Limites conferidos no servidor, de forma atômica (`UPDATE uso_recursos SET quantidade = quantidade + 1 WHERE … AND quantidade < limite RETURNING`). "Dia" e "mês" no fuso do usuário.
+- **RN-122 (PDF)** Limites conferidos no servidor, de forma atômica (`UPDATE uso_recursos SET quantidade = quantidade + 1 WHERE … AND quantidade < limite RETURNING`). "Dia" e "mês" no fuso do usuário. **(Decisão técnica, T-100:** como o limite do mês soma as linhas dos dias, a conta trava o usuário e o recurso na transação, soma e grava; ver doc 05, "Planos e cotas do gratuito".)
 - **RN-123 (PDF)** Ao atingir um limite, a Mony avisa e mostra [Ver planos]. O recurso volta no dia ou mês seguinte.
 - **RN-124 (PDF)** Avisos do teste no 2º dia e no último dia, por push e pela Mony, com resumo do que o usuário já registrou.
 - **RN-125 (PDF)** Um teste por pessoa, controlado por e-mail, conta Google/Apple e identificador do aparelho (hash em `controle_teste`). Conta nova que bate em qualquer um entra direto no gratuito.

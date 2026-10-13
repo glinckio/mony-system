@@ -27,6 +27,7 @@ import {
   ArmazenamentoMemoria,
 } from '../src/core/arquivos/armazenamento-arquivos';
 import { Clock, ClockFixo } from '../src/core/clock/clock';
+import { LIMITES_PLANO_PADRAO } from '../src/core/dados-iniciais/padroes';
 import { criarClientePrisma } from '../src/core/prisma/cliente';
 import { LlmFake } from '../src/integracoes/ia/llm-fake';
 import { ErroLlm, LlmProvider } from '../src/integracoes/ia/llm.provider';
@@ -35,6 +36,7 @@ import {
   MENSAGEM_LEITURA_INVALIDA,
 } from '../src/modulos/mony/documentos.service';
 import { PROMPT_LEITURA } from '../src/modulos/mony/prompts/leitura';
+import { botaoVerPlanos } from '../src/modulos/mony/aviso-limite';
 
 const ativo = process.env.TESTES_INTEGRACAO === '1';
 
@@ -392,6 +394,73 @@ describe.runIf(ativo)('integração: foto, print e PDF na Mony', () => {
         })
       ).status,
     ).toBe('confirmada');
+  });
+
+  it('RN-120 RN-123 no gratuito: [Confirmar todos] para no limite de lançamentos; a 4ª leitura do mês só avisa', async () => {
+    for (const limite of LIMITES_PLANO_PADRAO) {
+      await prisma.limitePlano.upsert({
+        where: { recurso: limite.recurso },
+        create: limite,
+        update: {},
+      });
+    }
+    const usuario = await usuarioNovo();
+    await prisma.assinatura.update({
+      where: { usuarioId: usuario.usuarioId },
+      data: { plano: 'gratuito', testeInicio: null, testeFim: null },
+    });
+    const usado = (recurso: 'lancamento' | 'leitura_documento', quantidade: number, data: string) =>
+      prisma.usoRecurso.create({
+        data: {
+          usuarioId: usuario.usuarioId,
+          recurso,
+          data: new Date(`${data}T00:00:00Z`),
+          quantidade,
+        },
+      });
+    await usado('leitura_documento', 2, '2026-10-01');
+    await usado('lancamento', 1, '2026-10-15');
+    const completo = (descricao: string, valorCentavos: number) => ({
+      descricao,
+      valorCentavos,
+      formaPagamento: 'pix',
+      categoria: 'Alimentação',
+    });
+    lerComo(
+      leitura([completo('Padaria', 1_000), completo('Feira', 2_000), completo('Açougue', 3_000)]),
+    );
+    const { componentes } = await conversar(usuario, await arquivo(usuario));
+    const [, , acougue, todos] = componentes;
+
+    const resposta = await tocar(usuario, opcao(todos, 'confirmar-todos'));
+    expect(resposta.statusCode, resposta.body).toBe(200);
+    const parcial = resposta.json<RespostaAcaoMony>();
+    expect(parcial.texto).toBe(
+      `Pronto! Anotei 2 lançamentos, ${formatarCentavos(3_000)} no total. Você chegou ao limite de 3 lançamentos por dia do plano gratuito. Amanhã libera de novo. Os que faltam continuam aqui para confirmar depois.`,
+    );
+    expect(parcial.componente).toEqual(botaoVerPlanos());
+    expect((await transacoesDo(usuario.usuarioId)).map(({ descricao }) => descricao)).toEqual([
+      'Padaria',
+      'Feira',
+    ]);
+    // O que ficou espera: o [Confirmar] dele avisa de novo, sem gravar.
+    const sozinho = (await tocar(usuario, opcao(acougue, 'confirmar'))).json<RespostaAcaoMony>();
+    expect(sozinho).toEqual({
+      texto:
+        'Você chegou ao limite de 3 lançamentos por dia do plano gratuito. Amanhã libera de novo.',
+      componente: botaoVerPlanos(),
+      transacaoId: null,
+    });
+    expect(await transacoesDo(usuario.usuarioId)).toHaveLength(2);
+
+    // A terceira leitura do mês foi a de cima; a quarta não chega ao modelo.
+    modelo.limpar();
+    const quarta = await conversar(usuario, await arquivo(usuario));
+    expect(quarta.texto).toBe(
+      'Você chegou ao limite de 3 leituras de foto ou PDF por mês do plano gratuito. No mês que vem libera de novo.',
+    );
+    expect(quarta.componentes).toEqual([botaoVerPlanos()]);
+    expect(modelo.pedidos).toEqual([]);
   });
 
   it('fatura em PDF: crédito no cartão achado pelo final, à vista, e o PDF vai como documento', async () => {

@@ -22,6 +22,7 @@ import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { Rotina } from '../../core/rotinas/rotinas';
 import { type CartaoTravado, CartoesService } from '../cartoes/cartoes.service';
+import { CotasService } from '../planos/cotas.service';
 import { paraDataDoBanco, paraResposta } from '../transacoes/transacoes.repository';
 import {
   type RecorrenciaDoUsuario,
@@ -75,6 +76,7 @@ export class RecorrenciasService {
   constructor(
     private readonly repositorio: RecorrenciasRepository,
     private readonly cartoes: CartoesService,
+    private readonly cotas: CotasService,
     private readonly clock: Clock,
   ) {}
 
@@ -114,6 +116,8 @@ export class RecorrenciasService {
     }
 
     return this.repositorio.emTransacao(async (tx) => {
+      // RN-120: criar a recorrência conta como um lançamento; as ocorrências que ela gera, não.
+      await this.cotas.consumir(contexto, 'lancamento', tx);
       const criada = await this.repositorio.criar(tx, {
         usuarioId,
         tipo: dados.tipo,
