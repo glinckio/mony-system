@@ -893,3 +893,21 @@ Contexto: a T-023 pedia o alarme no iOS (AlarmKit) e no Android. O ambiente do a
 - **Tela de teste** só em desenvolvimento (Perfil → "Teste do alarme"), como a da T-022. `horaDoAparelho` foi para `src/lib/datas-texto.ts`, com segundos opcionais.
 
 Reversível: sim.
+
+## 2026-10-13 — Humano — T-066 antes da T-023b
+Contexto: pela regra de prioridade a próxima tarefa livre era a T-023b (alarme no iOS). Sem Mac, o Swift só compilaria num job de macOS no CI, por tentativa e erro, e o teste fica para um iPhone. Decisão do humano: seguir com a T-066 (NFC-e); a T-023b fica na fila para quando houver Mac. Reversível: sim.
+
+## 2026-10-13 — T-066a — NFC-e na API
+Contexto: doc 10 (NFC-e), PoC da T-026 e doc 05 (`POST /mony/nfce`). Decisões:
+- **T-066 dividida** em API (T-066a), QR no app (T-066b) e histórico de preços (T-066c).
+- **Rota JSON, não SSE**: `POST /mony/nfce` responde como `POST /mony/acoes` (`RespostaAcaoMony`), com idempotência; a mensagem da pessoa ("QR Code do cupom fiscal") e a resposta entram no histórico. Está no OpenAPI (cliente gerado `lerNfceMony`).
+- **A compra passa por confirmação, como a foto** (RN-083 estendida): a nota vem da Sefaz, mas a mesma compra pode já ter sido lançada à mão. Reaproveita a importação da T-065: `importacoes_documento` ganhou o tipo `nfce` e `arquivo_id` opcional; `resultado.notaNfceId` aponta a nota. Um lançamento só, o total pago, com a descrição pelo nome da loja sem o sufixo jurídico (`nomeDoEstabelecimento`), para as preferências do estabelecimento (RN-090) acharem a mesma loja.
+- **Forma de pagamento do cupom** (`formaDePagamentoDoCupom`): uma forma só vale; formas diferentes, vale e crédito da loja ficam sem forma, e a Mony pergunta. Guardada em `nfce_notas.forma_pagamento` (coluna nova), porque a nota da nova tentativa pode ser lançada horas depois.
+- **Data da compra**: a Sefaz devolve o relógio da loja, sem fuso; vale o fuso do usuário (sem a hora, meio-dia).
+- **Nota ligada à transação no rascunho**: o [Confirmar] passa pelo rascunho (RN-080), então o `notaNfceId` vai em `rascunhos_lancamento.dados` e a gravação liga `nfce_notas.transacao_id` e `transacoes.nfce_nota_id`.
+- **Uma consulta por chave e usuário**: ler o mesmo QR mostra o cartão que espera (sem consultar nem contar na cota), ou avisa que já foi lançado. QR inválido ou de homologação não consulta nem conta.
+- **Novas tentativas na fila `mony-midia`** (5 min, 1 h, 6 h; um job por tentativa com id fixo), para nota em contingência, emissão recente e consulta fora do ar. O worker só carrega o `ConsultasNfceModule` (provedor, repositório, fila e `ChatDaMony`), não a Mony inteira: a nota encontrada vira mensagem da Mony com o botão [Ver a compra] (ação `importar_nfce`), e o cartão é montado na API, no toque. O `ChatDosAlertas.enviar` aceita componentes. Sem push por enquanto: a mensagem aparece quando a pessoa abre o chat (como os alertas da T-083).
+- **Infosimples por `fetch`**, só com o token e a chave no corpo. Valores pelos campos `normalizado_*` (números) ou pelo texto em pt-BR, sempre convertidos a centavos sem multiplicar em ponto flutuante; o total é o "valor a pagar" (com desconto). Códigos: 612 = nota não encontrada; 600, 605, 609, 610, 613–618 e os da conta (601–603) = indisponível; o resto, recusa. A confirmar com cupons reais (BLOQUEIOS).
+- **Cota**: o nome do recurso `leitura_documento` nas mensagens passou a "leitura de foto, PDF ou cupom" (API e app).
+
+Reversível: sim.

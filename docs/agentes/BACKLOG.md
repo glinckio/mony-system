@@ -134,7 +134,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - As dependências do app (T-011, T-034) entraram na T-047: sem elas a tarefa parecia livre, mas não há app onde fazê-la.
 - [x] **T-047** Rotinas diárias de faturas e atrasos (fechar faturas, marcar atrasadas) (PR #28)
   - dep: T-041, T-042 · docs: 09 (Rotinas)
-- [x] **T-048** Relatórios (API + telas), sem exportação (PR #29; telas na T-054, histórico de preços da NFC-e na T-066)
+- [x] **T-048** Relatórios (API + telas), sem exportação (PR #29; telas na T-054, histórico de preços da NFC-e na T-066c)
   - dep: T-044 · RN-150
 
 - [x] **T-049** Telas de categorias e contas no app (lista, criar, editar, excluir escolhendo para onde mover os lançamentos) (PR #43)
@@ -193,8 +193,14 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-060
 - [x] **T-065** Foto, print e PDF: `ler_documento`, `importacoes_documento`, confirmação obrigatória (PR #62)
   - dep: T-062b · RN-083, RN-086
-- [ ] **T-066** NFC-e: leitura do QR no app, `NfceProvider`, histórico de preços, fallback por foto
-  - dep: T-026, T-065 · docs: 10 (NFC-e)
+- [x] **T-066a** NFC-e na API: `NfceProvider` (falso e Infosimples), `POST /mony/nfce` com a compra a confirmar, novas tentativas na `mony-midia` e foto como plano B (PR #73; testar com a conta e cupons reais, ver BLOQUEIOS)
+  - dep: T-026, T-065 · docs: 10 (NFC-e) · RN-083, RN-090, RN-120
+  - A T-066 foi dividida em API (T-066a), leitura do QR no app (T-066b) e histórico de preços (T-066c).
+- [ ] **T-066b** NFC-e no app: ler o QR do cupom com `expo-camera` na aba Mony, conferir com `lerQrNfce` e mandar para `POST /mony/nfce`; o [Ver a compra] da mensagem da nova tentativa
+  - dep: T-066a, T-069 · docs: 04, 10 (NFC-e)
+  - Módulo nativo novo (`expo-camera`): sem build publicado ainda, não quebra o EAS Update (ver T-058).
+- [ ] **T-066c** Histórico de preços da NFC-e (RN-150): `GET /relatorios/precos` (busca por descrição em `nfce_itens`, último preço, menor e média por loja) e a tela em Relatórios
+  - dep: T-066a, T-054 · docs: 05 (Relatórios), 06 (índice `to_tsvector` em `nfce_itens`) · RN-150, RN-071
 - [x] **T-067** Consultoria pós-lançamento (impacto no orçamento e no cartão) (PR #63)
   - dep: T-062b · RN-089
 - [x] **T-068** Prompt versionado (`mony_config`) e avaliação com frases de teste no CI (PR #64)
@@ -254,7 +260,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-122** 👤 Lembrete por ligação (`VozProvider`), telefone verificado, limite mensal
   - dep: T-084, T-102 · RN-078
 - [ ] **T-123** Listas de compras com preço por NFC-e e geração de despesa
-  - dep: T-066 · RN-070 a RN-073
+  - dep: T-066a, T-066c · RN-070 a RN-073
   - Limite do gratuito (RN-120): contar as listas em `CotasRepository.contarItens` e chamar `CotasService.conferirQuantidade(contexto, 'lista_compras', tx)` ao criar.
 - [ ] **T-124** Compartilhamento de listas e lembretes em tempo real (WebSocket)
   - dep: T-123, T-084 · RN-074

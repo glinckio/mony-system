@@ -90,7 +90,7 @@ Cada ferramenta é um objeto com `nome`, `descricao`, `schema` (Zod, convertido 
 | `criar_compromisso` | `AgendaService.criarCompromisso` | Na agenda padrão |
 | `consultar_agenda` | `AgendaService.listar` | |
 | `ler_documento` | `DocumentosMony.ler` | Foto, print, PDF → lista de lançamentos candidatos. Não fica com o modelo da conversa: a mensagem com foto ou PDF vai direto à leitura, que obriga o modelo a responder por esta ferramenta (T-065) |
-| `consultar_nfce` | `NfceService.consultar` | Fallback: leitura da foto |
+| `consultar_nfce` | — | Não é ferramenta do modelo: o QR Code lido no app vai direto a `POST /mony/nfce` (`NfceMony`, T-066a), sem passar pela conversa. Sem como consultar, a Mony pede a foto |
 | `ajuda_app` | `AjudaService.buscar` | Responde com base em uma base de ajuda do app (markdown versionado) |
 
 Ferramentas que gravam (`criar_*`, `editar_*`, `pagar_fatura`, `definir_orcamento`) passam pela **política de confirmação**:
@@ -175,7 +175,7 @@ Por mensagem (do PDF): data de hoje (no fuso do usuário), nome, categorias, car
 | Áudio | `TranscricaoProvider` → texto, depois fluxo normal | Na própria requisição (T-064): o texto sai antes da resposta |
 | Foto/print | Modelo com visão + ferramenta `ler_documento` → JSON validado por Zod (documento, estabelecimento, lançamentos com valor, data, forma, cartão, parcelas e categoria) | Na própria requisição (T-065) |
 | PDF de fatura/extrato | Envio do PDF ao modelo (o provedor recomendado aceita PDF direto); saída: lista de lançamentos candidatos em `importacoes_documento` | Na própria requisição (T-065) |
-| QR Code NFC-e | `NfceService` consulta a nota; falhou → pede foto do cupom | `mony-midia` |
+| QR Code NFC-e | `POST /mony/nfce`: `lerQrNfce` confere sem rede; `NfceProvider` consulta a nota pela chave; a compra vira cartão a confirmar (RN-083); nota ainda fora da Sefaz → novas tentativas no worker, com o resultado no chat e o [Ver a compra]; sem como consultar → pede foto do cupom (T-066a) | Primeira consulta na requisição; novas tentativas na `mony-midia` |
 
 Mídias pesadas são processadas na fila; o chat mostra "lendo seu documento…" pelo SSE e recebe o resultado quando o job termina (o app mantém a conexão SSE ou recebe push se o usuário saiu da tela).
 
