@@ -3,12 +3,12 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
+import { horaDoAparelho } from '@/lib/datas-texto';
 import {
   atrasoEmMinutos,
   type DeteccaoApp,
   type EstadoUsoDeApps,
   type ExecucaoVerificacao,
-  horaDoAparelho,
   intervalosEntreVerificacoes,
   type ModuloUsoDeApps,
   resumoDosAtrasos,

@@ -52,3 +52,15 @@ export function useMesAnoCurto(): (data: DataCalendario) => string {
     return t('comum.mesAnoCurto', { mes: meses[mes - 1] ?? '', ano });
   };
 }
+
+const doisDigitos = (numero: number) => String(numero).padStart(2, '0');
+
+/**
+ * Hora de um instante no fuso do aparelho: "14:03", ou "14:03:05" com segundos. É a hora em que algo
+ * aconteceu no próprio aparelho (as telas de teste das PoCs nativas), não a do fuso do usuário.
+ */
+export function horaDoAparelho(instante: number, comSegundos = false): string {
+  const data = new Date(instante);
+  const hora = `${doisDigitos(data.getHours())}:${doisDigitos(data.getMinutes())}`;
+  return comSegundos ? `${hora}:${doisDigitos(data.getSeconds())}` : hora;
+}

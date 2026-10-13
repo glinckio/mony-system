@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { AppState, ScrollView, View } from 'react-native';
 
 import { configApp } from '@/lib/config';
+import { horaDoAparelho } from '@/lib/datas-texto';
 import {
   type AppDoAparelho,
   atrasoEmMinutos,
   type EstadoUsoDeApps,
   type ExecucaoVerificacao,
-  horaDoAparelho,
   intervalosEntreVerificacoes,
   type ModuloUsoDeApps,
   resumoDosAtrasos,
