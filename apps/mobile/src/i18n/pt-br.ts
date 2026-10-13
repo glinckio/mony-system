@@ -1,3 +1,4 @@
+import { textosAlarmes } from '@/features/alarmes/alarmes.strings';
 import { textosAppsDeCompra } from '@/features/apps-de-compra/apps-de-compra.strings';
 import { textosAtualizacao } from '@/features/atualizacao/atualizacao.strings';
 import { textosAuth } from '@/features/auth/auth.strings';
@@ -32,6 +33,7 @@ export const textosPtBr = {
   cartoes: textosCartoes,
   mais: textosMais,
   appsDeCompra: textosAppsDeCompra,
+  alarmes: textosAlarmes,
   categorias: textosCategorias,
   contas: textosContas,
   orcamentos: textosOrcamentos,

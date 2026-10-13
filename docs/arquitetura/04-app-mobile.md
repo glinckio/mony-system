@@ -122,7 +122,7 @@ Regras de cache:
 
 - `expo-notifications` registra o token e envia em `POST /v1/me/dispositivos`.
 - Categorias de ação (botões na notificação): `lembrete` → [Feito] [Adiar]; `fatura_atrasada` → [Paguei]. A ação chama a API em segundo plano.
-- Canais Android: `alertas`, `lembretes`, `alarmes` (som próprio, prioridade máxima), `novidades`.
+- Canais Android: `alertas`, `lembretes`, `alarmes` (som de alarme, prioridade máxima; criado pelo `mony-alarm`), `novidades`.
 - Alarmes: módulo `mony-alarm` (ver abaixo). Agendados localmente para tocar sem internet; o servidor envia a lista de lembretes com canal alarme e o app reagenda ao abrir e ao receber push silencioso.
 
 ## Módulos nativos (Expo Modules API)
@@ -130,7 +130,7 @@ Regras de cache:
 | Módulo | iOS (Swift) | Android (Kotlin) | Disponibilidade |
 |---|---|---|---|
 | `mony-app-usage` | FamilyControls + DeviceActivity (extensão `DeviceActivityMonitor`), exige entitlement da Apple | `UsageStatsManager` com permissão de acesso ao uso, verificação periódica | iOS 16+. Android: todas as versões suportadas |
-| `mony-alarm` | **AlarmKit** no iOS 26+. Abaixo: notificação local com som de alarme (até 30 s) | `AlarmManager.setAlarmClock` + notificação de tela cheia, permissões `SCHEDULE_EXACT_ALARM`/`USE_EXACT_ALARM` | Todos, com qualidade diferente por versão |
+| `mony-alarm` | **AlarmKit** no iOS 26+. Abaixo: notificação local com som de alarme (até 30 s) (T-023b) | `AlarmManager.setAlarmClock` + notificação de tela cheia, permissão `SCHEDULE_EXACT_ALARM`; sem ela, `setAndAllowWhileIdle` (T-023a). O `USE_EXACT_ALARM` fica de fora: a Play só aceita em despertador ou agenda | Todos, com qualidade diferente por versão |
 
 Ambos têm **prova de conceito obrigatória na Fase 0** ([15](15-roadmap-e-pendencias.md)), porque dependem de aprovação das lojas e de limitações do sistema. Detalhes em [10](10-integracoes.md#detecção-de-apps-de-compra).
 
@@ -139,6 +139,8 @@ Config plugins em `plugins/` adicionam permissões, entitlements, App Groups e e
 Cada módulo é um pacote do workspace (`modules/<nome>`) e entra no app como dependência (`"mony-app-usage": "workspace:*"` no `package.json` do app), que o autolinking do Expo encontra. O JS que conversa com o módulo fica no app (`src/lib/uso-de-apps.ts`), com `requireOptionalNativeModule`: no iOS, nos testes e em build sem o módulo, ele é `null`, e a tela trata. A lógica que não depende do Android fica em classes Kotlin puras, testadas com JUnit no CI ("Módulos nativos").
 
 **`mony-app-usage` no Android (T-022):** o WorkManager roda a verificação a cada 15 min; ela lê os eventos `ACTIVITY_RESUMED` e `ACTIVITY_PAUSED` dos apps monitorados desde a anterior e conta como abertura a volta ao app depois de 30 min sem vê-lo. O estado fica nas preferências do app, porque o worker roda sem o JS. Detalhes e medições em [docs/agentes/poc/T-022.md](../agentes/poc/T-022.md).
+
+**`mony-alarm` no Android (T-023a):** `sincronizar(alarmes, textos)` troca a agenda pela lista do servidor (no máximo os 50 mais próximos; os adiados ficam). O disparo, o [Parar], o [Adiar 10 min] e o reagendar depois de ligar o aparelho rodam em receptores do próprio módulo, sem o JS. O canal `alarmes` é criado pelo módulo, com o som de alarme no volume de alarme (toca no modo silencioso). Detalhes em [docs/agentes/poc/T-023a.md](../agentes/poc/T-023a.md).
 
 ## Permissões
 

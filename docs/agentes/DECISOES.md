@@ -880,3 +880,16 @@ Contexto: o doc 10 deixava para a PoC escolher entre WorkManager periódico e se
 - **Lockfile mínimo**: `pnpm install` sem `--frozen-lockfile` também reescrevia a resolução de pares do `@swc/core` do admin. O lockfile do PR só ganhou as linhas do módulo, conferidas com `--frozen-lockfile`.
 
 Reversível: sim.
+
+## 2026-10-13 — T-023a — PoC do alarme no Android
+Contexto: a T-023 pedia o alarme no iOS (AlarmKit) e no Android. O ambiente do agente compila Kotlin (T-022), mas não Swift. Relatório em `docs/agentes/poc/T-023a.md`. Decisões:
+- **T-023 dividida** em T-023a (Android, esta) e T-023b (iOS, precisa de Mac com Xcode 26 ou de um job de macOS no CI). A T-084 passou a depender só da T-023a: no iOS, o lembrete com alarme sai como notificação até a T-023b, em vez de a T-084 ficar parada esperando um Mac.
+- **`setAlarmClock` com `SCHEDULE_EXACT_ALARM`; sem a liberação, `setAndAllowWhileIdle`.** O `USE_EXACT_ALARM` não entra: a Play só o aceita em despertador ou agenda. A liberação concedida depois (`SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED`) troca tudo por exatos.
+- **Tela cheia sem declarar o app como despertador**: no Android 14+, a pessoa libera; sem isso, o alarme é notificação flutuante com som.
+- **Agenda trocada inteira a cada sincronização** (o servidor é a fonte da verdade, doc 09), no máximo os 50 mais próximos (o Android recusa mais de 500 por app; o iOS guarda 64 notificações pendentes). Os adiados ficam fora da troca, com id `<id>:adiado`, até tocarem.
+- **Canal `alarmes` criado pelo módulo**, com `USAGE_ALARM` e o toque de alarme do aparelho (toca no modo silencioso), porque som e importância só valem na criação do canal. A T-088 cria os outros três. Som insistente por até 10 min, como o "silenciar depois de 10 min" dos despertadores.
+- **Textos do alarme pelo i18n**: canal e botões vão na `sincronizar` e ficam guardados para o disparo sem o JS.
+- **Receptores**: um não exportado (disparo, parar, adiar; só o app manda) e um exportado só para avisos que só o sistema manda (ligar o aparelho, atualizar o app, liberar o alarme exato).
+- **Tela de teste** só em desenvolvimento (Perfil → "Teste do alarme"), como a da T-022. `horaDoAparelho` foi para `src/lib/datas-texto.ts`, com segundos opcionais.
+
+Reversível: sim.

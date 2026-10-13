@@ -107,9 +107,3 @@ export function intervalosEntreVerificacoes(execucoes: readonly ExecucaoVerifica
     .slice(1)
     .map((inicio, indice) => Math.round((inicio - (inicios[indice] ?? inicio)) / MINUTO));
 }
-
-/** "14:03" no fuso do aparelho, sem `Intl` (varia no Hermes; ver T-003). */
-export function horaDoAparelho(instante: number): string {
-  const data = new Date(instante);
-  return `${String(data.getHours()).padStart(2, '0')}:${String(data.getMinutes()).padStart(2, '0')}`;
-}

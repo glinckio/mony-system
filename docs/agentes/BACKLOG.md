@@ -80,8 +80,12 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-010 · docs: 10 (Detecção de apps de compra) · requer entitlement da Apple e aparelho físico
 - [x] **T-022** PoC UsageStats (Android): WorkManager periódico no módulo `mony-app-usage` (PR #71; medir no aparelho, ver o relatório)
   - dep: T-010 · docs: 10
-- [ ] **T-023** PoC alarme: módulo `mony-alarm` (AlarmKit iOS 26+, notificação abaixo; AlarmManager no Android)
+- [x] **T-023a** PoC alarme no Android: módulo `mony-alarm` com `AlarmManager` (PR #72; tocar nos aparelhos, ver o relatório)
   - dep: T-010 · docs: 04, 09
+  - A T-023 (PoC do alarme) foi dividida: o Android dá para compilar e testar no ambiente do agente; o iOS precisa de Mac.
+- [ ] **T-023b** PoC alarme no iOS: `mony-alarm` com AlarmKit no iOS 26+ e notificação local com som de alarme (até 30 s) abaixo
+  - dep: T-023a · docs: 04, 09 · requer Mac com Xcode 26 (ou um job de macOS no CI) e um iPhone para validar
+  - Mesmas funções do Android (`permissoes`, `sincronizar`, `estado`…), para o JS e a tela de teste não mudarem; relatório em `docs/agentes/poc/T-023b.md`.
 - [ ] **T-024** 👤 PoC Stripe: assinatura com cartão e Pix em conta BR, checkout externo com retorno por deep link
   - dep: T-008, T-010 · docs: 10 (Stripe)
 - [ ] **T-025** 👤 PoC Open Finance: widget do agregador no Expo, ida ao app do banco e volta
@@ -209,7 +213,8 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-083** Resumos semanal e mensal no chat (PR #66)
   - dep: T-080, T-062b
 - [ ] **T-084** Lembretes: CRUD, recorrência RRULE, soneca, feito pela notificação, alarme local
-  - dep: T-081, T-023 · RN-075 a RN-077
+  - dep: T-081, T-023a · RN-075 a RN-077
+  - Alarme local pelo `mony-alarm` (T-023a): o app chama `sincronizar` ao abrir, ao receber o push silencioso e ao criar ou editar; pede o alarme exato e a tela cheia no primeiro lembrete com alarme. No iOS, o alarme chega com a T-023b; até lá, o lembrete com alarme sai só como notificação.
   - Limite do gratuito (RN-120, 5 ativos): contar em `CotasRepository.contarItens` e chamar `CotasService.conferirQuantidade(contexto, 'lembrete_ativo', tx)` ao criar e ao reativar.
 - [ ] **T-085** 👤 Agendas Google e Outlook (OAuth no servidor) e agenda do aparelho
   - dep: T-084 · RN-079 · requer verificação do app no Google
@@ -222,6 +227,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-088** Push no app: permissão, registro do token (`POST /me/dispositivos` ao abrir e ao trocar), canais do Android, categorias de ação ([Paguei], [Feito], [Adiar]) e abrir o `linkInterno` ao tocar
   - dep: T-081, T-010, T-034 · docs: 04, 09
   - Separada da T-081 pelo mesmo motivo da T-049. Os canais (`CANAIS_ANDROID`) precisam existir antes do primeiro push: o Android não mostra push de canal que o app não criou.
+  - O canal `alarmes` é do `mony-alarm` (T-023a), que o cria com o som de alarme; esta tarefa cria os outros três.
 
 ## Fase 4 — Planos e cobrança
 
