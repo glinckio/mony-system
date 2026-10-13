@@ -32,6 +32,8 @@ export const esquemaDadosRascunho = z.object({
   parcelas: z.number().int().min(1).max(MAXIMO_PARCELAS).optional(),
   /** Veio de foto ou PDF confirmado (T-065): o lançamento fica com origem `foto`. */
   deDocumento: z.boolean().optional(),
+  /** Veio do cupom fiscal lido pelo QR Code (T-066a): gravar liga a nota à transação. */
+  notaNfceId: z.uuid().optional(),
 });
 
 export type DadosRascunho = z.infer<typeof esquemaDadosRascunho>;

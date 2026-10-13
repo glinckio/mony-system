@@ -330,6 +330,8 @@ enum TipoMensagem {
 enum TipoImportacao {
   foto
   pdf
+  /// Cupom fiscal lido pelo QR Code e consultado na Sefaz (T-066a): sem arquivo.
+  nfce
 
   @@map("tipo_importacao")
 }
@@ -919,18 +921,20 @@ model Anexo {
 }
 
 model NfceNota {
-  id           String   @id @default(uuid(7)) @db.Uuid
-  usuarioId    String   @map("usuario_id") @db.Uuid
-  chaveAcesso  String   @map("chave_acesso") @db.VarChar(44)
-  emitente     String
-  cnpj         String   @db.VarChar(14)
+  id             String          @id @default(uuid(7)) @db.Uuid
+  usuarioId      String          @map("usuario_id") @db.Uuid
+  chaveAcesso    String          @map("chave_acesso") @db.VarChar(44)
+  emitente       String
+  cnpj           String          @db.VarChar(14)
   /// Data e hora de emissão.
-  data         DateTime @db.Timestamptz(6)
-  total        BigInt
-  uf           String   @db.Char(2)
-  transacaoId  String?  @unique @map("transacao_id") @db.Uuid
-  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  data           DateTime        @db.Timestamptz(6)
+  total          BigInt
+  uf             String          @db.Char(2)
+  /// Forma do lançamento, tirada do pagamento do cupom (T-066a); nula quando a Mony pergunta.
+  formaPagamento FormaPagamento? @map("forma_pagamento")
+  transacaoId    String?         @unique @map("transacao_id") @db.Uuid
+  criadoEm       DateTime        @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm   DateTime        @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   usuario         Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   transacao       Transacao? @relation("NfceNotaTransacao", fields: [transacaoId], references: [id], onDelete: SetNull)
@@ -1536,7 +1540,8 @@ model DicaVista {
 model ImportacaoDocumento {
   id           String           @id @default(uuid(7)) @db.Uuid
   usuarioId    String           @map("usuario_id") @db.Uuid
-  arquivoId    String           @map("arquivo_id") @db.Uuid
+  /// A foto ou o PDF lido; nulo no cupom lido pelo QR Code (`nfce`).
+  arquivoId    String?          @map("arquivo_id") @db.Uuid
   tipo         TipoImportacao
   status       StatusImportacao @default(processando)
   resultado    Json?
@@ -1544,7 +1549,7 @@ model ImportacaoDocumento {
   atualizadoEm DateTime         @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  arquivo Anexo   @relation(fields: [arquivoId], references: [id], onDelete: Cascade)
+  arquivo Anexo?  @relation(fields: [arquivoId], references: [id], onDelete: Cascade)
 
   @@index([usuarioId])
   @@index([arquivoId])

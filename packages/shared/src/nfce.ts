@@ -13,6 +13,10 @@
  * `A-Z`, e o dígito verificador usa o código ASCII menos 48 de cada caractere.
  */
 
+import { z } from 'zod';
+
+import type { FormaPagamento } from './enums.js';
+
 /** Código IBGE da UF (dois primeiros dígitos da chave) → sigla. */
 export const UFS_POR_CODIGO = {
   '11': 'RO',
@@ -187,4 +191,46 @@ export function lerQrNfce(conteudo: string): LeituraNfce {
       tipoEmissao: Number(chave.slice(34, 35)),
     },
   };
+}
+
+/**
+ * `POST /mony/nfce` (T-066a): o que o app leu no QR Code do cupom (a URL inteira) ou a chave
+ * digitada. A API confere de novo com `lerQrNfce` e só manda a chave ao provedor.
+ */
+export const esquemaPedidoNfce = z.object({
+  conteudo: z.string().trim().min(1).max(2000),
+});
+
+export type DadosPedidoNfce = z.infer<typeof esquemaPedidoNfce>;
+
+/** Sufixos de natureza jurídica que não ajudam a reconhecer a loja ("LTDA", "S/A"…). */
+const SUFIXOS_JURIDICOS = /(?:[\s,.-]+(?:LTDA|ME|EPP|EIRELI|S\/?A|S\.A\.?|SA|MEI))+\.?$/i;
+
+/**
+ * O nome da loja para a descrição do lançamento: a razão social sem os espaços repetidos e sem o
+ * sufixo jurídico ("SUPERMERCADO BOM PRECO LTDA" → "SUPERMERCADO BOM PRECO"). A RN-090 guarda as
+ * preferências pelo nome normalizado, então o mesmo cupom sempre dá a mesma descrição.
+ */
+export function nomeDoEstabelecimento(razaoSocial: string): string {
+  const limpo = razaoSocial.replace(/\s+/g, ' ').trim();
+  const semSufixo = limpo.replace(SUFIXOS_JURIDICOS, '').trim();
+  return semSufixo === '' ? limpo : semSufixo;
+}
+
+/**
+ * A forma de pagamento do lançamento pelo texto do cupom ("Cartão de Crédito", "PIX"…). Vale-
+ * refeição, crédito da loja e afins não têm forma no app: `null`, e a Mony pergunta (RN-080).
+ */
+export function formaDePagamentoDoCupom(texto: string): FormaPagamento | null {
+  const normalizado = texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  if (/\bpix\b/.test(normalizado)) return 'pix';
+  if (/\bvale\b|alimenta|refeic/.test(normalizado)) return null;
+  if (/credito/.test(normalizado) && !/loja/.test(normalizado)) return 'cartao_credito';
+  if (/debito/.test(normalizado)) return 'debito';
+  if (/dinheiro|especie/.test(normalizado)) return 'dinheiro';
+  if (/boleto/.test(normalizado)) return 'boleto';
+  return null;
 }
