@@ -1,0 +1,91 @@
+# Módulos nativos (modules/*): compila o Kotlin com o SDK do Android, dentro do projeto que o
+# `expo prebuild` gera para o app, e roda os testes JUnit de cada módulo (T-022). O Swift entra
+# quando houver módulo de iOS (T-021). Só roda quando um módulo, as dependências do app ou este
+# arquivo mudam; não é check obrigatório da main.
+name: Módulos nativos
+
+on:
+  pull_request:
+    paths:
+      - 'modules/**'
+      - 'apps/mobile/package.json'
+      - 'apps/mobile/app.config.ts'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/modulos-nativos.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'modules/**'
+      - 'apps/mobile/package.json'
+      - 'apps/mobile/app.config.ts'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/modulos-nativos.yml'
+
+concurrency:
+  group: modulos-nativos-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      HUSKY: '0'
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+
+      - name: Instalar pnpm (versão do packageManager) com cache do store
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - name: Instalar Node (versão do .nvmrc)
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Instalar o JDK 17 (o do Android Gradle Plugin)
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle com cache
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Projeto Android do app
+        # O módulo compila contra o expo-modules-core e as versões de SDK do app, que só existem no
+        # projeto gerado (apps/mobile/android fica fora do Git).
+        working-directory: apps/mobile
+        run: pnpm exec expo prebuild --platform android --no-install
+
+      - name: Testes JUnit dos módulos
+        working-directory: apps/mobile/android
+        run: |
+          tarefas=""
+          for config in ../../../modules/*/expo-module.config.json; do
+            modulo=$(basename "$(dirname "$config")")
+            if [ -d "../../../modules/$modulo/android" ]; then
+              tarefas="$tarefas :$modulo:testDebugUnitTest"
+            fi
+          done
+          echo "Tarefas:$tarefas"
+          ./gradlew --console=plain $tarefas
+
+      - name: Relatório dos testes
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: testes-modulos-android
+          path: modules/*/android/build/reports/tests/
+          if-no-files-found: ignore
