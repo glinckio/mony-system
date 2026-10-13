@@ -3,6 +3,7 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppState, ScrollView, View } from 'react-native';
 
+import { configApp } from '@/lib/config';
 import {
   type AppDoAparelho,
   atrasoEmMinutos,
@@ -52,7 +53,8 @@ export default function TelaPocUsoDeApps() {
           router.back();
         }}
       />
-      {usoDeApps ? (
+      {/* A rota existe em todo build; o painel, só em desenvolvimento. */}
+      {usoDeApps && configApp.ambiente === 'development' ? (
         <Painel modulo={usoDeApps} />
       ) : (
         <Texto cor="suave">{t('appsDeCompra.poc.indisponivel')}</Texto>
