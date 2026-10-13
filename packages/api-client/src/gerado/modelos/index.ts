@@ -224,6 +224,7 @@ export * from './pedidoAcaoMonyDtoAcao';
 export * from './pedidoCodigoDto';
 export * from './pedidoExportacaoDto';
 export * from './pedidoExportacaoDtoFormato';
+export * from './pedidoNfceDto';
 export * from './perfilDto';
 export * from './perfilDtoLoginsSociaisItem';
 export * from './preferenciasAlertaDto';
