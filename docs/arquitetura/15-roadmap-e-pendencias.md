@@ -11,7 +11,7 @@ Ordem pensada para entregar valor cedo e atacar primeiro o que pode inviabilizar
 | PoC | Pergunta a responder | Se falhar |
 |---|---|---|
 | Screen Time (iOS) | A extensão `DeviceActivityMonitor` dispara de forma confiável e consegue avisar o servidor ou mostrar notificação local? | Plano B de notificação local com cache (ver [10](10-integracoes.md#detecção-de-apps-de-compra)) ou recurso só no Android |
-| UsageStats (Android) | WorkManager periódico dá precisão aceitável? Play aceita a declaração? | Foreground service ou retirar do escopo |
+| UsageStats (Android) | WorkManager periódico dá precisão aceitável? Play aceita a declaração? **Construída na [T-022](../agentes/poc/T-022.md): verificação a cada 15 min, atraso esperado de até ~15 min com o aparelho em uso; falta medir no aparelho** | Foreground service ou retirar do escopo |
 | Alarme | Alarme local toca com app fechado e sem internet em Android 8–15 e iOS (AlarmKit 26+ e notificação abaixo)? | Reduzir a "notificação de alta prioridade" em versões antigas |
 | Stripe Pix recorrente | Pix funciona em assinatura recorrente na conta BR? | Alternativas de [10](10-integracoes.md#stripe) |
 | Open Finance | Widget do agregador abre, vai ao app do banco e volta no Expo? | WebView com deep link de retorno |

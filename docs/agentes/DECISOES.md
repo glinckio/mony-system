@@ -863,3 +863,20 @@ Contexto: o RN-151 pede PDF e XLSX gerados no worker e entregues por URL assinad
 - **O mesmo pedido enquanto gera devolve a mesma exportação**; 3 tentativas, e na última falha ela fica com `erro` (o app oferece tentar de novo).
 - **Gratuito**: 403 `LIMITE_PLANO_ATINGIDO` com `recurso: relatorio` e a frase "No plano gratuito, os relatórios não são exportados."; o app mostra [Ver planos].
 Reversível: sim.
+
+## 2026-10-13 — T-022 — PoC UsageStats no Android
+Contexto: o doc 10 deixava para a PoC escolher entre WorkManager periódico e serviço em primeiro plano. As sessões anteriores não compilavam Kotlin (decisão de 2026-10-11, "T-045 antes da T-022"); esta baixou o SDK do Android no contêiner da nuvem. Relatório em `docs/agentes/poc/T-022.md`. Decisões:
+- **WorkManager periódico de 15 min** (o mínimo), com o trabalho único `UPDATE`: trocar a lista de apps não adia a próxima verificação. O serviço em primeiro plano fica como plano B, só se a medição no aparelho reprovar o atraso.
+- **Abertura = volta ao app depois de 30 min sem vê-lo**, olhando `ACTIVITY_RESUMED` e `ACTIVITY_PAUSED`. Só com `RESUMED`, uma troca de tela depois de 40 min na mesma tela contaria como abertura nova. No mesmo milissegundo, a saída vem antes da entrada. A RN-104 continua no servidor.
+- **Janela de leitura** de onde a anterior parou, no máximo 24 h para trás. Sem acesso ao uso, a janela não anda.
+- **Lógica em Kotlin puro** (`DetectorAberturas`, `Historico`), testada com JUnit na JVM. O histórico nas preferências é texto com `|`, sem `org.json`, que na JVM dos testes só existe como esboço.
+- **JS do módulo no app** (`src/lib/uso-de-apps.ts`, `requireOptionalNativeModule`), e não no pacote do módulo. Um pacote em `modules/` que dependesse do `expo` arriscaria uma segunda cópia dele no Metro (o mesmo cuidado do catálogo do pnpm com o React).
+- **Módulo como dependência do workspace** (`"mony-app-usage": "workspace:*"` no app), que o autolinking acha, em vez do `nativeModulesDir`.
+- **Sem config plugin no Android**: permissões e `<queries>` no manifesto do próprio módulo, que o build junta ao do app. `<queries>` de `MAIN/LAUNCHER` no lugar do `QUERY_ALL_PACKAGES`, que a Play restringe.
+- **Tela de teste só em desenvolvimento** (Perfil → "Teste da detecção de apps", quando o módulo existe), fora do design: ela mede o atraso no aparelho. O aviso local da PoC usa um canal próprio (`poc-apps-de-compra`) para não criar o canal `alertas` antes da T-088 com outra importância.
+- **Para a T-121, token de evento por aparelho** com escopo só para `POST /eventos/app-compra-aberto`: o worker roda sem o JS, e usar o refresh rotativo da sessão (RN-008) fora do app arriscaria dois processos renovando o mesmo token.
+- **Workflow "Módulos nativos"** (`modulos-nativos.yml`): `expo prebuild` e `testDebugUnitTest` de cada módulo com `android/`, só quando `modules/**` ou as dependências do app mudam. Não é check obrigatório: com filtro de caminho, ele travaria os PRs que não o disparam.
+- **Ambiente do agente**: o `sdkmanager` baixa o SDK de `dl.google.com` no contêiner da nuvem. O Maven Central responde 429 para a saída do contêiner, então um init script do Gradle fora do repositório (`~/.gradle/init.d`) troca o Maven Central pelo espelho do Google (`maven-central.storage-download.googleapis.com`) e o põe na frente. O CI do GitHub não precisa disso.
+- **Lockfile mínimo**: `pnpm install` sem `--frozen-lockfile` também reescrevia a resolução de pares do `@swc/core` do admin. O lockfile do PR só ganhou as linhas do módulo, conferidas com `--frozen-lockfile`.
+
+Reversível: sim.

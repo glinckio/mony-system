@@ -8,6 +8,7 @@
 | Integração (API) | Vitest + Testcontainers (Postgres e Redis reais) + Supertest | Services e rotas com banco: posse de recurso, cotas do plano (RN-122) com concorrência, webhooks idempotentes, transações de banco | Toda rota |
 | Contrato | OpenAPI gerado + `orval` sem diff no CI | App e API falam o mesmo contrato | Sempre |
 | Avaliação da Mony | Script próprio (`modulos/mony/avaliacao`, `pnpm --filter api mony:avaliar`; workflow "Avaliação da Mony") | Frases de teste → ferramentas e argumentos esperados, componente e texto | ≥ 95% para ativar uma versão do prompt (T-068) |
+| Módulos nativos | JUnit no projeto Android gerado pelo `expo prebuild` (workflow "Módulos nativos") | Lógica dos módulos de `modules/*` separada das APIs do Android, como a detecção de aberturas do `mony-app-usage` (T-022) | Toda lógica que roda sem o aparelho; o resto é validado no aparelho |
 | App (componentes) | Jest + React Native Testing Library | Componentes base, formulários, estados vazio/erro | Componentes de `src/ui` e telas críticas |
 | E2E mobile | **Maestro** | Fluxos: cadastro → onboarding → primeiro lançamento no chat; cartão → compra parcelada → pagar fatura; limite do gratuito → [Ver planos] | Rodar em staging antes de cada release |
 | Admin | Playwright | Login com 2FA, alterar preço, publicar novidade | Fluxos principais |

@@ -78,7 +78,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-008, T-010 · docs: 08 · 👤 chave do provedor de IA
 - [ ] **T-021** 👤 PoC Screen Time (iOS): módulo `mony-app-usage` com FamilyControls/DeviceActivity
   - dep: T-010 · docs: 10 (Detecção de apps de compra) · requer entitlement da Apple e aparelho físico
-- [ ] **T-022** PoC UsageStats (Android): WorkManager periódico no módulo `mony-app-usage`
+- [x] **T-022** PoC UsageStats (Android): WorkManager periódico no módulo `mony-app-usage` (PR #71; medir no aparelho, ver o relatório)
   - dep: T-010 · docs: 10
 - [ ] **T-023** PoC alarme: módulo `mony-alarm` (AlarmKit iOS 26+, notificação abaixo; AlarmManager no Android)
   - dep: T-010 · docs: 04, 09
@@ -244,6 +244,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-025, T-102 · RN-121, RN-140 a RN-144
 - [ ] **T-121** 👤 Detecção de apps de compra (iOS e Android) com endpoint e alerta
   - dep: T-021, T-022, T-081 · RN-104, RN-121
+  - Android sobre o módulo `mony-app-usage` da T-022; a abertura vai para o servidor com o token de evento recomendado em `docs/agentes/poc/T-022.md` ("Limitações da PoC"). A tela de teste da PoC sai quando a do produto existir.
 - [ ] **T-122** 👤 Lembrete por ligação (`VozProvider`), telefone verificado, limite mensal
   - dep: T-084, T-102 · RN-078
 - [ ] **T-123** Listas de compras com preço por NFC-e e geração de despesa

@@ -45,7 +45,7 @@ Alternativa equivalente em Google Cloud (Cloud Run + Cloud SQL + Memorystore + G
 
 | Gatilho | Jobs |
 |---|---|
-| PR | `lint`, `typecheck`, testes unitários e de integração (Testcontainers), checagem de migração Prisma, geração do cliente OpenAPI sem diff, avaliação da Mony se `modulos/mony/**` mudou |
+| PR | `lint`, `typecheck`, testes unitários e de integração (Testcontainers), checagem de migração Prisma, geração do cliente OpenAPI sem diff, avaliação da Mony se `modulos/mony/**` mudou, Kotlin e testes JUnit dos módulos nativos se `modules/**` mudou (`modulos-nativos.yml`, T-022) |
 | Merge em `main` | Build da imagem Docker → ECR (tag do commit e tag `staging`) → tarefa avulsa com `prisma migrate deploy && prisma db seed` → deploy dos serviços `api` e `worker` com circuit breaker (`deploy-staging.yml`); build do admin → bucket → invalidação do CloudFront quando o admin muda (`deploy-admin-staging.yml`); EAS Update no canal `staging` quando o app muda (`eas-update-staging.yml`, T-016) |
 | Tag `api-vX.Y.Z` | Deploy da API em produção com aprovação manual |
 | Tag `mobile-vX.Y.Z` | `eas build --profile production` + `eas submit` (App Store Connect e Play Console) |
