@@ -12,6 +12,7 @@ import { RelatoriosModule } from '../relatorios/relatorios.module';
 import { TransacoesModule } from '../transacoes/transacoes.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { ConfigMonyService } from './config.service';
+import { ConsultasNfceModule } from './consultas-nfce.module';
 import { ConsultoriaMony } from './consultoria.service';
 import { ContextoMonyService } from './contexto.service';
 import { DocumentosMony } from './documentos.service';
@@ -34,6 +35,7 @@ import { FERRAMENTAS_MONY, type Ferramenta, RegistroFerramentas } from './ferram
 import { MonyController } from './mony.controller';
 import { LancamentosMony } from './lancamentos.service';
 import { MonyService } from './mony.service';
+import { NfceMony } from './nfce.service';
 import { MonyOrquestrador } from './orquestrador.service';
 import { PreferenciasService } from './preferencias.service';
 import { RascunhosModule } from './rascunhos.module';
@@ -77,6 +79,7 @@ const FERRAMENTAS = [
     TransacoesModule,
     UsuariosModule,
     RascunhosModule,
+    ConsultasNfceModule,
   ],
   controllers: [MonyController],
   providers: [
@@ -87,6 +90,7 @@ const FERRAMENTAS = [
     ConsultoriaMony,
     ConfigMonyService,
     DocumentosMony,
+    NfceMony,
     PreferenciasService,
     ContextoMonyService,
     RegistroFerramentas,

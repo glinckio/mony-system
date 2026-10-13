@@ -109,7 +109,7 @@ describe('aviso do limite (RN-123)', () => {
       'Você chegou ao limite de 3 lançamentos por dia do plano gratuito. Amanhã libera de novo.',
     );
     expect(mensagemDoLimite('leitura_documento', 'mes', 3)).toBe(
-      'Você chegou ao limite de 3 leituras de foto ou PDF por mês do plano gratuito. No mês que vem libera de novo.',
+      'Você chegou ao limite de 3 leituras de foto, PDF ou cupom por mês do plano gratuito. No mês que vem libera de novo.',
     );
     expect(mensagemDoLimite('mensagem_mony', 'dia', 10)).toContain('10 mensagens para a Mony');
     expect(mensagemDoLimite('cartao', 'quantidade', 1)).toBe(

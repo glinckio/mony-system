@@ -153,7 +153,9 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
       );
       expect(limites[1]).toHaveTextContent('Lançamentos no mês9 de 30');
       expect(limites[2]).toHaveTextContent('Mensagens para a Mony hoje2 de 10');
-      expect(limites[3]).toHaveTextContent(/de foto ou PDF no mês3 de 3.*No dia 1º libera de novo/);
+      expect(limites[3]).toHaveTextContent(
+        /de foto, PDF ou cupom no mês3 de 3.*No dia 1º libera de novo/,
+      );
       expect(limites[4]).toHaveTextContent(/Cartões1 de 1.*Para ter mais, conheça os planos\./);
       expect(screen.getByText('Os relatórios mostram só o mês atual.')).toBeOnTheScreen();
       expect(screen.getByText('Os planos pagos chegam em breve.')).toBeOnTheScreen();

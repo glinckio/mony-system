@@ -83,15 +83,32 @@ const esquemaResultado = z.object({
   /** Linhas que o modelo leu e ficaram de fora (inválidas ou além do máximo). */
   ignorados: z.number().int(),
   itens: z.array(esquemaItem),
+  /**
+   * T-066a: o cupom fiscal lido pelo QR Code. Vai no rascunho do lançamento, e gravar a compra liga a
+   * nota à transação.
+   */
+  notaNfceId: z.uuid().nullable().optional(),
 });
 
 type ItemImportacao = z.infer<typeof esquemaItem>;
+/** O lançamento reservado leva o cupom fiscal da importação (T-066a), que vai no rascunho. */
+type ItemReservado = ItemImportacao & { notaNfceId: string | null };
 type ResultadoImportacao = z.infer<typeof esquemaResultado>;
 
 export type AcaoImportacao = Extract<
   AcaoMony,
   { tipo: 'confirmar_importacao' | 'descartar_importacao' }
 >;
+
+/** T-066a: a compra do cupom fiscal consultado na Sefaz, para virar o cartão a confirmar. */
+export interface CompraDoCupom {
+  notaId: string;
+  estabelecimento: string;
+  valorCentavos: number;
+  /** Data da compra no fuso do usuário. */
+  data: string;
+  formaPagamento: Leitura['lancamentos'][number]['formaPagamento'];
+}
 
 /** A leitura no chat: o texto da Mony e os cartões a confirmar, ou o erro. */
 export interface LeituraNoChat {
@@ -239,6 +256,51 @@ export class DocumentosMony {
       itens.length > 0 ? 'aguardando_confirmacao' : 'descartada',
       resultado,
     );
+    return this.noChat(importacao.id, resultado, catalogo);
+  }
+
+  /**
+   * T-066a: a compra do cupom fiscal vira uma importação com um lançamento a confirmar, como a
+   * foto. A RN-083 vale também aqui: a mesma compra pode já ter sido lançada à mão. Categoria, forma
+   * e cartão vêm das preferências do estabelecimento (RN-090), como na foto. Ler o mesmo QR de novo
+   * mostra o cartão que ainda espera.
+   */
+  async importarCupom(contexto: Contexto, compra: CompraDoCupom): Promise<LeituraNoChat> {
+    const usuarioId = usuarioDoContexto(contexto);
+    const catalogo = await this.catalogo(contexto);
+    const pendente = await this.repositorio.importacaoPendenteDaNota(usuarioId, compra.notaId);
+    if (pendente) {
+      const lido = esquemaResultado.safeParse(pendente.resultado);
+      if (lido.success) return this.noChat(pendente.id, lido.data, catalogo);
+    }
+    const leitura: Leitura = {
+      documento: 'cupom',
+      estabelecimento: compra.estabelecimento,
+      aviso: null,
+      invalidos: 0,
+      lancamentos: [
+        {
+          tipo: 'despesa',
+          descricao: compra.estabelecimento,
+          valorCentavos: compra.valorCentavos,
+          data: compra.data,
+          formaPagamento: compra.formaPagamento,
+          cartao: null,
+          parcelas: null,
+          categoria: null,
+        },
+      ],
+    };
+    const importacao = await this.repositorio.criarImportacao(usuarioId, null, 'nfce');
+    const resultado: ResultadoImportacao = {
+      documento: 'cupom',
+      estabelecimento: compra.estabelecimento,
+      aviso: null,
+      ignorados: 0,
+      itens: await this.resolver(contexto, leitura, catalogo),
+      notaNfceId: compra.notaId,
+    };
+    await this.repositorio.salvarImportacao(importacao.id, 'aguardando_confirmacao', resultado);
     return this.noChat(importacao.id, resultado, catalogo);
   }
 
@@ -436,7 +498,7 @@ export class DocumentosMony {
     contexto: Contexto,
     importacaoId: string,
     indices: number[] | null,
-  ): Promise<(ItemImportacao & { indice: number; completo: boolean })[]> {
+  ): Promise<(ItemReservado & { indice: number; completo: boolean })[]> {
     const resultado = await this.repositorio.alterarImportacao(
       usuarioDoContexto(contexto),
       importacaoId,
@@ -452,7 +514,7 @@ export class DocumentosMony {
           const completo = estaCompleto(item);
           // No "todos", o incompleto fica pendente: ele precisa das perguntas, uma por vez.
           if (indices !== null || completo) item.estado = 'gravando';
-          return { ...item, indice, completo };
+          return { ...item, indice, completo, notaNfceId: lido.notaNfceId ?? null };
         });
         return { status: statusDe(lido.itens), resultado: lido, retorno: reservados };
       },
@@ -793,7 +855,7 @@ function statusDe(itens: readonly ItemImportacao[]): StatusImportacao {
 }
 
 /** A despesa para o rascunho (RN-080): o que falta vira pergunta; a origem fica `foto`. */
-function paraRascunho(item: ItemImportacao): DadosRascunho {
+function paraRascunho(item: ItemImportacao & { notaNfceId?: string | null }): DadosRascunho {
   return {
     valorCentavos: item.valorCentavos,
     descricao: item.descricao,
@@ -803,6 +865,7 @@ function paraRascunho(item: ItemImportacao): DadosRascunho {
     ...(item.cartaoId === null ? {} : { cartaoId: item.cartaoId }),
     ...(item.parcelas === null ? {} : { parcelas: item.parcelas }),
     deDocumento: true,
+    ...(item.notaNfceId ? { notaNfceId: item.notaNfceId } : {}),
   };
 }
 

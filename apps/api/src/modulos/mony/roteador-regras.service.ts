@@ -35,6 +35,7 @@ import { CotasService } from '../planos/cotas.service';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import { avisoDoLimite } from './aviso-limite';
 import { LancamentosMony } from './lancamentos.service';
+import { NfceRepository } from './nfce.repository';
 import { PreferenciasService } from './preferencias.service';
 import { type Rascunho, RascunhosService } from './rascunhos.service';
 
@@ -133,6 +134,7 @@ export class RoteadorRegras {
     private readonly preferencias: PreferenciasService,
     private readonly usuarios: UsuariosService,
     private readonly cotas: CotasService,
+    private readonly notas: NfceRepository,
     private readonly clock: Clock,
   ) {}
 
@@ -360,13 +362,14 @@ export class RoteadorRegras {
     if (completo.formaPagamento === 'cartao_credito') {
       const [unico, ...outros] = catalogo.cartoes;
       if (!unico) {
-        const { valorCentavos, descricao, data, categoriaId, deDocumento } = completo;
+        const { valorCentavos, descricao, data, categoriaId, deDocumento, notaNfceId } = completo;
         completo = {
           valorCentavos,
           descricao,
           data,
           ...(categoriaId ? { categoriaId } : {}),
           ...(deDocumento ? { deDocumento } : {}),
+          ...(notaNfceId ? { notaNfceId } : {}),
         };
         avisos.push('Você ainda não tem cartão de crédito cadastrado.');
       } else if (outros.length === 0) {
@@ -493,6 +496,14 @@ export class RoteadorRegras {
               ? { cartaoId: dados.cartaoId }
               : {}),
           });
+    // T-066a: a compra do cupom fiscal liga a nota à transação (histórico de preços, doc 06).
+    if (dados.notaNfceId && lancamento.transacaoId) {
+      await this.notas.vincularTransacao(
+        usuarioDoContexto(contexto),
+        dados.notaNfceId,
+        lancamento.transacaoId,
+      );
+    }
     const noCartao = `no ${lancamento.cartao ?? 'cartão'}`;
     const onde =
       forma !== 'cartao_credito'

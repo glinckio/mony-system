@@ -16,7 +16,7 @@ export const textosPlanos = {
     lancamento_dia: 'Lançamentos hoje',
     lancamento_mes: 'Lançamentos no mês',
     mensagem_mony_dia: 'Mensagens para a Mony hoje',
-    leitura_documento_mes: 'Leituras de foto ou PDF no mês',
+    leitura_documento_mes: 'Leituras de foto, PDF ou cupom no mês',
     cartao_quantidade: 'Cartões',
   },
   /** "2 de 3". */
