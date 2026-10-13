@@ -3,11 +3,12 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, Switch, View } from 'react-native';
 
+import { usePlano } from '@/features/planos/hooks/use-plano';
 import { biometriaDisponivel, confirmarBiometria } from '@/lib/auth/biometria';
 import { cofre } from '@/lib/auth/cofre';
 import { sair } from '@/lib/auth/sessao';
 import { useSessao } from '@/stores/sessao';
-import { Avatar, Cabecalho, Card, Tela, Texto } from '@/ui';
+import { Avatar, Cabecalho, Card, Etiqueta, Icone, Tela, Texto } from '@/ui';
 import { cores } from '@/ui/tokens';
 
 import { Linha } from '../components/linha';
@@ -35,6 +36,8 @@ export default function TelaPerfil() {
   const router = useRouter();
   const nome = useSessao((estado) => estado.usuario?.nome ?? '');
   const perfil = usePerfil();
+  // O selo "Teste grátis" na linha do plano (T-101).
+  const emTeste = usePlano().data?.plano === 'teste';
   const [disponivel, definirDisponivel] = useState(false);
   const [ligada, definirLigada] = useState(false);
   const [saindo, definirSaindo] = useState(false);
@@ -95,6 +98,14 @@ export default function TelaPerfil() {
           <Linha
             titulo={t('mais.perfilTela.plano')}
             ajuda={t('mais.perfilTela.planoAjuda')}
+            direita={
+              emTeste ? (
+                <View className="flex-row items-center gap-2">
+                  <Etiqueta texto={t('planos.nomes.teste')} tom="primaria" />
+                  <Icone nome="chevron-right" tamanho={18} cor={cores['texto-suave']} />
+                </View>
+              ) : undefined
+            }
             aoPressionar={() => {
               router.push('/mais/plano');
             }}

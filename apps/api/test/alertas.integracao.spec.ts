@@ -82,6 +82,12 @@ describe.runIf(ativo)('integração: avaliadores de alertas', () => {
       },
     });
     const sessao = resposta.json<{ usuario: { id: string }; tokens: { acesso: string } }>();
+    // Assinante: sem os avisos do teste grátis (T-101) nem os limites do gratuito (T-100), que
+    // têm os testes deles.
+    await prisma.assinatura.update({
+      where: { usuarioId: sessao.usuario.id },
+      data: { plano: 'mensal', testeInicio: null, testeFim: null },
+    });
     const categoria = await prisma.categoria.findFirstOrThrow({
       where: { usuarioId: sessao.usuario.id, tipo: 'despesa' },
       orderBy: { nome: 'asc' },

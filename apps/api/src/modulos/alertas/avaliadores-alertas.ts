@@ -35,6 +35,7 @@ import {
 } from '../cartoes/cartoes.service';
 import { type AlertaCandidato, MotorAlertas } from '../notificacoes/motor-alertas';
 import { OrcamentosService } from '../orcamentos/orcamentos.service';
+import { TesteGratis } from '../planos/teste.service';
 import { RelatoriosService } from '../relatorios/relatorios.service';
 import { EVENTO_PARCELAMENTO_REGISTRADO } from '../parcelamentos/parcelamentos.service';
 import {
@@ -87,6 +88,7 @@ export class AvaliadoresAlertas {
     private readonly cartoes: CartoesService,
     private readonly orcamentos: OrcamentosService,
     private readonly relatorios: RelatoriosService,
+    private readonly teste: TesteGratis,
     private readonly clock: Clock,
   ) {}
 
@@ -243,9 +245,13 @@ export class AvaliadoresAlertas {
     return { usuarios, falhas };
   }
 
-  /** Vencimentos (RN-108) e projeção do mês (RN-107) de um usuário; devolve os candidatos. */
+  /**
+   * Vencimentos (RN-108), projeção do mês (RN-107), resumos e os avisos do teste grátis (RN-124)
+   * de um usuário; devolve os candidatos.
+   */
   async avaliarDiario(usuarioId: string, agora: Date): Promise<AlertaCandidato[]> {
-    const hoje = dataNoFuso(agora, await this.repositorio.fusoDoUsuario(usuarioId));
+    const fuso = await this.repositorio.fusoDoUsuario(usuarioId);
+    const hoje = dataNoFuso(agora, fuso);
     const antecedencias = await this.repositorio.antecedencias(usuarioId, [
       'fatura_vencimento',
       'vencimento_pendente',
@@ -263,6 +269,7 @@ export class AvaliadoresAlertas {
       )),
       ...(await this.projecaoDoMes(usuarioId, hoje)),
       ...(await this.resumos(usuarioId, hoje)),
+      ...(await this.teste.avisos(usuarioId, agora, fuso)),
     ];
     await this.emitir(candidatos, agora);
     return candidatos;

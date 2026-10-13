@@ -227,7 +227,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 
 - [x] **T-100** Cotas do plano gratuito: `@RecursoLimitado`, contagem atômica, `GET /assinatura/uso`, aviso com [Ver planos] (PR #68)
   - dep: T-062b · RN-120, RN-122, RN-123, RN-127
-- [ ] **T-101** Teste de 3 dias: início no cadastro, controle de um teste por pessoa, avisos, encerramento automático
+- [x] **T-101** Teste de 3 dias: início no cadastro, controle de um teste por pessoa, avisos, encerramento automático (PR #69)
   - dep: T-100, T-080 · RN-124, RN-125, RN-126
   - A T-100 já trata o teste vencido como gratuito (`planoEfetivo`); a rotina só grava a troca e avisa.
 - [ ] **T-102** 👤 Stripe: `BillingProvider`, checkout, webhooks idempotentes, portal, inadimplência
@@ -260,6 +260,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-140** LGPD: aceites de termos, consentimentos, exportar dados, excluir conta, retenção de arquivos
   - dep: T-120, T-102 · docs: 11 · RN-160 a RN-162
   - No app, "Exportar meus dados" e "Excluir conta" entram na seção Privacidade do Perfil (T-057).
+  - Excluir conta mantém os resumos da `controle_teste` (RN-125, T-101): sem eles, excluir e cadastrar de novo daria outro teste grátis.
 - [ ] **T-141** Admin completo: usuários, assinaturas, métricas, novidades, Mony (prompt e custos), auditoria, filas
   - dep: T-104, T-068 · docs: 13
 - [ ] **T-142** Monitoramento e alertas (Sentry, métricas, alarmes de fila, webhook, custo de IA, backup)

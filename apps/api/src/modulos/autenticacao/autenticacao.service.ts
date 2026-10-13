@@ -14,6 +14,7 @@ import { TokensAcesso, type UsuarioAutenticado } from '../../core/auth/tokens-ac
 import { Clock } from '../../core/clock/clock';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { LimiteTentativas } from '../../core/limites/limite-tentativas';
+import { controlesDoTeste } from '../planos/dominio/teste';
 import {
   AutenticacaoRepository,
   type NovaConta,
@@ -104,7 +105,10 @@ export class AutenticacaoService {
     return telefone;
   }
 
-  /** RN-006: conta com teste de 3 dias e padrões, e a sessão do aparelho, numa transação. */
+  /**
+   * RN-006: conta com teste de 3 dias e padrões, e a sessão do aparelho, numa transação. RN-125:
+   * quem já teve teste (pelo e-mail, pelo login social ou pelo aparelho) começa no gratuito.
+   */
   private async abrirContaNova(
     conta: Pick<NovaConta, 'nome' | 'email' | 'telefone' | 'senhaHash' | 'loginSocial'> & {
       aceites: DadosCadastro['aceites'];
@@ -122,6 +126,11 @@ export class AutenticacaoService {
         ip,
         testeInicio: agora,
         testeFim: somarDias(agora, DURACAO_TESTE_DIAS),
+        controlesTeste: controlesDoTeste({
+          email: conta.email,
+          loginSocial: conta.loginSocial,
+          aparelho: dispositivo.identificador,
+        }),
       },
       dispositivo,
       { resumoRenovacao: renovacao.resumo, expiraEm },

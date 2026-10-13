@@ -187,6 +187,16 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
   );
 
   it(
+    'T-101 no teste, o selo "Teste grátis" na linha do plano do Perfil',
+    async () => {
+      api(TESTE);
+      renderRouter(ROTAS, { initialUrl: '/mais/perfil' });
+      expect(await screen.findByText('Teste grátis', {}, ESPERA)).toBeOnTheScreen();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
     'RN-123 o [Ver planos] da Mony abre o seu plano, sem ir a /mony/acoes',
     async () => {
       const pedidos = api(GRATUITO);

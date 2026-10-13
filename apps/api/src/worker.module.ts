@@ -16,6 +16,7 @@ import { NotificacoesModule } from './modulos/notificacoes/notificacoes.module';
 import { ProcessadorNotificacoes } from './modulos/notificacoes/processador-notificacoes';
 import { OrcamentosModule } from './modulos/orcamentos/orcamentos.module';
 import { ParcelamentosModule } from './modulos/parcelamentos/parcelamentos.module';
+import { PlanosModule } from './modulos/planos/planos.module';
 import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
 
 /**
@@ -38,6 +39,7 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     PushModule,
     AlertasModule,
     RascunhosModule,
+    PlanosModule,
   ],
   providers: [ProcessadorEventos, ProcessadorEmails, ProcessadorRotinas, ProcessadorNotificacoes],
 })
