@@ -1947,6 +1947,53 @@
         ]
       }
     },
+    "/v1/mony/nfce": {
+      "post": {
+        "operationId": "lerNfceMony",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave única da operação (8 a 255 caracteres). Repetir a chave devolve a mesma resposta sem executar de novo.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoNfceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespostaAcaoMonyDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "mony"
+        ],
+        "x-recurso-limitado": "leitura_documento"
+      }
+    },
     "/v1/mony/conversa": {
       "get": {
         "operationId": "conversaMony",
@@ -7921,6 +7968,24 @@
                 "properties": {
                   "tipo": {
                     "type": "string",
+                    "const": "importar_nfce"
+                  },
+                  "notaId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "required": [
+                  "tipo",
+                  "notaId"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "tipo": {
+                    "type": "string",
                     "const": "cancelar"
                   }
                 },
@@ -8267,6 +8332,19 @@
           "texto",
           "componente",
           "transacaoId"
+        ]
+      },
+      "PedidoNfceDto": {
+        "type": "object",
+        "properties": {
+          "conteudo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "conteudo"
         ]
       },
       "PaginaConversaDto": {

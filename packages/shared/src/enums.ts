@@ -189,7 +189,7 @@ export const TIPOS_MENSAGEM = ['texto', 'audio', 'imagem', 'pdf', 'botao'] as co
 export type TipoMensagem = (typeof TIPOS_MENSAGEM)[number];
 
 /** Documento lido pela Mony com vários lançamentos aguardando confirmação (RN-083). Decisão técnica. */
-export const TIPOS_IMPORTACAO = ['foto', 'pdf'] as const;
+export const TIPOS_IMPORTACAO = ['foto', 'pdf', 'nfce'] as const;
 export type TipoImportacao = (typeof TIPOS_IMPORTACAO)[number];
 
 /** Decisão técnica. */

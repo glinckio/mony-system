@@ -101,7 +101,7 @@ export function renovaEm(
 const NOMES: Record<Exclude<RecursoPlano, 'relatorio'>, readonly [string, string]> = {
   lancamento: ['lançamento', 'lançamentos'],
   mensagem_mony: ['mensagem para a Mony', 'mensagens para a Mony'],
-  leitura_documento: ['leitura de foto ou PDF', 'leituras de foto ou PDF'],
+  leitura_documento: ['leitura de foto, PDF ou cupom', 'leituras de foto, PDF ou cupom'],
   cartao: ['cartão', 'cartões'],
   lista_compras: ['lista de compras', 'listas de compras'],
   lembrete_ativo: ['lembrete ativo', 'lembretes ativos'],

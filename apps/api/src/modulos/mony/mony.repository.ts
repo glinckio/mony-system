@@ -63,7 +63,8 @@ export interface NovoLogIa {
 /** Uma importação de documento (T-065) como sai do banco; `resultado` é validado por quem lê. */
 export interface ImportacaoSalva {
   id: string;
-  arquivoId: string;
+  /** Nulo no cupom fiscal lido pelo QR Code (T-066a). */
+  arquivoId: string | null;
   tipo: TipoImportacao;
   status: StatusImportacao;
   resultado: unknown;
@@ -394,11 +395,28 @@ export class MonyRepository {
 
   criarImportacao(
     usuarioId: string,
-    arquivoId: string,
+    arquivoId: string | null,
     tipo: TipoImportacao,
   ): Promise<ImportacaoSalva> {
     return this.prisma.cliente.importacaoDocumento.create({
       data: { usuarioId, arquivoId, tipo },
+      select: CAMPOS_IMPORTACAO,
+    });
+  }
+
+  /**
+   * T-066a: a importação do cupom fiscal ainda esperando confirmação (ler o mesmo QR de novo mostra o
+   * mesmo cartão, em vez de abrir outro).
+   */
+  importacaoPendenteDaNota(usuarioId: string, notaId: string): Promise<ImportacaoSalva | null> {
+    return this.prisma.cliente.importacaoDocumento.findFirst({
+      where: {
+        usuarioId,
+        tipo: 'nfce',
+        status: 'aguardando_confirmacao',
+        resultado: { path: ['notaNfceId'], equals: notaId },
+      },
+      orderBy: { criadoEm: 'desc' },
       select: CAMPOS_IMPORTACAO,
     });
   }

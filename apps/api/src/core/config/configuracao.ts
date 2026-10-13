@@ -82,6 +82,15 @@ export class Configuracao {
     return this.config.get('TRANSCRICAO_MODELO', { infer: true });
   }
 
+  get provedorNfce(): Ambiente['NFCE_PROVEDOR'] {
+    return this.config.get('NFCE_PROVEDOR', { infer: true });
+  }
+
+  /** Token da API da Infosimples; obrigatório com `NFCE_PROVEDOR=infosimples`. */
+  get tokenInfosimples(): string | undefined {
+    return this.config.get('INFOSIMPLES_TOKEN', { infer: true });
+  }
+
   get provedorPush(): Ambiente['PUSH_PROVEDOR'] {
     return this.config.get('PUSH_PROVEDOR', { infer: true });
   }

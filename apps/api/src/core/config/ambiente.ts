@@ -84,6 +84,12 @@ export const esquemaAmbiente = z
     DEEPGRAM_CHAVE_API: z.preprocess(vazioComoAusente, z.string().optional()),
     TRANSCRICAO_MODELO: z.string().min(1).default('nova-3'),
     /**
+     * Consulta do cupom fiscal pelo QR Code (doc 10, T-066a): `infosimples` em nuvem, com
+     * `INFOSIMPLES_TOKEN`; `fake` devolve um cupom de exemplo (desenvolvimento e testes).
+     */
+    NFCE_PROVEDOR: z.enum(['fake', 'infosimples']).default('fake'),
+    INFOSIMPLES_TOKEN: z.preprocess(vazioComoAusente, z.string().optional()),
+    /**
      * Arquivos (anexos, áudios, exportações) no S3 privado, só por URL assinada (doc 11). Sem
      * bucket, o envio de arquivos fica desligado. `S3_ENDPOINT` só para S3 compatível local
      * (SeaweedFS do `docker compose`); na AWS fica vazio e as credenciais vêm do papel da tarefa.
@@ -135,6 +141,13 @@ export const esquemaAmbiente = z
         code: 'custom',
         path: ['DEEPGRAM_CHAVE_API'],
         message: 'obrigatória com TRANSCRICAO_PROVEDOR=deepgram',
+      });
+    }
+    if (variaveis.NFCE_PROVEDOR === 'infosimples' && variaveis.INFOSIMPLES_TOKEN === undefined) {
+      contexto.addIssue({
+        code: 'custom',
+        path: ['INFOSIMPLES_TOKEN'],
+        message: 'obrigatória com NFCE_PROVEDOR=infosimples',
       });
     }
     if (variaveis.IA_PROVEDOR === 'anthropic' && variaveis.ANTHROPIC_CHAVE_API === undefined) {

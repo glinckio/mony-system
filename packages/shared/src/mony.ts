@@ -257,6 +257,8 @@ export const MAXIMO_LANCAMENTOS_DOCUMENTO = 50;
  * - `pagar_fatura`: a confirmação do pagamento da fatura, no valor mostrado no botão (RN-092).
  * - `confirmar_importacao` / `descartar_importacao`: grava ou descarta um lançamento lido de foto
  *   ou PDF (`indice`), ou todos os que faltam (`indice: null`), RN-083 e RN-086 (T-065).
+ * - `importar_nfce`: mostra para confirmar a compra do cupom fiscal que a Sefaz devolveu depois
+ *   (`notaId`), quando a consulta precisou esperar (T-066a).
  * - `cancelar`: não faz nada.
  */
 export const esquemaAcaoMony = z.discriminatedUnion('tipo', [
@@ -297,6 +299,7 @@ export const esquemaAcaoMony = z.discriminatedUnion('tipo', [
       .max(MAXIMO_LANCAMENTOS_DOCUMENTO - 1)
       .nullable(),
   }),
+  z.object({ tipo: z.literal('importar_nfce'), notaId: z.uuid() }),
   z.object({ tipo: z.literal('cancelar') }),
 ]);
 

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { calcularDigitoChave, lerQrNfce } from './nfce.js';
+import {
+  calcularDigitoChave,
+  esquemaPedidoNfce,
+  formaDePagamentoDoCupom,
+  lerQrNfce,
+  nomeDoEstabelecimento,
+} from './nfce.js';
 
 /** Monta uma chave válida de NFC-e a partir das partes (o dígito é calculado). */
 function chave({
@@ -155,5 +161,52 @@ describe('lerQrNfce', () => {
     ]) {
       expect(lerQrNfce(conteudo)).toEqual({ ok: false, erro: 'SEM_CHAVE' });
     }
+  });
+});
+
+describe('nomeDoEstabelecimento', () => {
+  it('tira os espaços repetidos e o sufixo jurídico', () => {
+    expect(nomeDoEstabelecimento('  SUPERMERCADO   BOM PRECO LTDA ')).toBe(
+      'SUPERMERCADO BOM PRECO',
+    );
+    expect(nomeDoEstabelecimento('Padaria Pão Quente Ltda.')).toBe('Padaria Pão Quente');
+    expect(nomeDoEstabelecimento('ATACADO CENTRAL S/A')).toBe('ATACADO CENTRAL');
+    expect(nomeDoEstabelecimento('ATACADO CENTRAL S.A.')).toBe('ATACADO CENTRAL');
+    expect(nomeDoEstabelecimento('FARMACIA POPULAR - ME')).toBe('FARMACIA POPULAR');
+    expect(nomeDoEstabelecimento('LOJA X EIRELI EPP')).toBe('LOJA X');
+  });
+
+  it('não corta palavra que só termina parecida nem deixa o nome vazio', () => {
+    expect(nomeDoEstabelecimento('MERCADO DA CASA')).toBe('MERCADO DA CASA');
+    expect(nomeDoEstabelecimento('MEGA LTDAMAX')).toBe('MEGA LTDAMAX');
+    expect(nomeDoEstabelecimento('LTDA')).toBe('LTDA');
+  });
+});
+
+describe('formaDePagamentoDoCupom', () => {
+  it('reconhece as formas do app', () => {
+    expect(formaDePagamentoDoCupom('Cartão de Crédito')).toBe('cartao_credito');
+    expect(formaDePagamentoDoCupom('CARTAO CREDITO')).toBe('cartao_credito');
+    expect(formaDePagamentoDoCupom('Cartão de Débito')).toBe('debito');
+    expect(formaDePagamentoDoCupom('Pagamento Instantâneo (PIX)')).toBe('pix');
+    expect(formaDePagamentoDoCupom('Dinheiro')).toBe('dinheiro');
+    expect(formaDePagamentoDoCupom('Boleto Bancário')).toBe('boleto');
+  });
+
+  it('vale, crédito da loja e outras ficam sem forma (a Mony pergunta)', () => {
+    expect(formaDePagamentoDoCupom('Vale Alimentação')).toBeNull();
+    expect(formaDePagamentoDoCupom('Vale Refeição')).toBeNull();
+    expect(formaDePagamentoDoCupom('Crédito Loja')).toBeNull();
+    expect(formaDePagamentoDoCupom('Outros')).toBeNull();
+  });
+});
+
+describe('esquemaPedidoNfce', () => {
+  it('aceita o conteúdo do QR e recusa vazio ou longo demais', () => {
+    expect(esquemaPedidoNfce.parse({ conteudo: ' https://exemplo/?p=1 ' }).conteudo).toBe(
+      'https://exemplo/?p=1',
+    );
+    expect(esquemaPedidoNfce.safeParse({ conteudo: '  ' }).success).toBe(false);
+    expect(esquemaPedidoNfce.safeParse({ conteudo: 'x'.repeat(2001) }).success).toBe(false);
   });
 });

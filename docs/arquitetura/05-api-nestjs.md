@@ -121,7 +121,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Notificações | `GET /notificacoes` · `POST /notificacoes/:id/lida` · `GET /preferencias-alerta` · `PUT /preferencias-alerta` |
 | Apps de compra | `GET /apps-monitorados` · `PUT /apps-monitorados` · `POST /eventos/app-compra-aberto` |
 | Open Finance | `POST /open-finance/token-conexao` · `GET /open-finance/conexoes` · `POST /open-finance/conexoes/:id/sincronizar` · `DELETE /open-finance/conexoes/:id` · `POST /webhooks/open-finance` |
-| Mony | `POST /mony/mensagens` (SSE) · `POST /mony/acoes` · `GET /mony/conversa` · `POST /mony/nfce` (as três primeiras prontas, T-020 e T-060; SSE fora do OpenAPI, contrato em `@mony/shared/mony`) |
+| Mony | `POST /mony/mensagens` (SSE) · `POST /mony/acoes` · `GET /mony/conversa` · `POST /mony/nfce` (prontas: T-020, T-060 e T-066a; SSE fora do OpenAPI, contrato em `@mony/shared/mony`) |
 | Arquivos | `POST /arquivos` (retorna URL assinada de upload) · `GET /arquivos/:id` (retorna URL assinada de leitura) |
 | Novidades | `GET /novidades` · `POST /novidades/:id/lida` |
 | Admin | `GET /admin/usuarios` · `PATCH /admin/usuarios/:id` · `GET /admin/assinaturas` · `GET /admin/metricas` · CRUD `/admin/novidades` · `GET/PUT /admin/mony/config` · `GET /admin/logs-ia` · `GET/PUT /admin/planos` · `GET/PUT /admin/limites` · CRUD `/admin/cupons` · `GET /admin/auditoria` **(proposta)** |
@@ -344,7 +344,7 @@ Implementado na T-048 (RN-150); a exportação (RN-151) na T-125 (ver abaixo). `
 - Contam lançamentos pagos e pendentes, sem os excluídos, só de natureza `normal`: pagamento de fatura e transferência não são receita nem despesa (RN-037).
 - Categoria e cartão excluídos ainda aparecem com o nome.
 - As somas por mês, ano e dia da semana são SQL (`$queryRaw`), com `excluido_em IS NULL` escrito à mão; as outras são `groupBy` do Prisma.
-- O histórico de preços da NFC-e entra com a T-066.
+- O histórico de preços da NFC-e entra com a T-066c (os itens já ficam em `nfce_itens` desde a T-066a).
 - **Exportação (RN-151, T-125):** `POST /relatorios/exportar` (`{ formato: pdf|xlsx, inicio?, fim? }`, com `Idempotency-Key`; sem período, os últimos 12 meses) grava a exportação (`exportacoes_relatorio`, `processando`) e põe o job `exportar` na fila `relatorios` (3 tentativas); responde 202. O mesmo pedido enquanto gera devolve a mesma exportação. O worker (`ProcessadorRelatorios`) monta as tabelas com os mesmos números das rotas (meses, categorias de despesa e de receita, dias da semana, cartões, formas de pagamento e, com mais de um ano, a evolução anual), gera o PDF (`pdfkit`, A4) ou o XLSX (OOXML escrito à mão e compactado com `fflate`; dinheiro em reais com formato de moeda), grava no S3 em `exportacoes/relatorios/<usuario>/<id>.<formato>` (o ciclo de vida do bucket apaga) e marca `pronta`; na última falha, `erro`. `GET /relatorios/exportacoes/:id` devolve o status e, pronta, a URL assinada de 24 horas, que baixa como `relatorio-<inicio>-a-<fim>.<formato>`. No gratuito, `LIMITE_PLANO_ATINGIDO` (RN-120).
 - **Plano gratuito (RN-120, T-100):** a tela de relatórios (origem `app`) mostra só o mês atual: o período pedido (ou o padrão) é cortado ao mês de hoje, e o pedido sem nenhum dia nele responde `LIMITE_PLANO_ATINGIDO` (`recurso: relatorio`). As consultas da Mony e os resumos das rotinas não mudam.
 
@@ -458,7 +458,7 @@ Implementado na T-101 (RN-124 a RN-126), em `modulos/planos` (`dominio/teste.ts`
 | `eventos-dominio` | Reações a eventos (alertas pós-lançamento, preferências aprendidas) |
 | `notificacoes` | Envio de push (`enviar-push`) e conferência dos recibos 15 minutos depois (`conferir-recibos`); depois, mensagem da Mony |
 | `emails` | E-mails transacionais pelo `EmailProvider` (o job sai do Redis assim que o envio dá certo) |
-| `mony-midia` | Transcrição de áudio, leitura de foto/PDF, NFC-e |
+| `mony-midia` | Novas consultas do cupom fiscal (`nfce-reconsulta`, T-066a: 5 min, 1 h e 6 h depois). A transcrição (T-064) e a leitura de foto e PDF (T-065) rodam na própria requisição |
 | `open-finance` | Sincronizações por webhook e periódicas |
 | `webhooks` | Processamento de eventos Stripe e Open Finance |
 | `relatorios` | Exportação PDF/XLSX e exportação LGPD |

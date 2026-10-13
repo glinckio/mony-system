@@ -12,6 +12,7 @@ import { CartoesService } from '../cartoes/cartoes.service';
 import { MetasService } from '../metas/metas.service';
 import { OrcamentosService } from '../orcamentos/orcamentos.service';
 import { DocumentosMony } from './documentos.service';
+import { NfceMony } from './nfce.service';
 import { paraMensagemConversa } from './historico';
 import { LancamentosMony } from './lancamentos.service';
 import { MonyRepository, type PosicaoMensagem } from './mony.repository';
@@ -25,6 +26,7 @@ export class MonyService {
     private readonly regras: RoteadorRegras,
     private readonly lancamentos: LancamentosMony,
     private readonly documentos: DocumentosMony,
+    private readonly nfce: NfceMony,
     private readonly cartoes: CartoesService,
     private readonly orcamentos: OrcamentosService,
     private readonly metas: MetasService,
@@ -71,7 +73,8 @@ export class MonyService {
 
   /**
    * Toque num botão (RN-084): responde por regra, sem o modelo (pergunta do rascunho, [Desfazer],
-   * confirmação de exclusão, confirmação do que foi lido de foto ou PDF), e o toque e a resposta entram no histórico. O mesmo toque repetido
+   * confirmação de exclusão, confirmação do que foi lido de foto, PDF ou cupom fiscal), e o toque e
+   * a resposta entram no histórico. O mesmo toque repetido
    * não chega aqui: a idempotência devolve a resposta guardada.
    */
   async agir(contexto: Contexto, acao: AcaoMony): Promise<RespostaAcaoMony> {
@@ -126,6 +129,11 @@ export class MonyService {
       case 'confirmar_importacao':
       case 'descartar_importacao':
         return this.documentos.agir(contexto, conversaId, acao);
+      case 'importar_nfce':
+        return {
+          toque: 'Ver a compra',
+          resposta: await this.nfce.importarNota(contexto, acao.notaId),
+        };
       case 'cancelar':
         return {
           toque: 'Cancelar',

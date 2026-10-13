@@ -457,7 +457,7 @@ describe.runIf(ativo)('integração: foto, print e PDF na Mony', () => {
     modelo.limpar();
     const quarta = await conversar(usuario, await arquivo(usuario));
     expect(quarta.texto).toBe(
-      'Você chegou ao limite de 3 leituras de foto ou PDF por mês do plano gratuito. No mês que vem libera de novo.',
+      'Você chegou ao limite de 3 leituras de foto, PDF ou cupom por mês do plano gratuito. No mês que vem libera de novo.',
     );
     expect(quarta.componentes).toEqual([botaoVerPlanos()]);
     expect(modelo.pedidos).toEqual([]);

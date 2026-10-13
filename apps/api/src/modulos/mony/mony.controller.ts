@@ -10,13 +10,16 @@ import {
   type PaginaConversa,
   type RespostaAcaoMony,
 } from '@mony/shared/mony';
+import { esquemaPedidoNfce } from '@mony/shared/nfce';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
 import { CABECALHO_ID_REQUISICAO } from '../../configurar-app';
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
 import { criarDto } from '../../core/openapi/dto';
+import { RecursoLimitado } from '../planos/recurso-limitado.decorator';
 import { MonyService } from './mony.service';
+import { NfceMony } from './nfce.service';
 import { MonyOrquestrador } from './orquestrador.service';
 
 class MensagemMonyDto extends criarDto(esquemaMensagemMony) {}
@@ -24,11 +27,12 @@ class PedidoAcaoMonyDto extends criarDto(esquemaPedidoAcaoMony) {}
 class RespostaAcaoMonyDto extends criarDto(esquemaRespostaAcaoMony) {}
 class ConsultaConversaDto extends criarDto(esquemaConsultaConversa) {}
 class PaginaConversaDto extends criarDto(esquemaPaginaConversa) {}
+class PedidoNfceDto extends criarDto(esquemaPedidoNfce) {}
 
 /** Comentário SSE a cada 15 s: o ALB e proxies não derrubam a conexão parada (doc 08). */
 const INTERVALO_PING_MS = 15_000;
 
-/** Mony (doc 08): chat em SSE, ações por botão e o histórico da conversa. */
+/** Mony (doc 08): chat em SSE, ações por botão, o QR Code do cupom fiscal e o histórico da conversa. */
 @ApiTags('mony')
 @ApiBearerAuth()
 @Controller('mony')
@@ -36,6 +40,7 @@ export class MonyController {
   constructor(
     private readonly orquestrador: MonyOrquestrador,
     private readonly mony: MonyService,
+    private readonly nfce: NfceMony,
   ) {}
 
   /**
@@ -97,6 +102,23 @@ export class MonyController {
     @Body() dados: PedidoAcaoMonyDto,
   ): Promise<RespostaAcaoMony> {
     return this.mony.agir(contexto, dados.acao);
+  }
+
+  /**
+   * QR Code do cupom fiscal (T-066a): o app manda o que leu; a Mony consulta a nota na Sefaz e
+   * devolve a compra para confirmar (RN-083), ou avisa que vai tentar de novo, ou pede a foto. Conta
+   * na cota `leitura_documento` do gratuito (RN-120), só quando consulta.
+   */
+  @Post('nfce')
+  @HttpCode(HttpStatus.OK)
+  @Idempotente()
+  @RecursoLimitado('leitura_documento')
+  @ApiOkResponse({ type: RespostaAcaoMonyDto })
+  lerNfce(
+    @ContextoAtual() contexto: Contexto,
+    @Body() dados: PedidoNfceDto,
+  ): Promise<RespostaAcaoMony> {
+    return this.nfce.ler(contexto, dados);
   }
 
   /** Histórico do chat, da mensagem mais nova para a mais antiga. */

@@ -25,6 +25,7 @@ import type {
   ConversaMonyParams,
   PaginaConversaDto,
   PedidoAcaoMonyDto,
+  PedidoNfceDto,
   RespostaAcaoMonyDto,
 } from '../modelos';
 
@@ -140,6 +141,100 @@ export const useAgirMony = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   return useMutation(getAgirMonyMutationOptions(options), queryClient);
+};
+export const getLerNfceMonyUrl = () => {
+  return `/v1/mony/nfce`;
+};
+
+export const lerNfceMony = async (
+  pedidoNfceDto: PedidoNfceDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<RespostaAcaoMonyDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<RespostaAcaoMonyDto>(getLerNfceMonyUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(pedidoNfceDto),
+  });
+};
+
+export const getLerNfceMonyMutationKey = () => ['lerNfceMony'] as const;
+
+export const getLerNfceMonyMutationOptions = <TError = unknown, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof lerNfceMony>>,
+    TError,
+    LerNfceMonyMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof lerNfceMony>>,
+  TError,
+  LerNfceMonyMutationVariables,
+  TContext
+> => {
+  const mutationKey = getLerNfceMonyMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof lerNfceMony>>,
+    LerNfceMonyMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return lerNfceMony(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LerNfceMonyMutationResult = NonNullable<Awaited<ReturnType<typeof lerNfceMony>>>;
+export type LerNfceMonyMutationBody = PedidoNfceDto;
+export type LerNfceMonyMutationError = unknown;
+export type LerNfceMonyMutationVariables = { data: PedidoNfceDto };
+
+export const useLerNfceMony = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof lerNfceMony>>,
+      TError,
+      LerNfceMonyMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof lerNfceMony>>,
+  TError,
+  LerNfceMonyMutationVariables,
+  TContext
+> => {
+  return useMutation(getLerNfceMonyMutationOptions(options), queryClient);
 };
 export const getConversaMonyUrl = (params?: ConversaMonyParams) => {
   const normalizedParams = new URLSearchParams();

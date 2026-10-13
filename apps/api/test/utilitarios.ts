@@ -16,6 +16,7 @@ import {
 import { LimiteTentativas, LimiteTentativasMemoria } from '../src/core/limites/limite-tentativas';
 import { ProcessadorRotinas } from '../src/core/rotinas/rotinas';
 import { ProcessadorEmails } from '../src/integracoes/email/processador-emails';
+import { ProcessadorMonyMidia } from '../src/modulos/mony/processador-mony-midia';
 import { ProcessadorNotificacoes } from '../src/modulos/notificacoes/processador-notificacoes';
 import { ProcessadorRelatorios } from '../src/modulos/relatorios/processador-relatorios';
 
@@ -24,6 +25,7 @@ export function criarFilaFalsa() {
     add: vi.fn((nome: string, dados: unknown, opcoes?: { jobId?: string }) =>
       Promise.resolve({ id: opcoes?.jobId ?? 'job-falso', name: nome, data: dados }),
     ),
+    getJob: vi.fn<(id: string) => Promise<undefined>>(() => Promise.resolve(undefined)),
     close: vi.fn(() => Promise.resolve()),
     on: vi.fn(),
   };
@@ -32,7 +34,7 @@ export function criarFilaFalsa() {
 export type FilaFalsa = ReturnType<typeof criarFilaFalsa>;
 
 /**
- * Troca filas BullMQ, consumidores (eventos, e-mails, notificações e relatórios), arquivos (S3), armazenamento de idempotência e contadores de
+ * Troca filas BullMQ, consumidores (eventos, e-mails, notificações, relatórios e mídia da Mony), arquivos (S3), armazenamento de idempotência e contadores de
  * tentativas por versões em memória, para os testes unitários não dependerem de Redis. As filas
  * falsas ficam em `filas`.
  */
@@ -52,6 +54,8 @@ export function semServicosExternos(
     .overrideProvider(ProcessadorNotificacoes)
     .useValue({})
     .overrideProvider(ProcessadorRelatorios)
+    .useValue({})
+    .overrideProvider(ProcessadorMonyMidia)
     .useValue({})
     .overrideProvider(ArmazenamentoArquivos)
     .useValue(new ArmazenamentoMemoria())
