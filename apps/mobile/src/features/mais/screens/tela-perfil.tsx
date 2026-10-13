@@ -7,6 +7,8 @@ import { usePlano } from '@/features/planos/hooks/use-plano';
 import { biometriaDisponivel, confirmarBiometria } from '@/lib/auth/biometria';
 import { cofre } from '@/lib/auth/cofre';
 import { sair } from '@/lib/auth/sessao';
+import { configApp } from '@/lib/config';
+import { usoDeApps } from '@/lib/uso-de-apps';
 import { useSessao } from '@/stores/sessao';
 import { Avatar, Cabecalho, Card, Etiqueta, Icone, Tela, Texto } from '@/ui';
 import { cores } from '@/ui/tokens';
@@ -38,6 +40,8 @@ export default function TelaPerfil() {
   const perfil = usePerfil();
   // O selo "Teste grátis" na linha do plano (T-101).
   const emTeste = usePlano().data?.plano === 'teste';
+  // Tela de teste da detecção de apps (PoC da T-022): só no build de desenvolvimento do Android.
+  const testeDaDeteccao = configApp.ambiente === 'development' && usoDeApps !== null;
   const [disponivel, definirDisponivel] = useState(false);
   const [ligada, definirLigada] = useState(false);
   const [saindo, definirSaindo] = useState(false);
@@ -147,6 +151,15 @@ export default function TelaPerfil() {
               router.push('/tutorial');
             }}
           />
+          {testeDaDeteccao ? (
+            <Linha
+              titulo={t('appsDeCompra.poc.atalho')}
+              ajuda={t('appsDeCompra.poc.atalhoAjuda')}
+              aoPressionar={() => {
+                router.push('/poc-uso-de-apps');
+              }}
+            />
+          ) : null}
         </Secao>
 
         <Secao titulo={t('mais.perfilTela.privacidade')}>
