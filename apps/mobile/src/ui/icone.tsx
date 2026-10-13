@@ -27,6 +27,7 @@ import Dumbbell from 'lucide-react-native/icons/dumbbell';
 import Ellipsis from 'lucide-react-native/icons/ellipsis';
 import Eye from 'lucide-react-native/icons/eye';
 import EyeOff from 'lucide-react-native/icons/eye-off';
+import FileText from 'lucide-react-native/icons/file-text';
 import FingerprintPattern from 'lucide-react-native/icons/fingerprint-pattern';
 import Gamepad2 from 'lucide-react-native/icons/gamepad-2';
 import Gift from 'lucide-react-native/icons/gift';
@@ -58,6 +59,7 @@ import Search from 'lucide-react-native/icons/search';
 import SendHorizontal from 'lucide-react-native/icons/send-horizontal';
 import Settings from 'lucide-react-native/icons/settings';
 import Shield from 'lucide-react-native/icons/shield';
+import Sheet from 'lucide-react-native/icons/sheet';
 import Shirt from 'lucide-react-native/icons/shirt';
 import ShoppingBag from 'lucide-react-native/icons/shopping-bag';
 import ShoppingCart from 'lucide-react-native/icons/shopping-cart';
@@ -107,6 +109,7 @@ const ICONES = {
   ellipsis: Ellipsis,
   eye: Eye,
   'eye-off': EyeOff,
+  'file-text': FileText,
   'fingerprint-pattern': FingerprintPattern,
   'gamepad-2': Gamepad2,
   gift: Gift,
@@ -138,6 +141,7 @@ const ICONES = {
   'send-horizontal': SendHorizontal,
   settings: Settings,
   shield: Shield,
+  sheet: Sheet,
   shirt: Shirt,
   'shopping-bag': ShoppingBag,
   'shopping-cart': ShoppingCart,

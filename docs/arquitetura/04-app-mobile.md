@@ -260,7 +260,7 @@ Tela em `src/features/relatorios` (`/relatorios`, no grupo `(telas)`, pela grade
 - **Por dia da semana**: sete barras, o dia de mais gastos em destaque e a frase "Você gasta mais às sextas: 41% das despesas do período."
 - **Por cartão** e **por forma de pagamento**: barras horizontais, do maior para o menor, com quantos lançamentos.
 - **Evolução anual** (só na aba Ano): os últimos cinco anos, com receitas, despesas e saldo.
-- O botão de baixar do design é a exportação (RN-151, T-125).
+- **Baixar** (RN-151, T-125): o botão do topo abre a folha com [PDF] e [Planilha (Excel)] do período da aba; enquanto o worker gera, "Gerando o relatório…" (o app pergunta a cada 1,5 s); pronto, [Abrir o relatório] abre a URL de 24 h no navegador do aparelho. Falhou: [Tentar de novo]. No gratuito, a mensagem da API e [Ver planos].
 
 ## Aba Mais e Perfil (T-057)
 

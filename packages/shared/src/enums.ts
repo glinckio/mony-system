@@ -234,3 +234,11 @@ export type TipoControleTeste = (typeof TIPOS_CONTROLE_TESTE)[number];
 /** Quem originou a chamada ao Service. */
 export const ORIGENS_CONTEXTO = ['app', 'mony', 'open_finance', 'admin', 'sistema'] as const;
 export type OrigemContexto = (typeof ORIGENS_CONTEXTO)[number];
+
+/** RN-151: os formatos da exportação de relatórios (T-125). */
+export const FORMATOS_EXPORTACAO = ['pdf', 'xlsx'] as const;
+export type FormatoExportacao = (typeof FORMATOS_EXPORTACAO)[number];
+
+/** A exportação é gerada no worker: `processando` até o arquivo ficar `pronta` (ou dar `erro`). */
+export const STATUS_EXPORTACAO = ['processando', 'pronta', 'erro'] as const;
+export type StatusExportacao = (typeof STATUS_EXPORTACAO)[number];

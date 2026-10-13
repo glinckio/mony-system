@@ -853,3 +853,13 @@ Contexto: o RN-125 pede um teste por pessoa pelo e-mail, pela conta Google/Apple
 - **Selo "Teste grátis"** na linha "Seu plano" do Perfil.
 - **Contas antigas** (antes da T-101) não ganham controles: ainda não há usuários reais.
 Reversível: sim.
+
+## 2026-10-13 — T-125 — Exportação dos relatórios em PDF e XLSX
+Contexto: o RN-151 pede PDF e XLSX gerados no worker e entregues por URL assinada de 24 h, sem dizer o conteúdo nem como o app sabe que ficou pronto. Decisões:
+- **Tabela `exportacoes_relatorio`** com o status (`processando`, `pronta`, `erro`), e o app pergunta por `GET /relatorios/exportacoes/:id` a cada 1,5 s: sem depender do histórico dos jobs no Redis, que é apagado. Sem push quando fica pronta: em geral leva segundos e a pessoa está na tela.
+- **O mesmo conteúdo da tela**: as tabelas das rotas de relatório do período (com a evolução anual quando o período passa de um ano), montadas uma vez (`montarDocumento`) e desenhadas em PDF ou XLSX.
+- **PDF com `pdfkit`** e as fontes padrão (Helvetica, que já tem os acentos); **XLSX escrito à mão** (OOXML mínimo, texto inline, uma aba por tabela) e compactado com `fflate`, em vez do `exceljs`, que trazia dezenas de dependências antigas. Na planilha, dinheiro em reais com formato de moeda, para dar para fazer conta; centavos continuam sendo a regra da API.
+- **Arquivo em `exportacoes/relatorios/`**, o prefixo que o bucket já apaga sozinho (7 dias, doc 12), e não em `usuarios/`; a URL baixa com o nome `relatorio-<inicio>-a-<fim>.<formato>`. A URL é assinada a cada consulta e vale 24 h a partir dela.
+- **O mesmo pedido enquanto gera devolve a mesma exportação**; 3 tentativas, e na última falha ela fica com `erro` (o app oferece tentar de novo).
+- **Gratuito**: 403 `LIMITE_PLANO_ATINGIDO` com `recurso: relatorio` e a frase "No plano gratuito, os relatórios não são exportados."; o app mostra [Ver planos].
+Reversível: sim.

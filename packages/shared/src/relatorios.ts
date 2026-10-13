@@ -14,7 +14,12 @@ import {
   somarMeses,
   ultimoDiaDaCompetencia,
 } from './datas.js';
-import { FORMAS_PAGAMENTO, TIPOS_TRANSACAO } from './enums.js';
+import {
+  FORMAS_PAGAMENTO,
+  FORMATOS_EXPORTACAO,
+  STATUS_EXPORTACAO,
+  TIPOS_TRANSACAO,
+} from './enums.js';
 
 /** Período de até 5 anos. */
 export const MAXIMO_PERIODO_RELATORIO_DIAS = 5 * 366;
@@ -192,3 +197,30 @@ export type RelatorioCategorias = z.infer<typeof esquemaRelatorioCategorias>;
 export type RelatorioDiasDaSemana = z.infer<typeof esquemaRelatorioDiasDaSemana>;
 export type RelatorioCartoes = z.infer<typeof esquemaRelatorioCartoes>;
 export type RelatorioFormasPagamento = z.infer<typeof esquemaRelatorioFormasPagamento>;
+
+/** RN-151: a URL do arquivo vale por 24 horas. */
+export const VALIDADE_URL_EXPORTACAO_SEGUNDOS = 24 * 60 * 60;
+
+/** `POST /relatorios/exportar`: o formato e o período (sem ele, os últimos 12 meses). */
+export const esquemaPedidoExportacao = z
+  .object({
+    formato: z.enum(FORMATOS_EXPORTACAO),
+    inicio: esquemaData.optional(),
+    fim: esquemaData.optional(),
+  })
+  .superRefine(periodoValido);
+
+/** Uma exportação; com `pronta`, a URL assinada do arquivo e quando ela expira. */
+export const esquemaExportacao = z.object({
+  id: z.uuid(),
+  formato: z.enum(FORMATOS_EXPORTACAO),
+  inicio: z.string(),
+  fim: z.string(),
+  status: z.enum(STATUS_EXPORTACAO),
+  url: z.string().nullable(),
+  expiraEm: z.string().nullable(),
+  criadoEm: z.string(),
+});
+
+export type DadosPedidoExportacao = z.infer<typeof esquemaPedidoExportacao>;
+export type Exportacao = z.infer<typeof esquemaExportacao>;

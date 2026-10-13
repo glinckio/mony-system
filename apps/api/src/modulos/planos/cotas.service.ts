@@ -6,6 +6,7 @@ import { periodoNoGratuito } from '@mony/shared/relatorios';
 
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
+import { ErroDominio } from '../../core/erros/erro-dominio';
 import { type BancoCotas, CotasRepository } from './cotas.repository';
 import {
   contaNaCota,
@@ -115,6 +116,18 @@ export class CotasService {
       throw erroDeLimite({ recurso: 'relatorio', periodo: 'mes', limite: 1, renovaEm: null });
     }
     return dentro;
+  }
+
+  /** RN-120 e RN-151: no gratuito, os relatórios não são exportados. */
+  async conferirExportacao(contexto: Contexto): Promise<void> {
+    if (!contaNaCota(contexto.origem)) return;
+    const usuarioId = usuarioDoContexto(contexto);
+    const { assinatura } = await this.repositorio.situacao(this.repositorio.banco, usuarioId);
+    if (!ehLimitado(planoEfetivo(assinatura, this.clock.agora()))) return;
+    throw new ErroDominio('LIMITE_PLANO_ATINGIDO', {
+      mensagem: 'No plano gratuito, os relatórios não são exportados.',
+      detalhes: { recurso: 'relatorio', periodo: 'quantidade', limite: 0, renovaEm: null },
+    });
   }
 
   /** `GET /assinatura/uso`: o plano que vale agora e, no gratuito, quanto já foi usado. */

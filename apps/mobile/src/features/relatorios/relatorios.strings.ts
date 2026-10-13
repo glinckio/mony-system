@@ -1,5 +1,19 @@
 export const textosRelatorios = {
   titulo: 'Relatórios',
+  exportar: {
+    botao: 'Baixar relatório',
+    titulo: 'Baixar relatório',
+    ajuda: 'O relatório do período escolhido, para guardar ou compartilhar.',
+    pdf: 'PDF',
+    xlsx: 'Planilha (Excel)',
+    gerando: 'Gerando o relatório…',
+    pronto: 'Pronto! O link vale por 24 horas.',
+    abrir: 'Abrir o relatório',
+    falhou: 'Não consegui gerar o relatório.',
+    tentarDeNovo: 'Tentar de novo',
+    semConexao: 'Sem conexão. Tente de novo.',
+    verPlanos: 'Ver planos',
+  },
   periodo: 'Período do relatório',
   abas: {
     mes: 'Mês',

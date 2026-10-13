@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DiscoveryModule } from '@nestjs/core';
 
+import { ArmazenamentoModule } from './core/arquivos/armazenamento-arquivos';
 import { EventosModule } from './core/eventos/eventos.module';
 import { ProcessadorEventos } from './core/eventos/processador-eventos';
 import { FilasModule } from './core/filas/filas.module';
@@ -17,6 +18,8 @@ import { ProcessadorNotificacoes } from './modulos/notificacoes/processador-noti
 import { OrcamentosModule } from './modulos/orcamentos/orcamentos.module';
 import { ParcelamentosModule } from './modulos/parcelamentos/parcelamentos.module';
 import { PlanosModule } from './modulos/planos/planos.module';
+import { ProcessadorRelatorios } from './modulos/relatorios/processador-relatorios';
+import { RelatoriosModule } from './modulos/relatorios/relatorios.module';
 import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
 
 /**
@@ -40,7 +43,15 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     AlertasModule,
     RascunhosModule,
     PlanosModule,
+    RelatoriosModule,
+    ArmazenamentoModule,
   ],
-  providers: [ProcessadorEventos, ProcessadorEmails, ProcessadorRotinas, ProcessadorNotificacoes],
+  providers: [
+    ProcessadorEventos,
+    ProcessadorEmails,
+    ProcessadorRotinas,
+    ProcessadorNotificacoes,
+    ProcessadorRelatorios,
+  ],
 })
 export class WorkerModule {}

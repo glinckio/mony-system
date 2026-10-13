@@ -4,6 +4,7 @@ import {
   competenciasEntre,
   esquemaConsultaRelatorio,
   esquemaConsultaRelatorioCategorias,
+  esquemaPedidoExportacao,
   periodoNoGratuito,
   periodoPadraoRelatorio,
 } from './relatorios.js';
@@ -53,5 +54,17 @@ describe('período dos relatórios (RN-150)', () => {
     expect(valida({ inicio: '2026-01-01' })).toBe(false);
     expect(valida({ inicio: '2026-02-01', fim: '2026-01-31' })).toBe(false);
     expect(esquemaConsultaRelatorioCategorias.parse({})).toEqual({ tipo: 'despesa' });
+  });
+});
+
+describe('pedido de exportação (RN-151)', () => {
+  it('PDF ou XLSX, com o período dos relatórios', () => {
+    const valida = (dados: Record<string, string>) =>
+      esquemaPedidoExportacao.safeParse(dados).success;
+    expect(valida({ formato: 'pdf' })).toBe(true);
+    expect(valida({ formato: 'xlsx', inicio: '2026-01-01', fim: '2026-10-31' })).toBe(true);
+    expect(valida({ formato: 'csv' })).toBe(false);
+    expect(valida({ formato: 'pdf', inicio: '2026-01-01' })).toBe(false);
+    expect(valida({ formato: 'pdf', inicio: '2026-10-31', fim: '2026-01-01' })).toBe(false);
   });
 });
