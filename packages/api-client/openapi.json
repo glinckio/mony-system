@@ -2583,6 +2583,89 @@
         ]
       }
     },
+    "/v1/relatorios/exportar": {
+      "post": {
+        "operationId": "exportarRelatorios",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave única da operação (8 a 255 caracteres). Repetir a chave devolve a mesma resposta sem executar de novo.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoExportacaoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Exportação em andamento.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportacaoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "relatorios"
+        ],
+        "x-recurso-limitado": "relatorio"
+      }
+    },
+    "/v1/relatorios/exportacoes/{id}": {
+      "get": {
+        "operationId": "exportacaoRelatorios",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A exportação; pronta, com a URL assinada do arquivo, válida por 24 horas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportacaoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "relatorios"
+        ],
+        "x-recurso-limitado": "relatorio"
+      }
+    },
     "/v1/relatorios/mensal": {
       "get": {
         "operationId": "mensalRelatorios",
@@ -10380,6 +10463,91 @@
         "required": [
           "parcela",
           "parcelamento"
+        ]
+      },
+      "PedidoExportacaoDto": {
+        "type": "object",
+        "properties": {
+          "formato": {
+            "type": "string",
+            "enum": [
+              "pdf",
+              "xlsx"
+            ]
+          },
+          "inicio": {
+            "type": "string"
+          },
+          "fim": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "formato"
+        ]
+      },
+      "ExportacaoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "formato": {
+            "type": "string",
+            "enum": [
+              "pdf",
+              "xlsx"
+            ]
+          },
+          "inicio": {
+            "type": "string"
+          },
+          "fim": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "processando",
+              "pronta",
+              "erro"
+            ]
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expiraEm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "criadoEm": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "formato",
+          "inicio",
+          "fim",
+          "status",
+          "url",
+          "expiraEm",
+          "criadoEm"
         ]
       },
       "RelatorioMensalDto": {

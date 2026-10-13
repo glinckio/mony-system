@@ -17,6 +17,7 @@ import { LimiteTentativas, LimiteTentativasMemoria } from '../src/core/limites/l
 import { ProcessadorRotinas } from '../src/core/rotinas/rotinas';
 import { ProcessadorEmails } from '../src/integracoes/email/processador-emails';
 import { ProcessadorNotificacoes } from '../src/modulos/notificacoes/processador-notificacoes';
+import { ProcessadorRelatorios } from '../src/modulos/relatorios/processador-relatorios';
 
 export function criarFilaFalsa() {
   return {
@@ -31,7 +32,7 @@ export function criarFilaFalsa() {
 export type FilaFalsa = ReturnType<typeof criarFilaFalsa>;
 
 /**
- * Troca filas BullMQ, consumidores (eventos e e-mails), arquivos (S3), armazenamento de idempotência e contadores de
+ * Troca filas BullMQ, consumidores (eventos, e-mails, notificações e relatórios), arquivos (S3), armazenamento de idempotência e contadores de
  * tentativas por versões em memória, para os testes unitários não dependerem de Redis. As filas
  * falsas ficam em `filas`.
  */
@@ -49,6 +50,8 @@ export function semServicosExternos(
     .overrideProvider(ProcessadorRotinas)
     .useValue({})
     .overrideProvider(ProcessadorNotificacoes)
+    .useValue({})
+    .overrideProvider(ProcessadorRelatorios)
     .useValue({})
     .overrideProvider(ArmazenamentoArquivos)
     .useValue(new ArmazenamentoMemoria())

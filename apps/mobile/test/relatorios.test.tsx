@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
+import { Linking } from 'react-native';
 
 import { periodoDaAba, periodoDosAnos } from '@/features/relatorios/lib/periodos';
 import { relogio } from '@/lib/relogio';
@@ -253,6 +254,109 @@ describe('relatórios no app (T-054)', () => {
       expect(
         within(screen.getByTestId('ano-2025')).getByText(reais('Saldo R$ 5.000,00')),
       ).toBeOnTheScreen();
+    },
+    TEMPO_LIMITE_MS,
+  );
+});
+
+describe('baixar o relatório (T-125, RN-151)', () => {
+  const fetchOriginal = globalThis.fetch;
+  const EXPORTACAO = {
+    id: ID('e1'),
+    formato: 'pdf',
+    inicio: '2026-05-01',
+    fim: '2026-10-31',
+    status: 'processando',
+    url: null,
+    expiraEm: null,
+    criadoEm: '2026-10-09T15:00:00.000Z',
+  };
+
+  /** Os relatórios de `api()` e a exportação: pronta na primeira consulta, ou o gratuito. */
+  function comExportacao(gratuito = false) {
+    api();
+    const relatorios = globalThis.fetch;
+    const pedidos: { metodo: string; rota: string; corpo: unknown }[] = [];
+    globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
+      const rota = new URL(typeof url === 'string' ? url : url instanceof URL ? url.href : url.url)
+        .pathname;
+      const metodo = opcoes?.method ?? 'GET';
+      const corpo: unknown = typeof opcoes?.body === 'string' ? JSON.parse(opcoes.body) : null;
+      pedidos.push({ metodo, rota, corpo });
+      const json = (dados: unknown, status = 200) =>
+        Promise.resolve(new Response(JSON.stringify(dados), { status }));
+      if (metodo === 'POST' && rota === '/v1/relatorios/exportar') {
+        return gratuito
+          ? json(
+              {
+                erro: {
+                  codigo: 'LIMITE_PLANO_ATINGIDO',
+                  mensagem: 'No plano gratuito, os relatórios não são exportados.',
+                  detalhes: { recurso: 'relatorio', periodo: 'quantidade', limite: 0 },
+                },
+              },
+              403,
+            )
+          : json(EXPORTACAO, 202);
+      }
+      if (rota === `/v1/relatorios/exportacoes/${ID('e1')}`) {
+        return json({
+          ...EXPORTACAO,
+          status: 'pronta',
+          url: 'https://arquivos.exemplo/relatorio.pdf',
+          expiraEm: '2026-10-10T15:00:00.000Z',
+        });
+      }
+      return relatorios(url, opcoes);
+    });
+    return pedidos;
+  }
+
+  beforeEach(() => {
+    jest.spyOn(relogio, 'agora').mockReturnValue(new Date('2026-10-09T15:00:00.000Z'));
+    useSessao.getState().encerrar();
+    useSessao.getState().iniciar({ id: 'u1', nome: 'Ana', onboardingConcluido: true }, 'acesso');
+  });
+
+  afterEach(() => {
+    globalThis.fetch = fetchOriginal;
+    jest.restoreAllMocks();
+  });
+
+  it(
+    'RN-151 PDF do período da aba: gera, fica pronto e abre o link',
+    async () => {
+      const pedidos = comExportacao();
+      const abrir = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+      renderRouter(ROTAS, { initialUrl: '/relatorios' });
+
+      fireEvent.press(await screen.findByRole('button', { name: 'Baixar relatório' }, ESPERA));
+      fireEvent.press(await screen.findByRole('button', { name: 'PDF' }, ESPERA));
+      fireEvent.press(await screen.findByRole('button', { name: 'Abrir o relatório' }, ESPERA));
+      expect(abrir).toHaveBeenCalledWith('https://arquivos.exemplo/relatorio.pdf');
+      expect(screen.getByText('Pronto! O link vale por 24 horas.')).toBeOnTheScreen();
+      expect(
+        pedidos.find(({ metodo, rota }) => metodo === 'POST' && rota === '/v1/relatorios/exportar')
+          ?.corpo,
+      ).toEqual({ formato: 'pdf', inicio: '2026-05-01', fim: '2026-10-31' });
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'RN-120 no gratuito, a mensagem da API e o [Ver planos]',
+    async () => {
+      comExportacao(true);
+      const app = renderRouter(ROTAS, { initialUrl: '/relatorios' });
+      fireEvent.press(await screen.findByRole('button', { name: 'Baixar relatório' }, ESPERA));
+      fireEvent.press(await screen.findByRole('button', { name: 'Planilha (Excel)' }, ESPERA));
+      expect(
+        await screen.findByText('No plano gratuito, os relatórios não são exportados.', {}, ESPERA),
+      ).toBeOnTheScreen();
+      fireEvent.press(screen.getByRole('button', { name: 'Ver planos' }));
+      await waitFor(() => {
+        expect(app.getPathname()).toBe('/mais/plano');
+      }, ESPERA);
     },
     TEMPO_LIMITE_MS,
   );

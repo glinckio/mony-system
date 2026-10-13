@@ -1,14 +1,27 @@
-import { Controller, Get, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { ApiAcceptedResponse, ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import {
   esquemaConsultaRelatorio,
   esquemaConsultaRelatorioCategorias,
+  esquemaExportacao,
+  esquemaPedidoExportacao,
   esquemaRelatorioAnual,
   esquemaRelatorioCartoes,
   esquemaRelatorioCategorias,
   esquemaRelatorioDiasDaSemana,
   esquemaRelatorioFormasPagamento,
   esquemaRelatorioMensal,
+  type Exportacao,
   type RelatorioAnual,
   type RelatorioCartoes,
   type RelatorioCategorias,
@@ -18,8 +31,10 @@ import {
 } from '@mony/shared/relatorios';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
+import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
 import { criarDto } from '../../core/openapi/dto';
 import { RecursoLimitado } from '../planos/recurso-limitado.decorator';
+import { ExportacoesRelatorio } from './exportacoes.service';
 import { RelatoriosService } from './relatorios.service';
 
 class ConsultaRelatorioDto extends criarDto(esquemaConsultaRelatorio) {}
@@ -30,6 +45,8 @@ class RelatorioCategoriasDto extends criarDto(esquemaRelatorioCategorias) {}
 class RelatorioDiasDaSemanaDto extends criarDto(esquemaRelatorioDiasDaSemana) {}
 class RelatorioCartoesDto extends criarDto(esquemaRelatorioCartoes) {}
 class RelatorioFormasPagamentoDto extends criarDto(esquemaRelatorioFormasPagamento) {}
+class PedidoExportacaoDto extends criarDto(esquemaPedidoExportacao) {}
+class ExportacaoDto extends criarDto(esquemaExportacao) {}
 
 /**
  * Relatórios (doc 05, `GET /relatorios/:tipo?inicio=&fim=`; RN-150). Uma rota por tipo, para
@@ -40,7 +57,38 @@ class RelatorioFormasPagamentoDto extends criarDto(esquemaRelatorioFormasPagamen
 @RecursoLimitado('relatorio')
 @Controller('relatorios')
 export class RelatoriosController {
-  constructor(private readonly relatorios: RelatoriosService) {}
+  constructor(
+    private readonly relatorios: RelatoriosService,
+    private readonly exportacoes: ExportacoesRelatorio,
+  ) {}
+
+  /**
+   * RN-151: pede o relatório do período em PDF ou XLSX; o worker gera o arquivo. A resposta volta
+   * `processando`; `GET /relatorios/exportacoes/:id` diz quando fica pronta e traz a URL (24 h).
+   * No gratuito, 403 `LIMITE_PLANO_ATINGIDO`.
+   */
+  @Post('exportar')
+  @Idempotente()
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiAcceptedResponse({ type: ExportacaoDto, description: 'Exportação em andamento.' })
+  exportar(
+    @ContextoAtual() contexto: Contexto,
+    @Body() pedido: PedidoExportacaoDto,
+  ): Promise<Exportacao> {
+    return this.exportacoes.pedir(contexto, pedido);
+  }
+
+  @Get('exportacoes/:id')
+  @ApiOkResponse({
+    type: ExportacaoDto,
+    description: 'A exportação; pronta, com a URL assinada do arquivo, válida por 24 horas.',
+  })
+  exportacao(
+    @ContextoAtual() contexto: Contexto,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<Exportacao> {
+    return this.exportacoes.buscar(contexto, id);
+  }
 
   @Get('mensal')
   @ApiOkResponse({ type: RelatorioMensalDto, description: 'Receitas × despesas por mês.' })

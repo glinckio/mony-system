@@ -251,7 +251,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Limite do gratuito (RN-120): contar as listas em `CotasRepository.contarItens` e chamar `CotasService.conferirQuantidade(contexto, 'lista_compras', tx)` ao criar.
 - [ ] **T-124** Compartilhamento de listas e lembretes em tempo real (WebSocket)
   - dep: T-123, T-084 · RN-074
-- [ ] **T-125** Exportação de relatórios PDF e XLSX no worker
+- [x] **T-125** Exportação de relatórios PDF e XLSX no worker (PR #70)
   - dep: T-048, T-100 · RN-151
   - No gratuito, sem exportação (RN-120): `LIMITE_PLANO_ATINGIDO` com `recurso: relatorio`.
 

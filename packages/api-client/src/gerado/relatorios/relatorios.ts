@@ -5,15 +5,18 @@
  * API do app Monitorizze e da assistente Mony.
  * OpenAPI spec version: 1
  */
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from '@tanstack/react-query';
@@ -23,8 +26,10 @@ import type {
   CartoesRelatoriosParams,
   CategoriasRelatoriosParams,
   DiasDaSemanaRelatoriosParams,
+  ExportacaoDto,
   FormasPagamentoRelatoriosParams,
   MensalRelatoriosParams,
+  PedidoExportacaoDto,
   RelatorioAnualDto,
   RelatorioCartoesDto,
   RelatorioCategoriasDto,
@@ -51,6 +56,235 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getExportarRelatoriosUrl = () => {
+  return `/v1/relatorios/exportar`;
+};
+
+export const exportarRelatorios = async (
+  pedidoExportacaoDto: PedidoExportacaoDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<ExportacaoDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<ExportacaoDto>(getExportarRelatoriosUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(pedidoExportacaoDto),
+  });
+};
+
+export const getExportarRelatoriosMutationKey = () => ['exportarRelatorios'] as const;
+
+export const getExportarRelatoriosMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof exportarRelatorios>>,
+    TError,
+    ExportarRelatoriosMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof exportarRelatorios>>,
+  TError,
+  ExportarRelatoriosMutationVariables,
+  TContext
+> => {
+  const mutationKey = getExportarRelatoriosMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof exportarRelatorios>>,
+    ExportarRelatoriosMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return exportarRelatorios(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ExportarRelatoriosMutationResult = NonNullable<
+  Awaited<ReturnType<typeof exportarRelatorios>>
+>;
+export type ExportarRelatoriosMutationBody = PedidoExportacaoDto;
+export type ExportarRelatoriosMutationError = unknown;
+export type ExportarRelatoriosMutationVariables = { data: PedidoExportacaoDto };
+
+export const useExportarRelatorios = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof exportarRelatorios>>,
+      TError,
+      ExportarRelatoriosMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof exportarRelatorios>>,
+  TError,
+  ExportarRelatoriosMutationVariables,
+  TContext
+> => {
+  return useMutation(getExportarRelatoriosMutationOptions(options), queryClient);
+};
+export const getExportacaoRelatoriosUrl = (id: string) => {
+  return `/v1/relatorios/exportacoes/${id}`;
+};
+
+export const exportacaoRelatorios = async (
+  id: string,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<ExportacaoDto> => {
+  return requisicao<ExportacaoDto>(getExportacaoRelatoriosUrl(id), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getExportacaoRelatoriosQueryKey = (id: string) => {
+  return [`/v1/relatorios/exportacoes/${id}`] as const;
+};
+
+export const getExportacaoRelatoriosQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportacaoRelatorios>>,
+  TError = unknown,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof exportacaoRelatorios>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportacaoRelatoriosQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exportacaoRelatorios>>> = ({ signal }) =>
+    exportacaoRelatorios(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof exportacaoRelatorios>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type ExportacaoRelatoriosQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportacaoRelatorios>>
+>;
+export type ExportacaoRelatoriosQueryError = unknown;
+
+export function useExportacaoRelatorios<
+  TData = Awaited<ReturnType<typeof exportacaoRelatorios>>,
+  TError = unknown,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof exportacaoRelatorios>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exportacaoRelatorios>>,
+          TError,
+          Awaited<ReturnType<typeof exportacaoRelatorios>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useExportacaoRelatorios<
+  TData = Awaited<ReturnType<typeof exportacaoRelatorios>>,
+  TError = unknown,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof exportacaoRelatorios>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exportacaoRelatorios>>,
+          TError,
+          Awaited<ReturnType<typeof exportacaoRelatorios>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useExportacaoRelatorios<
+  TData = Awaited<ReturnType<typeof exportacaoRelatorios>>,
+  TError = unknown,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof exportacaoRelatorios>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useExportacaoRelatorios<
+  TData = Awaited<ReturnType<typeof exportacaoRelatorios>>,
+  TError = unknown,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof exportacaoRelatorios>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getExportacaoRelatoriosQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getMensalRelatoriosUrl = (params?: MensalRelatoriosParams) => {
   const normalizedParams = new URLSearchParams();

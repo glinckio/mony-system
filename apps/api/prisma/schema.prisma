@@ -85,6 +85,22 @@ enum RecursoPlano {
   @@map("recurso_plano")
 }
 
+/// RN-151: formato da exportação de relatórios.
+enum FormatoExportacao {
+  pdf
+  xlsx
+
+  @@map("formato_exportacao")
+}
+
+enum StatusExportacao {
+  processando
+  pronta
+  erro
+
+  @@map("status_exportacao")
+}
+
 enum TipoCategoria {
   receita
   despesa
@@ -397,6 +413,7 @@ model Usuario {
   assinatura             Assinatura?
   precosAlterados        PlanoPreco[]
   usoRecursos            UsoRecurso[]
+  exportacoesRelatorio   ExportacaoRelatorio[]
   categorias             Categoria[]
   contas                 Conta[]
   cartoes                Cartao[]
@@ -586,6 +603,26 @@ model UsoRecurso {
 
   @@unique([usuarioId, recurso, data])
   @@map("uso_recursos")
+}
+
+/// RN-151 (T-125): relatório exportado em PDF ou XLSX, gerado no worker. O arquivo fica no S3 em
+/// `exportacoes/` (apagado pelo ciclo de vida do bucket) e sai por URL assinada de 24 h.
+model ExportacaoRelatorio {
+  id           String            @id @default(uuid(7)) @db.Uuid
+  usuarioId    String            @map("usuario_id") @db.Uuid
+  formato      FormatoExportacao
+  inicio       DateTime          @db.Date
+  fim          DateTime          @db.Date
+  status       StatusExportacao  @default(processando)
+  chaveArquivo String?           @map("chave_arquivo")
+  concluidaEm  DateTime?         @map("concluida_em") @db.Timestamptz(6)
+  criadoEm     DateTime          @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime          @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, criadoEm])
+  @@map("exportacoes_relatorio")
 }
 
 // ─── Finanças (11) ──────────────────────────────────────────────────────────────────────────────

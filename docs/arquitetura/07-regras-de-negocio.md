@@ -186,7 +186,7 @@ Legenda: **(PDF)** está na especificação · **(decisão técnica)** definido 
 ## Relatórios
 
 - **RN-150 (PDF)** Receitas × despesas por mês, por categoria, evolução anual, por dia da semana, por cartão e forma de pagamento, histórico de preços NFC-e.
-- **RN-151 (PDF)** Exportação PDF e XLSX, gerada no worker, entregue por URL assinada válida por 24 h. Bloqueada no gratuito.
+- **RN-151 (PDF)** Exportação PDF e XLSX, gerada no worker, entregue por URL assinada válida por 24 h. Bloqueada no gratuito. **(Decisão técnica, T-125:** o arquivo traz as mesmas tabelas da tela de relatórios do período; na planilha, os valores em reais com formato de moeda.)
 
 ## Privacidade (LGPD)
 

@@ -330,7 +330,7 @@ Implementado na T-080 (RN-100 a RN-105; motor no doc 09), na T-081 (push) e na T
 
 ## Relatórios
 
-Implementado na T-048 (RN-150), sem exportação (RN-151 fica na tarefa de exportação). `GET /relatorios/:tipo?inicio=&fim=` tem uma rota por tipo, cada uma com o seu contrato. Sem período, vale os últimos 12 meses, com o atual inteiro; o período vai até 5 anos.
+Implementado na T-048 (RN-150); a exportação (RN-151) na T-125 (ver abaixo). `GET /relatorios/:tipo?inicio=&fim=` tem uma rota por tipo, cada uma com o seu contrato. Sem período, vale os últimos 12 meses, com o atual inteiro; o período vai até 5 anos.
 
 | Rota | O que traz |
 |---|---|
@@ -345,6 +345,7 @@ Implementado na T-048 (RN-150), sem exportação (RN-151 fica na tarefa de expor
 - Categoria e cartão excluídos ainda aparecem com o nome.
 - As somas por mês, ano e dia da semana são SQL (`$queryRaw`), com `excluido_em IS NULL` escrito à mão; as outras são `groupBy` do Prisma.
 - O histórico de preços da NFC-e entra com a T-066.
+- **Exportação (RN-151, T-125):** `POST /relatorios/exportar` (`{ formato: pdf|xlsx, inicio?, fim? }`, com `Idempotency-Key`; sem período, os últimos 12 meses) grava a exportação (`exportacoes_relatorio`, `processando`) e põe o job `exportar` na fila `relatorios` (3 tentativas); responde 202. O mesmo pedido enquanto gera devolve a mesma exportação. O worker (`ProcessadorRelatorios`) monta as tabelas com os mesmos números das rotas (meses, categorias de despesa e de receita, dias da semana, cartões, formas de pagamento e, com mais de um ano, a evolução anual), gera o PDF (`pdfkit`, A4) ou o XLSX (OOXML escrito à mão e compactado com `fflate`; dinheiro em reais com formato de moeda), grava no S3 em `exportacoes/relatorios/<usuario>/<id>.<formato>` (o ciclo de vida do bucket apaga) e marca `pronta`; na última falha, `erro`. `GET /relatorios/exportacoes/:id` devolve o status e, pronta, a URL assinada de 24 horas, que baixa como `relatorio-<inicio>-a-<fim>.<formato>`. No gratuito, `LIMITE_PLANO_ATINGIDO` (RN-120).
 - **Plano gratuito (RN-120, T-100):** a tela de relatórios (origem `app`) mostra só o mês atual: o período pedido (ou o padrão) é cortado ao mês de hoje, e o pedido sem nenhum dia nele responde `LIMITE_PLANO_ATINGIDO` (`recurso: relatorio`). As consultas da Mony e os resumos das rotinas não mudam.
 
 ## Orçamentos e metas
