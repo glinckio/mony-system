@@ -1,0 +1,33 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!--
+    Alarme exato pelo `setAlarmClock`, que toca no horário mesmo no Doze. No Android 12 ou mais novo
+    a pessoa libera em "Alarmes e lembretes"; no 14 ou mais novo vem desligado em instalação nova.
+    O USE_EXACT_ALARM (liberado sem pedir) a Play só aceita em app de despertador ou de agenda.
+  -->
+  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <!-- Alarme em tela cheia com o aparelho bloqueado. No Android 14 ou mais novo, só com a liberação da pessoa. -->
+  <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+  <uses-permission android:name="android.permission.VIBRATE" />
+  <!-- Os alarmes somem ao desligar o aparelho: o módulo reagenda depois de ligar. -->
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+  <application>
+    <!-- Disparo, parar e adiar: só o próprio app manda (intenções explícitas). -->
+    <receiver
+      android:name="com.monitorizze.alarm.ReceptorAlarme"
+      android:exported="false" />
+
+    <!-- Avisos do sistema (só o sistema pode mandar estes): reagenda tudo. -->
+    <receiver
+      android:name="com.monitorizze.alarm.ReceptorSistema"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+        <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+      </intent-filter>
+    </receiver>
+  </application>
+</manifest>

@@ -1,0 +1,22 @@
+// Alarmes locais dos lembretes (docs/arquitetura/04 e 09). O plugin do Expo aplica o Kotlin, as
+// versões de SDK do app e o expo-modules-core.
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.monitorizze'
+version = '0.1.0'
+
+android {
+  namespace 'com.monitorizze.alarm'
+  defaultConfig {
+    versionCode 1
+    versionName '0.1.0'
+  }
+}
+
+dependencies {
+  // O plano dos alarmes e o histórico não usam APIs do Android e são testados na JVM.
+  testImplementation 'junit:junit:4.13.2'
+}

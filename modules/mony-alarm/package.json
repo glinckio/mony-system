@@ -1,0 +1,6 @@
+{
+  "name": "mony-alarm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Módulo nativo de alarmes locais: AlarmManager no Android (T-023a); AlarmKit no iOS fica para a T-023b"
+}
