@@ -1,0 +1,25 @@
+// Módulo da detecção de apps de compra (docs/arquitetura/10, "Detecção de apps de compra").
+// O plugin do Expo aplica o Kotlin, as versões de SDK do app e o expo-modules-core.
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.monitorizze'
+version = '0.1.0'
+
+android {
+  namespace 'com.monitorizze.appusage'
+  defaultConfig {
+    versionCode 1
+    versionName '0.1.0'
+  }
+}
+
+dependencies {
+  // Verificação periódica (mínimo de 15 min) que sobrevive ao fechamento do app e à reinicialização.
+  implementation 'androidx.work:work-runtime:2.12.0'
+
+  // A lógica de detecção não usa APIs do Android e é testada na JVM.
+  testImplementation 'junit:junit:4.13.2'
+}

@@ -1,0 +1,6 @@
+{
+  "name": "mony-app-usage",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Módulo nativo de detecção de apps de compra: UsageStats no Android (T-022); Screen Time no iOS fica para a T-021"
+}

@@ -134,7 +134,11 @@ Regras de cache:
 
 Ambos têm **prova de conceito obrigatória na Fase 0** ([15](15-roadmap-e-pendencias.md)), porque dependem de aprovação das lojas e de limitações do sistema. Detalhes em [10](10-integracoes.md#detecção-de-apps-de-compra).
 
-Config plugins em `plugins/` adicionam permissões, entitlements, App Groups e extensões ao `prebuild`, então nada nativo é editado à mão.
+Config plugins em `plugins/` adicionam permissões, entitlements, App Groups e extensões ao `prebuild`, então nada nativo é editado à mão. No Android, o que é só do módulo (permissões, `<queries>`) fica no `AndroidManifest.xml` do próprio módulo, que o build junta ao do app; config plugin só para o que mexe no app.
+
+Cada módulo é um pacote do workspace (`modules/<nome>`) e entra no app como dependência (`"mony-app-usage": "workspace:*"` no `package.json` do app), que o autolinking do Expo encontra. O JS que conversa com o módulo fica no app (`src/lib/uso-de-apps.ts`), com `requireOptionalNativeModule`: no iOS, nos testes e em build sem o módulo, ele é `null`, e a tela trata. A lógica que não depende do Android fica em classes Kotlin puras, testadas com JUnit no CI ("Módulos nativos").
+
+**`mony-app-usage` no Android (T-022):** o WorkManager roda a verificação a cada 15 min; ela lê os eventos `ACTIVITY_RESUMED` e `ACTIVITY_PAUSED` dos apps monitorados desde a anterior e conta como abertura a volta ao app depois de 30 min sem vê-lo. O estado fica nas preferências do app, porque o worker roda sem o JS. Detalhes e medições em [docs/agentes/poc/T-022.md](../agentes/poc/T-022.md).
 
 ## Permissões
 
