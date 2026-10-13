@@ -1,0 +1,25 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools">
+
+  <!--
+    Acesso ao uso: não tem diálogo. A pessoa libera em Configurações > Acesso ao uso, e a Google Play
+    exige a declaração do motivo no Play Console (docs/arquitetura/10).
+  -->
+  <uses-permission
+    android:name="android.permission.PACKAGE_USAGE_STATS"
+    tools:ignore="ProtectedPermissions" />
+
+  <!-- Aviso de teste da PoC (Android 13 ou mais novo). O push de verdade vem do servidor (T-121). -->
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+  <!--
+    Visibilidade dos apps que abrem pela tela inicial (Android 11 ou mais novo), para a pessoa escolher
+    o que monitorar. Não usa QUERY_ALL_PACKAGES, que a Play restringe.
+  -->
+  <queries>
+    <intent>
+      <action android:name="android.intent.action.MAIN" />
+      <category android:name="android.intent.category.LAUNCHER" />
+    </intent>
+  </queries>
+</manifest>
