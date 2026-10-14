@@ -198,6 +198,58 @@ export type RelatorioDiasDaSemana = z.infer<typeof esquemaRelatorioDiasDaSemana>
 export type RelatorioCartoes = z.infer<typeof esquemaRelatorioCartoes>;
 export type RelatorioFormasPagamento = z.infer<typeof esquemaRelatorioFormasPagamento>;
 
+/**
+ * Histórico de preços (RN-150, T-066c): o produto procurado nos cupons fiscais lidos (NFC-e) e o
+ * período (sem ele, os últimos 12 meses). A busca acha o produto com todas as palavras, sem
+ * diferenciar maiúscula nem acento.
+ */
+/** O histórico de preços só busca com pelo menos 2 letras (RN-150). */
+export const TAMANHO_MINIMO_BUSCA_PRECOS = 2;
+
+export const esquemaConsultaPrecos = z
+  .object({
+    busca: z.string().trim().min(TAMANHO_MINIMO_BUSCA_PRECOS).max(60),
+    inicio: esquemaData.optional(),
+    fim: esquemaData.optional(),
+  })
+  .superRefine(periodoValido);
+
+const esquemaPrecoPago = z.object({
+  valorUnitarioCentavos: centavos,
+  /** Data da compra no fuso do usuário. */
+  data: z.string(),
+  loja: z.string(),
+});
+
+/**
+ * Os produtos achados (até 20, o comprado mais recentemente primeiro): o último preço pago, o
+ * menor, e a média por loja (da mais barata para a mais cara). Preço é o valor unitário do cupom.
+ */
+export const esquemaRelatorioPrecos = z.object({
+  ...periodo,
+  busca: z.string(),
+  itens: z.array(
+    z.object({
+      descricao: z.string(),
+      unidade: z.string(),
+      compras: z.number().int(),
+      ultimo: esquemaPrecoPago,
+      menor: esquemaPrecoPago,
+      porLoja: z.array(
+        z.object({
+          loja: z.string(),
+          mediaCentavos: centavos,
+          compras: z.number().int(),
+          ultimaData: z.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+export type ConsultaPrecos = z.infer<typeof esquemaConsultaPrecos>;
+export type RelatorioPrecos = z.infer<typeof esquemaRelatorioPrecos>;
+
 /** RN-151: a URL do arquivo vale por 24 horas. */
 export const VALIDADE_URL_EXPORTACAO_SEGUNDOS = 24 * 60 * 60;
 

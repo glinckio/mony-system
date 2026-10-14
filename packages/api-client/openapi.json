@@ -2677,6 +2677,60 @@
         "x-recurso-limitado": "relatorio"
       }
     },
+    "/v1/relatorios/precos": {
+      "get": {
+        "operationId": "precosRelatorios",
+        "parameters": [
+          {
+            "name": "busca",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minLength": 2,
+              "maxLength": 60,
+              "type": "string"
+            }
+          },
+          {
+            "name": "inicio",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fim",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Histórico de preços dos cupons fiscais (NFC-e): último preço, menor e média por loja.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatorioPrecosDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "relatorios"
+        ],
+        "x-recurso-limitado": "relatorio"
+      }
+    },
     "/v1/relatorios/exportacoes/{id}": {
       "get": {
         "operationId": "exportacaoRelatorios",
@@ -10626,6 +10680,125 @@
           "url",
           "expiraEm",
           "criadoEm"
+        ]
+      },
+      "RelatorioPrecosDto": {
+        "type": "object",
+        "properties": {
+          "inicio": {
+            "type": "string"
+          },
+          "fim": {
+            "type": "string"
+          },
+          "busca": {
+            "type": "string"
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "descricao": {
+                  "type": "string"
+                },
+                "unidade": {
+                  "type": "string"
+                },
+                "compras": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "ultimo": {
+                  "type": "object",
+                  "properties": {
+                    "valorUnitarioCentavos": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "loja": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "valorUnitarioCentavos",
+                    "data",
+                    "loja"
+                  ]
+                },
+                "menor": {
+                  "type": "object",
+                  "properties": {
+                    "valorUnitarioCentavos": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "loja": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "valorUnitarioCentavos",
+                    "data",
+                    "loja"
+                  ]
+                },
+                "porLoja": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "loja": {
+                        "type": "string"
+                      },
+                      "mediaCentavos": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "compras": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "ultimaData": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "loja",
+                      "mediaCentavos",
+                      "compras",
+                      "ultimaData"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "descricao",
+                "unidade",
+                "compras",
+                "ultimo",
+                "menor",
+                "porLoja"
+              ]
+            }
+          }
+        },
+        "required": [
+          "inicio",
+          "fim",
+          "busca",
+          "itens"
         ]
       },
       "RelatorioMensalDto": {

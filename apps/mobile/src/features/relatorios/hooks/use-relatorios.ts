@@ -10,8 +10,11 @@ import {
   getDiasDaSemanaRelatoriosQueryKey,
   getFormasPagamentoRelatoriosQueryKey,
   getMensalRelatoriosQueryKey,
+  getPrecosRelatoriosQueryKey,
   mensalRelatorios,
+  precosRelatorios,
 } from '@mony/api-client';
+import { TAMANHO_MINIMO_BUSCA_PRECOS } from '@mony/shared/relatorios';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import type { PeriodoRelatorio } from '../lib/periodos';
@@ -66,6 +69,26 @@ export function useRelatorioFormas(periodo: PeriodoRelatorio) {
   return useQuery({
     queryKey: getFormasPagamentoRelatoriosQueryKey(periodo),
     queryFn: async ({ signal }) => await formasPagamentoRelatorios(periodo, { signal }),
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** A busca vale com pelo menos 2 letras (a API recusa menos). */
+export function buscaDePrecoValida(busca: string): boolean {
+  return busca.trim().length >= TAMANHO_MINIMO_BUSCA_PRECOS;
+}
+
+/**
+ * Histórico de preços da NFC-e (RN-150, T-066c): `GET /relatorios/precos?busca=`, sem período (a
+ * API usa os últimos 12 meses; no gratuito, o mês atual). Enquanto a nova busca não chega, a lista
+ * segue com a anterior.
+ */
+export function useHistoricoPrecos(busca: string) {
+  const parametros = { busca: busca.trim() };
+  return useQuery({
+    queryKey: getPrecosRelatoriosQueryKey(parametros),
+    queryFn: async ({ signal }) => await precosRelatorios(parametros, { signal }),
+    enabled: buscaDePrecoValida(busca),
     placeholderData: keepPreviousData,
   });
 }

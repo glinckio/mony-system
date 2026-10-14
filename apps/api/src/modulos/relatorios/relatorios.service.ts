@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { type DataCalendario, dataNoFuso } from '@mony/shared/datas';
 import {
   competenciasEntre,
+  type ConsultaPrecos,
   type ConsultaRelatorio,
   type ConsultaRelatorioCategorias,
   periodoPadraoRelatorio,
@@ -11,11 +12,13 @@ import {
   type RelatorioDiasDaSemana,
   type RelatorioFormasPagamento,
   type RelatorioMensal,
+  type RelatorioPrecos,
 } from '@mony/shared/relatorios';
 
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { CotasService } from '../planos/cotas.service';
+import { historicoDePrecos, termosDaBusca } from './dominio/precos';
 import { RelatoriosRepository } from './relatorios.repository';
 
 interface Periodo {
@@ -184,6 +187,25 @@ export class RelatoriosService {
       )
       .sort((a, b) => b.totalCentavos - a.totalCentavos);
     return { inicio, fim, itens };
+  }
+
+  /**
+   * Histórico de preços da NFC-e (RN-150, T-066c): os produtos dos cupons fiscais lidos com todas
+   * as palavras da busca, com o último preço, o menor e a média por loja. No gratuito, só o mês
+   * atual, como os outros relatórios (RN-120).
+   */
+  async precos(contexto: Contexto, consulta: ConsultaPrecos): Promise<RelatorioPrecos> {
+    const { usuarioId, inicio, fim } = await this.periodo(contexto, consulta);
+    const termos = termosDaBusca(consulta.busca);
+    const itens =
+      termos.length === 0
+        ? []
+        : await this.repositorio.itensComprados(usuarioId, termos, {
+            inicio,
+            fim,
+            fuso: await this.repositorio.fusoDoUsuario(usuarioId),
+          });
+    return { inicio, fim, busca: consulta.busca, itens: historicoDePrecos(itens) };
   }
 
   /**

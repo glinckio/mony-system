@@ -3,7 +3,12 @@ import type { DataCalendario } from '@mony/shared/datas';
 import type { TipoTransacao } from '@mony/shared/enums';
 
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { Prisma } from '../../generated/prisma/client';
+import { type ItemComprado, MAXIMO_ITENS } from './dominio/precos';
 import { paraDataDoBanco } from '../transacoes/transacoes.repository';
+
+const COM_ACENTO = 'áàâãäéèêëíìîïóòôõöúùûüçÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ';
+const SEM_ACENTO = 'aaaaaeeeeiiiiooooouuuucaaaaaeeeeiiiiooooouuuuc';
 
 /**
  * Consultas dos relatórios (RN-150). Lançamentos pagos e pendentes, sem os excluídos, só de
@@ -126,6 +131,51 @@ export class RelatoriosRepository {
       where: { usuarioId, id: { in: [...ids] }, excluidoEm: undefined },
       select: { id: true, nome: true, cor: true },
     });
+  }
+
+  /**
+   * Histórico de preços (RN-150): os itens dos cupons fiscais da pessoa com todas as palavras da
+   * busca na descrição (sem acento e sem diferenciar maiúscula), comprados no período (data da nota
+   * no fuso dela), dos mais recentes para os mais antigos. `LIKE` em substring sobre os itens de um
+   * usuário só, já filtrados pelo índice de `usuario_id` (como a busca de transações, T-037).
+   */
+  async itensComprados(
+    usuarioId: string,
+    termos: readonly string[],
+    periodo: { inicio: DataCalendario; fim: DataCalendario; fuso: string },
+  ): Promise<ItemComprado[]> {
+    // As maiúsculas acentuadas também, para o caso de o `lower` do banco só tratar o ASCII.
+    const semAcento = Prisma.sql`translate(lower(i.descricao), ${COM_ACENTO}, ${SEM_ACENTO})`;
+    const filtros = termos.map((termo) => Prisma.sql`${semAcento} LIKE ${`%${termo}%`}`);
+    const linhas = await this.prisma.cliente.$queryRaw<
+      {
+        descricao: string;
+        unidade: string;
+        valor_unitario: bigint;
+        data: string;
+        cnpj: string;
+        emitente: string;
+      }[]
+    >`
+      SELECT i.descricao, i.unidade, i.valor_unitario,
+             to_char((n.data AT TIME ZONE ${periodo.fuso})::date, 'YYYY-MM-DD') AS data,
+             n.cnpj, n.emitente
+      FROM nfce_itens i
+      JOIN nfce_notas n ON n.id = i.nota_id
+      WHERE i.usuario_id = ${usuarioId}::uuid
+        AND (n.data AT TIME ZONE ${periodo.fuso})::date
+          BETWEEN ${periodo.inicio}::date AND ${periodo.fim}::date
+        AND ${Prisma.join(filtros, ' AND ')}
+      ORDER BY n.data DESC, i.id
+      LIMIT ${MAXIMO_ITENS}`;
+    return linhas.map((linha) => ({
+      descricao: linha.descricao,
+      unidade: linha.unidade,
+      valorUnitarioCentavos: Number(linha.valor_unitario),
+      data: linha.data,
+      cnpj: linha.cnpj,
+      emitente: linha.emitente,
+    }));
   }
 
   async fusoDoUsuario(usuarioId: string): Promise<string> {

@@ -920,3 +920,13 @@ Contexto: doc 04 e doc 10 pedem a leitura com `expo-camera` e o envio a `POST /m
 - **Sem digitar a chave** por enquanto: a API aceita, mas a tela fica para quando aparecer cupom com QR ilegível (a foto, T-065, cobre o caso).
 - **`expo-camera` com o mesmo texto de câmera do `expo-image-picker`** (agora citando o QR do cupom) e o mesmo texto de microfone dos outros plugins: o plugin também pede o `RECORD_AUDIO` no Android, que a mensagem de voz já usa.
 Reversível: sim.
+
+## 2026-10-14 — T-066c — Histórico de preços da NFC-e
+Contexto: o BACKLOG cita o índice `to_tsvector` do doc 06 e a RN-150 só diz "histórico de preços NFC-e". Decisões:
+- **Sem o GIN de `to_tsvector`**, como na T-037: o `to_tsvector('portuguese')` reduz as palavras ao radical e não acha pedaço ("lei" não acha "leite"), e a descrição do cupom é abreviada ("LTE INT 1L"). A busca é `LIKE '%palavra%'` em cada palavra, sem acento (`translate(lower(…))`, com as maiúsculas acentuadas também, para o caso de o `lower` do banco só tratar ASCII), sobre os itens de um usuário só. Se pesar, `pg_trgm`.
+- **Produto = mesma descrição (sem acento, minúscula, espaços simples) e mesma unidade.** Não junta descrições diferentes do mesmo produto em lojas diferentes ("LEITE INTEGRAL 1L" e "LT INTEGRAL 1L"): cada uma vira um card. Juntar por semelhança fica para quando houver cupons reais (a lista de compras, RN-071, usa a mesma busca).
+- **Loja pelo CNPJ**, com o nome do emitente sem o sufixo jurídico (`nomeDoEstabelecimento`); filiais aparecem separadas.
+- **Limites**: 500 itens mais recentes e 20 produtos por busca. Preço é o valor unitário do cupom.
+- **Período padrão da API** (12 meses; no gratuito, o mês atual, RN-120), sem seletor na tela: o histórico é para comparar ao longo do tempo.
+- **Tela própria** (`/relatorios/precos`), aberta pelo último bloco dos Relatórios, porque é uma busca, não um gráfico do período da aba.
+Reversível: sim.

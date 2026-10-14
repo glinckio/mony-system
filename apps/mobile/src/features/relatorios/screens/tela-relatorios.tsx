@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
 import { useMesCapitalizado } from '@/lib/datas-texto';
 import { useHoje } from '@/lib/fuso';
-import { BotaoIcone, Cabecalho, Erro, Segmentado, Skeleton, Tela } from '@/ui';
+import { BotaoIcone, Cabecalho, Card, Erro, Icone, Segmentado, Skeleton, Tela, Texto } from '@/ui';
 import { cores } from '@/ui/tokens';
 
 import { BarrasDias } from '../components/barras-dias';
@@ -28,6 +28,7 @@ import { ABAS_RELATORIO, type AbaRelatorio, periodoDaAba, periodoDosAnos } from 
  * Relatórios (design, página 6; RN-150): Mês, 6 meses e Ano. Receitas × despesas por mês, despesas
  * por categoria, por dia da semana, por cartão e por forma de pagamento; no Ano, também a evolução
  * dos últimos cinco anos. O botão de baixar exporta o período da aba em PDF ou planilha (RN-151).
+ * No fim, o atalho para o histórico de preços dos cupons fiscais (T-066c).
  */
 export default function TelaRelatorios() {
   const { t } = useTranslation();
@@ -142,6 +143,26 @@ export default function TelaRelatorios() {
               </View>
             )
           ) : null}
+          <Card className="p-0">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('relatorios.precos.titulo')}
+              accessibilityHint={t('relatorios.precos.atalho')}
+              onPress={() => {
+                router.push('/relatorios/precos');
+              }}
+              className="min-h-toque flex-row items-center gap-3 p-4 active:opacity-70"
+            >
+              <Icone nome="receipt" tamanho={20} cor={cores.link} />
+              <View className="flex-1">
+                <Texto className="font-forte">{t('relatorios.precos.titulo')}</Texto>
+                <Texto variante="legenda" cor="suave">
+                  {t('relatorios.precos.atalho')}
+                </Texto>
+              </View>
+              <Icone nome="chevron-right" tamanho={18} cor={cores['texto-suave']} />
+            </Pressable>
+          </Card>
         </ScrollView>
       )}
       <FolhaExportar
