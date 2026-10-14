@@ -6,6 +6,7 @@ export const textosMais = {
     orcamentos: 'Orçamentos',
     metas: 'Metas',
     relatorios: 'Relatórios',
+    lembretes: 'Lembretes',
     categorias: 'Categorias',
     contas: 'Contas',
   },

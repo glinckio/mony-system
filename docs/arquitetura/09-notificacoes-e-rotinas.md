@@ -80,7 +80,7 @@ Regras de envio: RN-100 a RN-108 em [07](07-regras-de-negocio.md#alertas-e-notif
 | Canal | Como |
 |---|---|
 | Notificação | Push enviado pelo worker na rotina por minuto |
-| Alarme | Agendado **no aparelho** pelo módulo `mony-alarm`, toca sem internet. O servidor é a fonte da verdade; o app sincroniza a agenda de alarmes ao abrir, ao receber push silencioso e ao criar/editar, mandando a lista inteira dos próximos (o aparelho fica com os 50 mais próximos; `GET /lembretes/alarmes`, T-084a). Lembrete só com alarme não manda push no Android (o aparelho toca); no iPhone, até a T-023b, manda. [Adiar] cria um alarme só no aparelho, 10 min depois. No Android, sem a liberação do alarme exato, o alarme pode atrasar ([T-023a](../agentes/poc/T-023a.md)) |
+| Alarme | Agendado **no aparelho** pelo módulo `mony-alarm`, toca sem internet. O servidor é a fonte da verdade; o app sincroniza a agenda de alarmes ao abrir, ao receber push silencioso e ao criar/editar, mandando a lista inteira dos próximos (o aparelho fica com os 50 mais próximos; `GET /lembretes/alarmes`, T-084a; no app, ao abrir e depois de cada mudança, T-084b). Lembrete só com alarme não manda push no Android (o aparelho toca); no iPhone, até a T-023b, manda. [Adiar] cria um alarme só no aparelho, 10 min depois. No Android, sem a liberação do alarme exato, o alarme pode atrasar ([T-023a](../agentes/poc/T-023a.md)) |
 | Ligação | Worker chama `VozProvider` (ex.: Twilio) com texto sintetizado. Só plano pago, telefone verificado, dentro do limite mensal (RN-078). Registro em `ligacoes` |
 
 ## Rotinas agendadas

@@ -221,7 +221,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-084a** Lembretes na API: CRUD, repetição em RRULE (subconjunto), [Feito] e [Adiar], rotina por minuto com push urgente, `GET /lembretes/alarmes` e push silencioso; 5 ativos no gratuito (PR #76)
   - dep: T-081, T-023a · RN-075 a RN-077, RN-120
   - A T-084 foi dividida em API (T-084a) e app (T-084b).
-- [ ] **T-084b** Lembretes no app: lista (ativos e feitos), novo e editar (título, data e hora, repetição diária, semanal com os dias, mensal ou anual, a cada N, até; canais notificação e alarme), [Feito] e [Adiar] na lista, a tela do lembrete (`mony://lembretes/:id`) e os atalhos (Mais e o "Lembrete" do Início)
+- [x] **T-084b** Lembretes no app: lista (ativos e feitos), novo e editar (título, data e hora, repetição diária, semanal com os dias, mensal ou anual, a cada N, até; canais notificação e alarme), [Feito] e [Adiar] na lista, a tela do lembrete (`mony://lembretes/:id`) e os atalhos (Mais e o "Lembrete" do Início) (PR #78)
   - dep: T-084a · docs: 04, 09 · RN-075, RN-076
   - Alarme local pelo `mony-alarm` (T-023a): o app chama `sincronizar` com `GET /lembretes/alarmes` ao abrir e depois de criar, editar, concluir, adiar ou excluir; pede o alarme exato e a tela cheia no primeiro lembrete com alarme. No iOS, o alarme chega com a T-023b; até lá, o lembrete com alarme sai só como notificação (a API já manda o push para quem tem iPhone).
 - [ ] **T-085** 👤 Agendas Google e Outlook (OAuth no servidor) e agenda do aparelho

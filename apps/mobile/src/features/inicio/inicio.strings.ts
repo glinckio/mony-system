@@ -31,6 +31,7 @@ export const textosInicio = {
     lancar: 'Lançar',
     orcamentos: 'Orçamentos',
     metas: 'Metas',
+    lembrete: 'Lembrete',
   },
   resumo: {
     titulo: 'Resumo',

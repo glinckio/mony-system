@@ -955,3 +955,19 @@ Contexto: RN-075 a RN-077 e o doc 09 dizem o quê (repetição em RRULE, soneca,
 - **Na tela do plano** (`GET /assinatura/uso`), "Lembretes ativos" entra com o uso.
 
 Reversível: sim (a coluna nova só acrescenta).
+
+## 2026-10-14 — T-084b — Lembretes no app
+Contexto: o design (página 6) traz a lista com Próximos, Recorrentes e Feitos, o bloco da hora ou do dia e o selo do canal. Não traz o formulário, a tela do lembrete nem o pedido das permissões do alarme. Decisões:
+- **Grupos de Próximos:** "Já tocaram" (pendentes, que esperam o [Feito]), Hoje, Amanhã e Próximos dias. O selo é o canal mais forte (Alarme; senão, Push).
+- **Data e hora em campos de texto com máscara**, como no resto do app, sem o seletor nativo. O novo sugere a próxima hora cheia.
+- **A repetição do formulário não manda `BYMONTHDAY` nem `BYMONTH`**: a API completa pela data, então mudar a data muda o dia da repetição. A semanal começa pelo dia da semana da data.
+- **A tela do lembrete é o destino do push** (`/lembretes/<id>`), com [Feito], [Adiar], Editar e Excluir. O feito tem "Lembrar de novo", que manda a data nova (reativa, RN-120).
+- **Sincronização dos alarmes:**
+  - acontece no layout das abas, ao abrir e ao voltar para o app, e depois de toda mudança em lembrete (mesmo sem alarme, para cobrir o lembrete que perdeu o canal);
+  - sem o módulo, não faz nada; com erro, fica a agenda de antes.
+- **Permissões do alarme:** pedidas uma vez, guardadas no aparelho (`AsyncStorage`), só as que faltam, e depois de salvar o primeiro lembrete com alarme.
+- **O calendário do cabeçalho** (a agenda) fica para a T-085.
+- **A tela de teste do alarme (T-023a) fica**, só no build de desenvolvimento, até medir nos aparelhos e fazer a T-023b.
+
+Reversível: sim.
+
