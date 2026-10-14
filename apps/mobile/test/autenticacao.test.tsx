@@ -12,7 +12,7 @@ import { useSessao } from '@/stores/sessao';
 
 const ROTAS = path.resolve(__dirname, '../app');
 const ESPERA = { timeout: 10_000 };
-const TEMPO_LIMITE_MS = 30_000;
+const TEMPO_LIMITE_MS = 60_000;
 
 type Manipulador = (corpo: Record<string, unknown>) => { status: number; corpo?: unknown };
 

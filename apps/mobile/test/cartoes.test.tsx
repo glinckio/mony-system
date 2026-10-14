@@ -9,7 +9,7 @@ import { useSessao } from '@/stores/sessao';
 
 const ROTAS = path.resolve(__dirname, '../app');
 const ESPERA = { timeout: 10_000 };
-const TEMPO_LIMITE_MS = 30_000;
+const TEMPO_LIMITE_MS = 60_000;
 
 /** "R$ 1.240,00" com o espaço não separável que o `formatarCentavos` usa. */
 const reais = (texto: string) => texto.replaceAll('R$ ', 'R$ ');

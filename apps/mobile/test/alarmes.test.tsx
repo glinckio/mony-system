@@ -27,7 +27,7 @@ jest.mock('@/lib/alarmes', () => {
 
 const ROTAS = path.resolve(__dirname, '../app');
 const ESPERA = { timeout: 10_000 };
-const TEMPO_LIMITE_MS = 30_000;
+const TEMPO_LIMITE_MS = 60_000;
 const SEGUNDO = 1_000;
 const MINUTO = 60 * SEGUNDO;
 /** 13/10/2026 14:00:00 no fuso do processo de teste. */

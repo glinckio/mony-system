@@ -971,3 +971,12 @@ Contexto: o design (página 6) traz a lista com Próximos, Recorrentes e Feitos,
 
 Reversível: sim.
 
+
+## 2026-10-14 — T-HOTFIX — Tempo dos testes do app no CI
+Contexto: o reporter `github-actions` do Jest (PR #77) mostrou a falha que deixava o Verificar vermelho de vez em quando: o primeiro teste de um arquivo (`renderRouter` com todas as rotas) passou dos 30 s.
+
+No CI, o `turbo run build lint typecheck test` roda o Jest junto com o bundle do Metro (iOS e Android) e os testes da API. Além disso, a primeira transformação do app é fria, sem cache do Jest. Localmente, o mesmo teste leva 2 s.
+
+Decisão: o tempo limite dos testes do app que abrem rotas vai a 60 s (`TEMPO_LIMITE_MS`), sem mudar as esperas de cada passo (10 s). Alternativas: o teste do app depender do build no `turbo.json` (o CI fica mais lento) ou guardar o cache do Jest no CI.
+
+Reversível: sim.

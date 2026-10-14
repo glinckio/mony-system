@@ -13,7 +13,7 @@ jest.mock('@/features/onboarding/components/dica', () => ({ Dica: () => null }))
 
 const ROTAS = path.resolve(__dirname, '../app');
 const ESPERA = { timeout: 10_000 };
-const TEMPO_LIMITE_MS = 30_000;
+const TEMPO_LIMITE_MS = 60_000;
 
 const GRATUITO: UsoPlano = {
   plano: 'gratuito',

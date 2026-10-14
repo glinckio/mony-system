@@ -142,7 +142,7 @@ const MERCADO = {
 };
 
 /** O CI roda build, lint e testes juntos: a primeira renderização da tela passa de 5 s lá. */
-const TEMPO_LIMITE_MS = 30_000;
+const TEMPO_LIMITE_MS = 60_000;
 const ESPERA = { timeout: 10_000 };
 
 describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
