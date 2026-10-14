@@ -11,4 +11,6 @@ module.exports = {
   },
   // Testes ficam fora de `app/`, que o Expo Router lê como rotas.
   testMatch: ['<rootDir>/{src,test}/**/*.test.{ts,tsx}'],
+  // No CI, cada falha também vira anotação do GitHub, que dá para ler pela API sem baixar o log.
+  reporters: process.env.GITHUB_ACTIONS === 'true' ? ['default', 'github-actions'] : ['default'],
 };
