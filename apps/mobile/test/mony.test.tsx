@@ -10,6 +10,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import * as ExpoAudio from 'expo-audio';
 import * as ImagePicker from 'expo-image-picker';
 import { fetch as fetchExpo } from 'expo/fetch';
+import { Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import TelaMony from '@/features/mony/screens/tela-mony';
@@ -858,4 +859,215 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
       TEMPO_LIMITE_MS,
     );
   });
+});
+
+/** O leitor falso de `preparar-jest` (T-066b). */
+const camera = jest.requireMock<{
+  __camera: {
+    ler: (conteudo: string) => void;
+    permissao: { granted: boolean; canAskAgain: boolean; status: string };
+    pedir: jest.Mock;
+    reiniciar: () => void;
+  };
+}>('expo-camera').__camera;
+
+/** Uma chave de NFC-e de SP com o dígito certo, e o QR Code como o cupom traz. */
+function chaveNfce(ambiente: '1' | '2' = '1') {
+  const semDigito = '3526101234567800019565001000123456187654321';
+  let soma = 0;
+  let peso = 2;
+  for (let i = semDigito.length - 1; i >= 0; i -= 1) {
+    soma += (semDigito.charCodeAt(i) - 48) * peso;
+    peso = peso === 9 ? 2 : peso + 1;
+  }
+  const resto = soma % 11;
+  const chave = `${semDigito}${String(resto < 2 ? 0 : 11 - resto)}`;
+  return `https://www.nfce.fazenda.sp.gov.br/NFCeConsultaPublica/Paginas/ConsultaQRCode.aspx?p=${chave}|3|${ambiente}`;
+}
+
+describe('QR Code do cupom fiscal na Mony (T-066b)', () => {
+  const fetchOriginal = globalThis.fetch;
+  const NOTA = '0199a000-0000-7000-8000-0000000000f1';
+  const COMPRA: ComponenteMony = {
+    tipo: 'resumo',
+    aConfirmar: true,
+    lancamento: {
+      transacaoId: null,
+      parcelamentoId: null,
+      tipo: 'despesa',
+      descricao: 'SUPERMERCADO BOM PRECO',
+      valorCentavos: 8_790,
+      data: '2026-10-15',
+      categoria: null,
+      formaPagamento: 'pix',
+      cartao: null,
+      parcelas: null,
+      valorParcelaCentavos: null,
+    },
+    opcoes: [
+      {
+        id: 'confirmar',
+        rotulo: 'Confirmar',
+        acao: { tipo: 'confirmar_importacao', importacaoId: NOTA, indice: 0 },
+      },
+      {
+        id: 'descartar',
+        rotulo: 'Descartar',
+        acao: { tipo: 'descartar_importacao', importacaoId: NOTA, indice: 0 },
+      },
+    ],
+  };
+
+  /** `POST /mony/nfce` e `POST /mony/acoes`, com o histórico de `comHistorico`. */
+  function api(historico?: Pagina) {
+    const pedidos: { url: string; corpo: unknown; chave: string | null }[] = [];
+    globalThis.fetch = comHistorico(
+      (url, opcoes) => {
+        const endereco = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
+        pedidos.push({
+          url: endereco,
+          corpo: corpoJson(opcoes),
+          chave: new Headers(opcoes?.headers).get('idempotency-key'),
+        });
+        const json = (dados: unknown) =>
+          Promise.resolve(new Response(JSON.stringify(dados), { status: 200 }));
+        if (endereco.endsWith('/v1/mony/nfce')) {
+          return json({
+            texto: 'Achei a compra no SUPERMERCADO BOM PRECO. Confira antes de eu anotar.',
+            componente: COMPRA,
+            transacaoId: null,
+          });
+        }
+        if (endereco.endsWith('/v1/mony/acoes')) {
+          return json({ texto: 'Confira a compra:', componente: COMPRA, transacaoId: null });
+        }
+        return Promise.resolve(new Response(null, { status: 404 }));
+      },
+      historico ? () => historico : undefined,
+    );
+    return pedidos;
+  }
+
+  async function abrirLeitor() {
+    fireEvent.press(await screen.findByRole('button', { name: 'Mandar foto ou PDF' }, ESPERA));
+    fireEvent.press(screen.getByRole('button', { name: 'QR Code do cupom fiscal' }));
+    expect(await screen.findByTestId('camera', {}, ESPERA)).toBeOnTheScreen();
+  }
+
+  beforeEach(() => {
+    useSessao.getState().iniciar({ id: 'u1', nome: 'Ana', onboardingConcluido: true }, 'token-1');
+    camera.reiniciar();
+  });
+
+  afterEach(() => {
+    consultas?.clear();
+    globalThis.fetch = fetchOriginal;
+    useSessao.getState().encerrar();
+  });
+
+  it(
+    'QR que não é cupom avisa e a câmera continua; o cupom vai à Mony e a compra vem para confirmar',
+    async () => {
+      const pedidos = api();
+      renderizar();
+      await abrirLeitor();
+
+      act(() => {
+        camera.ler('https://exemplo.test/promocao');
+      });
+      expect(screen.getByText('Esse QR Code não é de um cupom fiscal.')).toBeOnTheScreen();
+      act(() => {
+        camera.ler(chaveNfce('2'));
+      });
+      expect(
+        screen.getByText('Esse cupom é de teste do estabelecimento e não tem compra.'),
+      ).toBeOnTheScreen();
+      expect(pedidos.filter(({ url }) => url.endsWith('/v1/mony/nfce'))).toEqual([]);
+
+      act(() => {
+        camera.ler(chaveNfce());
+        // A câmera avisa o mesmo código várias vezes: vai uma só.
+        camera.ler(chaveNfce());
+      });
+      expect(
+        await screen.findByText(
+          'Achei a compra no SUPERMERCADO BOM PRECO. Confira antes de eu anotar.',
+          {},
+          ESPERA,
+        ),
+      ).toBeOnTheScreen();
+      expect(screen.getByText('QR Code do cupom fiscal')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Confirmar' })).toBeOnTheScreen();
+      expect(screen.queryByTestId('camera')).toBeNull();
+      const enviados = pedidos.filter(({ url }) => url.endsWith('/v1/mony/nfce'));
+      expect(enviados).toHaveLength(1);
+      expect(enviados[0]?.corpo).toEqual({ conteudo: chaveNfce() });
+      expect(enviados[0]?.chave).toEqual(expect.any(String));
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'sem a câmera liberada, pede; negada de vez, leva aos ajustes',
+    async () => {
+      api();
+      camera.permissao = { granted: false, canAskAgain: true, status: 'undetermined' };
+      renderizar();
+      fireEvent.press(await screen.findByRole('button', { name: 'Mandar foto ou PDF' }, ESPERA));
+      fireEvent.press(screen.getByRole('button', { name: 'QR Code do cupom fiscal' }));
+      expect(
+        await screen.findByText('Libere a câmera para ler o QR Code do cupom.', {}, ESPERA),
+      ).toBeOnTheScreen();
+      fireEvent.press(screen.getByRole('button', { name: 'Permitir câmera' }));
+      expect(camera.pedir).toHaveBeenCalled();
+      fireEvent.press(screen.getByRole('button', { name: 'Fechar' }));
+
+      camera.permissao = { granted: false, canAskAgain: false, status: 'denied' };
+      const ajustes = jest.spyOn(Linking, 'openSettings').mockResolvedValue();
+      fireEvent.press(screen.getByRole('button', { name: 'Mandar foto ou PDF' }));
+      fireEvent.press(screen.getByRole('button', { name: 'QR Code do cupom fiscal' }));
+      fireEvent.press(await screen.findByRole('button', { name: 'Abrir ajustes' }, ESPERA));
+      expect(ajustes).toHaveBeenCalled();
+      ajustes.mockRestore();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    '[Ver a compra] da nota que chegou depois vai à Mony como ação',
+    async () => {
+      const pedidos = api({
+        proximoCursor: null,
+        sugestoes: [],
+        itens: [
+          {
+            id: '0199a000-0000-7000-8000-0000000000c9',
+            autor: 'mony',
+            tipo: 'texto',
+            conteudo: 'A Sefaz achou o seu cupom do SUPERMERCADO BOM PRECO.',
+            componentes: [
+              {
+                tipo: 'botoes',
+                opcoes: [
+                  {
+                    id: 'ver-compra',
+                    rotulo: 'Ver a compra',
+                    acao: { tipo: 'importar_nfce', notaId: NOTA },
+                  },
+                ],
+              },
+            ],
+            criadoEm: '2026-10-15T15:00:00.000Z',
+          },
+        ],
+      });
+      renderizar();
+      fireEvent.press(await screen.findByRole('button', { name: 'Ver a compra' }, ESPERA));
+      expect(await screen.findByText('Confira a compra:', {}, ESPERA)).toBeOnTheScreen();
+      expect(pedidos.find(({ url }) => url.endsWith('/v1/mony/acoes'))?.corpo).toEqual({
+        acao: { tipo: 'importar_nfce', notaId: NOTA },
+      });
+    },
+    TEMPO_LIMITE_MS,
+  );
 });

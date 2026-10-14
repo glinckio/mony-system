@@ -8,6 +8,7 @@ import { Atalhos } from '@/features/mony/components/atalhos';
 import { Balao } from '@/features/mony/components/balao';
 import { FolhaBusca } from '@/features/mony/components/folha-busca';
 import { FolhaDocumento } from '@/features/mony/components/folha-documento';
+import { LeitorQr } from '@/features/mony/components/leitor-qr';
 import { useChatMony } from '@/features/mony/hooks/use-chat-mony';
 import { useHistoricoMony } from '@/features/mony/hooks/use-conversa-mony';
 import { duracaoParaTexto, useGravador } from '@/features/mony/lib/gravador';
@@ -32,6 +33,7 @@ export default function TelaMony() {
   const chat = useChatMony(doServidor);
   const [texto, definirTexto] = useState('');
   const [escolhendo, definirEscolhendo] = useState(false);
+  const [lendoQr, definirLendoQr] = useState(false);
   const [buscando, definirBuscando] = useState(false);
 
   // No limite de 10 minutos, o gravador envia sozinho.
@@ -215,6 +217,17 @@ export default function TelaMony() {
           definirEscolhendo(false);
           void chat.enviarDocumento(origem);
         }}
+        aoLerQr={() => {
+          definirEscolhendo(false);
+          definirLendoQr(true);
+        }}
+      />
+      <LeitorQr
+        visivel={lendoQr}
+        aoFechar={() => {
+          definirLendoQr(false);
+        }}
+        aoLer={(conteudo) => void chat.enviarNfce(conteudo)}
       />
       <FolhaBusca
         visivel={buscando}

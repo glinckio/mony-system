@@ -94,3 +94,32 @@ jest.mock('expo-audio', () => {
     __gravador: gravador,
   };
 });
+
+// Leitor do QR Code do cupom (T-066b): a `CameraView` falsa guarda o `onBarcodeScanned`, e os
+// testes "apontam" para um código com `__camera.ler(conteudo)`; a permissão muda com
+// `__camera.permissao`.
+jest.mock('expo-camera', () => {
+  const { createElement } = jest.requireActual<typeof import('react')>('react');
+  const { View } = jest.requireActual<typeof import('react-native')>('react-native');
+  const camera = {
+    aoLer: undefined as ((mockLeitura: { type: string; data: string }) => void) | undefined,
+    permissao: { granted: true, canAskAgain: true, status: 'granted' },
+    pedir: jest.fn(() => Promise.resolve(camera.permissao)),
+    ler: (data: string) => {
+      camera.aoLer?.({ type: 'qr', data });
+    },
+    reiniciar: () => {
+      camera.aoLer = undefined;
+      camera.permissao = { granted: true, canAskAgain: true, status: 'granted' };
+      camera.pedir.mockClear();
+    },
+  };
+  return {
+    CameraView: (propriedades: { onBarcodeScanned?: typeof camera.aoLer }) => {
+      camera.aoLer = propriedades.onBarcodeScanned;
+      return createElement(View, { testID: 'camera' });
+    },
+    useCameraPermissions: () => [camera.permissao, camera.pedir],
+    __camera: camera,
+  };
+});

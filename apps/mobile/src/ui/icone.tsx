@@ -51,6 +51,7 @@ import Pencil from 'lucide-react-native/icons/pencil';
 import PiggyBank from 'lucide-react-native/icons/piggy-bank';
 import Plane from 'lucide-react-native/icons/plane';
 import Plus from 'lucide-react-native/icons/plus';
+import QrCode from 'lucide-react-native/icons/qr-code';
 import Receipt from 'lucide-react-native/icons/receipt';
 import RefreshCw from 'lucide-react-native/icons/refresh-cw';
 import Repeat from 'lucide-react-native/icons/repeat';
@@ -133,6 +134,7 @@ const ICONES = {
   'piggy-bank': PiggyBank,
   plane: Plane,
   plus: Plus,
+  'qr-code': QrCode,
   receipt: Receipt,
   'refresh-cw': RefreshCw,
   repeat: Repeat,

@@ -99,6 +99,8 @@ const COR_FUNDO = '#0A2133';
 
 const PEDIDO_FACE_ID = 'Use o Face ID para desbloquear o Mony neste aparelho.';
 const PEDIDO_MICROFONE = 'O Mony usa o microfone para você mandar mensagens de voz para a Mony.';
+const PEDIDO_CAMERA =
+  'O Mony usa a câmera para fotografar comprovantes e ler o QR Code do cupom fiscal.';
 
 export function criarConfigApp(base: ConfigContext['config'], variaveis: Variaveis): ExpoConfig {
   const ambiente = texto(variaveis.APP_ENV) ?? 'development';
@@ -170,10 +172,13 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
         {
           photosPermission:
             'O Mony usa suas fotos para anexar comprovantes e notas aos lançamentos.',
-          cameraPermission: 'O Mony usa a câmera para fotografar comprovantes e notas.',
+          cameraPermission: PEDIDO_CAMERA,
           microphonePermission: PEDIDO_MICROFONE,
         },
       ],
+      // QR Code do cupom fiscal na Mony (T-066b): só a leitura de código; o microfone com o mesmo
+      // texto dos outros, porque o expo-camera também pede o RECORD_AUDIO no Android.
+      ['expo-camera', { cameraPermission: PEDIDO_CAMERA, microphonePermission: PEDIDO_MICROFONE }],
       // Mensagem de voz para a Mony (T-064): só com o app aberto, sem áudio em segundo plano.
       [
         'expo-audio',
