@@ -13,6 +13,7 @@ import {
   usePreferenciasAlerta,
   useSalvarPreferenciasAlerta,
 } from '@/features/notificacoes/hooks/use-notificacoes';
+import { mascararHora } from '@/lib/mascaras';
 import { mensagemDeErro } from '@/lib/formularios';
 import { Botao, Cabecalho, Campo, Card, Chip, Erro, Skeleton, Tela, Texto } from '@/ui';
 import { cores } from '@/ui/tokens';
@@ -36,12 +37,6 @@ const TIPOS_NA_TELA: readonly TipoAlerta[] = [
 
 /** RN-108: dias de antecedência oferecidos nos avisos de vencimento. */
 const ANTECEDENCIAS = [0, 1, 3, 5, 7] as const;
-
-/** "22:00" enquanto digita "2200". */
-function mascararHora(texto: string): string {
-  const digitos = texto.replace(/\D/g, '').slice(0, 4);
-  return digitos.length <= 2 ? digitos : `${digitos.slice(0, 2)}:${digitos.slice(2)}`;
-}
 
 function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (

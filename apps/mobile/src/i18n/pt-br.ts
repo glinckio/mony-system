@@ -6,6 +6,7 @@ import { textosCartoes } from '@/features/cartoes/cartoes.strings';
 import { textosCategorias } from '@/features/categorias/categorias.strings';
 import { textosContas } from '@/features/contas/contas.strings';
 import { textosInicio } from '@/features/inicio/inicio.strings';
+import { textosLembretes } from '@/features/lembretes/lembretes.strings';
 import { textosMais } from '@/features/mais/mais.strings';
 import { textosMetas } from '@/features/metas/metas.strings';
 import { textosMony } from '@/features/mony/mony.strings';
@@ -38,6 +39,7 @@ export const textosPtBr = {
   contas: textosContas,
   orcamentos: textosOrcamentos,
   metas: textosMetas,
+  lembretes: textosLembretes,
   relatorios: textosRelatorios,
   planos: textosPlanos,
 };

@@ -46,7 +46,7 @@ function textoDoErro(erro: unknown): string {
 /**
  * Tela de teste da PoC do alarme no Android (T-023a). Só em desenvolvimento (Perfil → "Teste do
  * alarme"): agenda alarmes de teste e mede, no aparelho, o atraso entre o horário previsto e o toque.
- * Os lembretes de verdade são da T-084.
+ * Os lembretes de verdade são da T-084 (`src/features/lembretes`).
  */
 export default function TelaPocAlarmes() {
   const { t } = useTranslation();

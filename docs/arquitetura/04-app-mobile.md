@@ -252,7 +252,7 @@ Tela em `src/features/inicio`, no design da página 3 (`docs/design`), com uma c
 - **Topo**: as iniciais do nome (abrem o Perfil), "Pesquisar" (abre Transações, que tem a busca), o calendário do período e o sino com o ponto das não lidas, que abre a central de notificações (T-087).
 - **Saldo do período** (RN-020) grande, com os centavos menores, o olho do modo privacidade (RN-022) e "Ver o mês" (abre Transações). O título da tela ("Início") é só para o leitor de tela: o design não tem título visível.
 - **Período** (RN-021): folha com "Este mês", "Mês passado" e "Escolher" (de e até, `DD/MM/AAAA`), validada pelo `esquemaConsultaDashboard`. Ao trocar, a tela segue com o período anterior até o novo chegar.
-- **Atalhos**: Lançar, Orçamentos e Metas. Os do design que ainda não têm tela (Ler nota, Lista, Lembrete) entram com as tarefas deles.
+- **Atalhos**: Lançar, Orçamentos, Metas e Lembrete (o novo lembrete, T-084b). Os do design que ainda não têm tela (Ler nota e Lista) entram com as tarefas deles.
 - **Blocos**: o checklist (RN-024), o resumo (receitas e quanto já entrou, despesas pagas, a pagar), os próximos vencimentos (RN-023, até cinco; a fatura abre a fatura, parcela e conta abrem o lançamento), os cartões (cor, fatura atual, barra do limite e vencimento) e os orçamentos do mês (total e as três categorias mais perto de estourar). Cartões e orçamentos só aparecem quando existem.
 - Puxar para baixo atualiza o Início e o checklist.
 
@@ -269,11 +269,36 @@ Tela em `src/features/relatorios` (`/relatorios`, no grupo `(telas)`, pela grade
 - **Baixar** (RN-151, T-125): o botão do topo abre a folha com [PDF] e [Planilha (Excel)] do período da aba; enquanto o worker gera, "Gerando o relatório…" (o app pergunta a cada 1,5 s); pronto, [Abrir o relatório] abre a URL de 24 h no navegador do aparelho. Falhou: [Tentar de novo]. No gratuito, a mensagem da API e [Ver planos].
 - **Histórico de preços** (RN-150, T-066c): o último bloco abre `/relatorios/precos`, com a busca de produto ("leite", "café"). Com 2 letras ou mais, depois de 350 ms sem digitar, pede `GET /relatorios/precos?busca=` (sem período: o padrão da API). Cada produto dos cupons fiscais lidos pela Mony vem num card com a descrição, a unidade e quantas compras, o último preço e o menor (data e loja) e, com mais de uma loja, a média em cada uma. Acima, o período ("Compras de nov/2025 a out/2026"; no gratuito, "Compras de outubro"). Sem nada: "Nada com “caviar”".
 
+## Lembretes (T-084b)
+
+Telas em `src/features/lembretes`, no design da página 6, sobre as rotas da T-084a (doc 05, "Lembretes"; RN-075 e RN-076):
+
+- **Lista** (`/lembretes`, pela grade da aba Mais):
+  - **Abas:** Próximos, Recorrentes e Feitos.
+  - **Próximos:** os que tocaram e esperam o [Feito] ("Já tocaram"), Hoje, Amanhã e Próximos dias. Em "Já tocaram" e Hoje, o bloco da esquerda mostra a hora; nos outros, o dia ("QUA 21").
+  - **Cada item:** a repetição curta ("Todo mês · 08:00") ou "Adiado até 12:10", e o selo do canal (Alarme, quando tem; senão, Push).
+  - **No fim:** "Peça no chat: …".
+  - **Recorrentes:** os ativos que repetem. **Feitos:** os últimos 100.
+  - **Fora:** o calendário do design (a agenda) entra com a T-085.
+- **Novo** (`/lembretes/novo`, pelo "+" e pelo atalho Lembrete do Início) e **editar** (`/lembretes/<id>/editar`):
+  - **Campos:** o que lembrar; a data (`DD/MM/AAAA`) e a hora (`HH:MM`) no fuso do usuário (o novo sugere a próxima hora cheia); a repetição; avisar por notificação e por alarme.
+  - **Repetição:** não repete, diária, semanal nos dias escolhidos (começa pelo dia da data), mensal ou anual, "a cada N" e "até". A RRULE sai sem o dia do mês nem o mês, que a API tira da data.
+  - **Validação:** a data e hora não pode ter passado, menos no ativo que mantém a data.
+  - **Envio:** `POST` com a `Idempotency-Key` do formulário. A edição manda só o que mudou. O feito ("Lembrar de novo") vai com a data nova, que o reativa.
+- **O lembrete** (`/lembretes/<id>`, também pelo link `mony://lembretes/<id>` do push):
+  - **O que mostra:** quando ("Quinta, 15/10/2026 às 08:00"), a repetição por extenso ("Toda semana: seg, qua", "Todo mês, dia 21", ", até 31/12/2027"), os canais, a soneca e "Tocou e espera o feito".
+  - **Ações:** [Feito]; [Adiar] (10 minutos, 1 hora ou amanhã no mesmo horário); Editar; Excluir (com confirmação).
+- **Alarmes do aparelho (`mony-alarm`, doc 09):**
+  - **Quando sincroniza:** ao abrir o app (o layout das abas, e de novo ao voltar para ele) e depois de cada mudança.
+  - **Como:** o app busca `GET /lembretes/alarmes` e chama `sincronizar` com os textos do alarme. Sem o módulo (iOS até a T-023b, testes), não faz nada; sem conexão, fica a agenda de antes.
+  - **Permissões:** no primeiro lembrete com alarme, se faltam o alarme exato ou a tela cheia, uma folha leva às configurações do sistema. O pedido fica guardado no aparelho e não volta.
+  - **Push silencioso:** é tratado na T-088.
+
 ## Aba Mais e Perfil (T-057)
 
 Telas em `src/features/mais`, no design das páginas 8 e 9 (`docs/design`):
 
-- **Mais** (`/mais`): o cartão do perfil (iniciais e nome, abre o Perfil), a grade de atalhos e "Configurações". A grade só mostra as telas que já existem (Orçamentos, Metas, Relatórios, Categorias e Contas); Parcelamentos, Listas, Lembretes, Agenda e Bancos entram com as tarefas deles, e Contas sai quando Bancos (Open Finance) chegar.
+- **Mais** (`/mais`): o cartão do perfil (iniciais e nome, abre o Perfil), a grade de atalhos e "Configurações". A grade só mostra as telas que já existem (Orçamentos, Metas, Relatórios, Lembretes, Categorias e Contas); Parcelamentos, Listas, Agenda e Bancos entram com as tarefas deles, e Contas sai quando Bancos (Open Finance) chegar.
 - **Perfil** (`/mais/perfil`, também pelas iniciais do Início): iniciais, nome e e-mail (`GET /me`); Dados pessoais; Seu plano; Entrar com biometria (RN-005, quando o aparelho tem); Alertas da Mony; Permissões e apps de compra; Rever tutorial; Sair da conta.
 - **Seu plano** (`/mais/plano`, T-100): o plano que vale agora (`GET /assinatura/uso`): no teste, "Tudo liberado até 18/out, 12:00."; no gratuito, cada limite com "2 de 3", a barra e, quando acabou, quando volta ("Amanhã libera de novo.", "No dia 1º libera de novo.") ou, nos de quantidade, "Para ter mais, conheça os planos."; e o aviso de que os relatórios mostram só o mês atual. O [Ver planos] da Mony (link `mony://planos`) abre esta tela; a compra dos planos entra com a T-103. No teste, a linha "Seu plano" do Perfil tem o selo "Teste grátis" (T-101); os avisos do teste chegam por push e pela Mony e abrem esta tela.
 - **Alertas da Mony** (`/mais/alertas`, T-087): o horário de silêncio (chave e as horas de começo e fim, "22:00"; RN-101), a chave de cada alerta que o app já manda (limite, fatura fechada, vencimento da fatura, fatura atrasada, orçamentos, contas a vencer, fora do padrão, projeção, resumos; assinatura "sempre ligado", RN-100) e, nos vencimentos, a antecedência (no dia, 1, 3, 5 ou 7 dias, RN-108). "Salvar" manda só o que mudou (`PUT /preferencias-alerta`). Os alertas de recursos que ainda não existem (lembretes, agenda, apps de compra, banco) entram com eles.
