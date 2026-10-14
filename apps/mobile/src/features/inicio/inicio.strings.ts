@@ -30,7 +30,7 @@ export const textosInicio = {
   atalhos: {
     lancar: 'Lançar',
     orcamentos: 'Orçamentos',
-    metas: 'Metas',
+    lista: 'Lista',
     lembrete: 'Lembrete',
   },
   resumo: {

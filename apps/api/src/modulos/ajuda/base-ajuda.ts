@@ -12,7 +12,7 @@ export interface TopicoAjuda {
 }
 
 /** Muda junto com o conteúdo (vai no resultado da ferramenta, para saber de qual base veio). */
-export const VERSAO_BASE_AJUDA = '2026-10-14';
+export const VERSAO_BASE_AJUDA = '2026-10-15';
 
 export const BASE_AJUDA: readonly TopicoAjuda[] = [
   {
@@ -189,6 +189,30 @@ export const BASE_AJUDA: readonly TopicoAjuda[] = [
     ].join('\n'),
   },
   {
+    id: 'listas',
+    titulo: 'Listas de compras',
+    palavras: [
+      'lista',
+      'listas',
+      'compras',
+      'mercado',
+      'supermercado',
+      'feira',
+      'farmacia',
+      'itens',
+      'item',
+      'comprado',
+      'finalizar',
+    ],
+    texto: [
+      '- **Onde fica:** atalho **Lista** no Início, ou aba **Mais** → **Listas**. O "+" cria uma lista com nome e tipo (mercado, casa, carro, farmácia ou outra).',
+      '- **Itens:** escreva o nome no fim da lista. O app sugere o preço pelo último cupom fiscal parecido dos últimos 90 dias e avisa quando o preço subiu ou caiu. Toque no item para mudar a quantidade, a unidade ou o preço.',
+      '- **Orçamento:** o topo mostra o total estimado e quanto ainda sobra no orçamento da categoria da lista.',
+      '- **No mercado:** marque a caixa do que já comprou. **Finalizar e lançar despesa** lança uma despesa com o total dos itens comprados, na categoria da lista; dá para mudar o valor, a data, a categoria e a forma de pagamento.',
+      '- **Plano gratuito:** uma lista aberta por vez. A finalizada não conta.',
+    ].join('\n'),
+  },
+  {
     id: 'lembretes',
     titulo: 'Lembretes e alarmes',
     palavras: [
@@ -258,7 +282,7 @@ export const BASE_AJUDA: readonly TopicoAjuda[] = [
     ],
     texto: [
       '- **Teste grátis:** a conta nova começa com 3 dias com tudo liberado. Depois, vai para o plano gratuito.',
-      '- **Plano gratuito:** tem limites por dia e por mês (lançamentos, mensagens para a Mony, leituras de foto, PDF ou cupom) e de quantidade (cartões e lembretes ativos). Os relatórios mostram só o mês atual.',
+      '- **Plano gratuito:** tem limites por dia e por mês (lançamentos, mensagens para a Mony, leituras de foto, PDF ou cupom) e de quantidade (cartões, listas de compras abertas e lembretes ativos). Os relatórios mostram só o mês atual.',
       '- **Seu uso:** aba **Mais** → **Perfil** → **Seu plano** mostra o uso de cada limite e quando volta.',
       '- **Planos pagos:** chegam em breve.',
     ].join('\n'),

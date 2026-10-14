@@ -335,11 +335,14 @@ describe.runIf(ativo)('integração: listas de compras', () => {
     );
 
     // Um cartão que não existe: o lançamento falha e a lista continua aberta.
+    const cartaoId = randomUUID();
     const falha = await chamar(ana, 'POST', `/listas/${lista.id}/finalizar`, {
-      formaPagamento: 'credito',
-      cartaoId: randomUUID(),
+      formaPagamento: 'cartao_credito',
+      cartaoId,
     });
-    expect(falha.statusCode).toBeGreaterThanOrEqual(400);
+    expect(falha.json()).toMatchObject({
+      erro: { codigo: 'NAO_ENCONTRADO', detalhes: { cartaoId } },
+    });
     expect(
       (await ok<DetalheLista>(await chamar(ana, 'GET', `/listas/${lista.id}`))).finalizadaEm,
     ).toBeNull();

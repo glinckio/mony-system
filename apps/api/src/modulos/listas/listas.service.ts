@@ -288,7 +288,7 @@ export class ListasService {
   }
 
   /**
-   * A lista com os itens (os não comprados primeiro), o histórico de preço de cada um que ainda vai
+   * A lista com os itens (na ordem em que entraram), o histórico de preço de cada um que ainda vai
    * ser comprado (RN-071), a categoria de despesa padrão (RN-072) e o orçamento livre dela no mês de
    * hoje (RN-073).
    */
@@ -320,10 +320,7 @@ export class ListasService {
     }
     return {
       ...paraResumo(lista),
-      itens: [
-        ...itens.filter(({ comprado }) => !comprado),
-        ...itens.filter(({ comprado }) => comprado),
-      ],
+      itens,
       totalCompradoCentavos: itens
         .filter(({ comprado }) => comprado)
         .reduce((soma, { totalEstimadoCentavos }) => soma + (totalEstimadoCentavos ?? 0), 0),

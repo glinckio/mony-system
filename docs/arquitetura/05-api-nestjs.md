@@ -470,9 +470,9 @@ Implementado na T-123a (RN-070 a RN-073), em `modulos/listas`; o contrato e as c
 | `DELETE /itens/:id` | Tira o item |
 | `POST /listas/:id/finalizar` | Lança a despesa e fecha a lista, com `Idempotency-Key` |
 
-As rotas de item devolvem a lista inteira, já na ordem da tela. Uma lista finalizada não muda mais: item, nome e "Finalizar" de novo respondem `CONFLITO`.
+As rotas de item devolvem a lista inteira. Uma lista finalizada não muda mais: item, nome e "Finalizar" de novo respondem `CONFLITO`.
 
-- **Itens (RN-070):** quantidade de até 3 casas (1,5 kg), preço unitário em centavos e total de cada item = preço × quantidade, arredondado. Até 200 itens por lista. Os não comprados vêm primeiro, na ordem em que entraram, e o total estimado da lista soma só os itens com preço.
+- **Itens (RN-070):** quantidade de até 3 casas (1,5 kg), preço unitário em centavos e total de cada item = preço × quantidade, arredondado. Até 200 itens por lista. Os itens vêm na ordem em que entraram (marcar comprado não muda o lugar deles na tela), e o total estimado da lista soma só os itens com preço.
 - **Preço sugerido (RN-071):** sem `precoEstimadoCentavos`, o item recebe o último preço unitário pago num item de cupom parecido nos últimos 90 dias (`RelatoriosService.ultimasComprasDoProduto`, a mesma busca do histórico de preços da T-066c).
   - **A busca:** todas as palavras do nome, sem acento nem caixa. Sem nada, só a primeira palavra de 3 letras ou mais ("Leite integral" acha "LEITE INT 1L").
   - **O histórico:** cada item ainda por comprar de uma lista aberta traz `historico`, com o último preço, a data, a loja e a compra anterior do mesmo produto (outro dia ou outra loja). A variação vem em percentual inteiro ("Subiu 12% desde a última compra").

@@ -143,4 +143,6 @@ export const LINKS_INTERNOS = {
     ocorrencia === undefined
       ? `mony://lembretes/${lembreteId}`
       : `mony://lembretes/${lembreteId}?ocorrencia=${String(ocorrencia.getTime())}`,
+  /** A lista de compras (T-123b). */
+  lista: (listaId: string): string => `mony://listas/${listaId}`,
 } as const;
