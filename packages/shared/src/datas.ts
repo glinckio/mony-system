@@ -210,19 +210,35 @@ function paredeComoUtc(instante: number, fuso: string): number {
   );
 }
 
+const PADRAO_HORA = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
 /**
- * O instante em que o dia começa no fuso do usuário (meia-noite local): `2026-10-09` em São Paulo
- * → `2026-10-09T03:00:00Z`. É quando a cota do dia volta (RN-122, RN-123).
+ * O instante de uma data e hora (`HH:MM`, 24 h) no relógio do fuso do usuário: `2026-10-09` às
+ * `08:00` em São Paulo → `2026-10-09T11:00:00Z` (a hora dos lembretes, RN-075).
  */
-export function inicioDoDiaNoFuso(data: DataCalendario, fuso: string = FUSO_PADRAO): Date {
+export function instanteNoFuso(
+  data: DataCalendario,
+  hora: string,
+  fuso: string = FUSO_PADRAO,
+): Date {
   const { ano, mes, dia } = partesOuErro(data);
-  const alvo = Date.UTC(ano, mes - 1, dia);
+  const partesHora = PADRAO_HORA.exec(hora);
+  if (!partesHora) throw new RangeError(`hora inválida (esperado HH:MM): ${hora}`);
+  const alvo = Date.UTC(ano, mes - 1, dia, Number(partesHora[1]), Number(partesHora[2]));
   // Duas voltas acertam o deslocamento também perto de mudança de horário de verão.
   let instante = alvo;
   for (let volta = 0; volta < 2; volta += 1) {
     instante = alvo - (paredeComoUtc(instante, fuso) - instante);
   }
   return new Date(instante);
+}
+
+/**
+ * O instante em que o dia começa no fuso do usuário (meia-noite local): `2026-10-09` em São Paulo
+ * → `2026-10-09T03:00:00Z`. É quando a cota do dia volta (RN-122, RN-123).
+ */
+export function inicioDoDiaNoFuso(data: DataCalendario, fuso: string = FUSO_PADRAO): Date {
+  return instanteNoFuso(data, '00:00', fuso);
 }
 
 /** Competência de um instante no fuso do usuário (o "mês atual" dele). */

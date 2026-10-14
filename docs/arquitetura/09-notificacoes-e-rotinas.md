@@ -73,14 +73,14 @@ Regras de envio: RN-100 a RN-108 em [07](07-regras-de-negocio.md#alertas-e-notif
   - `DeviceNotRegistered` no ticket tira o token na hora; os tickets aceitos voltam à fila para conferir os recibos 15 minutos depois (o Expo guarda por 24 h), e o mesmo erro no recibo tira o token. Tirar o token é `token_push = null` e `ativo = false`, só se o token ainda for o mesmo (o aparelho pode ter registrado outro). O app registra de novo ao abrir, e o registro volta `ativo = true`.
   - Resposta 4xx do Expo (menos 429) vai direto para as falhas; 429, 5xx e falha de rede tentam de novo.
   - O job leva título e corpo: fica no Redis uma hora depois de enviado (para segurar o envio repetido) e um dia se falhar.
-- Push silencioso (`content-available`) para o app reagendar alarmes locais quando um lembrete com canal alarme muda.
+- Push silencioso (`content-available`) para o app reagendar alarmes locais quando um lembrete com canal alarme muda. **Como está (T-084a):** job `sincronizar-alarmes` na fila `notificacoes` (id por usuário, 5 s de espera, para juntar mudanças seguidas); o worker manda a cada aparelho com token uma mensagem só com `dados.tipo = sincronizar_alarmes` (`PUSH_SINCRONIZAR_ALARMES`), sem título, corpo nem som. O app trata na T-088.
 
 ## Canais de lembrete (do PDF)
 
 | Canal | Como |
 |---|---|
 | Notificação | Push enviado pelo worker na rotina por minuto |
-| Alarme | Agendado **no aparelho** pelo módulo `mony-alarm`, toca sem internet. O servidor é a fonte da verdade; o app sincroniza a agenda de alarmes ao abrir, ao receber push silencioso e ao criar/editar, mandando a lista inteira dos próximos (o aparelho fica com os 50 mais próximos). [Adiar] cria um alarme só no aparelho, 10 min depois. No Android, sem a liberação do alarme exato, o alarme pode atrasar ([T-023a](../agentes/poc/T-023a.md)) |
+| Alarme | Agendado **no aparelho** pelo módulo `mony-alarm`, toca sem internet. O servidor é a fonte da verdade; o app sincroniza a agenda de alarmes ao abrir, ao receber push silencioso e ao criar/editar, mandando a lista inteira dos próximos (o aparelho fica com os 50 mais próximos; `GET /lembretes/alarmes`, T-084a). Lembrete só com alarme não manda push no Android (o aparelho toca); no iPhone, até a T-023b, manda. [Adiar] cria um alarme só no aparelho, 10 min depois. No Android, sem a liberação do alarme exato, o alarme pode atrasar ([T-023a](../agentes/poc/T-023a.md)) |
 | Ligação | Worker chama `VozProvider` (ex.: Twilio) com texto sintetizado. Só plano pago, telefone verificado, dentro do limite mensal (RN-078). Registro em `ligacoes` |
 
 ## Rotinas agendadas
@@ -98,7 +98,7 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 | Repetir orçamentos | Dia 1, 00:15 | Copia do mês anterior os orçamentos com `repetir_mensal` (RN-060); o mês é o de São Paulo (T-043) |
 | Sincronização Open Finance | A cada 6 h | Além dos webhooks |
 | Aviso de consentimento | Diária | 7 dias antes de vencer (RN-144) |
-| Disparo de lembretes e ligações | A cada minuto | Lembretes com `data_hora` (ou `adiado_ate`) no minuto atual |
+| Disparo de lembretes e ligações (`disparar-lembretes`) | A cada minuto | Lembretes com `data_hora` (ou `adiado_ate`) vencidos e ainda não tocados: push urgente com [Feito] [Adiar]; a repetição passa para a próxima ocorrência. Implementada na T-084a (doc 05, "Lembretes"); as ligações, na T-122 |
 | Sincronização de agendas externas | A cada 15 min | Google e Microsoft (prefira webhooks/delta quando disponíveis) |
 | Liberação do silêncio (`liberar-silencio`) | A cada 15 min | Envia alertas adiados cujo silêncio terminou; mais de 3 para o mesmo usuário saem num envio agrupado. Implementada na T-080 |
 | Limpeza | Diária 03:00 | Rascunhos, códigos, sessões expiradas; arquivos fora do prazo de retenção (RN-162). Os rascunhos da Mony já saem na `limpar-rascunhos` (T-061, RN-088) |

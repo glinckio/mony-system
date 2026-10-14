@@ -930,3 +930,28 @@ Contexto: o BACKLOG cita o índice `to_tsvector` do doc 06 e a RN-150 só diz "h
 - **Período padrão da API** (12 meses; no gratuito, o mês atual, RN-120), sem seletor na tela: o histórico é para comparar ao longo do tempo.
 - **Tela própria** (`/relatorios/precos`), aberta pelo último bloco dos Relatórios, porque é uma busca, não um gráfico do período da aba.
 Reversível: sim.
+
+## 2026-10-14 — T-084a — Lembretes na API
+Contexto: RN-075 a RN-077 e o doc 09 dizem o quê (repetição em RRULE, soneca, [Feito] pela notificação, alarme sincronizado), mas não como guardar a ocorrência nem o que é "personalizado". Decisões:
+- **T-084 dividida** em API (T-084a, esta) e app (T-084b). As ações da notificação e o push silencioso no app ficam na T-088, que trata todo push.
+- **RRULE num subconjunto, sem biblioteca:**
+  - aceita `FREQ` (diária, semanal, mensal, anual), `INTERVAL` (1 a 99), `BYDAY` na semanal, `BYMONTHDAY` na mensal e anual, `BYMONTH` na anual e `UNTIL` como data;
+  - recusa `COUNT` e o resto;
+  - a hora vem do lembrete, no fuso do usuário (horário de verão certo);
+  - a regra é completada pela data pedida e guardada canônica, então a próxima ocorrência sai só da regra e da atual, sem guardar o `DTSTART`;
+  - dia 31 cai no último dia do mês e volta (como nas recorrências, RN-043), o que diverge da RFC, que pula o mês.
+
+  Alternativa: o `rrule`, que pede o `DTSTART` guardado e conta `COUNT`.
+- **`data_hora` é a ocorrência atual, e uma coluna nova, `disparado_em`**, diz que ela já tocou. Sem ela, a rotina por minuto não sabe se o único já tocou sem olhar a central (e o lembrete só com alarme no Android nem passa pela central). O único que tocou fica ativo e "pendente" até o [Feito], e conta no limite do gratuito.
+- **A ocorrência vai no link do push** (`mony://lembretes/<id>?ocorrencia=<ms>`), para o [Feito] da notificação de um lembrete que repete não pular a próxima: com a ocorrência que já passou (ou o fim da soneca), o [Feito] só tira a soneca. Sem ocorrência (da lista), o [Feito] da repetição pula a próxima.
+- **Adiar "amanhã"** = o dia seguinte ao de hoje, no fuso, na hora do lembrete. A soneca do feito é `CONFLITO`.
+- **Só com alarme**:
+  - no Android, o push não vai, porque o aparelho toca e um push junto seria repetido;
+  - com iPhone, vai, porque lá o alarme é a T-023b. Com os dois aparelhos, o Android também recebe o push.
+- **Alarmes:** as ocorrências dos próximos 35 dias e as sonecas, as 50 mais próximas.
+- **Push silencioso:** job por usuário com 5 s de espera, para juntar mudanças seguidas. Sem Redis, fica no log, porque o app também sincroniza ao abrir.
+- **Excluir = `cancelado`** (some de tudo; as `ligacoes` da T-122 apontam para o lembrete). `DELETE /lembretes/:id` entrou nas rotas do doc 05.
+- **A ligação** fica fora dos canais aceitos até a T-122.
+- **Na tela do plano** (`GET /assinatura/uso`), "Lembretes ativos" entra com o uso.
+
+Reversível: sim (a coluna nova só acrescenta).

@@ -26,6 +26,10 @@ import {
   montarMensagens,
   ProcessadorNotificacoes,
 } from '../src/modulos/notificacoes/processador-notificacoes';
+import {
+  JOB_SINCRONIZAR_ALARMES,
+  SincronizacaoAlarmes,
+} from '../src/modulos/notificacoes/sincronizacao-alarmes';
 import { criarFilaFalsa } from './utilitarios';
 
 function respostaJson(corpo: unknown, status = 200): Response {
@@ -116,6 +120,30 @@ describe('PushExpo', () => {
       erro: 'DeviceNotRegistered',
       mensagem: 'não registrado',
     });
+  });
+
+  it('o push silencioso vai só com os dados e o content-available (doc 09)', async () => {
+    const buscar = vi.fn<Buscar>(() =>
+      Promise.resolve(respostaJson({ data: [{ status: 'ok', id: 'a' }] })),
+    );
+    await new PushExpo(undefined, buscar).enviar([
+      mensagem('t', {
+        titulo: '',
+        corpo: '',
+        dados: { tipo: 'sincronizar_alarmes' },
+        canal: 'lembretes',
+        silenciosa: true,
+      }),
+    ]);
+    const [, opcoes] = buscar.mock.calls[0] ?? [];
+    expect(corpo(opcoes)).toEqual([
+      {
+        to: 't',
+        data: { tipo: 'sincronizar_alarmes' },
+        priority: 'high',
+        _contentAvailable: true,
+      },
+    ]);
   });
 
   it('sem token de acesso não manda o cabeçalho de autorização', async () => {
@@ -278,6 +306,26 @@ describe('EnvioPush', () => {
   });
 });
 
+describe('SincronizacaoAlarmes', () => {
+  it('põe o push silencioso na fila, com o id do usuário e 5 segundos de espera', async () => {
+    const fila = criarFilaFalsa();
+    await new SincronizacaoAlarmes(fila as unknown as Queue).avisar('u1');
+    expect(fila.add).toHaveBeenCalledExactlyOnceWith(
+      JOB_SINCRONIZAR_ALARMES,
+      { usuarioId: 'u1' },
+      { jobId: 'alarmes-u1', delay: 5000, removeOnComplete: true, removeOnFail: { age: 86_400 } },
+    );
+  });
+
+  it('sem Redis, só fica no log', async () => {
+    const fila = criarFilaFalsa();
+    fila.add.mockRejectedValueOnce(new Error('sem conexão'));
+    await expect(
+      new SincronizacaoAlarmes(fila as unknown as Queue).avisar('u1'),
+    ).resolves.toBeUndefined();
+  });
+});
+
 describe('ProcessadorNotificacoes', () => {
   function montar(aparelhos: { id: string; token: string }[]) {
     const push = new PushFake();
@@ -334,6 +382,29 @@ describe('ProcessadorNotificacoes', () => {
     expect(repositorio.desligarPush).toHaveBeenCalledExactlyOnceWith(
       'd3',
       'ExponentPushToken[saiu]',
+    );
+  });
+
+  it('o push silencioso dos alarmes vai para cada aparelho e desliga o token recusado', async () => {
+    const { push, repositorio, processador, job } = montar([
+      { id: 'd1', token: 'ExponentPushToken[bom]' },
+      { id: 'd2', token: 'ExponentPushToken[invalido]' },
+    ]);
+    expect(await processador.process(job(JOB_SINCRONIZAR_ALARMES, { usuarioId: 'u' }))).toEqual({
+      enviadas: 1,
+    });
+    expect(repositorio.aparelhosComPush).toHaveBeenCalledWith('u');
+    expect(push.enviadas[0]).toEqual({
+      para: 'ExponentPushToken[bom]',
+      titulo: '',
+      corpo: '',
+      dados: { tipo: 'sincronizar_alarmes' },
+      canal: 'lembretes',
+      silenciosa: true,
+    });
+    expect(repositorio.desligarPush).toHaveBeenCalledExactlyOnceWith(
+      'd2',
+      'ExponentPushToken[invalido]',
     );
   });
 

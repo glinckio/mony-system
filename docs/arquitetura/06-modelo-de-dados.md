@@ -84,7 +84,7 @@ erDiagram
 
 | Tabela | Campos principais | Relações |
 |---|---|---|
-| `lembretes` | titulo, data_hora, recorrencia, canais (`push`,`alarme`,`ligacao`), status, adiado_ate | usuarios |
+| `lembretes` | titulo, data_hora (a ocorrência atual), recorrencia (RRULE), canais (`push`,`alarme`,`ligacao`), status, adiado_ate, disparado_em (T-084a: a ocorrência atual já tocou) | usuarios |
 | `agendas_conectadas` | provedor (`google`,`outlook`,`aparelho`), tokens criptografados, agenda_padrao | usuarios |
 | `compromissos` | titulo, inicio, fim, local, id_externo, origem | usuarios, agendas_conectadas |
 | `notificacoes` | tipo, titulo, corpo, link_interno, enviada_em, lida_em, chave_unica | usuarios. Único (usuario_id, chave_unica) |
@@ -169,7 +169,7 @@ CREATE INDEX ON transacoes USING gin (to_tsvector('portuguese', descricao));
 -- Faturas e parcelas por vencimento (rotinas)
 CREATE INDEX ON faturas (data_vencimento, status);
 CREATE INDEX ON parcelas (vencimento, status);
--- Lembretes por minuto
+-- Lembretes por minuto (T-084a: sem o WHERE, (status, data_hora) e (status, adiado_ate))
 CREATE INDEX ON lembretes (data_hora) WHERE status = 'ativo';
 -- Histórico do chat
 CREATE INDEX ON mensagens (conversa_id, criado_em DESC);

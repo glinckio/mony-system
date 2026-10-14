@@ -10,6 +10,11 @@ export interface MensagemPush {
   categoria?: string | undefined;
   /** Canal do Android (doc 04), criado pelo app. */
   canal: string;
+  /**
+   * Push silencioso (doc 09): sem título, corpo nem som, só os `dados`, para o app trabalhar em
+   * segundo plano (buscar os alarmes de novo).
+   */
+  silenciosa?: boolean;
 }
 
 /** Resultado do envio de uma mensagem, na mesma ordem das mensagens. */

@@ -45,16 +45,21 @@ export class PushExpo extends PushProvider {
       const lote = mensagens.slice(inicio, inicio + MENSAGENS_POR_ENVIO);
       const resposta = await this.postar<TicketExpo[]>(
         URL_ENVIO_EXPO,
-        lote.map((mensagem) => ({
-          to: mensagem.para,
-          title: mensagem.titulo,
-          body: mensagem.corpo,
-          data: mensagem.dados,
-          sound: 'default',
-          priority: 'high',
-          channelId: mensagem.canal,
-          ...(mensagem.categoria === undefined ? {} : { categoryId: mensagem.categoria }),
-        })),
+        lote.map((mensagem) =>
+          mensagem.silenciosa === true
+            ? // Só dados: o iOS acorda o app com `content-available`; o Android entrega ao app.
+              { to: mensagem.para, data: mensagem.dados, priority: 'high', _contentAvailable: true }
+            : {
+                to: mensagem.para,
+                title: mensagem.titulo,
+                body: mensagem.corpo,
+                data: mensagem.dados,
+                sound: 'default',
+                priority: 'high',
+                channelId: mensagem.canal,
+                ...(mensagem.categoria === undefined ? {} : { categoryId: mensagem.categoria }),
+              },
+        ),
       );
       const recebidos = resposta ?? [];
       lote.forEach((_, indice) => {

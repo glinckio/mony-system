@@ -105,9 +105,14 @@ describe('links internos (RN-105)', () => {
       LINKS_INTERNOS.parcelamento(id),
       LINKS_INTERNOS.mony(),
       LINKS_INTERNOS.planos(),
+      LINKS_INTERNOS.lembrete(id),
+      LINKS_INTERNOS.lembrete(id, new Date('2026-10-15T11:00:00Z')),
     ]) {
       expect(link).toMatch(REGEX_LINK_INTERNO);
     }
     expect(LINKS_INTERNOS.orcamentos('2026-10-01')).toBe('mony://orcamentos?competencia=2026-10');
+    expect(LINKS_INTERNOS.lembrete(id, new Date('2026-10-15T11:00:00Z'))).toBe(
+      `mony://lembretes/${id}?ocorrencia=1792062000000`,
+    );
   });
 });

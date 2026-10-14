@@ -117,7 +117,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Dashboard e relatórios | `GET /dashboard?periodo=` · `GET /relatorios/:tipo?inicio=&fim=` · `POST /relatorios/exportar` |
 | Listas de compras | `GET /listas` · `POST /listas` · `PATCH /listas/:id` · `DELETE /listas/:id` · `POST /listas/:id/itens` · `PATCH /itens/:id` · `DELETE /itens/:id` **(proposta)** · `POST /listas/:id/finalizar` |
 | Compartilhamento | `POST /compartilhamentos` · `POST /compartilhamentos/:id/aceitar` · `DELETE /compartilhamentos/:id` |
-| Lembretes e agenda | `GET /lembretes` · `POST /lembretes` · `PATCH /lembretes/:id` · `POST /lembretes/:id/concluir` · `POST /lembretes/:id/adiar` · `GET /agenda?inicio=&fim=` · `POST /agendas/conectar` · `GET /agendas/oauth/callback` **(proposta)** · `POST /compromissos` · `PATCH /compromissos/:id` **(proposta)** |
+| Lembretes e agenda | `GET /lembretes` · `POST /lembretes` · `PATCH /lembretes/:id` · `DELETE /lembretes/:id` · `POST /lembretes/:id/concluir` · `POST /lembretes/:id/adiar` · `GET /lembretes/alarmes` (prontas: T-084a) · `GET /agenda?inicio=&fim=` · `POST /agendas/conectar` · `GET /agendas/oauth/callback` **(proposta)** · `POST /compromissos` · `PATCH /compromissos/:id` **(proposta)** |
 | Notificações | `GET /notificacoes` · `POST /notificacoes/:id/lida` · `GET /preferencias-alerta` · `PUT /preferencias-alerta` |
 | Apps de compra | `GET /apps-monitorados` · `PUT /apps-monitorados` · `POST /eventos/app-compra-aberto` |
 | Open Finance | `POST /open-finance/token-conexao` · `GET /open-finance/conexoes` · `POST /open-finance/conexoes/:id/sincronizar` · `DELETE /open-finance/conexoes/:id` · `POST /webhooks/open-finance` |
@@ -411,6 +411,49 @@ Implementado na T-042 (RN-050 a RN-055).
 - **Dias:** mudar o fechamento ou o vencimento vale para as faturas que ainda não existem; as criadas mantêm as datas.
 - **Open Finance (RN-039):** cartão conectado só muda nome, cor, faixas de alerta e conta de pagamento, e sai desconectando o banco.
 
+## Lembretes
+
+Implementado na T-084a (RN-075 a RN-077), em `modulos/lembretes`; a regra da repetição fica em `@mony/shared/lembretes`, e as telas chegam com a T-084b. A ligação (RN-078) é a T-122: até lá, os canais aceitos são `push` e `alarme`.
+
+| Rota | O que faz |
+|---|---|
+| `GET /lembretes?status=ativo\|concluido` | Os ativos (os que tocaram e esperam o [Feito] primeiro, depois o mais próximo) ou os últimos 100 feitos |
+| `GET /lembretes/:id` | Um lembrete |
+| `POST /lembretes` | Cria (`titulo`, `dataHora`, `recorrencia?`, `canais`), com `Idempotency-Key` |
+| `PATCH /lembretes/:id` | Muda o título, a data e hora, a repetição ou os canais; uma data nova reativa o feito |
+| `DELETE /lembretes/:id` | Exclui: o status vira `cancelado`, e ele some das listas e dos alarmes |
+| `POST /lembretes/:id/concluir` | O [Feito] (`ocorrencia?`) |
+| `POST /lembretes/:id/adiar` | A soneca (`opcao`: `10min`, o padrão, `1h` ou `amanha`) |
+| `GET /lembretes/alarmes` | Os próximos alarmes, para o `mony-alarm` |
+
+- **Agenda:** `data_hora` é a ocorrência atual: a próxima a tocar ou a que já tocou e espera o [Feito] (`disparado_em` preenchido; na resposta, `pendente`). Segundos não contam (a rotina é por minuto). A data pedida não pode ter passado.
+- **Repetição (RN-075):** RRULE num subconjunto conferido (`lerRegra`):
+  - `FREQ` diária, semanal, mensal ou anual, e `INTERVAL` de 1 a 99;
+  - `BYDAY` na semanal, `BYMONTHDAY` na mensal e na anual, e `BYMONTH` na anual;
+  - `UNTIL` como data, inclusive.
+
+  O que a regra não diz vem da data pedida, e a regra é guardada canônica (`FREQ=WEEKLY;BYDAY=MO,FR`). O primeiro aviso é a primeira data da regra a partir da pedida, na mesma hora local. Dia 31 em mês mais curto cai no último dia e volta ao 31, como nas recorrências (RN-043). A semana da regra começa na segunda. `COUNT` e o resto da RFC 5545 são recusados.
+- **Rotina `disparar-lembretes` (a cada minuto):**
+  - **O que toca:** os ativos com a ocorrência vencida e ainda não tocada, ou com a soneca vencida, até 500 por minuto.
+  - **O aviso:** tipo `lembrete`, urgente (ignora o silêncio, RN-077), com a categoria `lembrete` ([Feito] [Adiar]) e o texto "Lembrete das 08:00" ("Lembrete adiado das 08:00" na soneca).
+  - **Link e chave:** o link leva a ocorrência, `mony://lembretes/<id>?ocorrencia=<ms>`. A chave é `lembrete:<id>:<ocorrência>` ou `lembrete:<id>:adiado:<fim da soneca>`.
+  - **Depois do aviso:** a repetição passa para a próxima ocorrência depois de agora (o que passou com a rotina parada não toca). O único, e a repetição que acabou, ficam esperando o [Feito].
+  - **Concorrência:** o estado só é gravado se o lembrete ainda está como a rotina leu. Se falhar no meio, a chave única segura o aviso repetido.
+  - **Só com alarme:** o push vai só para quem tem iPhone. No Android, o alarme toca no aparelho; no iOS, o alarme chega com a T-023b.
+- **[Feito] (RN-076):**
+  - O único (tocado ou não) e a repetição que já tocou a última ficam `concluido`.
+  - Na repetição, o [Feito] da ocorrência atual (sem `ocorrencia`, ou com ela) pula para a próxima.
+  - O [Feito] de uma ocorrência que já passou ou de uma soneca (a notificação manda a `ocorrencia` do link) só tira a soneca.
+  - O mesmo [Feito] de novo não muda nada.
+- **[Adiar] (RN-076):** `adiado_ate` é agora (sem os segundos) mais 10 minutos ou 1 hora, ou "amanhã": o dia seguinte ao de hoje no fuso do usuário, na hora do lembrete. A soneca de um lembrete feito responde `CONFLITO`.
+- **PATCH:**
+  - Mudar a data ou a repetição recomeça a agenda: tira a soneca e o "tocou".
+  - Só a repetição recomeça da data atual, sem voltar para antes de agora nem tocar de novo a que já tocou.
+- **Alarmes (doc 09):**
+  - **A lista:** `GET /lembretes/alarmes` devolve, dos ativos com o canal alarme, as ocorrências dos próximos 35 dias (a que já tocou não volta) e as sonecas. São os 50 mais próximos, com `id` `<lembrete>-<instante em ms>`, título e texto.
+  - **O push silencioso:** toda mudança num lembrete com alarme (criar, mudar, concluir, adiar, excluir) põe um job `sincronizar-alarmes` na fila `notificacoes`. O id é por usuário e o job espera 5 s, então mudanças seguidas viram um push só. O worker manda o push silencioso (`_contentAvailable`, só `dados.tipo = sincronizar_alarmes`) a cada aparelho com token.
+- **Gratuito (RN-120):** 5 lembretes ativos, conferidos ao criar e ao reativar (`conferirQuantidade(contexto, 'lembrete_ativo', tx)`).
+
 ## Planos e cotas do gratuito
 
 Implementado na T-100 (RN-120 a RN-123, RN-127), em `modulos/planos`; o teste de 3 dias na T-101 (ver "Teste grátis"). A Stripe e as telas de compra chegam com a T-102 e a T-103.
@@ -419,11 +462,11 @@ Implementado na T-100 (RN-120 a RN-123, RN-127), em `modulos/planos`; o teste de
 - **Quem conta:** o que vem do app e da Mony (`contexto.origem` `app` ou `mony`). Rotinas (ocorrências de recorrência), Open Finance e admin não contam.
 - **Onde conta:** no Service que grava, dentro da transação dele (`CotasService.consumir(contexto, recurso, tx)`), e não num guard antes do handler: a Mony chama os Services, não as rotas, e o que não foi gravado não conta (o erro desfaz tudo). Lançamento: `TransacoesService.registrar` (manual, Mony e foto ou PDF confirmado), `ParcelamentosService.registrar` (um parcelamento é um lançamento) e `RecorrenciasService.criar` (a recorrência é um lançamento; as ocorrências não). Mensagem (texto e áudio) e leitura de foto ou PDF: no orquestrador da Mony, ao receber; toque em botão não conta.
 - **Contagem atômica (RN-122):** trava por usuário e recurso até o fim da transação (`pg_advisory_xact_lock`), soma o uso do dia e do mês (do dia 1º a hoje, no fuso do usuário) em `uso_recursos` e grava `+1` na linha do dia (`INSERT … ON CONFLICT DO UPDATE`). O `UPDATE … WHERE quantidade < limite` do RN-122 sozinho não confere o limite do mês, que soma várias linhas.
-- **Quantidade (cartão):** conta os itens que existem (cartões não excluídos) na transação que cria; os que passam do limite continuam visíveis e editáveis (RN-127). Listas de compras e lembretes ativos entram com a T-123 e a T-084.
+- **Quantidade (cartão e lembrete ativo):** conta os itens que existem (cartões não excluídos; lembretes `ativo`, inclusive o que tocou e espera o [Feito]) na transação que cria (e, no lembrete, na que reativa); os que passam do limite continuam visíveis e editáveis (RN-127). As listas de compras entram com a T-123.
 - **Erro:** `LIMITE_PLANO_ATINGIDO` (403) com a frase da Mony e `detalhes` `{ recurso, periodo: dia|mes|quantidade, limite, renovaEm }`; `renovaEm` é a meia-noite do dia seguinte ou do dia 1º no fuso do usuário (nulo na quantidade).
 - **Mony (RN-123):** no limite, a Mony responde a frase com o botão [Ver planos] (`{ tipo: 'abrir', link: 'mony://planos' }`, que o app abre sem chamar `POST /mony/acoes`): na mensagem e na leitura, sem chamar o modelo; no lançamento pelo rascunho, antes das perguntas, sem guardar o rascunho; nas ferramentas, o modelo recebe a falha e o botão sai uma vez; no [Confirmar todos] da foto ou PDF, grava até o limite e o resto continua esperando.
 - **`GET /assinatura/uso`:** o plano que vale agora, `limitado`, o fim do teste e, no gratuito, cada limite com `uso`, `limite` e `renovaEm`.
-- **`@RecursoLimitado(recurso)`** marca as rotas que podem responder o 403 (`x-recurso-limitado` no OpenAPI): `POST /transacoes`, `/parcelamentos`, `/recorrencias`, `/cartoes` e os relatórios. A conta não é feita por ele.
+- **`@RecursoLimitado(recurso)`** marca as rotas que podem responder o 403 (`x-recurso-limitado` no OpenAPI): `POST /transacoes`, `/parcelamentos`, `/recorrencias`, `/cartoes`, `POST` e `PATCH /lembretes` e os relatórios. A conta não é feita por ele.
 
 ## Teste grátis
 

@@ -10,6 +10,7 @@ import { MotorAlertas } from './motor-alertas';
 import { NotificacoesController, PreferenciasAlertaController } from './notificacoes.controller';
 import { NotificacoesRepository } from './notificacoes.repository';
 import { NotificacoesService } from './notificacoes.service';
+import { SincronizacaoAlarmes } from './sincronizacao-alarmes';
 
 /**
  * Central, preferências e motor de alertas. O envio sai pela fila `notificacoes`; o worker registra
@@ -22,9 +23,10 @@ import { NotificacoesService } from './notificacoes.service';
     NotificacoesService,
     NotificacoesRepository,
     MotorAlertas,
+    SincronizacaoAlarmes,
     { provide: EnvioNotificacoes, useClass: EnvioPush },
     { provide: ChatDosAlertas, useExisting: ChatDaMony },
   ],
-  exports: [NotificacoesService, MotorAlertas, NotificacoesRepository],
+  exports: [NotificacoesService, MotorAlertas, NotificacoesRepository, SincronizacaoAlarmes],
 })
 export class NotificacoesModule {}
