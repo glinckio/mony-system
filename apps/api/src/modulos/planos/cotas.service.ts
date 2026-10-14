@@ -26,7 +26,11 @@ const RECURSOS_DE_USO: readonly RecursoDeUso[] = [
   'mensagem_mony',
   'leitura_documento',
 ];
-const RECURSOS_DE_QUANTIDADE: readonly RecursoDeQuantidade[] = ['cartao', 'lembrete_ativo'];
+const RECURSOS_DE_QUANTIDADE: readonly RecursoDeQuantidade[] = [
+  'cartao',
+  'lista_compras',
+  'lembrete_ativo',
+];
 
 /**
  * Cotas do plano gratuito (RN-120 a RN-123). A conta é feita no Service que grava, dentro da

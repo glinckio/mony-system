@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { type DataCalendario, dataNoFuso } from '@mony/shared/datas';
+import { somarDias } from '@mony/shared/recorrencias';
 import {
   competenciasEntre,
   type ConsultaPrecos,
@@ -18,7 +19,12 @@ import {
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { CotasService } from '../planos/cotas.service';
-import { historicoDePrecos, termosDaBusca } from './dominio/precos';
+import {
+  historicoDePrecos,
+  termosDaBusca,
+  type UltimasCompras,
+  ultimasCompras,
+} from './dominio/precos';
 import { RelatoriosRepository } from './relatorios.repository';
 
 interface Periodo {
@@ -206,6 +212,29 @@ export class RelatoriosService {
             fuso: await this.repositorio.fusoDoUsuario(usuarioId),
           });
     return { inicio, fim, busca: consulta.busca, itens: historicoDePrecos(itens) };
+  }
+
+  /**
+   * RN-071 (listas de compras): a última compra de um produto parecido com o nome nos últimos
+   * `dias` (data da nota no fuso do usuário) e a anterior dele. Procura com todas as palavras do
+   * nome e, sem nada, só com a primeira de 3 letras ou mais ("Leite integral" acha "LEITE INT 1L").
+   */
+  async ultimasComprasDoProduto(
+    usuarioId: string,
+    nome: string,
+    dias: number,
+  ): Promise<UltimasCompras | null> {
+    const termos = termosDaBusca(nome);
+    if (termos.length === 0) return null;
+    const fuso = await this.repositorio.fusoDoUsuario(usuarioId);
+    const hoje = dataNoFuso(this.clock.agora(), fuso);
+    const periodo = { inicio: somarDias(hoje, -dias), fim: hoje, fuso };
+    let itens = await this.repositorio.itensComprados(usuarioId, termos, periodo);
+    const primeira = termos.find((termo) => termo.length >= 3);
+    if (itens.length === 0 && termos.length > 1 && primeira !== undefined) {
+      itens = await this.repositorio.itensComprados(usuarioId, [primeira], periodo);
+    }
+    return ultimasCompras(itens);
   }
 
   /**

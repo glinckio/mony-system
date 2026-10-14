@@ -62,6 +62,10 @@
       "types": "./dist/lembretes.d.ts",
       "default": "./dist/lembretes.js"
     },
+    "./listas": {
+      "types": "./dist/listas.d.ts",
+      "default": "./dist/listas.js"
+    },
     "./metas": {
       "types": "./dist/metas.d.ts",
       "default": "./dist/metas.js"

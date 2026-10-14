@@ -134,25 +134,30 @@ export class CotasRepository {
   }
 
   /**
-   * Os itens que contam no limite de quantidade (RN-120): os cartões não excluídos e os lembretes
-   * ativos (o que tocou e espera o [Feito] também). As listas de compras entram com a T-123.
+   * Os itens que contam no limite de quantidade (RN-120): os cartões não excluídos, as listas de
+   * compras abertas (a finalizada é histórico) e os lembretes ativos (o que tocou e espera o [Feito]
+   * também).
    */
   async contarItens(
     db: BancoCotas,
     usuarioId: string,
     recurso: RecursoDeQuantidade,
   ): Promise<number> {
-    if (recurso === 'lista_compras') throw new Error(`A contagem de ${recurso} ainda não existe`);
-    const [linha] =
-      recurso === 'cartao'
-        ? await db.$queryRaw<{ total: number }[]>`
-            SELECT COUNT(*)::int AS total
-            FROM cartoes
-            WHERE usuario_id = ${usuarioId}::uuid AND excluido_em IS NULL`
-        : await db.$queryRaw<{ total: number }[]>`
-            SELECT COUNT(*)::int AS total
-            FROM lembretes
-            WHERE usuario_id = ${usuarioId}::uuid AND status = 'ativo'`;
+    const consultas: Record<RecursoDeQuantidade, () => Promise<{ total: number }[]>> = {
+      cartao: () => db.$queryRaw`
+        SELECT COUNT(*)::int AS total
+        FROM cartoes
+        WHERE usuario_id = ${usuarioId}::uuid AND excluido_em IS NULL`,
+      lista_compras: () => db.$queryRaw`
+        SELECT COUNT(*)::int AS total
+        FROM listas_compras
+        WHERE usuario_id = ${usuarioId}::uuid AND finalizada_em IS NULL`,
+      lembrete_ativo: () => db.$queryRaw`
+        SELECT COUNT(*)::int AS total
+        FROM lembretes
+        WHERE usuario_id = ${usuarioId}::uuid AND status = 'ativo'`,
+    };
+    const [linha] = await consultas[recurso]();
     return linha?.total ?? 0;
   }
 }

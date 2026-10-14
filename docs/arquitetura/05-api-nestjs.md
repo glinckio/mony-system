@@ -115,7 +115,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Parcelamentos | `GET /parcelamentos` · `POST /parcelamentos` · `PATCH /parcelamentos/:id` · `DELETE /parcelamentos/:id` · `POST /parcelas/:id/pagar` · `POST /parcelas/:id/desfazer` · `POST /parcelamentos/simular` |
 | Orçamentos e metas | `GET /orcamentos?competencia=` · `PUT /orcamentos` · `GET /metas` · `POST /metas` · `PATCH /metas/:id` · `POST /metas/:id/aportes` |
 | Dashboard e relatórios | `GET /dashboard?periodo=` · `GET /relatorios/:tipo?inicio=&fim=` · `POST /relatorios/exportar` |
-| Listas de compras | `GET /listas` · `POST /listas` · `PATCH /listas/:id` · `DELETE /listas/:id` · `POST /listas/:id/itens` · `PATCH /itens/:id` · `DELETE /itens/:id` **(proposta)** · `POST /listas/:id/finalizar` |
+| Listas de compras | `GET /listas` · `GET /listas/:id` · `POST /listas` · `PATCH /listas/:id` · `DELETE /listas/:id` · `POST /listas/:id/itens` · `PATCH /itens/:id` · `DELETE /itens/:id` **(proposta)** · `POST /listas/:id/finalizar` (prontas: T-123a) |
 | Compartilhamento | `POST /compartilhamentos` · `POST /compartilhamentos/:id/aceitar` · `DELETE /compartilhamentos/:id` |
 | Lembretes e agenda | `GET /lembretes` · `POST /lembretes` · `PATCH /lembretes/:id` · `DELETE /lembretes/:id` · `POST /lembretes/:id/concluir` · `POST /lembretes/:id/adiar` · `GET /lembretes/alarmes` (prontas: T-084a) · `GET /agenda?inicio=&fim=` · `POST /agendas/conectar` · `GET /agendas/oauth/callback` **(proposta)** · `POST /compromissos` · `PATCH /compromissos/:id` **(proposta)** |
 | Notificações | `GET /notificacoes` · `POST /notificacoes/:id/lida` · `GET /preferencias-alerta` · `PUT /preferencias-alerta` |
@@ -454,6 +454,38 @@ Implementado na T-084a (RN-075 a RN-077), em `modulos/lembretes`; a regra da rep
   - **O push silencioso:** toda mudança num lembrete com alarme (criar, mudar, concluir, adiar, excluir) põe um job `sincronizar-alarmes` na fila `notificacoes`. O id é por usuário e o job espera 5 s, então mudanças seguidas viram um push só. O worker manda o push silencioso (`_contentAvailable`, só `dados.tipo = sincronizar_alarmes`) a cada aparelho com token.
 - **Gratuito (RN-120):** 5 lembretes ativos, conferidos ao criar e ao reativar (`conferirQuantidade(contexto, 'lembrete_ativo', tx)`).
 
+## Listas de compras
+
+Implementado na T-123a (RN-070 a RN-073), em `modulos/listas`; o contrato e as contas puras ficam em `@mony/shared/listas`. As telas chegam com a T-123b, a ferramenta da Mony com a T-123c e o compartilhamento (RN-074) com a T-124.
+
+| Rota | O que faz |
+|---|---|
+| `GET /listas` | As abertas (a mais nova primeiro) e as últimas 20 finalizadas, com a contagem de itens, de comprados e o total estimado |
+| `GET /listas/:id` | A lista com os itens, a categoria de despesa padrão e o orçamento livre dela |
+| `POST /listas` | Cria (`nome`, `categoria`) |
+| `PATCH /listas/:id` | Muda o nome ou a categoria |
+| `DELETE /listas/:id` | Apaga a lista e os itens; a despesa de uma finalizada continua |
+| `POST /listas/:id/itens` | Põe um item (`nome`, `quantidade?`, `unidade?`, `precoEstimadoCentavos?`) |
+| `PATCH /itens/:id` | Muda o item ou marca `comprado` |
+| `DELETE /itens/:id` | Tira o item |
+| `POST /listas/:id/finalizar` | Lança a despesa e fecha a lista, com `Idempotency-Key` |
+
+As rotas de item devolvem a lista inteira, já na ordem da tela. Uma lista finalizada não muda mais: item, nome e "Finalizar" de novo respondem `CONFLITO`.
+
+- **Itens (RN-070):** quantidade de até 3 casas (1,5 kg), preço unitário em centavos e total de cada item = preço × quantidade, arredondado. Até 200 itens por lista. Os não comprados vêm primeiro, na ordem em que entraram, e o total estimado da lista soma só os itens com preço.
+- **Preço sugerido (RN-071):** sem `precoEstimadoCentavos`, o item recebe o último preço unitário pago num item de cupom parecido nos últimos 90 dias (`RelatoriosService.ultimasComprasDoProduto`, a mesma busca do histórico de preços da T-066c).
+  - **A busca:** todas as palavras do nome, sem acento nem caixa. Sem nada, só a primeira palavra de 3 letras ou mais ("Leite integral" acha "LEITE INT 1L").
+  - **O histórico:** cada item ainda por comprar de uma lista aberta traz `historico`, com o último preço, a data, a loja e a compra anterior do mesmo produto (outro dia ou outra loja). A variação vem em percentual inteiro ("Subiu 12% desde a última compra").
+  - Mandar `precoEstimadoCentavos: null` deixa o item sem preço.
+- **Categoria de despesa (RN-072):** cada tipo de lista tem uma lista de nomes de categoria (`CATEGORIA_DA_LISTA`): mercado → Mercado ou Alimentação; casa → Moradia, Casa ou Compras; carro → Transporte ou Carro; farmácia → Saúde ou Farmácia; outra → Compras ou Outros. Vale a primeira que a pessoa tiver entre as de despesa (sem acento e caixa); sem nenhuma, `categoriaDespesa` vem nula e o "Finalizar" pede a categoria.
+- **Orçamento (RN-073):** `orcamento` é o orçamento do mês de hoje da categoria padrão (limite, gasto e restante, como `GET /orcamentos`), ou nulo sem orçamento. A tela compara com o total estimado.
+- **Finalizar (RN-072):**
+  - **A despesa:** uma só, com o total dos comprados (`totalCompradoCentavos`), a categoria padrão e o nome da lista como descrição, de quem finaliza. `valorCentavos`, `categoriaId`, `data` e `descricao` podem mudar na hora; `formaPagamento` é obrigatória, e o crédito pede o `cartaoId` (RN-041).
+  - **O lançamento:** passa pelo `TransacoesService.registrar`, que confere a forma de pagamento, a cota de lançamento do gratuito e a fatura do cartão. Os itens comprados ficam com o `transacao_id`, e a lista com `finalizada_em`; a resposta traz o `transacaoId`.
+  - **As recusas:** sem item comprado, "Marque os itens comprados antes de finalizar."; com item comprado sem preço e sem `valorCentavos`, o erro aponta o campo `valorCentavos`.
+  - **Dois toques:** a lista é reservada (`finalizada_em` gravado só se ainda está aberta) antes do lançamento, e volta a aberta se ele falhar. Dois "Finalizar" ao mesmo tempo lançam uma despesa só: o segundo recebe `CONFLITO`.
+- **Gratuito (RN-120):** uma lista aberta, conferida ao criar (`conferirQuantidade(contexto, 'lista_compras', tx)`). A finalizada não conta, então finalizar libera outra.
+
 ## Planos e cotas do gratuito
 
 Implementado na T-100 (RN-120 a RN-123, RN-127), em `modulos/planos`; o teste de 3 dias na T-101 (ver "Teste grátis"). A Stripe e as telas de compra chegam com a T-102 e a T-103.
@@ -462,11 +494,11 @@ Implementado na T-100 (RN-120 a RN-123, RN-127), em `modulos/planos`; o teste de
 - **Quem conta:** o que vem do app e da Mony (`contexto.origem` `app` ou `mony`). Rotinas (ocorrências de recorrência), Open Finance e admin não contam.
 - **Onde conta:** no Service que grava, dentro da transação dele (`CotasService.consumir(contexto, recurso, tx)`), e não num guard antes do handler: a Mony chama os Services, não as rotas, e o que não foi gravado não conta (o erro desfaz tudo). Lançamento: `TransacoesService.registrar` (manual, Mony e foto ou PDF confirmado), `ParcelamentosService.registrar` (um parcelamento é um lançamento) e `RecorrenciasService.criar` (a recorrência é um lançamento; as ocorrências não). Mensagem (texto e áudio) e leitura de foto ou PDF: no orquestrador da Mony, ao receber; toque em botão não conta.
 - **Contagem atômica (RN-122):** trava por usuário e recurso até o fim da transação (`pg_advisory_xact_lock`), soma o uso do dia e do mês (do dia 1º a hoje, no fuso do usuário) em `uso_recursos` e grava `+1` na linha do dia (`INSERT … ON CONFLICT DO UPDATE`). O `UPDATE … WHERE quantidade < limite` do RN-122 sozinho não confere o limite do mês, que soma várias linhas.
-- **Quantidade (cartão e lembrete ativo):** conta os itens que existem (cartões não excluídos; lembretes `ativo`, inclusive o que tocou e espera o [Feito]) na transação que cria (e, no lembrete, na que reativa); os que passam do limite continuam visíveis e editáveis (RN-127). As listas de compras entram com a T-123.
+- **Quantidade (cartão, lista de compras e lembrete ativo):** conta os itens que existem (cartões não excluídos; listas de compras abertas; lembretes `ativo`, inclusive o que tocou e espera o [Feito]) na transação que cria (e, no lembrete, na que reativa); os que passam do limite continuam visíveis e editáveis (RN-127).
 - **Erro:** `LIMITE_PLANO_ATINGIDO` (403) com a frase da Mony e `detalhes` `{ recurso, periodo: dia|mes|quantidade, limite, renovaEm }`; `renovaEm` é a meia-noite do dia seguinte ou do dia 1º no fuso do usuário (nulo na quantidade).
 - **Mony (RN-123):** no limite, a Mony responde a frase com o botão [Ver planos] (`{ tipo: 'abrir', link: 'mony://planos' }`, que o app abre sem chamar `POST /mony/acoes`): na mensagem e na leitura, sem chamar o modelo; no lançamento pelo rascunho, antes das perguntas, sem guardar o rascunho; nas ferramentas, o modelo recebe a falha e o botão sai uma vez; no [Confirmar todos] da foto ou PDF, grava até o limite e o resto continua esperando.
 - **`GET /assinatura/uso`:** o plano que vale agora, `limitado`, o fim do teste e, no gratuito, cada limite com `uso`, `limite` e `renovaEm`.
-- **`@RecursoLimitado(recurso)`** marca as rotas que podem responder o 403 (`x-recurso-limitado` no OpenAPI): `POST /transacoes`, `/parcelamentos`, `/recorrencias`, `/cartoes`, `POST` e `PATCH /lembretes` e os relatórios. A conta não é feita por ele.
+- **`@RecursoLimitado(recurso)`** marca as rotas que podem responder o 403 (`x-recurso-limitado` no OpenAPI): `POST /transacoes`, `/parcelamentos`, `/recorrencias`, `/cartoes`, `/listas` e `/listas/:id/finalizar`, `POST` e `PATCH /lembretes` e os relatórios. A conta não é feita por ele.
 
 ## Teste grátis
 

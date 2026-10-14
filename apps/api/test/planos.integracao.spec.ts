@@ -409,6 +409,7 @@ describe.runIf(ativo)('integração: cotas do plano gratuito', () => {
           renovaEm: '2026-11-01T03:00:00.000Z',
         },
         { recurso: 'cartao', periodo: 'quantidade', uso: 1, limite: 1, renovaEm: null },
+        { recurso: 'lista_compras', periodo: 'quantidade', uso: 0, limite: 1, renovaEm: null },
         { recurso: 'lembrete_ativo', periodo: 'quantidade', uso: 0, limite: 5, renovaEm: null },
       ],
     });
