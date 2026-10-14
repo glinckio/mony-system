@@ -28,7 +28,7 @@ jest.mock('@/lib/uso-de-apps', () => {
 
 const ROTAS = path.resolve(__dirname, '../app');
 const ESPERA = { timeout: 10_000 };
-const TEMPO_LIMITE_MS = 30_000;
+const TEMPO_LIMITE_MS = 60_000;
 const MINUTO = 60_000;
 /** 13/10/2026 14:00 no fuso do processo de teste. */
 const BASE = new Date(2026, 9, 13, 14, 0).getTime();

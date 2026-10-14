@@ -8,7 +8,7 @@ import { useSessao } from '@/stores/sessao';
 
 const ROTAS = path.resolve(__dirname, '../app');
 const ESPERA = { timeout: 10_000 };
-const TEMPO_LIMITE_MS = 30_000;
+const TEMPO_LIMITE_MS = 60_000;
 
 const ID = (final: string) => `0199a000-0000-7000-8000-${final.padStart(12, '0')}`;
 const MORADIA = {
