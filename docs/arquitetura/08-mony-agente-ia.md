@@ -88,6 +88,7 @@ Cada ferramenta é um objeto com `nome`, `descricao`, `schema` (Zod, convertido 
 | `gerenciar_lista_compras` | `ListasService` | Criar lista, adicionar, remover, marcar |
 | `criar_lembrete` | `LembretesService.criar` | Com canal |
 | `criar_compromisso` | `AgendaService.criarCompromisso` | Na agenda padrão |
+| `consultar_lembretes` | `LembretesService.listar` | Os ativos (T-086a) |
 | `consultar_agenda` | `AgendaService.listar` | |
 | `ler_documento` | `DocumentosMony.ler` | Foto, print, PDF → lista de lançamentos candidatos. Não fica com o modelo da conversa: a mensagem com foto ou PDF vai direto à leitura, que obriga o modelo a responder por esta ferramenta (T-065) |
 | `consultar_nfce` | — | Não é ferramenta do modelo: o QR Code lido no app vai direto a `POST /mony/nfce` (`NfceMony`, T-066a), sem passar pela conversa. Sem como consultar, a Mony pede a foto |
@@ -107,6 +108,12 @@ Ferramentas que gravam (`criar_*`, `editar_*`, `pagar_fatura`, `definir_orcament
 - **Cartão de resumo** (componente `resumo`): tipo, descrição, valor, data, categoria, forma, cartão e parcelas, com [Desfazer] (RN-082). Um por lançamento (RN-086). O fim do rascunho também mostra o resumo. Edição mostra o resumo sem [Desfazer].
 - **Ações por botão** (`POST /mony/acoes { acao }`, `tipo`): `rascunho`, `desfazer` (até 24 h depois de gravar e só para origem `mony` ou `foto`; parcelamento sai cancelado; depois do prazo, 410 `DESFAZER_EXPIRADO`), `excluir_transacao` e `pagar_fatura` (as confirmações pedidas pelas ferramentas; o pagamento vale o valor mostrado no botão, total ou parcial, hoje), `confirmar_importacao` e `descartar_importacao` (um lançamento lido de foto ou PDF pelo `indice`, ou todos com `indice: null`, T-065) e `cancelar`.
 - `definir_orcamento` e `atualizar_meta` gravam direto e respondem em texto, sem cartão de resumo nem [Desfazer] (DECISOES, T-062b).
+- **Lembretes e ajuda (T-086a):**
+  - **`criar_lembrete`:** recebe título, data (`AAAA-MM-DD`) e hora (`HH:MM`) no fuso do usuário, e a API converte para o instante. A repetição vem estruturada (`frequencia`, `intervalo`, `dias` como `seg`… `dom`, `ate`) e vira a RRULE. Com `alarme`, os canais são notificação e alarme. Grava direto (`LembretesService.criar`, RN-075) e devolve a data e a hora do primeiro aviso (com repetição, pode ser outro dia que o pedido) e o botão [Ver lembrete], que abre `mony://lembretes/<id>`. Data passada e o limite do gratuito voltam como falha (RN-087, RN-120 com [Ver planos]).
+  - **`consultar_lembretes`:** os 20 primeiros ativos, com data e hora locais, a repetição, se já tocou e a soneca.
+  - **`ajuda_app`:** busca a pergunta em `modulos/ajuda/base-ajuda.ts`, uma base de ajuda em markdown versionada com o código, um tópico por assunto com as palavras-chave. Devolve os 3 tópicos mais próximos pelas palavras-chave e pelo título; sem nenhum, a Mony diz que não sabe. Quando uma tela muda, o tópico muda no mesmo PR.
+  - **Contexto:** passa a ter "Agora: HH:MM", para "daqui a 2 horas" e "às 9h" de hoje.
+  - **Compromissos e agenda:** `criar_compromisso` e `consultar_agenda` entram com a T-086b, depois das agendas (T-085).
 - **Consultoria pós-lançamento (RN-089, T-067):** todo lançamento gravado pela Mony (rascunho, ferramentas, documento confirmado) leva em `lancamento.impacto` o orçamento da categoria no mês da despesa (percentual, quanto falta, faixa) e o limite do cartão (percentual, disponível, faixa), com a frase pronta em `comentario` ("Mercado: 45% do orçamento de outubro, faltam R$ 550,00."; "Atenção: …" a partir de 80%; "passou R$ X" acima de 100%). O cartão de resumo mostra a frase; o modelo recebe o impacto no resultado da ferramenta e só alerta, sem repetir os números. Sem orçamento na categoria nem cartão, não há impacto. Falha no cálculo vai ao log e não desfaz o lançamento.
 
 ## Rascunhos e perguntas com botões

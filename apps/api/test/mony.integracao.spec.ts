@@ -282,6 +282,7 @@ describe.runIf(ativo)('integração: Mony', () => {
     expect(pedido?.sistema[0]).toBe(PROMPT_SISTEMA);
     const contextoUsuario = pedido?.sistema[1] ?? '';
     expect(contextoUsuario).toContain('Hoje: quinta-feira, 15/10/2026, no fuso America/Sao_Paulo.');
+    expect(contextoUsuario).toContain('- Agora: 12:00.');
     expect(contextoUsuario).toContain('- Nome: Ana.');
     expect(contextoUsuario).toMatch(/Categorias de despesa: .*Alimentação/);
     expect(contextoUsuario).toContain('- Cartões: nenhum cadastrado.');
@@ -306,6 +307,9 @@ describe.runIf(ativo)('integração: Mony', () => {
       'definir_orcamento',
       'consultar_metas',
       'atualizar_meta',
+      'criar_lembrete',
+      'consultar_lembretes',
+      'ajuda_app',
     ]);
 
     const mensagens = await mensagensDo(usuario.usuarioId);
@@ -1347,6 +1351,98 @@ describe.runIf(ativo)('integração: Mony', () => {
     expect(resultadosDaFerramenta(4)).toMatchObject([
       { erro: false, dados: { meta: { concluida: true }, sugerirConclusao: false } },
     ]);
+  });
+
+  it('RN-075 criar_lembrete no fuso do usuário com [Ver lembrete], consultar_lembretes e ajuda_app', async () => {
+    const usuario = await usuarioNovo();
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'criar_lembrete',
+            entrada: { titulo: 'Pagar o IPVA', data: '2026-10-20', hora: '09:00' },
+          },
+          {
+            nome: 'criar_lembrete',
+            entrada: {
+              titulo: 'Academia',
+              data: '2026-10-15',
+              hora: '19:30',
+              repeticao: { frequencia: 'semanal', dias: ['seg', 'qua'] },
+              alarme: true,
+            },
+          },
+          // No passado: a falha volta ao modelo (RN-087).
+          {
+            nome: 'criar_lembrete',
+            entrada: { titulo: 'Ontem', data: '2026-10-14', hora: '09:00' },
+          },
+        ],
+      },
+      { texto: 'Combinado!' },
+    );
+    const { eventos } = await conversar(usuario, 'me lembra do IPVA dia 20 às 9h e da academia');
+    expect(resultadosDaFerramenta(1)).toMatchObject([
+      {
+        erro: false,
+        dados: { criado: true, titulo: 'Pagar o IPVA', data: '2026-10-20', hora: '09:00' },
+      },
+      {
+        erro: false,
+        // Quinta não é dia da regra: o primeiro é a segunda, 19/10.
+        dados: {
+          data: '2026-10-19',
+          hora: '19:30',
+          repeticao: 'FREQ=WEEKLY;BYDAY=MO,WE',
+          canais: ['push', 'alarme'],
+        },
+      },
+      { erro: true, dados: { erro: { codigo: 'REQUISICAO_INVALIDA' } } },
+    ]);
+    const gravados = await prisma.lembrete.findMany({
+      where: { usuarioId: usuario.usuarioId },
+      orderBy: { dataHora: 'asc' },
+    });
+    expect(gravados.map(({ dataHora }) => dataHora.toISOString())).toEqual([
+      '2026-10-19T22:30:00.000Z',
+      '2026-10-20T12:00:00.000Z',
+    ]);
+    const verLembrete = eventos
+      .flatMap((evento) => botoes(evento))
+      .find(({ id }) => id === 'ver-lembrete');
+    expect(verLembrete?.acao).toEqual({
+      tipo: 'abrir',
+      link: `mony://lembretes/${gravados[1]?.id ?? ''}`,
+    });
+
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          { nome: 'consultar_lembretes', entrada: {} },
+          { nome: 'ajuda_app', entrada: { pergunta: 'como eu exporto o relatório em PDF?' } },
+          { nome: 'ajuda_app', entrada: { pergunta: 'qual a previsão do tempo?' } },
+        ],
+      },
+      { texto: 'Pronto.' },
+    );
+    await conversar(usuario, 'quais meus lembretes? e como exporto o relatório?');
+    const [lembretes, ajuda, semAjuda] = resultadosDaFerramenta(3);
+    expect(lembretes).toMatchObject({
+      erro: false,
+      dados: {
+        total: 2,
+        lembretes: [
+          { titulo: 'Academia', data: '2026-10-19', hora: '19:30', jaTocou: false },
+          { titulo: 'Pagar o IPVA', data: '2026-10-20', hora: '09:00', repeticao: null },
+        ],
+      },
+    });
+    // O mais próximo primeiro; os outros que também batem vêm depois (até 3).
+    expect(ajuda?.erro).toBe(false);
+    expect((ajuda?.dados as { topicos: { titulo: string }[] }).topicos[0]?.titulo).toBe(
+      'Relatórios, exportação e histórico de preços',
+    );
+    expect(semAjuda).toMatchObject({ erro: false, dados: { topicos: [] } });
   });
 
   it('RN-081 RN-090 o que foi confirmado para o estabelecimento vem primeiro nos botões e no contexto', async () => {

@@ -142,13 +142,36 @@ export const CASOS_AVALIACAO: readonly CasoAvaliacao[] = [
     id: 'definir-orcamento',
     entrada: 'quero gastar no máximo 600 reais por mês com mercado',
     espera: {
-      ferramentas: [{ nome: 'definir_orcamento', args: { valorLimiteCentavos: 60_000 } }],
+      ferramentas: [{ nome: 'definir_orcamento', args: { limiteCentavos: 60_000 } }],
     },
   },
   {
     id: 'metas',
     entrada: 'como estão minhas metas?',
     espera: { ferramentas: [{ nome: 'consultar_metas' }] },
+  },
+  // Lembretes e ajuda (T-086a). A avaliação roda no dia de hoje: a data do lembrete varia.
+  {
+    id: 'lembrete-com-dia-e-hora',
+    entrada: 'me lembra de pagar o IPVA dia 20 às 9h',
+    espera: {
+      ferramentas: [{ nome: 'criar_lembrete', args: { hora: '09:00' } }],
+      semFerramentas: ['criar_transacao'],
+    },
+  },
+  {
+    id: 'lembrete-que-repete',
+    entrada: 'todo dia às 8 da manhã me lembra de tomar o remédio',
+    espera: {
+      ferramentas: [
+        { nome: 'criar_lembrete', args: { hora: '08:00', repeticao: { frequencia: 'diaria' } } },
+      ],
+    },
+  },
+  {
+    id: 'ajuda-do-app',
+    entrada: 'como eu exporto meus relatórios?',
+    espera: { ferramentas: [{ nome: 'ajuda_app' }], semFerramentas: ['resumo_periodo'] },
   },
   {
     id: 'excluir-pede-confirmacao',

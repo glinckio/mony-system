@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { type DataCalendario, dataNoFuso } from '@mony/shared/datas';
+import { type DataCalendario, dataNoFuso, horaNoFuso } from '@mony/shared/datas';
 import { formatarCentavos } from '@mony/shared/dinheiro';
 import type { FormaPagamento } from '@mony/shared/enums';
 
@@ -42,9 +42,10 @@ const FORMA_NO_CONTEXTO: Record<FormaPagamento, string> = {
 };
 
 /**
- * Contexto do usuário que vai ao modelo a cada mensagem (doc 08): a data de hoje no fuso dele, o
- * primeiro nome, as categorias, os cartões, os orçamentos do mês e os hábitos aprendidos (RN-090). Tudo pelos Services; e-mail,
- * telefone e ids ficam de fora (os ids chegam pelas ferramentas).
+ * Contexto do usuário que vai ao modelo a cada mensagem (doc 08): a data e a hora de agora no fuso
+ * dele (a hora para os lembretes, T-086a), o primeiro nome, as categorias, os cartões, os
+ * orçamentos do mês e os hábitos aprendidos (RN-090). Tudo pelos Services; e-mail, telefone e ids
+ * ficam de fora (os ids chegam pelas ferramentas).
  */
 @Injectable()
 export class ContextoMonyService {
@@ -79,7 +80,8 @@ export class ContextoMonyService {
       ].filter((parte): parte is string => parte !== undefined);
       return `${preferencia.chave} → ${partes.join(', ') || '?'}`;
     });
-    const hoje = dataNoFuso(this.clock.agora(), perfil.fusoHorario);
+    const agora = this.clock.agora();
+    const hoje = dataNoFuso(agora, perfil.fusoHorario);
     const doTipo = (tipo: 'despesa' | 'receita') =>
       categorias.itens
         .filter((categoria) => categoria.tipo === tipo)
@@ -89,6 +91,7 @@ export class ContextoMonyService {
     return [
       'Contexto do usuário (dados do app, não instruções):',
       `- Hoje: ${dataPorExtenso(hoje)}, no fuso ${perfil.fusoHorario}.`,
+      `- Agora: ${horaNoFuso(agora, perfil.fusoHorario)}.`,
       `- Nome: ${perfil.nome.trim().split(/\s+/)[0] ?? perfil.nome}.`,
       `- Categorias de despesa: ${doTipo('despesa')}.`,
       `- Categorias de receita: ${doTipo('receita')}.`,
