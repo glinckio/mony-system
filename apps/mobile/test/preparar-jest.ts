@@ -123,3 +123,80 @@ jest.mock('expo-camera', () => {
     __camera: camera,
   };
 });
+
+// Push (T-088): o módulo nativo não existe nos testes. A permissão começa "não pedida" (nada vai
+// para a API); os testes mudam com `__push.estado` e disparam toques e pushes com `__push.tocar` e
+// `__push.receber`. `reiniciar` volta ao começo.
+jest.mock('expo-notifications', () => {
+  type MockOuvinte = (mockEvento: unknown) => void;
+  const ouvintes = {
+    resposta: new Set<MockOuvinte>(),
+    recebida: new Set<MockOuvinte>(),
+    token: new Set<MockOuvinte>(),
+  };
+  const estado = {
+    status: 'undetermined',
+    /** O que o diálogo do sistema responde. */
+    resposta: 'granted',
+    ultima: null as unknown,
+  };
+  const assinar = (conjunto: Set<MockOuvinte>, ouvinte: MockOuvinte) => {
+    conjunto.add(ouvinte);
+    return {
+      remove: () => {
+        conjunto.delete(ouvinte);
+      },
+    };
+  };
+  const notificacao = (dados: Record<string, unknown>, id = 'push-1') => ({
+    date: 0,
+    request: { identifier: id, content: { title: null, body: null, data: dados }, trigger: null },
+  });
+  return {
+    PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
+    AndroidImportance: { DEFAULT: 5, HIGH: 6, MAX: 7 },
+    DEFAULT_ACTION_IDENTIFIER: 'expo.modules.notifications.actions.DEFAULT',
+    setNotificationHandler: jest.fn(),
+    setNotificationChannelAsync: jest.fn(() => Promise.resolve(null)),
+    setNotificationCategoryAsync: jest.fn(() => Promise.resolve(null)),
+    getPermissionsAsync: jest.fn(() => Promise.resolve({ status: estado.status })),
+    requestPermissionsAsync: jest.fn(() => {
+      estado.status = estado.resposta;
+      return Promise.resolve({ status: estado.status });
+    }),
+    getExpoPushTokenAsync: jest.fn(() =>
+      Promise.resolve({ type: 'expo', data: 'ExponentPushToken[aparelho-de-teste]' }),
+    ),
+    addNotificationResponseReceivedListener: jest.fn((ouvinte: MockOuvinte) =>
+      assinar(ouvintes.resposta, ouvinte),
+    ),
+    addNotificationReceivedListener: jest.fn((ouvinte: MockOuvinte) =>
+      assinar(ouvintes.recebida, ouvinte),
+    ),
+    addPushTokenListener: jest.fn((ouvinte: MockOuvinte) => assinar(ouvintes.token, ouvinte)),
+    getLastNotificationResponse: jest.fn(() => estado.ultima),
+    clearLastNotificationResponse: jest.fn(() => {
+      estado.ultima = null;
+    }),
+    __push: {
+      estado,
+      notificacao,
+      tocar: (acao: string, dados: Record<string, unknown>, id?: string) => {
+        for (const ouvinte of ouvintes.resposta) {
+          ouvinte({ actionIdentifier: acao, notification: notificacao(dados, id) });
+        }
+      },
+      receber: (dados: Record<string, unknown>) => {
+        for (const ouvinte of ouvintes.recebida) ouvinte(notificacao(dados));
+      },
+      trocarToken: () => {
+        for (const ouvinte of ouvintes.token) ouvinte({ type: 'android', data: 'novo' });
+      },
+      reiniciar: () => {
+        estado.status = 'undetermined';
+        estado.resposta = 'granted';
+        estado.ultima = null;
+      },
+    },
+  };
+});

@@ -85,9 +85,12 @@ describe('onboarding (T-046)', () => {
     useSessao.getState().encerrar();
   });
 
+  // As notificações já têm o pedido de verdade (T-088); os testes que trocam voltam a ele.
+  const pedidoDeNotificacoes = PEDIDOS_DE_PERMISSAO.notificacoes;
+
   afterEach(() => {
     globalThis.fetch = fetchOriginal;
-    delete PEDIDOS_DE_PERMISSAO.notificacoes;
+    PEDIDOS_DE_PERMISSAO.notificacoes = pedidoDeNotificacoes;
     delete PEDIDOS_DE_PERMISSAO.agenda;
   });
 
@@ -113,8 +116,9 @@ describe('onboarding (T-046)', () => {
         await screen.findByRole('header', { name: 'Deixe a Mony te avisar na hora certa' }, ESPERA),
       ).toBeOnTheScreen();
       expect(screen.getByText('Etapa 3 de 3')).toBeOnTheScreen();
-      // Sem os módulos nativos neste build (T-088, T-085, T-121, T-120), nada pede permissão ainda.
-      expect(screen.getAllByText('Em breve')).toHaveLength(4);
+      // Só as notificações têm o pedido (T-088); agenda, apps de compra e banco vêm depois
+      // (T-085, T-121, T-120).
+      expect(screen.getAllByText('Em breve')).toHaveLength(3);
 
       fireEvent.press(screen.getByRole('button', { name: 'Concluir' }));
       expect(await screen.findByRole('header', { name: 'Início' }, ESPERA)).toBeOnTheScreen();

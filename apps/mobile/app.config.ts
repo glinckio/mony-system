@@ -188,6 +188,9 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
           enableBackgroundRecording: false,
         },
       ],
+      // Push (T-088): a cor do ícone na barra do Android e o push silencioso no iOS
+      // (`remote-notification`, para os alarmes, doc 09). Os canais são criados pelo app.
+      ['expo-notifications', { color: COR_FUNDO, enableBackgroundRemoteNotifications: true }],
       // Envio de source maps no build do EAS: precisa de SENTRY_AUTH_TOKEN (segredo no EAS) ou
       // SENTRY_DISABLE_AUTO_UPLOAD=true.
       [
