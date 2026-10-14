@@ -462,7 +462,7 @@ Implementado na T-123a (RN-070 a RN-073), em `modulos/listas`; o contrato e as c
 |---|---|
 | `GET /listas` | As abertas (a mais nova primeiro) e as últimas 20 finalizadas, com a contagem de itens, de comprados e o total estimado |
 | `GET /listas/:id` | A lista com os itens, a categoria de despesa padrão e o orçamento livre dela |
-| `POST /listas` | Cria (`nome`, `categoria`), com `Idempotency-Key` |
+| `POST /listas` | Cria (`nome`, `categoria`) |
 | `PATCH /listas/:id` | Muda o nome ou a categoria |
 | `DELETE /listas/:id` | Apaga a lista e os itens; a despesa de uma finalizada continua |
 | `POST /listas/:id/itens` | Põe um item (`nome`, `quantidade?`, `unidade?`, `precoEstimadoCentavos?`) |
