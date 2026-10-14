@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { estadoDaPermissaoDePush, pedirPermissaoDePush } from './push';
+
 /**
  * Permissões do aparelho que a Mony usa (doc 04, "Permissões"), pedidas uma por vez com a tela
  * explicativa antes do diálogo do sistema. Recusa nunca bloqueia o app.
@@ -18,10 +20,12 @@ export interface PedidoDePermissao {
 
 /**
  * Quem sabe pedir cada permissão. Cada tarefa que traz o módulo nativo entra aqui: notificações na
- * T-088 (`expo-notifications`), agenda na T-085, apps de compra na T-121 e banco na T-120. Sem
- * pedido, a tela mostra "Em breve".
+ * T-088 (`expo-notifications`; liberada, o token vai para a API), agenda na T-085, apps de compra
+ * na T-121 e banco na T-120. Sem pedido, a tela mostra "Em breve".
  */
-export const PEDIDOS_DE_PERMISSAO: Partial<Record<Permissao, PedidoDePermissao>> = {};
+export const PEDIDOS_DE_PERMISSAO: Partial<Record<Permissao, PedidoDePermissao>> = {
+  notificacoes: { estado: estadoDaPermissaoDePush, pedir: pedirPermissaoDePush },
+};
 
 /** O estado de todas as permissões e a função que pede uma delas. */
 export function usePermissoes(): {

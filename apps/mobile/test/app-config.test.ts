@@ -97,6 +97,17 @@ describe('app.config por ambiente', () => {
     expect(opcoes('expo-camera')?.microphonePermission).toBe(audio?.microphonePermission);
   });
 
+  it('push (T-088): a cor do ícone e o push silencioso no iOS para os alarmes', () => {
+    const plugins = criarConfigApp(base, {}).plugins ?? [];
+    const notificacoes = plugins.find(
+      (plugin) => Array.isArray(plugin) && plugin[0] === 'expo-notifications',
+    );
+    expect(Array.isArray(notificacoes) ? notificacoes[1] : null).toEqual({
+      color: '#0A2133',
+      enableBackgroundRemoteNotifications: true,
+    });
+  });
+
   it('câmera para o QR Code do cupom (T-066b): o mesmo texto nos dois plugins', () => {
     const plugins = criarConfigApp(base, {}).plugins ?? [];
     const opcoes = (nome: string) =>

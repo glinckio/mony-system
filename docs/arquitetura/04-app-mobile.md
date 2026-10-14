@@ -125,6 +125,20 @@ Regras de cache:
 - Canais Android: `alertas`, `lembretes`, `alarmes` (som de alarme, prioridade máxima; criado pelo `mony-alarm`), `novidades`.
 - Alarmes: módulo `mony-alarm` (ver abaixo). Agendados localmente para tocar sem internet; o servidor envia a lista de lembretes com canal alarme e o app reagenda ao abrir e ao receber push silencioso.
 
+**Como está (T-088):** `src/lib/push.ts` e o `usePushNoApp`, no layout das abas, que só existe com a sessão aberta.
+
+- **Abertura:** o push também aparece com o app aberto. Os canais `alertas`, `lembretes` (prioridade máxima) e `novidades` são criados com os nomes do i18n (o `alarmes` é do `mony-alarm`), e as categorias, com os botões.
+- **Token:** com a permissão liberada, o token do Expo vai para `POST /me/dispositivos` (com o `projectId` do EAS quando há). Isso acontece ao abrir, quando o sistema troca o token e quando a pessoa libera a permissão.
+- **Permissão:** o item Notificações das Permissões (onboarding e `/mais/permissoes`) pede ao sistema (`PEDIDOS_DE_PERMISSAO`).
+- **Toque:**
+  - O toque no corpo abre o `linkInterno` (`rotaDoLink`), e todo toque marca a notificação como lida.
+  - [Feito] chama `POST /lembretes/:id/concluir` com a `ocorrencia` do link; [Adiar] chama `POST /lembretes/:id/adiar` com 10 min. Os dois sincronizam os alarmes.
+  - [Paguei] chama `POST /faturas/:id/pagar` sem corpo, com a `Idempotency-Key` `paguei-<notificação>`, para o toque repetido não pagar duas vezes.
+  - Depois, abre a tela do lembrete ou da fatura. O mesmo toque entregue duas vezes (o ouvinte e a última resposta) é tratado uma vez só.
+- **Botões abrem o app:** o JS só recebe o botão que não abre o app se ele ainda estiver vivo.
+- **App fechado:** o toque que abriu o app vem pela última resposta.
+- **Push silencioso** (`sincronizar_alarmes`): com o app aberto, busca os alarmes de novo. Com o app fechado, quem cobre é a sincronização da próxima abertura (T-088b).
+
 ## Módulos nativos (Expo Modules API)
 
 | Módulo | iOS (Swift) | Android (Kotlin) | Disponibilidade |
@@ -146,7 +160,7 @@ Cada módulo é um pacote do workspace (`modules/<nome>`) e entra no app como de
 
 Pedidas uma por vez, com tela explicativa antes do diálogo do sistema (onboarding passo 5): notificações, agenda, detecção de apps de compra, conexão bancária. Recusa nunca bloqueia o app; a tela de Permissões em Configurações mostra o estado e leva às configurações do sistema.
 
-**Como está (T-046):** `src/lib/permissoes.ts` lista as quatro permissões e guarda, em `PEDIDOS_DE_PERMISSAO`, quem sabe ver o estado e pedir cada uma. O quadro (`ListaPermissoes`) aparece no onboarding e em `/mais/permissoes`: chave para notificações, agenda e apps de compra, botão "Conectar" para o banco, e a explicação de onde liberar quando a pessoa recusa. Sem o pedido no build, o item mostra "Em breve". Cada módulo nativo entra na sua tarefa: notificações na T-088, agenda na T-085, apps de compra na T-121 e banco na T-120.
+**Como está (T-046, notificações na T-088):** `src/lib/permissoes.ts` lista as quatro permissões e guarda, em `PEDIDOS_DE_PERMISSAO`, quem sabe ver o estado e pedir cada uma. O quadro (`ListaPermissoes`) aparece no onboarding e em `/mais/permissoes`: chave para notificações, agenda e apps de compra, botão "Conectar" para o banco, e a explicação de onde liberar quando a pessoa recusa. Sem o pedido no build, o item mostra "Em breve". Cada módulo nativo entra na sua tarefa: notificações na T-088, agenda na T-085, apps de compra na T-121 e banco na T-120.
 
 ## Design system
 

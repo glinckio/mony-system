@@ -49,3 +49,4 @@ minimumReleaseAgeExclude:
   - expo-asset@57.0.20
   - expo-constants@57.0.22
   - expo-linking@57.0.13
+  - expo-notifications@57.0.23

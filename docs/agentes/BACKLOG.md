@@ -235,11 +235,15 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-081, T-011, T-034 · docs: 04
   - Tela do app: depende do design system (T-011) e da sessão no app (T-034), como a T-049.
   - "Alertas da Mony" (com o horário de silêncio, "silêncio 22h às 7h") entra no Perfil (T-057), e o sino do Início (T-053) passa a abrir a central.
-- [ ] **T-088** Push no app: permissão, registro do token (`POST /me/dispositivos` ao abrir e ao trocar), canais do Android, categorias de ação ([Paguei], [Feito], [Adiar]) e abrir o `linkInterno` ao tocar
+- [x] **T-088** Push no app: permissão, registro do token (`POST /me/dispositivos` ao abrir e ao trocar), canais do Android, categorias de ação ([Paguei], [Feito], [Adiar]) e abrir o `linkInterno` ao tocar (PR #81)
   - dep: T-081, T-010, T-034 · docs: 04, 09
   - Separada da T-081 pelo mesmo motivo da T-049. Os canais (`CANAIS_ANDROID`) precisam existir antes do primeiro push: o Android não mostra push de canal que o app não criou.
   - O canal `alarmes` é do `mony-alarm` (T-023a), que o cria com o som de alarme; esta tarefa cria os outros três.
   - Lembretes (T-084a): o [Feito] chama `POST /lembretes/:id/concluir` com a `ocorrencia` do link (`?ocorrencia=<ms>`, em ISO) e o [Adiar], `POST /lembretes/:id/adiar` (10 min); o push silencioso (`dados.tipo = sincronizar_alarmes`) busca `GET /lembretes/alarmes` e chama o `sincronizar` do `mony-alarm` em segundo plano.
+  - Feito no PR #81: os botões abrem o app e o silencioso funciona com o app aberto. O resto ficou na T-088b.
+- [ ] **T-088b** Push com o app fechado: o silencioso dos alarmes e os botões [Feito] e [Adiar] sem abrir o app, por uma tarefa de segundo plano (`expo-task-manager` e `Notifications.registerTaskAsync`)
+  - dep: T-088 · docs: 04, 09 · testar em aparelho Android e iPhone
+  - A tarefa roda sem a tela: precisa de acesso à API sem renovar a sessão junto com o app aberto (dois usos do mesmo token de renovação derrubam a sessão, RN-004). Uma saída é um token só de leitura dos alarmes por aparelho.
 
 ## Fase 4 — Planos e cobrança
 

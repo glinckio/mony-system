@@ -995,3 +995,15 @@ Contexto: o doc 08 lista `criar_lembrete` ("com canal"), `criar_compromisso`, `c
 
 Reversível: sim.
 
+## 2026-10-14 — T-088 — Push no app
+Contexto: o doc 04 diz que "a ação chama a API em segundo plano" e que o app reagenda os alarmes "ao receber push silencioso". Com o app fechado, o `expo-notifications` só entrega ao JS por uma tarefa de segundo plano. Essa tarefa roda sem a tela, e a sessão do app renova o token a cada abertura: se a tarefa e o app renovassem com o mesmo token, a sessão cairia (RN-004). Decisões:
+- **Os botões abrem o app** (`opensAppToForeground` padrão). O app faz a ação e mostra a tela do lembrete ou da fatura. É o caminho que funciona com o app fechado sem tarefa de segundo plano.
+- **O push silencioso** sincroniza os alarmes com o app aberto (ouvinte de notificação recebida). Fechado, vale a sincronização da abertura.
+- O segundo plano de verdade virou a **T-088b**, com teste em aparelho.
+- **[Paguei]** paga a fatura sem corpo (`POST /faturas/:id/pagar`, o restante, hoje, a conta do cartão), com a `Idempotency-Key` `paguei-<notificação>`.
+- **Canais:** `lembretes` com prioridade máxima, `alertas` alta, `novidades` padrão.
+- **Plugin:** com `enableBackgroundRemoteNotifications`, o iOS acorda o app para o silencioso quando ele está em segundo plano.
+- **Ícone:** fica o do app até o cliente mandar o monocromático.
+
+Reversível: sim.
+

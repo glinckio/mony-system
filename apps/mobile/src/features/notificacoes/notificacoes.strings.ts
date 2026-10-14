@@ -1,5 +1,16 @@
 /** Central de notificações e alertas da Mony (T-087). */
 export const textosNotificacoes = {
+  /** O push no aparelho (T-088): nomes dos canais do Android e os botões das notificações. */
+  push: {
+    canais: {
+      alertas: 'Alertas',
+      lembretes: 'Lembretes',
+      novidades: 'Novidades',
+    },
+    feito: 'Feito',
+    adiar: 'Adiar 10 min',
+    paguei: 'Paguei',
+  },
   titulo: 'Notificações',
   todas: 'Todas',
   naoLidas: 'Não lidas',
