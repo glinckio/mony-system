@@ -1,6 +1,6 @@
 import { InjectQueue, OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
-import { CATEGORIAS_ACAO, canalDoPush } from '@mony/shared/notificacoes';
+import { CATEGORIAS_ACAO, canalDoPush, PUSH_SINCRONIZAR_ALARMES } from '@mony/shared/notificacoes';
 import { type Job, type Queue, UnrecoverableError } from 'bullmq';
 
 import { AvisosDeConexao } from '../../core/filas/avisos-conexao';
@@ -14,6 +14,7 @@ import {
 import type { EnvioDeNotificacoes } from './envio-notificacoes';
 import { JOB_CONFERIR_RECIBOS, JOB_ENVIAR_PUSH } from './envio-push';
 import { NotificacoesRepository } from './notificacoes.repository';
+import { JOB_SINCRONIZAR_ALARMES } from './sincronizacao-alarmes';
 
 /** O Expo pede para conferir os recibos uns 15 minutos depois do envio. */
 const ESPERA_RECIBOS_MS = 15 * 60 * 1000;
@@ -89,6 +90,9 @@ export class ProcessadorNotificacoes extends WorkerHost {
       if (job.name === JOB_CONFERIR_RECIBOS) {
         return await this.conferir((job.data as { tickets: TicketGuardado[] }).tickets);
       }
+      if (job.name === JOB_SINCRONIZAR_ALARMES) {
+        return await this.sincronizarAlarmes((job.data as { usuarioId: string }).usuarioId);
+      }
       this.log.warn(`Job ${job.name} sem manipulador na fila de notificações`);
       return null;
     } catch (erro) {
@@ -100,10 +104,37 @@ export class ProcessadorNotificacoes extends WorkerHost {
   private async enviar(envio: EnvioDeNotificacoes) {
     const aparelhos = await this.repositorio.aparelhosComPush(envio.usuarioId);
     if (aparelhos.length === 0) return { enviadas: 0 };
-    const mensagens = montarMensagens(
-      envio,
-      aparelhos.map(({ token }) => token),
+    return this.entregar(
+      aparelhos,
+      montarMensagens(
+        envio,
+        aparelhos.map(({ token }) => token),
+      ),
     );
+  }
+
+  /** Doc 09: o push silencioso que pede aos aparelhos para buscar os alarmes de novo. */
+  private async sincronizarAlarmes(usuarioId: string) {
+    const aparelhos = await this.repositorio.aparelhosComPush(usuarioId);
+    if (aparelhos.length === 0) return { enviadas: 0 };
+    return this.entregar(
+      aparelhos,
+      aparelhos.map(({ token }) => ({
+        para: token,
+        titulo: '',
+        corpo: '',
+        dados: { tipo: PUSH_SINCRONIZAR_ALARMES },
+        canal: 'lembretes',
+        silenciosa: true,
+      })),
+    );
+  }
+
+  /** Manda uma mensagem por aparelho (na mesma ordem) e cuida dos tickets e dos tokens recusados. */
+  private async entregar(
+    aparelhos: readonly { id: string; token: string }[],
+    mensagens: readonly MensagemPush[],
+  ) {
     const tickets = await this.push.enviar(mensagens);
     const guardados: TicketGuardado[] = [];
     const recusados: { id: string; token: string }[] = [];

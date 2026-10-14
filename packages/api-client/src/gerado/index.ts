@@ -6,6 +6,7 @@ export * from './cartoes/cartoes';
 export * from './categorias/categorias';
 export * from './contas/contas';
 export * from './dashboard/dashboard';
+export * from './lembretes/lembretes';
 export * from './metas/metas';
 export * from './mony/mony';
 export * from './notificacoes/notificacoes';

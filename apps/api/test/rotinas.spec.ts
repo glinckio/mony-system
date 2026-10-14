@@ -9,6 +9,7 @@ import { Clock, ClockFixo } from '../src/core/clock/clock';
 import { FILAS } from '../src/core/filas/filas';
 import { ProcessadorRotinas, ROTINA, Rotina } from '../src/core/rotinas/rotinas';
 import { CartoesService } from '../src/modulos/cartoes/cartoes.service';
+import { DisparoLembretes } from '../src/modulos/lembretes/disparo-lembretes';
 import { RascunhosService } from '../src/modulos/mony/rascunhos.service';
 import { MotorAlertas } from '../src/modulos/notificacoes/motor-alertas';
 import { OrcamentosService } from '../src/modulos/orcamentos/orcamentos.service';
@@ -106,6 +107,14 @@ describe('rotinas agendadas (doc 09)', () => {
     expect(Reflect.getMetadata(ROTINA, metodo)).toEqual({
       nome: 'encerrar-testes',
       padrao: '15 1 * * *',
+    });
+  });
+
+  it('RN-075 os lembretes tocam a cada minuto', () => {
+    const metodo = Reflect.get(DisparoLembretes.prototype, 'disparar') as object;
+    expect(Reflect.getMetadata(ROTINA, metodo)).toEqual({
+      nome: 'disparar-lembretes',
+      padrao: '* * * * *',
     });
   });
 

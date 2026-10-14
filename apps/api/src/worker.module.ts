@@ -11,6 +11,7 @@ import { EmailModule } from './integracoes/email/email.module';
 import { ProcessadorEmails } from './integracoes/email/processador-emails';
 import { AlertasModule } from './modulos/alertas/alertas.module';
 import { CartoesModule } from './modulos/cartoes/cartoes.module';
+import { LembretesModule } from './modulos/lembretes/lembretes.module';
 import { ConsultasNfceModule } from './modulos/mony/consultas-nfce.module';
 import { ProcessadorMonyMidia } from './modulos/mony/processador-mony-midia';
 import { RascunhosModule } from './modulos/mony/rascunhos.module';
@@ -28,7 +29,7 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
  * Módulo raiz do worker: consumidores BullMQ e rotinas. Consome as filas `eventos-dominio`,
  * `emails`, `rotinas`, `notificacoes`, `relatorios` e `mony-midia` (novas consultas do cupom
  * fiscal, T-066a); as outras ganham consumidores nas tarefas de cada módulo. Os módulos com
- * `@Rotina` entram aqui para o agendador achá-las.
+ * `@Rotina` entram aqui para o agendador achá-las (os lembretes, por minuto, desde a T-084a).
  */
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     PlanosModule,
     RelatoriosModule,
     ArmazenamentoModule,
+    LembretesModule,
   ],
   providers: [
     ProcessadorEventos,

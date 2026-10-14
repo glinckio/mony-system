@@ -41,6 +41,12 @@ export function canalDoPush(tipo: TipoAlerta): CanalAndroid {
   return 'alertas';
 }
 
+/**
+ * Doc 09: o push silencioso (sem título nem corpo) que pede ao app para buscar os alarmes de novo
+ * (`GET /lembretes/alarmes`) quando muda um lembrete com alarme. Vai em `dados.tipo`.
+ */
+export const PUSH_SINCRONIZAR_ALARMES = 'sincronizar_alarmes';
+
 /** Hora local `HH:MM`, de 00:00 a 23:59. */
 export const REGEX_HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 

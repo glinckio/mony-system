@@ -1097,6 +1097,8 @@ model Lembrete {
   canais          CanalLembrete[]
   status          StatusLembrete  @default(ativo)
   adiadoAte       DateTime?       @map("adiado_ate") @db.Timestamptz(6)
+  /// Quando a ocorrência atual tocou; com ela, o lembrete espera o [Feito] (T-084a).
+  disparadoEm     DateTime?       @map("disparado_em") @db.Timestamptz(6)
   /// Controle do limite mensal de ligações (RN-078).
   ultimaLigacaoEm DateTime?       @map("ultima_ligacao_em") @db.Timestamptz(6)
   criadoEm        DateTime        @default(now()) @map("criado_em") @db.Timestamptz(6)
@@ -1107,6 +1109,7 @@ model Lembrete {
 
   @@index([usuarioId])
   @@index([status, dataHora])
+  @@index([status, adiadoAte])
   @@map("lembretes")
 }
 

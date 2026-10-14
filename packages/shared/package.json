@@ -58,6 +58,10 @@
       "types": "./dist/erros.d.ts",
       "default": "./dist/erros.js"
     },
+    "./lembretes": {
+      "types": "./dist/lembretes.d.ts",
+      "default": "./dist/lembretes.js"
+    },
     "./metas": {
       "types": "./dist/metas.d.ts",
       "default": "./dist/metas.js"

@@ -218,14 +218,16 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-080 · RN-106, RN-107, RN-108
 - [x] **T-083** Resumos semanal e mensal no chat (PR #66)
   - dep: T-080, T-062b
-- [ ] **T-084** Lembretes: CRUD, recorrência RRULE, soneca, feito pela notificação, alarme local
-  - dep: T-081, T-023a · RN-075 a RN-077
-  - Alarme local pelo `mony-alarm` (T-023a): o app chama `sincronizar` ao abrir, ao receber o push silencioso e ao criar ou editar; pede o alarme exato e a tela cheia no primeiro lembrete com alarme. No iOS, o alarme chega com a T-023b; até lá, o lembrete com alarme sai só como notificação.
-  - Limite do gratuito (RN-120, 5 ativos): contar em `CotasRepository.contarItens` e chamar `CotasService.conferirQuantidade(contexto, 'lembrete_ativo', tx)` ao criar e ao reativar.
+- [x] **T-084a** Lembretes na API: CRUD, repetição em RRULE (subconjunto), [Feito] e [Adiar], rotina por minuto com push urgente, `GET /lembretes/alarmes` e push silencioso; 5 ativos no gratuito (PR #76)
+  - dep: T-081, T-023a · RN-075 a RN-077, RN-120
+  - A T-084 foi dividida em API (T-084a) e app (T-084b).
+- [ ] **T-084b** Lembretes no app: lista (ativos e feitos), novo e editar (título, data e hora, repetição diária, semanal com os dias, mensal ou anual, a cada N, até; canais notificação e alarme), [Feito] e [Adiar] na lista, a tela do lembrete (`mony://lembretes/:id`) e os atalhos (Mais e o "Lembrete" do Início)
+  - dep: T-084a · docs: 04, 09 · RN-075, RN-076
+  - Alarme local pelo `mony-alarm` (T-023a): o app chama `sincronizar` com `GET /lembretes/alarmes` ao abrir e depois de criar, editar, concluir, adiar ou excluir; pede o alarme exato e a tela cheia no primeiro lembrete com alarme. No iOS, o alarme chega com a T-023b; até lá, o lembrete com alarme sai só como notificação (a API já manda o push para quem tem iPhone).
 - [ ] **T-085** 👤 Agendas Google e Outlook (OAuth no servidor) e agenda do aparelho
-  - dep: T-084 · RN-079 · requer verificação do app no Google
+  - dep: T-084a · RN-079 · requer verificação do app no Google
 - [ ] **T-086** Ferramentas da Mony: lembretes, compromissos, agenda, `ajuda_app`
-  - dep: T-084, T-062b
+  - dep: T-084a, T-062b
 - [x] **T-087** Preferências de alerta e horário de silêncio no app; central de notificações (PR #67)
   - dep: T-081, T-011, T-034 · docs: 04
   - Tela do app: depende do design system (T-011) e da sessão no app (T-034), como a T-049.
@@ -234,6 +236,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-081, T-010, T-034 · docs: 04, 09
   - Separada da T-081 pelo mesmo motivo da T-049. Os canais (`CANAIS_ANDROID`) precisam existir antes do primeiro push: o Android não mostra push de canal que o app não criou.
   - O canal `alarmes` é do `mony-alarm` (T-023a), que o cria com o som de alarme; esta tarefa cria os outros três.
+  - Lembretes (T-084a): o [Feito] chama `POST /lembretes/:id/concluir` com a `ocorrencia` do link (`?ocorrencia=<ms>`, em ISO) e o [Adiar], `POST /lembretes/:id/adiar` (10 min); o push silencioso (`dados.tipo = sincronizar_alarmes`) busca `GET /lembretes/alarmes` e chama o `sincronizar` do `mony-alarm` em segundo plano.
 
 ## Fase 4 — Planos e cobrança
 
@@ -258,12 +261,12 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-021, T-022, T-081 · RN-104, RN-121
   - Android sobre o módulo `mony-app-usage` da T-022; a abertura vai para o servidor com o token de evento recomendado em `docs/agentes/poc/T-022.md` ("Limitações da PoC"). A tela de teste da PoC sai quando a do produto existir.
 - [ ] **T-122** 👤 Lembrete por ligação (`VozProvider`), telefone verificado, limite mensal
-  - dep: T-084, T-102 · RN-078
+  - dep: T-084a, T-102 · RN-078
 - [ ] **T-123** Listas de compras com preço por NFC-e e geração de despesa
   - dep: T-066a, T-066c · RN-070 a RN-073
   - Limite do gratuito (RN-120): contar as listas em `CotasRepository.contarItens` e chamar `CotasService.conferirQuantidade(contexto, 'lista_compras', tx)` ao criar.
 - [ ] **T-124** Compartilhamento de listas e lembretes em tempo real (WebSocket)
-  - dep: T-123, T-084 · RN-074
+  - dep: T-123, T-084b · RN-074
 - [x] **T-125** Exportação de relatórios PDF e XLSX no worker (PR #70)
   - dep: T-048, T-100 · RN-151
   - No gratuito, sem exportação (RN-120): `LIMITE_PLANO_ATINGIDO` com `recurso: relatorio`.

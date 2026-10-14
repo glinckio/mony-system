@@ -135,4 +135,12 @@ export const LINKS_INTERNOS = {
   parcelamento: (parcelamentoId: string): string => `mony://parcelamentos/${parcelamentoId}`,
   /** O plano e o uso das cotas (RN-123: [Ver planos]). */
   planos: (): string => 'mony://planos',
+  /**
+   * O lembrete; no push, com a ocorrência que tocou (em ms), para o [Feito] e o [Adiar] da
+   * notificação saberem qual foi (T-084a).
+   */
+  lembrete: (lembreteId: string, ocorrencia?: Date): string =>
+    ocorrencia === undefined
+      ? `mony://lembretes/${lembreteId}`
+      : `mony://lembretes/${lembreteId}?ocorrencia=${String(ocorrencia.getTime())}`,
 } as const;

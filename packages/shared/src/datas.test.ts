@@ -10,6 +10,7 @@ import {
   ehDataCalendario,
   ehFusoValido,
   inicioDoDiaNoFuso,
+  instanteNoFuso,
   somarMeses,
   ultimoDiaDaCompetencia,
   ultimoDiaDoMes,
@@ -137,6 +138,28 @@ describe('fuso do usuário', () => {
   it('recusa instante inválido e fuso desconhecido', () => {
     expect(() => dataNoFuso(new Date('não é data'))).toThrow(RangeError);
     expect(() => dataNoFuso(instante, 'Brasil/Inventado')).toThrow(RangeError);
+  });
+});
+
+describe('instanteNoFuso', () => {
+  it('RN-075 a data e a hora no relógio do fuso, também com horário de verão', () => {
+    expect(instanteNoFuso('2026-10-09', '08:00', 'America/Sao_Paulo').toISOString()).toBe(
+      '2026-10-09T11:00:00.000Z',
+    );
+    expect(instanteNoFuso('2026-10-09', '23:59', 'UTC').toISOString()).toBe(
+      '2026-10-09T23:59:00.000Z',
+    );
+    expect(instanteNoFuso('2026-07-15', '08:30', 'America/New_York').toISOString()).toBe(
+      '2026-07-15T12:30:00.000Z',
+    );
+    expect(instanteNoFuso('2026-01-15', '08:30', 'America/New_York').toISOString()).toBe(
+      '2026-01-15T13:30:00.000Z',
+    );
+  });
+
+  it('recusa hora fora do formato', () => {
+    expect(() => instanteNoFuso('2026-10-09', '8:00')).toThrow(RangeError);
+    expect(() => instanteNoFuso('2026-10-09', '24:00')).toThrow(RangeError);
   });
 });
 
