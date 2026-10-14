@@ -30,12 +30,14 @@ import type {
   FormasPagamentoRelatoriosParams,
   MensalRelatoriosParams,
   PedidoExportacaoDto,
+  PrecosRelatoriosParams,
   RelatorioAnualDto,
   RelatorioCartoesDto,
   RelatorioCategoriasDto,
   RelatorioDiasDaSemanaDto,
   RelatorioFormasPagamentoDto,
   RelatorioMensalDto,
+  RelatorioPrecosDto,
 } from '../modelos';
 
 import { requisicao } from '../../requisicao';
@@ -156,6 +158,133 @@ export const useExportarRelatorios = <TError = unknown, TContext = unknown>(
 > => {
   return useMutation(getExportarRelatoriosMutationOptions(options), queryClient);
 };
+export const getPrecosRelatoriosUrl = (params: PrecosRelatoriosParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/relatorios/precos?${stringifiedParams}`
+    : `/v1/relatorios/precos`;
+};
+
+export const precosRelatorios = async (
+  params: PrecosRelatoriosParams,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<RelatorioPrecosDto> => {
+  return requisicao<RelatorioPrecosDto>(getPrecosRelatoriosUrl(params), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getPrecosRelatoriosQueryKey = (params?: PrecosRelatoriosParams) => {
+  return [`/v1/relatorios/precos`, ...(params ? [params] : [])] as const;
+};
+
+export const getPrecosRelatoriosQueryOptions = <
+  TData = Awaited<ReturnType<typeof precosRelatorios>>,
+  TError = unknown,
+>(
+  params: PrecosRelatoriosParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof precosRelatorios>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getPrecosRelatoriosQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof precosRelatorios>>> = ({ signal }) =>
+    precosRelatorios(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof precosRelatorios>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type PrecosRelatoriosQueryResult = NonNullable<Awaited<ReturnType<typeof precosRelatorios>>>;
+export type PrecosRelatoriosQueryError = unknown;
+
+export function usePrecosRelatorios<
+  TData = Awaited<ReturnType<typeof precosRelatorios>>,
+  TError = unknown,
+>(
+  params: PrecosRelatoriosParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof precosRelatorios>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof precosRelatorios>>,
+          TError,
+          Awaited<ReturnType<typeof precosRelatorios>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function usePrecosRelatorios<
+  TData = Awaited<ReturnType<typeof precosRelatorios>>,
+  TError = unknown,
+>(
+  params: PrecosRelatoriosParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof precosRelatorios>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof precosRelatorios>>,
+          TError,
+          Awaited<ReturnType<typeof precosRelatorios>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function usePrecosRelatorios<
+  TData = Awaited<ReturnType<typeof precosRelatorios>>,
+  TError = unknown,
+>(
+  params: PrecosRelatoriosParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof precosRelatorios>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function usePrecosRelatorios<
+  TData = Awaited<ReturnType<typeof precosRelatorios>>,
+  TError = unknown,
+>(
+  params: PrecosRelatoriosParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof precosRelatorios>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getPrecosRelatoriosQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getExportacaoRelatoriosUrl = (id: string) => {
   return `/v1/relatorios/exportacoes/${id}`;
 };

@@ -1,7 +1,7 @@
 import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
+import { act, fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 import { Linking } from 'react-native';
 
 import { periodoDaAba, periodoDosAnos } from '@/features/relatorios/lib/periodos';
@@ -357,6 +357,131 @@ describe('baixar o relatório (T-125, RN-151)', () => {
       await waitFor(() => {
         expect(app.getPathname()).toBe('/mais/plano');
       }, ESPERA);
+    },
+    TEMPO_LIMITE_MS,
+  );
+});
+
+describe('histórico de preços (T-066c, RN-150)', () => {
+  const fetchOriginal = globalThis.fetch;
+  const pago = (valorUnitarioCentavos: number, data: string, loja: string) => ({
+    valorUnitarioCentavos,
+    data,
+    loja,
+  });
+  const LEITE = {
+    descricao: 'LEITE INTEGRAL 1L',
+    unidade: 'UN',
+    compras: 3,
+    ultimo: pago(549, '2026-10-08', 'MERCADO BOM PRECO'),
+    menor: pago(499, '2026-09-02', 'ATACADO CENTRAL'),
+    porLoja: [
+      { loja: 'ATACADO CENTRAL', mediaCentavos: 499, compras: 1, ultimaData: '2026-09-02' },
+      { loja: 'MERCADO BOM PRECO', mediaCentavos: 539, compras: 2, ultimaData: '2026-10-08' },
+    ],
+  };
+  const CAFE = {
+    descricao: 'CAFE TORRADO 500G',
+    unidade: 'PCT',
+    compras: 1,
+    ultimo: pago(1890, '2026-10-05', 'PADARIA PAO QUENTE'),
+    menor: pago(1890, '2026-10-05', 'PADARIA PAO QUENTE'),
+    porLoja: [
+      { loja: 'PADARIA PAO QUENTE', mediaCentavos: 1890, compras: 1, ultimaData: '2026-10-05' },
+    ],
+  };
+
+  /** `GET /relatorios/precos`: com `gratuito`, o mês atual; "caviar" não acha nada. */
+  function precos(gratuito = false) {
+    api();
+    const relatorios = globalThis.fetch;
+    const buscas: string[] = [];
+    globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
+      const endereco = new URL(
+        typeof url === 'string' ? url : url instanceof URL ? url.href : url.url,
+      );
+      if (endereco.pathname !== '/v1/relatorios/precos') return relatorios(url, opcoes);
+      const busca = endereco.searchParams.get('busca') ?? '';
+      buscas.push(busca);
+      const periodo = gratuito
+        ? { inicio: '2026-10-01', fim: '2026-10-31' }
+        : { inicio: '2025-11-01', fim: '2026-10-31' };
+      const itens = busca === 'caviar' ? [] : busca === 'cafe' ? [CAFE] : [LEITE];
+      return Promise.resolve(
+        new Response(JSON.stringify({ ...periodo, busca, itens }), { status: 200 }),
+      );
+    });
+    return buscas;
+  }
+
+  beforeEach(() => {
+    jest.spyOn(relogio, 'agora').mockReturnValue(new Date('2026-10-09T15:00:00.000Z'));
+    useSessao.getState().encerrar();
+    useSessao.getState().iniciar({ id: 'u1', nome: 'Ana', onboardingConcluido: true }, 'acesso');
+  });
+
+  afterEach(() => {
+    globalThis.fetch = fetchOriginal;
+    jest.restoreAllMocks();
+  });
+
+  it(
+    'RN-150 dos Relatórios: busca o produto e mostra o último preço, o menor e a média por loja',
+    async () => {
+      const buscas = precos();
+      const app = renderRouter(ROTAS, { initialUrl: '/relatorios' });
+      fireEvent.press(await screen.findByRole('button', { name: 'Histórico de preços' }, ESPERA));
+      await waitFor(() => {
+        expect(app.getPathname()).toBe('/relatorios/precos');
+      }, ESPERA);
+      expect(await screen.findByText('Quanto você pagou?', {}, ESPERA)).toBeOnTheScreen();
+
+      // Com uma letra só, não busca.
+      fireEvent.changeText(screen.getByLabelText('Buscar produto'), 'l');
+      // O `renderRouter` liga os relógios falsos do Jest: passa o tempo da espera da busca.
+      act(() => {
+        jest.advanceTimersByTime(500);
+      });
+      expect(buscas).toEqual([]);
+      expect(screen.getByText('Quanto você pagou?')).toBeOnTheScreen();
+
+      fireEvent.changeText(screen.getByLabelText('Buscar produto'), 'leite ');
+      expect(await screen.findByText('LEITE INTEGRAL 1L', {}, ESPERA)).toBeOnTheScreen();
+      expect(buscas).toEqual(['leite']);
+      expect(screen.getByTestId('precos-periodo')).toHaveTextContent(
+        'Compras de nov/2025 a out/2026',
+      );
+      const leite = within(screen.getByTestId('preco-0'));
+      expect(leite.getByText('UN · 3 compras')).toBeOnTheScreen();
+      expect(leite.getByText('Último')).toBeOnTheScreen();
+      expect(leite.getByText('8/out · MERCADO BOM PRECO')).toBeOnTheScreen();
+      expect(leite.getByText(reais('R$ 5,49'))).toBeOnTheScreen();
+      expect(leite.getByText('Menor')).toBeOnTheScreen();
+      expect(leite.getByText('2/set · ATACADO CENTRAL')).toBeOnTheScreen();
+      expect(leite.getAllByText(reais('R$ 4,99'))).toHaveLength(2);
+      expect(leite.getByText('Média por loja')).toBeOnTheScreen();
+      expect(leite.getByText('2 compras · última em 8/out')).toBeOnTheScreen();
+      expect(leite.getByText(reais('R$ 5,39'))).toBeOnTheScreen();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'RN-120 RN-150 no gratuito, as compras do mês; uma loja só sem a média; e a busca sem nada',
+    async () => {
+      precos(true);
+      renderRouter(ROTAS, { initialUrl: '/relatorios/precos' });
+      fireEvent.changeText(await screen.findByLabelText('Buscar produto', {}, ESPERA), 'cafe');
+      expect(await screen.findByText('CAFE TORRADO 500G', {}, ESPERA)).toBeOnTheScreen();
+      expect(screen.getByTestId('precos-periodo')).toHaveTextContent('Compras de outubro');
+      expect(screen.getByText('PCT · 1 compra')).toBeOnTheScreen();
+      expect(screen.queryByText('Média por loja')).toBeNull();
+
+      fireEvent.changeText(screen.getByLabelText('Buscar produto'), 'caviar');
+      expect(await screen.findByText('Nada com “caviar”', {}, ESPERA)).toBeOnTheScreen();
+      expect(
+        screen.getByText('Nenhum cupom fiscal do período tem esse produto.'),
+      ).toBeOnTheScreen();
     },
     TEMPO_LIMITE_MS,
   );

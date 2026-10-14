@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiAcceptedResponse, ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import {
+  esquemaConsultaPrecos,
   esquemaConsultaRelatorio,
   esquemaConsultaRelatorioCategorias,
   esquemaExportacao,
@@ -21,6 +22,7 @@ import {
   esquemaRelatorioDiasDaSemana,
   esquemaRelatorioFormasPagamento,
   esquemaRelatorioMensal,
+  esquemaRelatorioPrecos,
   type Exportacao,
   type RelatorioAnual,
   type RelatorioCartoes,
@@ -28,6 +30,7 @@ import {
   type RelatorioDiasDaSemana,
   type RelatorioFormasPagamento,
   type RelatorioMensal,
+  type RelatorioPrecos,
 } from '@mony/shared/relatorios';
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
@@ -46,6 +49,8 @@ class RelatorioDiasDaSemanaDto extends criarDto(esquemaRelatorioDiasDaSemana) {}
 class RelatorioCartoesDto extends criarDto(esquemaRelatorioCartoes) {}
 class RelatorioFormasPagamentoDto extends criarDto(esquemaRelatorioFormasPagamento) {}
 class PedidoExportacaoDto extends criarDto(esquemaPedidoExportacao) {}
+class ConsultaPrecosDto extends criarDto(esquemaConsultaPrecos) {}
+class RelatorioPrecosDto extends criarDto(esquemaRelatorioPrecos) {}
 class ExportacaoDto extends criarDto(esquemaExportacao) {}
 
 /**
@@ -76,6 +81,19 @@ export class RelatoriosController {
     @Body() pedido: PedidoExportacaoDto,
   ): Promise<Exportacao> {
     return this.exportacoes.pedir(contexto, pedido);
+  }
+
+  @Get('precos')
+  @ApiOkResponse({
+    type: RelatorioPrecosDto,
+    description:
+      'Histórico de preços dos cupons fiscais (NFC-e): último preço, menor e média por loja.',
+  })
+  precos(
+    @ContextoAtual() contexto: Contexto,
+    @Query() consulta: ConsultaPrecosDto,
+  ): Promise<RelatorioPrecos> {
+    return this.relatorios.precos(contexto, consulta);
   }
 
   @Get('exportacoes/:id')

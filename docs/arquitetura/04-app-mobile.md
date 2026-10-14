@@ -267,6 +267,7 @@ Tela em `src/features/relatorios` (`/relatorios`, no grupo `(telas)`, pela grade
 - **Por cartão** e **por forma de pagamento**: barras horizontais, do maior para o menor, com quantos lançamentos.
 - **Evolução anual** (só na aba Ano): os últimos cinco anos, com receitas, despesas e saldo.
 - **Baixar** (RN-151, T-125): o botão do topo abre a folha com [PDF] e [Planilha (Excel)] do período da aba; enquanto o worker gera, "Gerando o relatório…" (o app pergunta a cada 1,5 s); pronto, [Abrir o relatório] abre a URL de 24 h no navegador do aparelho. Falhou: [Tentar de novo]. No gratuito, a mensagem da API e [Ver planos].
+- **Histórico de preços** (RN-150, T-066c): o último bloco abre `/relatorios/precos`, com a busca de produto ("leite", "café"). Com 2 letras ou mais, depois de 350 ms sem digitar, pede `GET /relatorios/precos?busca=` (sem período: o padrão da API). Cada produto dos cupons fiscais lidos pela Mony vem num card com a descrição, a unidade e quantas compras, o último preço e o menor (data e loja) e, com mais de uma loja, a média em cada uma. Acima, o período ("Compras de nov/2025 a out/2026"; no gratuito, "Compras de outubro"). Sem nada: "Nada com “caviar”".
 
 ## Aba Mais e Perfil (T-057)
 

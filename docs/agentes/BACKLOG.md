@@ -199,7 +199,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-066b** NFC-e no app: ler o QR do cupom com `expo-camera` na aba Mony, conferir com `lerQrNfce` e mandar para `POST /mony/nfce`; o [Ver a compra] da mensagem da nova tentativa (PR #74)
   - dep: T-066a, T-069 · docs: 04, 10 (NFC-e)
   - Módulo nativo novo (`expo-camera`): sem build publicado ainda, não quebra o EAS Update (ver T-058).
-- [ ] **T-066c** Histórico de preços da NFC-e (RN-150): `GET /relatorios/precos` (busca por descrição em `nfce_itens`, último preço, menor e média por loja) e a tela em Relatórios
+- [x] **T-066c** Histórico de preços da NFC-e (RN-150): `GET /relatorios/precos` (busca por descrição em `nfce_itens`, último preço, menor e média por loja) e a tela em Relatórios (PR #75)
   - dep: T-066a, T-054 · docs: 05 (Relatórios), 06 (índice `to_tsvector` em `nfce_itens`) · RN-150, RN-071
 - [x] **T-067** Consultoria pós-lançamento (impacto no orçamento e no cartão) (PR #63)
   - dep: T-062b · RN-089
