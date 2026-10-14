@@ -19,6 +19,7 @@ import { ConfigAppModule } from './modulos/config-app/config-app';
 import { ContasModule } from './modulos/contas/contas.module';
 import { DashboardModule } from './modulos/dashboard/dashboard.module';
 import { LembretesModule } from './modulos/lembretes/lembretes.module';
+import { ListasModule } from './modulos/listas/listas.module';
 import { MetasModule } from './modulos/metas/metas.module';
 import { MonyModule } from './modulos/mony/mony.module';
 import { NotificacoesModule } from './modulos/notificacoes/notificacoes.module';
@@ -58,6 +59,7 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     NotificacoesModule,
     PlanosModule,
     LembretesModule,
+    ListasModule,
   ],
   controllers: [SaudeController],
   providers: [

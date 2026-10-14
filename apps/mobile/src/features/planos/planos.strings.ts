@@ -18,6 +18,7 @@ export const textosPlanos = {
     mensagem_mony_dia: 'Mensagens para a Mony hoje',
     leitura_documento_mes: 'Leituras de foto, PDF ou cupom no mês',
     cartao_quantidade: 'Cartões',
+    lista_compras_quantidade: 'Listas de compras abertas',
     lembrete_ativo_quantidade: 'Lembretes ativos',
   },
   /** "2 de 3". */

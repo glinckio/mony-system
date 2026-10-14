@@ -103,7 +103,7 @@ Avaliação completa na PoC [T-026](../agentes/poc/T-026.md); API na T-066a.
   - Nota encontrada → `nfce_notas` e `nfce_itens` gravados, e a compra (o nome da loja sem o sufixo jurídico, o total pago, a data no fuso do usuário e a forma de pagamento do cupom) vira cartão a confirmar, como a foto (RN-083; a mesma compra pode já ter sido lançada à mão). Categoria, forma e cartão faltantes vêm das preferências do estabelecimento (RN-090) ou viram perguntas (RN-080). Gravar liga a nota à transação (`nfce_notas.transacao_id` e `transacoes.nfce_nota_id`).
   - Nota ainda fora da Sefaz (contingência ou emissão recente) ou consulta fora do ar → novas tentativas na fila `mony-midia` em 5 min, 1 h e 6 h. A nota encontrada vira mensagem da Mony no chat com o [Ver a compra]; esgotadas as tentativas, a Mony pede a foto.
   - Cupom cancelado → aviso. Recusa da consulta (UF sem cobertura, por exemplo) → a Mony pede a foto do cupom (leitura por visão, T-065).
-- Os itens alimentam o histórico de preços (RN-150, T-066c) e o preço estimado das listas (RN-071, T-123).
+- Os itens alimentam o histórico de preços (RN-150, T-066c) e o preço estimado das listas (RN-071, T-123a).
 
 ## Ligação de voz
 

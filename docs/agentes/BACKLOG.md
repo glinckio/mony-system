@@ -269,11 +269,16 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Android sobre o módulo `mony-app-usage` da T-022; a abertura vai para o servidor com o token de evento recomendado em `docs/agentes/poc/T-022.md` ("Limitações da PoC"). A tela de teste da PoC sai quando a do produto existir.
 - [ ] **T-122** 👤 Lembrete por ligação (`VozProvider`), telefone verificado, limite mensal
   - dep: T-084a, T-102 · RN-078
-- [ ] **T-123** Listas de compras com preço por NFC-e e geração de despesa
-  - dep: T-066a, T-066c · RN-070 a RN-073
-  - Limite do gratuito (RN-120): contar as listas em `CotasRepository.contarItens` e chamar `CotasService.conferirQuantidade(contexto, 'lista_compras', tx)` ao criar.
+- [x] **T-123a** Listas de compras na API: listas, itens, preço por NFC-e, orçamento e "Finalizar" com a despesa (PR #82)
+  - dep: T-066a, T-066c · RN-070 a RN-073, RN-120 · docs: 05 (Listas de compras)
+- [ ] **T-123b** Telas das listas de compras no app (desenho, página 6)
+  - dep: T-123a · RN-070 a RN-073
+  - Entrada em Mais e nos atalhos do Início; item com o preço sugerido e o "Subiu 12% desde a última compra" (`historico`); total estimado contra o `orcamento` da categoria; "Finalizar" com a forma de pagamento, a categoria e o valor editáveis; `LIMITE_PLANO_ATINGIDO` com [Ver planos].
+- [ ] **T-123c** Ferramenta da Mony para listas de compras (`gerenciar_lista_compras`)
+  - dep: T-123a · RN-070, RN-072 · docs: 08
+  - Criar lista, pôr e tirar itens, marcar comprado e consultar o total pelo `ListasService`; o "Finalizar" pela Mony passa pela confirmação como os lançamentos.
 - [ ] **T-124** Compartilhamento de listas e lembretes em tempo real (WebSocket)
-  - dep: T-123, T-084b · RN-074
+  - dep: T-123b, T-084b · RN-074
 - [x] **T-125** Exportação de relatórios PDF e XLSX no worker (PR #70)
   - dep: T-048, T-100 · RN-151
   - No gratuito, sem exportação (RN-120): `LIMITE_PLANO_ATINGIDO` com `recurso: relatorio`.

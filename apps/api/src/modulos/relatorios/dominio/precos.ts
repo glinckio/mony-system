@@ -32,7 +32,7 @@ export function termosDaBusca(busca: string): string[] {
 }
 
 /** A descrição que junta as compras do mesmo produto: sem acento, minúscula e espaços simples. */
-function chaveDoProduto(item: Pick<ItemComprado, 'descricao' | 'unidade'>): string {
+export function chaveDoProduto(item: Pick<ItemComprado, 'descricao' | 'unidade'>): string {
   return `${normalizar(item.descricao).replace(/\s+/g, ' ').trim()}|${normalizar(item.unidade)}`;
 }
 
@@ -89,4 +89,27 @@ export function historicoDePrecos(itens: readonly ItemComprado[]): RelatorioPrec
       porLoja,
     };
   });
+}
+
+/** A última compra de um produto e a anterior dele, para o preço sugerido da lista (RN-071). */
+export interface UltimasCompras {
+  ultimo: ItemComprado;
+  anterior: ItemComprado | null;
+}
+
+/**
+ * RN-071: a compra mais recente entre os itens achados e a anterior do mesmo produto (a mesma
+ * descrição e unidade, em outra nota: outro dia ou outra loja). `itens` chega do mais recente para
+ * o mais antigo.
+ */
+export function ultimasCompras(itens: readonly ItemComprado[]): UltimasCompras | null {
+  const [ultimo] = itens;
+  if (!ultimo) return null;
+  const chave = chaveDoProduto(ultimo);
+  const anterior =
+    itens.find(
+      (item) =>
+        chaveDoProduto(item) === chave && (item.data !== ultimo.data || item.cnpj !== ultimo.cnpj),
+    ) ?? null;
+  return { ultimo, anterior };
 }

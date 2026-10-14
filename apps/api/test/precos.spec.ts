@@ -9,6 +9,7 @@ import {
   type ItemComprado,
   MAXIMO_PRODUTOS,
   termosDaBusca,
+  ultimasCompras,
 } from '../src/modulos/relatorios/dominio/precos';
 
 const item = (extra: Partial<ItemComprado>): ItemComprado => ({
@@ -106,5 +107,22 @@ describe('histórico de preços (RN-150)', () => {
     );
     expect(historicoDePrecos(muitos)).toHaveLength(MAXIMO_PRODUTOS);
     expect(historicoDePrecos([])).toEqual([]);
+  });
+});
+
+describe('preço sugerido da lista de compras (RN-071)', () => {
+  it('RN-071 a última compra achada e a anterior do mesmo produto, em outro dia ou outra loja', () => {
+    const ultima = item({ data: '2026-10-10', valorUnitarioCentavos: 549 });
+    const mesmaNota = item({ data: '2026-10-10', valorUnitarioCentavos: 549 });
+    const outroProduto = item({ descricao: 'LEITE DESNATADO 1L', data: '2026-10-08' });
+    const anterior = item({ data: '2026-09-20', valorUnitarioCentavos: 499 });
+    expect(ultimasCompras([ultima, mesmaNota, outroProduto, anterior])).toEqual({
+      ultimo: ultima,
+      anterior,
+    });
+    const outraLoja = item({ cnpj: '22222222000122', valorUnitarioCentavos: 529 });
+    expect(ultimasCompras([ultima, outraLoja])?.anterior).toBe(outraLoja);
+    expect(ultimasCompras([ultima, outroProduto])).toEqual({ ultimo: ultima, anterior: null });
+    expect(ultimasCompras([])).toBeNull();
   });
 });
