@@ -226,8 +226,11 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Alarme local pelo `mony-alarm` (T-023a): o app chama `sincronizar` com `GET /lembretes/alarmes` ao abrir e depois de criar, editar, concluir, adiar ou excluir; pede o alarme exato e a tela cheia no primeiro lembrete com alarme. No iOS, o alarme chega com a T-023b; até lá, o lembrete com alarme sai só como notificação (a API já manda o push para quem tem iPhone).
 - [ ] **T-085** 👤 Agendas Google e Outlook (OAuth no servidor) e agenda do aparelho
   - dep: T-084a · RN-079 · requer verificação do app no Google
-- [ ] **T-086** Ferramentas da Mony: lembretes, compromissos, agenda, `ajuda_app`
+- [x] **T-086a** Ferramentas da Mony: `criar_lembrete`, `consultar_lembretes` e `ajuda_app` (base de ajuda versionada) (PR #79)
   - dep: T-084a, T-062b
+  - A T-086 foi dividida: lembretes e ajuda (T-086a) e compromissos e agenda (T-086b), que dependem das agendas da T-085.
+- [ ] **T-086b** Ferramentas da Mony: `criar_compromisso` e `consultar_agenda`
+  - dep: T-085, T-086a
 - [x] **T-087** Preferências de alerta e horário de silêncio no app; central de notificações (PR #67)
   - dep: T-081, T-011, T-034 · docs: 04
   - Tela do app: depende do design system (T-011) e da sessão no app (T-034), como a T-049.

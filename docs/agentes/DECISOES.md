@@ -980,3 +980,18 @@ No CI, o `turbo run build lint typecheck test` roda o Jest junto com o bundle do
 Decisão: o tempo limite dos testes do app que abrem rotas vai a 60 s (`TEMPO_LIMITE_MS`), sem mudar as esperas de cada passo (10 s). Alternativas: o teste do app depender do build no `turbo.json` (o CI fica mais lento) ou guardar o cache do Jest no CI.
 
 Reversível: sim.
+
+## 2026-10-14 — T-086a — Mony com lembretes e ajuda do app
+Contexto: o doc 08 lista `criar_lembrete` ("com canal"), `criar_compromisso`, `consultar_agenda` e `ajuda_app` ("base de ajuda do app, markdown versionado"), mas as agendas são da T-085 (👤). Decisões:
+- **T-086 dividida:** lembretes e ajuda agora (T-086a); compromissos e agenda (T-086b) depois da T-085.
+- **`criar_lembrete` com data e hora locais e a repetição estruturada.**
+  - Por quê: o modelo erra menos com `{ frequencia, dias: ['seg'] }` do que escrevendo RRULE, e a conversão para o instante (fuso, horário de verão) fica no servidor.
+  - A notificação vai sempre; o alarme, quando a pessoa pede.
+  - Grava direto, sem [Desfazer]: o lembrete se exclui na tela dele, aberta pelo [Ver lembrete].
+- **`consultar_lembretes`** entrou, embora não esteja no doc 08, para "quais meus lembretes?".
+- **Base de ajuda como módulo TypeScript** (`modulos/ajuda/base-ajuda.ts`), com o texto em markdown: entra no build sem copiar arquivos. A busca é por palavra-chave e título, sem índice nem embeddings, porque com 15 tópicos basta.
+- **"Agora: HH:MM" no contexto** da Mony, para a hora relativa dos lembretes.
+- **Avaliação:** o caso `definir-orcamento` esperava `valorLimiteCentavos`, mas o campo da ferramenta é `limiteCentavos`; foi corrigido. Os casos de lembrete não fixam a data, porque a avaliação roda no dia de hoje.
+
+Reversível: sim.
+
