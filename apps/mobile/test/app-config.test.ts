@@ -94,6 +94,20 @@ describe('app.config por ambiente', () => {
     });
     // `false` no expo-image-picker bloquearia o RECORD_AUDIO no Android.
     expect(opcoes('expo-image-picker')?.microphonePermission).toBe(audio?.microphonePermission);
+    expect(opcoes('expo-camera')?.microphonePermission).toBe(audio?.microphonePermission);
+  });
+
+  it('câmera para o QR Code do cupom (T-066b): o mesmo texto nos dois plugins', () => {
+    const plugins = criarConfigApp(base, {}).plugins ?? [];
+    const opcoes = (nome: string) =>
+      plugins.find((plugin) => Array.isArray(plugin) && plugin[0] === nome)?.[1] as
+        Record<string, unknown> | undefined;
+    expect(opcoes('expo-camera')?.cameraPermission).toEqual(
+      expect.stringContaining('QR Code do cupom fiscal'),
+    );
+    expect(opcoes('expo-image-picker')?.cameraPermission).toBe(
+      opcoes('expo-camera')?.cameraPermission,
+    );
   });
 });
 

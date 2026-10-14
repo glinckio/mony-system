@@ -48,11 +48,30 @@ export const textosMony = {
     camera: 'Tirar foto',
     galeria: 'Foto ou print da galeria',
     pdf: 'PDF',
+    qr: 'QR Code do cupom fiscal',
     erros: {
       semPermissao: 'Libere a câmera nas configurações do aparelho para fotografar.',
       grande: 'O arquivo passa de 10 MB.',
       tipo: 'Escolha um arquivo PDF.',
       envio: 'Não consegui enviar o arquivo. Tente de novo.',
+    },
+  },
+  /** QR Code do cupom fiscal (T-066b). */
+  nfce: {
+    titulo: 'Ler o cupom fiscal',
+    ajuda: 'Aponte a câmera para o QR Code do cupom. Eu busco a compra na Sefaz e você confirma.',
+    fechar: 'Fechar',
+    /** O balão da pessoa, como a API grava no histórico. */
+    mensagem: 'QR Code do cupom fiscal',
+    semPermissao: 'Libere a câmera para ler o QR Code do cupom.',
+    permitir: 'Permitir câmera',
+    ajustes: 'Abrir ajustes',
+    avisos: {
+      SEM_CHAVE: 'Esse QR Code não é de um cupom fiscal.',
+      DIGITO_INVALIDO: 'Não consegui ler a chave do cupom. Aproxime ou limpe a câmera.',
+      UF_INVALIDA: 'Esse QR Code não é de um cupom fiscal.',
+      NAO_E_NFCE: 'Esse é de nota fiscal eletrônica, não de cupom. Mande a foto ou o PDF da nota.',
+      homologacao: 'Esse cupom é de teste do estabelecimento e não tem compra.',
     },
   },
   resumo: {

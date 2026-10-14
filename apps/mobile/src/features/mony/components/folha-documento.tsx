@@ -9,15 +9,27 @@ interface PropsFolhaDocumento {
   visivel: boolean;
   aoFechar: () => void;
   aoEscolher: (origem: OrigemDocumento) => void;
+  /** O QR Code do cupom fiscal (T-066b). */
+  aoLerQr: () => void;
 }
 
-/** Foto, print ou PDF para a Mony ler (T-065): câmera, galeria ou arquivo. */
-export function FolhaDocumento({ visivel, aoFechar, aoEscolher }: PropsFolhaDocumento) {
+/**
+ * Foto, print ou PDF para a Mony ler (T-065): câmera, galeria ou arquivo; e o QR Code do cupom
+ * fiscal, que a Mony busca na Sefaz (T-066b).
+ */
+export function FolhaDocumento({ visivel, aoFechar, aoEscolher, aoLerQr }: PropsFolhaDocumento) {
   const { t } = useTranslation();
   return (
     <Folha visivel={visivel} titulo={t('mony.documento.titulo')} aoFechar={aoFechar}>
       <View className="gap-2">
         <Texto cor="suave">{t('mony.documento.ajuda')}</Texto>
+        <Botao
+          variante="secundaria"
+          icone="qr-code"
+          larguraTotal
+          titulo={t('mony.documento.qr')}
+          aoPressionar={aoLerQr}
+        />
         <Botao
           variante="secundaria"
           icone="camera"

@@ -912,3 +912,11 @@ Contexto: doc 10 (NFC-e), PoC da T-026 e doc 05 (`POST /mony/nfce`). Decisões:
 - **Cota**: o nome do recurso `leitura_documento` nas mensagens passou a "leitura de foto, PDF ou cupom" (API e app).
 
 Reversível: sim.
+
+## 2026-10-14 — T-066b — QR Code do cupom fiscal no app
+Contexto: doc 04 e doc 10 pedem a leitura com `expo-camera` e o envio a `POST /mony/nfce`, sem dizer onde fica o botão nem o que fazer com QR errado. Decisões:
+- **Na folha do clipe**, como a primeira opção ("QR Code do cupom fiscal"): é a mesma ideia de mandar um documento para a Mony, sem um botão a mais na barra do chat.
+- **Leitor em tela cheia** (`Modal`), só QR; o conteúdo lido é conferido na hora com `lerQrNfce` e só o cupom que vale sai do aparelho. QR de outra coisa, chave danificada, NF-e (modelo 55) e cupom de homologação avisam e a câmera continua. A câmera repete o mesmo código várias vezes por segundo: o mesmo conteúdo não é tratado de novo, e depois do cupom lido nada mais até abrir de novo.
+- **Sem digitar a chave** por enquanto: a API aceita, mas a tela fica para quando aparecer cupom com QR ilegível (a foto, T-065, cobre o caso).
+- **`expo-camera` com o mesmo texto de câmera do `expo-image-picker`** (agora citando o QR do cupom) e o mesmo texto de microfone dos outros plugins: o plugin também pede o `RECORD_AUDIO` no Android, que a mensagem de voz já usa.
+Reversível: sim.

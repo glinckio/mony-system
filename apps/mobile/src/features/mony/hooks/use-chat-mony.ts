@@ -1,4 +1,4 @@
-import { agirMony, ErroApi, type PedidoAcaoMonyDto } from '@mony/api-client';
+import { agirMony, ErroApi, lerNfceMony, type PedidoAcaoMonyDto } from '@mony/api-client';
 import type { EventoMony, OpcaoBotao } from '@mony/shared/mony';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,8 +21,8 @@ import { chaveDoToque, enviarMensagemMony } from '@/lib/mony/conversa';
 
 /**
  * A conversa da tela (doc 04, T-069): as mensagens desta abertura sobre o histórico, o envio de
- * texto, voz (T-064), foto e PDF (T-065) com a resposta em SSE, e o toque nos botões (RN-084), que
- * também vale para as mensagens do histórico.
+ * texto, voz (T-064), foto e PDF (T-065) com a resposta em SSE, o QR Code do cupom fiscal (T-066b)
+ * e o toque nos botões (RN-084), que também vale para as mensagens do histórico.
  *
  * `historico`: as mensagens da API, da mais nova para a mais antiga. Devolve tudo na mesma ordem,
  * com as desta abertura na frente.
@@ -174,6 +174,25 @@ export function useChatMony(historico: readonly Mensagem[]) {
     });
   }
 
+  /**
+   * QR Code do cupom fiscal (T-066b): o conteúdo lido vai a `POST /mony/nfce`, e a Mony responde
+   * com a compra para confirmar (RN-083), um aviso ou a espera pela Sefaz.
+   */
+  async function enviarNfce(conteudo: string) {
+    if (ocupada) return;
+    await conversar(null, nova('usuario', t('mony.nfce.mensagem')), async (respostaId) => {
+      const resposta = await lerNfceMony(
+        { conteudo },
+        { headers: { 'idempotency-key': chaveDoToque() } },
+      );
+      atualizar(respostaId, (atual) => ({
+        ...atual,
+        texto: resposta.texto,
+        componentes: resposta.componente ? [resposta.componente] : [],
+      }));
+    });
+  }
+
   /** Toque num botão (RN-084): a ação volta como veio; o componente tocado sai da mensagem. */
   async function tocar(mensagem: Mensagem, indice: number, opcao: OpcaoBotao) {
     if (ocupada) return;
@@ -200,6 +219,7 @@ export function useChatMony(historico: readonly Mensagem[]) {
     enviarTexto,
     enviarAudio,
     enviarDocumento,
+    enviarNfce,
     tocar,
   };
 }
