@@ -6,18 +6,18 @@ import { Icone, type NomeIcone, Texto } from '@/ui';
 import { cores } from '@/ui/tokens';
 
 /**
- * Os atalhos do design são Lançar, Ler nota, Lista e Lembrete. Lembrete (T-084b) abre o novo
- * lembrete; Ler nota e Lista entram quando as telas deles existirem, e até lá Orçamentos e Metas
- * ocupam o lugar.
+ * Os atalhos do design são Lançar, Ler nota, Lista e Lembrete. Lista (T-123b) abre as listas de
+ * compras e Lembrete (T-084b), o novo lembrete; Ler nota entra quando a tela dele existir, e até
+ * lá Orçamentos ocupa o lugar.
  */
 const ATALHOS: {
-  chave: 'lancar' | 'orcamentos' | 'metas' | 'lembrete';
+  chave: 'lancar' | 'orcamentos' | 'lista' | 'lembrete';
   icone: NomeIcone;
   rota: Href;
 }[] = [
   { chave: 'lancar', icone: 'plus', rota: '/transacoes/nova' },
   { chave: 'orcamentos', icone: 'chart-pie', rota: '/orcamentos' },
-  { chave: 'metas', icone: 'target', rota: '/metas' },
+  { chave: 'lista', icone: 'shopping-cart', rota: '/listas' },
   { chave: 'lembrete', icone: 'bell', rota: '/lembretes/novo' },
 ];
 

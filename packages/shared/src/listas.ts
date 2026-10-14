@@ -146,7 +146,7 @@ export const esquemaOrcamentoDaLista = z.object({
 
 export const esquemaDetalheLista = z.object({
   ...resumoLista,
-  /** Os não comprados primeiro, na ordem em que entraram. */
+  /** Na ordem em que entraram: marcar comprado não muda o lugar do item na tela. */
   itens: z.array(esquemaItemLista),
   /** Soma estimada dos comprados: o que o "Finalizar" lança por padrão. */
   totalCompradoCentavos: z.number().int(),

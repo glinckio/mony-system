@@ -20,6 +20,7 @@ const ROTAS: readonly { padrao: RegExp; rota: (partes: string[], consulta: strin
   { padrao: new RegExp(`^transacoes/${ID}$`), rota: ([, id]) => `/transacoes/${id ?? ''}` },
   // O push do lembrete traz `?ocorrencia=` para o [Feito] da notificação; a tela não precisa dela.
   { padrao: new RegExp(`^lembretes/${ID}$`), rota: ([, id]) => `/lembretes/${id ?? ''}` },
+  { padrao: new RegExp(`^listas/${ID}$`), rota: ([, id]) => `/listas/${id ?? ''}` },
   {
     padrao: /^orcamentos$/,
     rota: (_partes, consulta) => {

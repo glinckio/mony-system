@@ -58,7 +58,7 @@ As rotas em `app/` ficam finas: só importam a `screen` da feature. Isso mantém
 - Expo Router com grupos `(auth)`, `(onboarding)` e `(tabs)`. O `_layout.tsx` raiz decide o grupo pelo estado da sessão e por `usuario.onboardingConcluido`.
 - Esquema `mony://` e Universal Links / App Links em `https://app.<dominio>/`.
 - Toda notificação traz `linkInterno` (ex.: `mony://cartoes/<id>/faturas/<id>`). `lib/deeplinks` valida o link contra uma lista de rotas permitidas antes de navegar.
-- Links que o servidor já manda (`LINKS_INTERNOS` em `@mony/shared/alertas`): `mony://inicio`, `mony://notificacoes`, `mony://cartoes/<id>`, `mony://cartoes/<id>/faturas/<id>`, `mony://orcamentos?competencia=AAAA-MM`, `mony://transacoes/<id>`, `mony://parcelamentos/<id>` e `mony://mony` (o chat, nos resumos da T-083).
+- Links que o servidor já manda (`LINKS_INTERNOS` em `@mony/shared/alertas`): `mony://inicio`, `mony://notificacoes`, `mony://cartoes/<id>`, `mony://cartoes/<id>/faturas/<id>`, `mony://orcamentos?competencia=AAAA-MM`, `mony://transacoes/<id>`, `mony://parcelamentos/<id>`, `mony://mony` (o chat, nos resumos da T-083), `mony://planos`, `mony://lembretes/<id>` e `mony://listas/<id>` (T-123b, para a Mony da T-123c).
 
 ## Dados e estado
 
@@ -266,7 +266,7 @@ Tela em `src/features/inicio`, no design da página 3 (`docs/design`), com uma c
 - **Topo**: as iniciais do nome (abrem o Perfil), "Pesquisar" (abre Transações, que tem a busca), o calendário do período e o sino com o ponto das não lidas, que abre a central de notificações (T-087).
 - **Saldo do período** (RN-020) grande, com os centavos menores, o olho do modo privacidade (RN-022) e "Ver o mês" (abre Transações). O título da tela ("Início") é só para o leitor de tela: o design não tem título visível.
 - **Período** (RN-021): folha com "Este mês", "Mês passado" e "Escolher" (de e até, `DD/MM/AAAA`), validada pelo `esquemaConsultaDashboard`. Ao trocar, a tela segue com o período anterior até o novo chegar.
-- **Atalhos**: Lançar, Orçamentos, Metas e Lembrete (o novo lembrete, T-084b). Os do design que ainda não têm tela (Ler nota e Lista) entram com as tarefas deles.
+- **Atalhos**: Lançar, Orçamentos, Lista (as listas de compras, T-123b) e Lembrete (o novo lembrete, T-084b). Ler nota, do design, entra com a tarefa dele; até lá, Orçamentos fica no lugar.
 - **Blocos**: o checklist (RN-024), o resumo (receitas e quanto já entrou, despesas pagas, a pagar), os próximos vencimentos (RN-023, até cinco; a fatura abre a fatura, parcela e conta abrem o lançamento), os cartões (cor, fatura atual, barra do limite e vencimento) e os orçamentos do mês (total e as três categorias mais perto de estourar). Cartões e orçamentos só aparecem quando existem.
 - Puxar para baixo atualiza o Início e o checklist.
 
@@ -308,11 +308,34 @@ Telas em `src/features/lembretes`, no design da página 6, sobre as rotas da T-0
   - **Permissões:** no primeiro lembrete com alarme, se faltam o alarme exato ou a tela cheia, uma folha leva às configurações do sistema. O pedido fica guardado no aparelho e não volta.
   - **Push silencioso:** é tratado na T-088.
 
+## Listas de compras (T-123b)
+
+Telas em `src/features/listas`, no design da página 6, sobre as rotas da T-123a (doc 05, "Listas de compras"; RN-070 a RN-073):
+
+- **Listas** (`/listas`, pela grade da aba Mais e pelo atalho Lista do Início):
+  - **Chips:** Todas, Mercado, Casa, Carro, Farmácia e Outra. Filtram as listas pelo tipo.
+  - **Cada lista:** o nome, o tipo, "2 de 4 itens" (a finalizada: "Finalizada em 12/out") e o total estimado. As finalizadas ficam embaixo, em "Finalizadas".
+  - **Diferença do design:** o design mostra uma lista aberta direto na tela das listas. O app abre a lista numa tela própria, porque cada tipo pode ter várias listas (RN-070).
+  - **Fora:** quem divide a lista (os avatares e "compartilhada com 1 pessoa") entra com a T-124.
+- **A lista** (`/listas/<id>`, também pelo link `mony://listas/<id>`):
+  - **O topo:** o nome, quantos já foram comprados e o total estimado contra o orçamento livre da categoria ("Orçamento livre em Mercado: R$ 40,00"), em laranja e com o aviso "A lista passa do orçamento livre." quando passa (RN-073). Sem orçamento, "Sem orçamento para Mercado".
+  - **Os itens:** na ordem em que entraram, com a caixa de comprado. O comprado fica riscado. Ao lado do nome, a quantidade ("(x6)" ou "(1,5 kg)") e o total do item, ou "Sem preço"; embaixo, "subiu 12% desde a última compra" em laranja (ou "caiu", em verde).
+  - **Marcar comprado:** a caixa muda na hora (a resposta da API confirma; se falhar, volta).
+  - **Pôr item:** o campo no fim da lista manda só o nome, e a API sugere o preço pelas notas (RN-071). O teclado fica aberto para o próximo.
+  - **Editar item:** tocar no item abre a folha com o nome, a quantidade (com vírgula, até 3 casas), a unidade e o preço por unidade (vazio deixa sem preço), e o último preço pago nas notas. "Tirar da lista" apaga o item.
+- **Finalizar e lançar despesa (RN-072):**
+  - **Quando:** só com algum item comprado; antes disso, o botão fica parado com "Marque o que já comprou para finalizar.".
+  - **A folha:** o valor (o total dos comprados), a descrição (o nome da lista), a data (hoje), a categoria (a da lista, entre as de despesa), a forma de pagamento e, no crédito, o cartão (senão, a conta opcional).
+  - **O envio:** `POST /listas/:id/finalizar` com a `Idempotency-Key` da folha. Depois, a lista fica finalizada, sem caixas nem campo, com [Ver despesa]. Lançamentos, Início e orçamentos buscam de novo.
+- **Nova** (`/listas/nova`, pelo "+") e **editar** (`/listas/<id>/editar`, pelo lápis da lista): o nome e o tipo.
+  - **Nova:** abre a lista criada. No gratuito, a segunda lista aberta mostra a frase do limite com [Ver planos] (RN-120).
+  - **Editar:** manda só o que mudou e tem "Excluir lista", com confirmação. A despesa de uma lista finalizada continua.
+
 ## Aba Mais e Perfil (T-057)
 
 Telas em `src/features/mais`, no design das páginas 8 e 9 (`docs/design`):
 
-- **Mais** (`/mais`): o cartão do perfil (iniciais e nome, abre o Perfil), a grade de atalhos e "Configurações". A grade só mostra as telas que já existem (Orçamentos, Metas, Relatórios, Lembretes, Categorias e Contas); Parcelamentos, Listas, Agenda e Bancos entram com as tarefas deles, e Contas sai quando Bancos (Open Finance) chegar.
+- **Mais** (`/mais`): o cartão do perfil (iniciais e nome, abre o Perfil), a grade de atalhos e "Configurações". A grade só mostra as telas que já existem (Orçamentos, Metas, Relatórios, Listas, Lembretes, Categorias e Contas); Parcelamentos, Agenda e Bancos entram com as tarefas deles, e Contas sai quando Bancos (Open Finance) chegar.
 - **Perfil** (`/mais/perfil`, também pelas iniciais do Início): iniciais, nome e e-mail (`GET /me`); Dados pessoais; Seu plano; Entrar com biometria (RN-005, quando o aparelho tem); Alertas da Mony; Permissões e apps de compra; Rever tutorial; Sair da conta.
 - **Seu plano** (`/mais/plano`, T-100): o plano que vale agora (`GET /assinatura/uso`): no teste, "Tudo liberado até 18/out, 12:00."; no gratuito, cada limite com "2 de 3", a barra e, quando acabou, quando volta ("Amanhã libera de novo.", "No dia 1º libera de novo.") ou, nos de quantidade, "Para ter mais, conheça os planos."; e o aviso de que os relatórios mostram só o mês atual. O [Ver planos] da Mony (link `mony://planos`) abre esta tela; a compra dos planos entra com a T-103. No teste, a linha "Seu plano" do Perfil tem o selo "Teste grátis" (T-101); os avisos do teste chegam por push e pela Mony e abrem esta tela.
 - **Alertas da Mony** (`/mais/alertas`, T-087): o horário de silêncio (chave e as horas de começo e fim, "22:00"; RN-101), a chave de cada alerta que o app já manda (limite, fatura fechada, vencimento da fatura, fatura atrasada, orçamentos, contas a vencer, fora do padrão, projeção, resumos; assinatura "sempre ligado", RN-100) e, nos vencimentos, a antecedência (no dia, 1, 3, 5 ou 7 dias, RN-108). "Salvar" manda só o que mudou (`PUT /preferencias-alerta`). Os alertas de recursos que ainda não existem (lembretes, agenda, apps de compra, banco) entram com eles.

@@ -29,6 +29,7 @@ describe('ajuda do app (T-086a)', () => {
     );
     expect(primeiro('como leio o QR do cupom fiscal?')).toBe('Ler cupom fiscal, foto ou PDF');
     expect(primeiro('quero colocar um alarme')).toBe('Lembretes e alarmes');
+    expect(primeiro('como faço uma lista de mercado?')).toBe('Listas de compras');
     expect(primeiro('como desligo as notificações de noite?')).toBe(
       'Alertas da Mony e horário de silêncio',
     );

@@ -271,7 +271,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-084a, T-102 · RN-078
 - [x] **T-123a** Listas de compras na API: listas, itens, preço por NFC-e, orçamento e "Finalizar" com a despesa (PR #82)
   - dep: T-066a, T-066c · RN-070 a RN-073, RN-120 · docs: 05 (Listas de compras)
-- [ ] **T-123b** Telas das listas de compras no app (desenho, página 6)
+- [x] **T-123b** Telas das listas de compras no app (desenho, página 6) (PR #83)
   - dep: T-123a · RN-070 a RN-073
   - Entrada em Mais e nos atalhos do Início; item com o preço sugerido e o "Subiu 12% desde a última compra" (`historico`); total estimado contra o `orcamento` da categoria; "Finalizar" com a forma de pagamento, a categoria e o valor editáveis; `LIMITE_PLANO_ATINGIDO` com [Ver planos].
 - [ ] **T-123c** Ferramenta da Mony para listas de compras (`gerenciar_lista_compras`)
