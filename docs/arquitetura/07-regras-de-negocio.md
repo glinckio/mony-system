@@ -13,7 +13,7 @@ Legenda: **(PDF)** está na especificação · **(decisão técnica)** definido 
 - **RN-003 (PDF)** Recuperação por código de 6 dígitos enviado por e-mail, de uso único. Validade de 15 minutos e no máximo 5 tentativas por código **(decisão técnica: valores)**. Pedir novo código invalida o anterior.
 - **RN-004 (PDF)** Sessão com token de acesso de 15 minutos e token de renovação por aparelho. Renovação é rotativa: cada uso gera novo refresh e invalida o anterior; reuso de refresh antigo revoga todas as sessões daquele aparelho **(decisão técnica)**. "Sair de todos os aparelhos" revoga todas as sessões do usuário.
 - **RN-005 (PDF)** Biometria é opcional, ativada nas configurações, e só libera o token já guardado no aparelho. Não substitui autenticação no servidor.
-- **RN-006 (PDF)** O cadastro inicia o teste grátis de 3 dias com acesso completo, cria as categorias padrão e as preferências de alerta padrão.
+- **RN-006 (PDF)** O cadastro inicia o teste grátis de 3 dias (padrão, editável no admin, T-104c; vale para novos cadastros) com acesso completo, cria as categorias padrão e as preferências de alerta padrão.
 - **RN-007 (PDF)** Termos de uso e política de privacidade aceitos no cadastro, com versão e data gravadas. Nova versão dos termos pede novo aceite no próximo acesso **(decisão técnica)**.
 - **RN-008 (PDF)** Limite de tentativas em login, recuperação de senha e código: 5 por 15 minutos por e-mail e 20 por 15 minutos por IP **(decisão técnica: valores)**.
 

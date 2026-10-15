@@ -262,7 +262,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-012 · docs: 11, 13
 - [x] **T-104b** Admin: preços do mensal e do anual (novo Price na Stripe, só para novas assinaturas) e histórico com data e autor (PR #95)
   - dep: T-104a, T-102 · RN-129 · docs: 13
-- [ ] **T-104c** Admin: limites do plano gratuito e duração do teste grátis
+- [x] **T-104c** Admin: limites do plano gratuito e duração do teste grátis (PR #96)
   - dep: T-104a · RN-120, RN-124 · docs: 13
 - [ ] **T-104d** Admin: cupons espelhados na Stripe
   - dep: T-104a, T-102 · RN-130 · docs: 13
