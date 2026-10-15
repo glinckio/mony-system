@@ -259,6 +259,8 @@ export const MAXIMO_LANCAMENTOS_DOCUMENTO = 50;
  *   ou PDF (`indice`), ou todos os que faltam (`indice: null`), RN-083 e RN-086 (T-065).
  * - `importar_nfce`: mostra para confirmar a compra do cupom fiscal que a Sefaz devolveu depois
  *   (`notaId`), quando a consulta precisou esperar (T-066a).
+ * - `finalizar_lista`: a confirmação do "Finalizar" de uma lista de compras pedido à Mony, com a
+ *   forma de pagamento, a categoria e o valor mostrados (RN-072, RN-092; T-123c).
  * - `cancelar`: não faz nada.
  */
 export const esquemaAcaoMony = z.discriminatedUnion('tipo', [
@@ -300,6 +302,14 @@ export const esquemaAcaoMony = z.discriminatedUnion('tipo', [
       .nullable(),
   }),
   z.object({ tipo: z.literal('importar_nfce'), notaId: z.uuid() }),
+  z.object({
+    tipo: z.literal('finalizar_lista'),
+    listaId: z.uuid(),
+    formaPagamento: z.enum(FORMAS_PAGAMENTO),
+    cartaoId: z.uuid().nullable(),
+    categoriaId: z.uuid(),
+    valorCentavos: z.number().int().min(1).max(VALOR_MAXIMO_CENTAVOS),
+  }),
   z.object({ tipo: z.literal('cancelar') }),
 ]);
 

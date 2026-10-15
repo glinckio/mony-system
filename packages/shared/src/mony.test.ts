@@ -90,6 +90,18 @@ describe('ação do botão (RN-084)', () => {
       esquemaAcaoMony.safeParse({ tipo: 'pagar_fatura', faturaId: id, valorCentavos: 0 }).success,
     ).toBe(false);
     expect(esquemaAcaoMony.safeParse({ tipo: 'cancelar' }).success).toBe(true);
+    // T-123c: o "Finalizar" da lista pela Mony leva a forma, a categoria e o valor mostrados.
+    const finalizar = {
+      tipo: 'finalizar_lista',
+      listaId: id,
+      formaPagamento: 'pix',
+      cartaoId: null,
+      categoriaId: id,
+      valorCentavos: 4_590,
+    };
+    expect(esquemaAcaoMony.safeParse(finalizar).success).toBe(true);
+    expect(esquemaAcaoMony.safeParse({ ...finalizar, formaPagamento: 'vale' }).success).toBe(false);
+    expect(esquemaAcaoMony.safeParse({ ...finalizar, valorCentavos: 0 }).success).toBe(false);
     // T-065: confirmar ou descartar um lançamento lido (indice) ou todos (null).
     const importacao = { importacaoId: id };
     expect(

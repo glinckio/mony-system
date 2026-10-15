@@ -6,6 +6,7 @@ import { ArquivosModule } from '../arquivos/arquivos.module';
 import { CartoesModule } from '../cartoes/cartoes.module';
 import { CategoriasModule } from '../categorias/categorias.module';
 import { LembretesModule } from '../lembretes/lembretes.module';
+import { ListasModule } from '../listas/listas.module';
 import { MetasModule } from '../metas/metas.module';
 import { OrcamentosModule } from '../orcamentos/orcamentos.module';
 import { ParcelamentosModule } from '../parcelamentos/parcelamentos.module';
@@ -32,6 +33,7 @@ import { CriarTransacaoTool } from './ferramentas/criar-transacao.tool';
 import { DefinirOrcamentoTool } from './ferramentas/definir-orcamento.tool';
 import { EditarTransacaoTool } from './ferramentas/editar-transacao.tool';
 import { ExcluirTransacaoTool } from './ferramentas/excluir-transacao.tool';
+import { GerenciarListaComprasTool } from './ferramentas/gerenciar-lista-compras.tool';
 import { ListarCartoesTool } from './ferramentas/listar-cartoes.tool';
 import { ListarCategoriasTool } from './ferramentas/listar-categorias.tool';
 import { PagarFaturaTool } from './ferramentas/pagar-fatura.tool';
@@ -39,6 +41,7 @@ import { ResumoPeriodoTool } from './ferramentas/resumo-periodo.tool';
 import { FERRAMENTAS_MONY, type Ferramenta, RegistroFerramentas } from './ferramentas/registro';
 import { MonyController } from './mony.controller';
 import { LancamentosMony } from './lancamentos.service';
+import { ListasMony } from './listas.service';
 import { MonyService } from './mony.service';
 import { NfceMony } from './nfce.service';
 import { MonyOrquestrador } from './orquestrador.service';
@@ -46,7 +49,10 @@ import { PreferenciasService } from './preferencias.service';
 import { RascunhosModule } from './rascunhos.module';
 import { RoteadorRegras } from './roteador-regras.service';
 
-/** Ferramentas que o modelo pode chamar: finanças (T-062a e T-062b), lembretes e ajuda (T-086a). */
+/**
+ * Ferramentas que o modelo pode chamar: finanças (T-062a e T-062b), lembretes e ajuda (T-086a) e
+ * listas de compras (T-123c).
+ */
 const FERRAMENTAS = [
   ListarCategoriasTool,
   ListarCartoesTool,
@@ -65,6 +71,7 @@ const FERRAMENTAS = [
   AtualizarMetaTool,
   CriarLembreteTool,
   ConsultarLembretesTool,
+  GerenciarListaComprasTool,
   AjudaAppTool,
 ];
 
@@ -88,6 +95,7 @@ const FERRAMENTAS = [
     TransacoesModule,
     UsuariosModule,
     LembretesModule,
+    ListasModule,
     RascunhosModule,
     ConsultasNfceModule,
   ],
@@ -97,6 +105,7 @@ const FERRAMENTAS = [
     MonyService,
     RoteadorRegras,
     LancamentosMony,
+    ListasMony,
     ConsultoriaMony,
     ConfigMonyService,
     DocumentosMony,
