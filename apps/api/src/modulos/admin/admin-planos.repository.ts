@@ -1,8 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import type { PrecoAdmin } from '@mony/shared/admin';
+import {
+  type PlanoGratuitoAdmin,
+  type PrecoAdmin,
+  RECURSOS_DE_QUANTIDADE,
+  RECURSOS_DE_USO,
+} from '@mony/shared/admin';
 import type { PlanoPago } from '@mony/shared/enums';
 
 import { PrismaService } from '../../core/prisma/prisma.service';
+import type { Prisma } from '../../generated/prisma/client';
+import { CONFIGURACAO_DURACAO_TESTE, DURACAO_TESTE_DIAS } from '../autenticacao/dominio/sessoes';
 
 /** Quantos preços o histórico do painel mostra. */
 export const TAMANHO_HISTORICO_PRECOS = 50;
@@ -92,6 +99,85 @@ export class AdminPlanosRepository {
             valorCentavos: novo.valorCentavos,
             stripePriceId: novo.stripePriceId,
           },
+        },
+      });
+    });
+  }
+
+  /** Limites do gratuito e duração do teste (T-104c). Recurso sem linha: sem limite. */
+  async planoGratuito(): Promise<PlanoGratuitoAdmin> {
+    const [linhas, duracao] = await Promise.all([
+      this.prisma.cliente.limitePlano.findMany(),
+      this.prisma.cliente.configuracao.findUnique({
+        where: { chave: CONFIGURACAO_DURACAO_TESTE },
+        select: { valor: true },
+      }),
+    ]);
+    const doRecurso = (recurso: string) => linhas.find((linha) => linha.recurso === recurso);
+    return {
+      duracaoTesteDias: typeof duracao?.valor === 'number' ? duracao.valor : DURACAO_TESTE_DIAS,
+      limitesDeUso: RECURSOS_DE_USO.map((recurso) => ({
+        recurso,
+        limiteDia: doRecurso(recurso)?.limiteDia ?? null,
+        limiteMes: doRecurso(recurso)?.limiteMes ?? null,
+      })),
+      limitesDeQuantidade: RECURSOS_DE_QUANTIDADE.map((recurso) => ({
+        recurso,
+        limiteQuantidade: doRecurso(recurso)?.limiteQuantidade ?? null,
+      })),
+    };
+  }
+
+  /** Grava tudo e a `auditoria` (com o antes e o depois) numa transação. */
+  async salvarPlanoGratuito(novo: {
+    dados: PlanoGratuitoAdmin;
+    antes: PlanoGratuitoAdmin;
+    adminId: string;
+    ip: string;
+  }): Promise<void> {
+    const { dados } = novo;
+    await this.prisma.cliente.$transaction(async (tx) => {
+      for (const item of dados.limitesDeUso) {
+        const valores = {
+          limiteDia: item.limiteDia,
+          limiteMes: item.limiteMes,
+          limiteQuantidade: null,
+        };
+        await tx.limitePlano.upsert({
+          where: { recurso: item.recurso },
+          create: { recurso: item.recurso, ...valores },
+          update: valores,
+        });
+      }
+      for (const item of dados.limitesDeQuantidade) {
+        const valores = {
+          limiteDia: null,
+          limiteMes: null,
+          limiteQuantidade: item.limiteQuantidade,
+        };
+        await tx.limitePlano.upsert({
+          where: { recurso: item.recurso },
+          create: { recurso: item.recurso, ...valores },
+          update: valores,
+        });
+      }
+      await tx.configuracao.upsert({
+        where: { chave: CONFIGURACAO_DURACAO_TESTE },
+        create: {
+          chave: CONFIGURACAO_DURACAO_TESTE,
+          valor: dados.duracaoTesteDias,
+          alteradoPorId: novo.adminId,
+        },
+        update: { valor: dados.duracaoTesteDias, alteradoPorId: novo.adminId },
+      });
+      await tx.registroAuditoria.create({
+        data: {
+          usuarioId: novo.adminId,
+          acao: 'plano.gratuito_alterado',
+          entidade: 'plano_gratuito',
+          ip: novo.ip,
+          antes: novo.antes as unknown as Prisma.InputJsonValue,
+          depois: dados as unknown as Prisma.InputJsonValue,
         },
       });
     });

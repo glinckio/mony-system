@@ -5,7 +5,7 @@
 import { z } from 'zod';
 
 import { SENHA_MAXIMO } from './autenticacao.js';
-import { PLANOS_PAGOS } from './enums.js';
+import { PLANOS_PAGOS, type RecursoPlano } from './enums.js';
 
 /** `POST /admin/auth/entrar`. */
 export const esquemaLoginAdmin = z.object({
@@ -79,6 +79,60 @@ export const esquemaPrecosAdmin = z.object({
   historico: z.array(esquemaPrecoAdmin),
 });
 
+/** Recursos do gratuito que contam uso por dia ou por mês (RN-120). */
+export const RECURSOS_DE_USO = [
+  'lancamento',
+  'mensagem_mony',
+  'leitura_documento',
+] as const satisfies readonly RecursoPlano[];
+/** Recursos do gratuito que contam os itens que existem (RN-120). */
+export const RECURSOS_DE_QUANTIDADE = [
+  'cartao',
+  'lista_compras',
+  'lembrete_ativo',
+] as const satisfies readonly RecursoPlano[];
+
+export const DURACAO_TESTE_MINIMA_DIAS = 1;
+export const DURACAO_TESTE_MAXIMA_DIAS = 30;
+/** Limite de um recurso no painel: um número de 0 a 10.000, ou `null` para "sem limite". */
+export const LIMITE_MAXIMO = 10_000;
+
+const limite = z.number().int().min(0).max(LIMITE_MAXIMO).nullable();
+
+/** Um limite de uso: por dia e por mês (o `relatorio` não tem número, a regra está no código). */
+export const esquemaLimiteDeUso = z.object({
+  recurso: z.enum(RECURSOS_DE_USO),
+  limiteDia: limite,
+  limiteMes: limite,
+});
+
+/** Um limite de quantidade: quantos itens a pessoa pode ter. */
+export const esquemaLimiteDeQuantidade = z.object({
+  recurso: z.enum(RECURSOS_DE_QUANTIDADE),
+  limiteQuantidade: limite,
+});
+
+/**
+ * `GET` e `PUT /admin/planos/gratuito` (T-104c): os limites do plano gratuito (RN-120), que valem
+ * na hora, e a duração do teste grátis, que vale para quem se cadastrar depois (RN-006). O `PUT`
+ * recebe todos os recursos de uma vez.
+ */
+export const esquemaPlanoGratuitoAdmin = z.object({
+  duracaoTesteDias: z.number().int().min(DURACAO_TESTE_MINIMA_DIAS).max(DURACAO_TESTE_MAXIMA_DIAS),
+  limitesDeUso: z
+    .array(esquemaLimiteDeUso)
+    .length(RECURSOS_DE_USO.length)
+    .refine((itens) => new Set(itens.map((item) => item.recurso)).size === itens.length, {
+      message: 'Um item por recurso',
+    }),
+  limitesDeQuantidade: z
+    .array(esquemaLimiteDeQuantidade)
+    .length(RECURSOS_DE_QUANTIDADE.length)
+    .refine((itens) => new Set(itens.map((item) => item.recurso)).size === itens.length, {
+      message: 'Um item por recurso',
+    }),
+});
+
 export type DadosLoginAdmin = z.infer<typeof esquemaLoginAdmin>;
 export type DesafioAdmin = z.infer<typeof esquemaDesafioAdmin>;
 export type Novo2fa = z.infer<typeof esquemaNovo2fa>;
@@ -88,3 +142,6 @@ export type SessaoAdmin = z.infer<typeof esquemaSessaoAdmin>;
 export type NovoPreco = z.infer<typeof esquemaNovoPreco>;
 export type PrecoAdmin = z.infer<typeof esquemaPrecoAdmin>;
 export type PrecosAdmin = z.infer<typeof esquemaPrecosAdmin>;
+export type LimiteDeUso = z.infer<typeof esquemaLimiteDeUso>;
+export type LimiteDeQuantidade = z.infer<typeof esquemaLimiteDeQuantidade>;
+export type PlanoGratuitoAdmin = z.infer<typeof esquemaPlanoGratuitoAdmin>;

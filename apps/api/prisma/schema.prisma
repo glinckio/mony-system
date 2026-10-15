@@ -418,6 +418,7 @@ model Usuario {
   codigosRecuperacao     CodigoRecuperacao[]
   assinatura             Assinatura?
   precosAlterados        PlanoPreco[]
+  configuracoesAlteradas Configuracao[]
   usoRecursos            UsoRecurso[]
   exportacoesRelatorio   ExportacaoRelatorio[]
   categorias             Categoria[]
@@ -593,6 +594,20 @@ model LimitePlano {
   atualizadoEm     DateTime     @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   @@map("limites_plano")
+}
+
+/// Configurações do sistema editáveis no admin (T-104c), uma linha por chave. Ex.: `teste.duracao_dias`.
+model Configuracao {
+  chave         String   @id
+  valor         Json
+  alteradoPorId String?  @map("alterado_por") @db.Uuid
+  criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm  DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  alteradoPor Usuario? @relation(fields: [alteradoPorId], references: [id], onDelete: SetNull)
+
+  @@index([alteradoPorId])
+  @@map("configuracoes")
 }
 
 /// Contagem de uso por dia no fuso do usuário (RN-122).

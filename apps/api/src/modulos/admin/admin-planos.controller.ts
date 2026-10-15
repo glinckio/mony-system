@@ -1,6 +1,12 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Ip, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Ip, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { esquemaNovoPreco, esquemaPrecosAdmin, type PrecosAdmin } from '@mony/shared/admin';
+import {
+  esquemaNovoPreco,
+  esquemaPlanoGratuitoAdmin,
+  esquemaPrecosAdmin,
+  type PlanoGratuitoAdmin,
+  type PrecosAdmin,
+} from '@mony/shared/admin';
 
 import { Admin } from '../../core/auth/admin.decorator';
 import type { UsuarioAutenticado } from '../../core/auth/tokens-acesso';
@@ -10,6 +16,7 @@ import { AdminPlanosService } from './admin-planos.service';
 
 class NovoPrecoDto extends criarDto(esquemaNovoPreco) {}
 class PrecosAdminDto extends criarDto(esquemaPrecosAdmin) {}
+class PlanoGratuitoAdminDto extends criarDto(esquemaPlanoGratuitoAdmin) {}
 
 /** Planos e preços do painel (T-104b, doc 13). Só faz HTTP; a regra está no Service. */
 @ApiTags('admin')
@@ -41,5 +48,28 @@ export class AdminPlanosController {
     @Ip() ip: string,
   ): Promise<PrecosAdmin> {
     return this.planos.alterar(admin.id, novo, ip);
+  }
+
+  @Get('gratuito')
+  @ApiOkResponse({
+    type: PlanoGratuitoAdminDto,
+    description: 'Limites do plano gratuito (RN-120) e duração do teste grátis (RN-006).',
+  })
+  planoGratuito(): Promise<PlanoGratuitoAdmin> {
+    return this.planos.planoGratuito();
+  }
+
+  @Put('gratuito')
+  @ApiOkResponse({
+    type: PlanoGratuitoAdminDto,
+    description:
+      'Grava todos os limites e a duração do teste. Os limites valem na hora; a duração, para os próximos cadastros. `null`: sem limite.',
+  })
+  salvarPlanoGratuito(
+    @UsuarioAtual() admin: UsuarioAutenticado,
+    @Body() dados: PlanoGratuitoAdminDto,
+    @Ip() ip: string,
+  ): Promise<PlanoGratuitoAdmin> {
+    return this.planos.salvarPlanoGratuito(admin.id, dados, ip);
   }
 }

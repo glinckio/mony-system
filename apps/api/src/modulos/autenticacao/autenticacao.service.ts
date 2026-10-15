@@ -106,7 +106,7 @@ export class AutenticacaoService {
   }
 
   /**
-   * RN-006: conta com teste de 3 dias e padrões, e a sessão do aparelho, numa transação. RN-125:
+   * RN-006: conta com teste (3 dias, ou o que o admin definiu, T-104c) e padrões, e a sessão do aparelho, numa transação. RN-125:
    * quem já teve teste (pelo e-mail, pelo login social ou pelo aparelho) começa no gratuito.
    */
   private async abrirContaNova(
@@ -119,13 +119,14 @@ export class AutenticacaoService {
     const agora = this.clock.agora();
     const renovacao = gerarTokenRenovacao();
     const expiraEm = somarDias(agora, VALIDADE_RENOVACAO_DIAS);
+    const diasDeTeste = (await this.repositorio.duracaoTesteDias()) ?? DURACAO_TESTE_DIAS;
     const criada = await this.repositorio.criarConta(
       {
         ...conta,
         aceites: { termos: conta.aceites.termos, privacidade: conta.aceites.privacidade },
         ip,
         testeInicio: agora,
-        testeFim: somarDias(agora, DURACAO_TESTE_DIAS),
+        testeFim: somarDias(agora, diasDeTeste),
         controlesTeste: controlesDoTeste({
           email: conta.email,
           loginSocial: conta.loginSocial,

@@ -5,8 +5,13 @@ import { DOCUMENTOS_ACEITE, type DocumentoAceite } from '@mony/shared/enums';
 
 /** Token de renovação vale 60 dias sem uso; cada renovação começa a contagem de novo. */
 export const VALIDADE_RENOVACAO_DIAS = 60;
-/** RN-006: o cadastro dá 3 dias de teste com acesso completo. */
+/**
+ * RN-006: o cadastro dá 3 dias de teste com acesso completo. É o padrão: o admin muda a duração
+ * em `configuracoes` (`teste.duracao_dias`, T-104c).
+ */
 export const DURACAO_TESTE_DIAS = 3;
+/** A chave da duração do teste em `configuracoes`. */
+export const CONFIGURACAO_DURACAO_TESTE = 'teste.duracao_dias';
 /** RN-008: 5 tentativas por e-mail e 20 por IP a cada 15 minutos. */
 export const JANELA_TENTATIVAS_SEGUNDOS = 15 * 60;
 export const MAXIMO_TENTATIVAS_EMAIL = 5;

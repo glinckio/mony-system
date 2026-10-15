@@ -7,6 +7,7 @@ import type { ClientePrisma } from '../../core/prisma/cliente';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { Prisma } from '../../generated/prisma/client';
 import type { ControleDoTeste } from '../planos/dominio/teste';
+import { CONFIGURACAO_DURACAO_TESTE } from './dominio/sessoes';
 
 /** Dados do usuário que a sessão devolve ao app. */
 const CAMPOS_USUARIO = {
@@ -53,6 +54,15 @@ type ClienteSessao = Pick<ClientePrisma, 'dispositivo' | 'sessao'>;
 @Injectable()
 export class AutenticacaoRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** Os dias de teste que o admin definiu (T-104c); `null`: o padrão. */
+  async duracaoTesteDias(): Promise<number | null> {
+    const linha = await this.prisma.cliente.configuracao.findUnique({
+      where: { chave: CONFIGURACAO_DURACAO_TESTE },
+      select: { valor: true },
+    });
+    return typeof linha?.valor === 'number' ? linha.valor : null;
+  }
 
   /**
    * RN-001, RN-006, RN-007: cria o usuário (e o vínculo do login social, se veio por ele), grava
