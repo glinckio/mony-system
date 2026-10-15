@@ -42,10 +42,20 @@ export class LembretesRepository {
     return usuario.fusoHorario;
   }
 
-  /** Os ativos (os que tocaram e esperam o [Feito] primeiro, depois o mais próximo) ou os feitos. */
-  listar(usuarioId: string, status: 'ativo' | 'concluido'): Promise<LembreteGravado[]> {
+  /**
+   * Os ativos (os que tocaram e esperam o [Feito] primeiro, depois o mais próximo) ou os feitos, do
+   * usuário e os compartilhados com ele (`recebidos`).
+   */
+  listar(
+    usuarioId: string,
+    status: 'ativo' | 'concluido',
+    recebidos: readonly string[] = [],
+  ): Promise<LembreteGravado[]> {
     return this.prisma.cliente.lembrete.findMany({
-      where: { usuarioId, status },
+      where: {
+        status,
+        OR: [{ usuarioId }, ...(recebidos.length > 0 ? [{ id: { in: [...recebidos] } }] : [])],
+      },
       select: CAMPOS_LEMBRETE,
       ...(status === 'ativo'
         ? {

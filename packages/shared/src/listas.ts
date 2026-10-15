@@ -3,7 +3,7 @@
  */
 import { z } from 'zod';
 
-import { ACESSOS_LISTA } from './compartilhamentos.js';
+import { ACESSOS_RECURSO } from './compartilhamentos.js';
 import { ehDataCalendario } from './datas.js';
 import { CATEGORIAS_LISTA, type CategoriaLista, FORMAS_PAGAMENTO } from './enums.js';
 import { normalizar } from './rascunhos.js';
@@ -126,7 +126,7 @@ export const esquemaItemLista = z.object({
 const resumoLista = {
   id: z.uuid(),
   /** RN-074: dona, ou convidada com `ver` ou `editar`. */
-  acesso: z.enum(ACESSOS_LISTA),
+  acesso: z.enum(ACESSOS_RECURSO),
   /** Quem é dono da lista, quando ela foi compartilhada com quem vê; `null` na própria. */
   dono: z.object({ id: z.uuid(), nome: z.string() }).nullable(),
   /** Quantas pessoas aceitaram o convite para a lista. */

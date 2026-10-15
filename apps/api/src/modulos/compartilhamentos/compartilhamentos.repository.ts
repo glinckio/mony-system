@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { RecursoComConvite } from '@mony/shared/compartilhamentos';
 
 import { PrismaService } from '../../core/prisma/prisma.service';
 import type { Prisma } from '../../generated/prisma/client';
@@ -20,7 +21,7 @@ const CAMPOS = {
 
 export type CompartilhamentoGravado = Prisma.CompartilhamentoGetPayload<{ select: typeof CAMPOS }>;
 
-/** Convites e acessos compartilhados (RN-074). Só a lista de compras por enquanto (T-124a). */
+/** Convites e acessos compartilhados (RN-074): a lista de compras (T-124a) e o lembrete (T-124c). */
 @Injectable()
 export class CompartilhamentosRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -34,21 +35,44 @@ export class CompartilhamentosRepository {
     });
   }
 
-  /** O dono e o nome da lista, ou `null` se ela não existe. */
-  lista(id: string) {
-    return this.prisma.cliente.listaCompras.findUnique({
-      where: { id },
-      select: { usuarioId: true, nome: true },
+  /** O dono e o nome da lista (ou o título do lembrete), ou `null` se não existe (ou foi excluído). */
+  async recurso(
+    recurso: RecursoComConvite,
+    id: string,
+  ): Promise<{ usuarioId: string; nome: string } | null> {
+    if (recurso === 'lista') {
+      return this.prisma.cliente.listaCompras.findUnique({
+        where: { id },
+        select: { usuarioId: true, nome: true },
+      });
+    }
+    const lembrete = await this.prisma.cliente.lembrete.findFirst({
+      where: { id, status: { not: 'cancelado' } },
+      select: { usuarioId: true, titulo: true },
     });
+    return lembrete && { usuarioId: lembrete.usuarioId, nome: lembrete.titulo };
   }
 
-  /** Os nomes das listas, para os convites. */
-  async nomesDasListas(ids: readonly string[]): Promise<Map<string, string>> {
-    const listas = await this.prisma.cliente.listaCompras.findMany({
-      where: { id: { in: [...ids] } },
-      select: { id: true, nome: true },
-    });
-    return new Map(listas.map(({ id, nome }) => [id, nome]));
+  /** Os nomes das listas e os títulos dos lembretes, para os convites (chave `recurso:id`). */
+  async nomesDosRecursos(
+    recursos: readonly { recurso: RecursoComConvite; recursoId: string }[],
+  ): Promise<Map<string, string>> {
+    const ids = (tipo: RecursoComConvite) =>
+      recursos.filter(({ recurso }) => recurso === tipo).map(({ recursoId }) => recursoId);
+    const [listas, lembretes] = await Promise.all([
+      this.prisma.cliente.listaCompras.findMany({
+        where: { id: { in: ids('lista') } },
+        select: { id: true, nome: true },
+      }),
+      this.prisma.cliente.lembrete.findMany({
+        where: { id: { in: ids('lembrete') } },
+        select: { id: true, titulo: true },
+      }),
+    ]);
+    return new Map([
+      ...listas.map(({ id, nome }) => [`lista:${id}`, nome] as const),
+      ...lembretes.map(({ id, titulo }) => [`lembrete:${id}`, titulo] as const),
+    ]);
   }
 
   buscar(id: string): Promise<CompartilhamentoGravado | null> {
@@ -79,13 +103,14 @@ export class CompartilhamentosRepository {
    */
   async convidar(dados: {
     usuarioId: string;
+    recurso: RecursoComConvite;
     recursoId: string;
     convidadoId: string;
     permissao: 'ver' | 'editar';
   }): Promise<CompartilhamentoGravado> {
     return this.prisma.cliente.$transaction(async (tx) => {
       const chave = {
-        recurso: 'lista' as const,
+        recurso: dados.recurso,
         recursoId: dados.recursoId,
         convidadoId: dados.convidadoId,
       };
@@ -135,36 +160,49 @@ export class CompartilhamentosRepository {
     await this.prisma.cliente.compartilhamento.deleteMany({ where: { id } });
   }
 
-  /** O convite aceito do usuário para a lista, se houver. */
-  aceito(usuarioId: string, recursoId: string) {
+  /** O convite aceito do usuário para o recurso, se houver. */
+  aceito(usuarioId: string, recurso: RecursoComConvite, recursoId: string) {
     return this.prisma.cliente.compartilhamento.findFirst({
-      where: { recurso: 'lista', recursoId, convidadoId: usuarioId, status: 'aceito' },
+      where: { recurso, recursoId, convidadoId: usuarioId, status: 'aceito' },
       select: { permissao: true },
     });
   }
 
-  /** As listas compartilhadas com o usuário (aceitas), com a permissão. */
-  aceitosDoUsuario(usuarioId: string) {
+  /** Os recursos desse tipo compartilhados com o usuário (aceitos), com a permissão. */
+  aceitosDoUsuario(usuarioId: string, recurso: RecursoComConvite) {
     return this.prisma.cliente.compartilhamento.findMany({
-      where: { recurso: 'lista', convidadoId: usuarioId, status: 'aceito' },
+      where: { recurso, convidadoId: usuarioId, status: 'aceito' },
       select: { recursoId: true, permissao: true, usuario: PESSOA },
     });
   }
 
-  /** Quantas pessoas aceitaram cada lista. */
-  async aceitosPorLista(ids: readonly string[]): Promise<Map<string, number>> {
+  /** Quem aceitou cada recurso, com o fuso, e o nome do dono. */
+  convidadosAceitos(recurso: RecursoComConvite, ids: readonly string[]) {
+    return this.prisma.cliente.compartilhamento.findMany({
+      where: { recurso, recursoId: { in: [...ids] }, status: 'aceito' },
+      select: {
+        recursoId: true,
+        usuario: { select: { nome: true } },
+        convidado: { select: { id: true, fusoHorario: true } },
+      },
+    });
+  }
+
+  /** Quantas pessoas aceitaram cada recurso. */
+  async aceitosPorRecurso(
+    recurso: RecursoComConvite,
+    ids: readonly string[],
+  ): Promise<Map<string, number>> {
     const grupos = await this.prisma.cliente.compartilhamento.groupBy({
       by: ['recursoId'],
-      where: { recurso: 'lista', recursoId: { in: [...ids] }, status: 'aceito' },
+      where: { recurso, recursoId: { in: [...ids] }, status: 'aceito' },
       _count: { _all: true },
     });
     return new Map(grupos.map(({ recursoId, _count }) => [recursoId, _count._all]));
   }
 
-  /** Apaga os convites de uma lista que saiu (não há chave estrangeira para o recurso). */
-  async excluirDoRecurso(recursoId: string): Promise<void> {
-    await this.prisma.cliente.compartilhamento.deleteMany({
-      where: { recurso: 'lista', recursoId },
-    });
+  /** Apaga os convites de um recurso que saiu (não há chave estrangeira para o recurso). */
+  async excluirDoRecurso(recurso: RecursoComConvite, recursoId: string): Promise<void> {
+    await this.prisma.cliente.compartilhamento.deleteMany({ where: { recurso, recursoId } });
   }
 }

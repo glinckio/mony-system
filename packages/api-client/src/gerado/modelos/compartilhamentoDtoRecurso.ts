@@ -11,4 +11,5 @@ export type CompartilhamentoDtoRecurso =
 
 export const CompartilhamentoDtoRecurso = {
   lista: 'lista',
+  lembrete: 'lembrete',
 } as const;

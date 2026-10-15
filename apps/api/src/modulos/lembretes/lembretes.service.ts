@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { AcessoRecurso } from '@mony/shared/compartilhamentos';
 import type { CanalLembrete } from '@mony/shared/enums';
 import type {
   AlarmesLembretes,
@@ -14,6 +15,10 @@ import type {
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
+import {
+  CompartilhamentosService,
+  type RecursoRecebido,
+} from '../compartilhamentos/compartilhamentos.service';
 import { SincronizacaoAlarmes } from '../notificacoes/sincronizacao-alarmes';
 import { CotasService } from '../planos/cotas.service';
 import { adiarAte, agendar, alarmesDe, concluir, inicioDoMinuto } from './dominio/agenda';
@@ -23,7 +28,12 @@ import {
   type TransacaoLembretes,
 } from './lembretes.repository';
 
-function paraLembrete(linha: LembreteGravado): Lembrete {
+/** Como o lembrete chega a quem vê (RN-074). */
+type Visao = Pick<Lembrete, 'acesso' | 'dono' | 'compartilhadoCom'>;
+
+const PROPRIO_SEM_CONVITES: Visao = { acesso: 'dono', dono: null, compartilhadoCom: 0 };
+
+function paraLembrete(linha: LembreteGravado, visao: Visao): Lembrete {
   return {
     id: linha.id,
     titulo: linha.titulo,
@@ -33,6 +43,7 @@ function paraLembrete(linha: LembreteGravado): Lembrete {
     status: linha.status,
     adiadoAte: linha.adiadoAte?.toISOString() ?? null,
     pendente: linha.status === 'ativo' && linha.disparadoEm !== null,
+    ...visao,
     criadoEm: linha.criadoEm.toISOString(),
     atualizadoEm: linha.atualizadoEm.toISOString(),
   };
@@ -53,6 +64,10 @@ const repeticaoAcabou = () =>
  * Lembretes (RN-075 a RN-077, doc 09). O servidor é a fonte da verdade: a rotina por minuto
  * (`DisparoLembretes`) manda o push, e o aparelho agenda os alarmes pela lista de `alarmes`. Toda
  * mudança num lembrete com alarme manda o push silencioso para o app buscar a lista de novo.
+ *
+ * Compartilhado (RN-074, T-124c), o lembrete continua do dono (a hora, o fuso, os alarmes e a cota
+ * são dele): quem foi convidado vê e recebe o aviso; com `editar`, também conclui e adia, para
+ * todos. Mudar, excluir e convidar são do dono.
  */
 @Injectable()
 export class LembretesService {
@@ -60,19 +75,28 @@ export class LembretesService {
     private readonly repositorio: LembretesRepository,
     private readonly cotas: CotasService,
     private readonly sincronizacao: SincronizacaoAlarmes,
+    private readonly compartilhamentos: CompartilhamentosService,
     private readonly clock: Clock,
   ) {}
 
+  /** Os próprios e os compartilhados com o usuário (RN-074), na mesma ordem. */
   async listar(contexto: Contexto, consulta: ConsultaLembretes): Promise<ListaLembretes> {
     const usuarioId = usuarioDoContexto(contexto);
-    const linhas = await this.repositorio.listar(usuarioId, consulta.status);
-    return { itens: linhas.map(paraLembrete) };
+    const recebidos = await this.compartilhamentos.recebidos(usuarioId, 'lembrete');
+    const linhas = await this.repositorio.listar(
+      usuarioId,
+      consulta.status,
+      recebidos.map(({ recursoId }) => recursoId),
+    );
+    return { itens: await this.comVisao(usuarioId, linhas, recebidos) };
   }
 
+  /** RN-074: o dono e quem foi convidado (aceito) leem. */
   async buscar(contexto: Contexto, id: string): Promise<Lembrete> {
-    const linha = await this.repositorio.buscar(usuarioDoContexto(contexto), id);
+    const { donoId } = await this.acesso(contexto, id, 'ver');
+    const linha = await this.repositorio.buscar(donoId, id);
     if (!linha) throw naoEncontrado();
-    return paraLembrete(linha);
+    return this.umComVisao(contexto, linha);
   }
 
   /** RN-075; RN-120: no gratuito, até 5 lembretes ativos. */
@@ -95,20 +119,20 @@ export class LembretesService {
       });
     });
     if (temAlarme(canais)) await this.sincronizacao.avisar(usuarioId);
-    return paraLembrete(criado);
+    return paraLembrete(criado, PROPRIO_SEM_CONVITES);
   }
 
   /**
    * Muda o título, a data e hora, a repetição ou os canais. Mudar a data ou a repetição recomeça
    * a agenda (tira a soneca e o "tocou"); uma data nova reativa o lembrete feito, dentro do limite
-   * do gratuito (RN-120).
+   * do gratuito (RN-120). Só o dono (RN-074).
    */
   async atualizar(
     contexto: Contexto,
     id: string,
     dados: DadosAtualizacaoLembrete,
   ): Promise<Lembrete> {
-    const usuarioId = usuarioDoContexto(contexto);
+    const { donoId: usuarioId } = await this.acesso(contexto, id, 'dono');
     const agora = this.clock.agora();
     const fuso = await this.repositorio.fusoDoUsuario(usuarioId);
     const { antes, depois } = await this.repositorio.emTransacao(async (tx) => {
@@ -150,25 +174,32 @@ export class LembretesService {
     if (temAlarme(antes.canais) || temAlarme(depois.canais)) {
       await this.sincronizacao.avisar(usuarioId);
     }
-    return paraLembrete(depois);
+    return this.umComVisao(contexto, depois);
   }
 
-  /** Excluir é cancelar: o lembrete some das listas e dos alarmes. */
+  /**
+   * Excluir é cancelar: o lembrete some das listas e dos alarmes, e os convites dele saem junto. Só
+   * o dono (RN-074).
+   */
   async excluir(contexto: Contexto, id: string): Promise<void> {
-    const usuarioId = usuarioDoContexto(contexto);
+    const { donoId: usuarioId } = await this.acesso(contexto, id, 'dono');
     const antes = await this.repositorio.emTransacao(async (tx) => {
       const atual = await this.exigir(tx, usuarioId, id);
       await this.repositorio.atualizar(tx, id, { status: 'cancelado', adiadoAte: null });
       return atual;
     });
+    await this.compartilhamentos.recursoExcluido('lembrete', id);
     if (antes.status === 'ativo' && temAlarme(antes.canais)) {
       await this.sincronizacao.avisar(usuarioId);
     }
   }
 
-  /** RN-076: o [Feito], da lista ou da notificação (com a ocorrência que tocou). */
+  /**
+   * RN-076: o [Feito], da lista ou da notificação (com a ocorrência que tocou). Compartilhado, com
+   * `editar`: vale para todos (RN-074).
+   */
   async concluir(contexto: Contexto, id: string, dados: DadosConclusaoLembrete): Promise<Lembrete> {
-    const usuarioId = usuarioDoContexto(contexto);
+    const { donoId: usuarioId } = await this.acesso(contexto, id, 'editar');
     const fuso = await this.repositorio.fusoDoUsuario(usuarioId);
     const { antes, depois } = await this.repositorio.emTransacao(async (tx) => {
       const atual = await this.exigir(tx, usuarioId, id);
@@ -186,12 +217,15 @@ export class LembretesService {
       return { antes: atual, depois: gravado };
     });
     if (antes !== depois && temAlarme(antes.canais)) await this.sincronizacao.avisar(usuarioId);
-    return paraLembrete(depois);
+    return this.umComVisao(contexto, depois);
   }
 
-  /** RN-076: adiar por 10 minutos (o padrão), 1 hora ou para amanhã; a soneca toca de novo. */
+  /**
+   * RN-076: adiar por 10 minutos (o padrão), 1 hora ou para amanhã; a soneca toca de novo.
+   * Compartilhado, com `editar`: a soneca é de todos, e "amanhã" é no fuso do dono (RN-074).
+   */
   async adiar(contexto: Contexto, id: string, dados: DadosAdiamentoLembrete): Promise<Lembrete> {
-    const usuarioId = usuarioDoContexto(contexto);
+    const { donoId: usuarioId } = await this.acesso(contexto, id, 'editar');
     const agora = this.clock.agora();
     const fuso = await this.repositorio.fusoDoUsuario(usuarioId);
     const gravado = await this.repositorio.emTransacao(async (tx) => {
@@ -204,10 +238,13 @@ export class LembretesService {
       });
     });
     if (temAlarme(gravado.canais)) await this.sincronizacao.avisar(usuarioId);
-    return paraLembrete(gravado);
+    return this.umComVisao(contexto, gravado);
   }
 
-  /** Doc 09: os próximos alarmes, para o aparelho agendar (`mony-alarm`). */
+  /**
+   * Doc 09: os próximos alarmes, para o aparelho agendar (`mony-alarm`). Só os próprios: quem foi
+   * convidado recebe o push (T-124c).
+   */
   async alarmes(contexto: Contexto): Promise<AlarmesLembretes> {
     const usuarioId = usuarioDoContexto(contexto);
     const [fuso, lembretes] = await Promise.all([
@@ -220,6 +257,48 @@ export class LembretesService {
         instante: alarme.instante.toISOString(),
       })),
     };
+  }
+
+  private acesso(contexto: Contexto, id: string, exigido: AcessoRecurso) {
+    return this.compartilhamentos.verificarAcesso(
+      usuarioDoContexto(contexto),
+      'lembrete',
+      id,
+      exigido,
+    );
+  }
+
+  private async umComVisao(contexto: Contexto, linha: LembreteGravado): Promise<Lembrete> {
+    const [lembrete] = await this.comVisao(usuarioDoContexto(contexto), [linha]);
+    if (!lembrete) throw naoEncontrado();
+    return lembrete;
+  }
+
+  /** Como cada lembrete chega ao usuário: dono, ou convidado (com quem é o dono). */
+  private async comVisao(
+    usuarioId: string,
+    linhas: readonly LembreteGravado[],
+    recebidos?: readonly RecursoRecebido[],
+  ): Promise<Lembrete[]> {
+    const [deOutros, pessoas] = await Promise.all([
+      recebidos ??
+        (linhas.some((linha) => linha.usuarioId !== usuarioId)
+          ? this.compartilhamentos.recebidos(usuarioId, 'lembrete')
+          : []),
+      this.compartilhamentos.pessoasPorRecurso(
+        'lembrete',
+        linhas.map(({ id }) => id),
+      ),
+    ]);
+    const recebido = new Map(deOutros.map((item) => [item.recursoId, item]));
+    return linhas.map((linha) => {
+      const deOutro = linha.usuarioId === usuarioId ? undefined : recebido.get(linha.id);
+      return paraLembrete(linha, {
+        acesso: deOutro?.acesso ?? 'dono',
+        dono: deOutro?.dono ?? null,
+        compartilhadoCom: pessoas.get(linha.id) ?? 0,
+      });
+    });
   }
 
   private async exigir(

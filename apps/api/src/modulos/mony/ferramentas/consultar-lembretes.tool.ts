@@ -20,7 +20,7 @@ const esquema = z.object({});
 export class ConsultarLembretesTool implements Ferramenta<typeof esquema> {
   readonly nome = 'consultar_lembretes';
   readonly descricao =
-    'Lembretes ativos: título, data e hora da próxima vez que toca (no fuso do usuário), repetição (RRULE), canais, se já tocou e espera o "feito" e até quando está adiado.';
+    'Lembretes ativos: título, data e hora da próxima vez que toca (no fuso do usuário), repetição (RRULE), canais, se já tocou e espera o "feito" e até quando está adiado. Os compartilhados por outra pessoa vêm com o nome dela.';
   readonly esquema = esquema;
 
   constructor(
@@ -46,6 +46,7 @@ export class ConsultarLembretesTool implements Ferramenta<typeof esquema> {
           repeticao: lembrete.recorrencia,
           canais: lembrete.canais,
           jaTocou: lembrete.pendente,
+          compartilhadoPor: lembrete.dono?.nome ?? null,
           adiadoAte: lembrete.adiadoAte === null ? null : local(lembrete.adiadoAte),
         })),
       },

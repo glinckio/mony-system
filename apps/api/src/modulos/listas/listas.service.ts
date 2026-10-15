@@ -20,7 +20,7 @@ import {
 } from '@mony/shared/listas';
 import { nomeDoEstabelecimento } from '@mony/shared/nfce';
 
-import type { AcessoLista } from '@mony/shared/compartilhamentos';
+import type { AcessoRecurso } from '@mony/shared/compartilhamentos';
 
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
@@ -67,7 +67,7 @@ function paraItem(item: ItemGravado, historico: HistoricoItemLista | null): Item
 
 /** Como a lista chega a quem vê (RN-074). */
 interface Visao {
-  acesso: AcessoLista;
+  acesso: AcessoRecurso;
   dono: { id: string; nome: string } | null;
   compartilhadaCom: number;
 }
@@ -118,12 +118,17 @@ export class ListasService {
     const usuarioId = usuarioDoContexto(contexto);
     const [proprias, recebidas] = await Promise.all([
       this.repositorio.listar(usuarioId),
-      this.compartilhamentos.listasRecebidas(usuarioId),
+      this.compartilhamentos.recebidos(usuarioId, 'lista'),
     ]);
-    const deOutros = await this.repositorio.listarPorIds(recebidas.map(({ listaId }) => listaId));
+    const deOutros = await this.repositorio.listarPorIds(
+      recebidas.map(({ recursoId }) => recursoId),
+    );
     const todas = [...proprias, ...deOutros];
-    const pessoas = await this.compartilhamentos.pessoasPorLista(todas.map(({ id }) => id));
-    const recebida = new Map(recebidas.map((item) => [item.listaId, item]));
+    const pessoas = await this.compartilhamentos.pessoasPorRecurso(
+      'lista',
+      todas.map(({ id }) => id),
+    );
+    const recebida = new Map(recebidas.map((item) => [item.recursoId, item]));
     const visao = (lista: ListaGravada): Visao => {
       const deOutro = recebida.get(lista.id);
       return {
@@ -186,7 +191,7 @@ export class ListasService {
       if (!lista) throw naoEncontrada();
       await this.repositorio.excluir(tx, id);
     });
-    await this.compartilhamentos.recursoExcluido(id);
+    await this.compartilhamentos.recursoExcluido('lista', id);
     this.avisos.fecharLista(id);
   }
 
@@ -350,7 +355,7 @@ export class ListasService {
   private async detalhe(
     contexto: Contexto,
     lista: ListaGravada,
-    acesso: AcessoLista,
+    acesso: AcessoRecurso,
   ): Promise<DetalheLista> {
     const usuarioId = usuarioDoContexto(contexto);
     const aberta = lista.finalizadaEm === null;
@@ -378,7 +383,7 @@ export class ListasService {
       }
     }
     const [pessoas, dono] = await Promise.all([
-      this.compartilhamentos.pessoasPorLista([lista.id]),
+      this.compartilhamentos.pessoasPorRecurso('lista', [lista.id]),
       acesso === 'dono' ? null : this.usuarios.perfil(lista.usuarioId),
     ]);
     return {
@@ -419,7 +424,7 @@ export class ListasService {
     return categoriaDaLista(categoria, itens);
   }
 
-  private acesso(contexto: Contexto, listaId: string, exigido: AcessoLista) {
+  private acesso(contexto: Contexto, listaId: string, exigido: AcessoRecurso) {
     return this.compartilhamentos.verificarAcesso(
       usuarioDoContexto(contexto),
       'lista',
