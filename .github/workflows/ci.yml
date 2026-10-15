@@ -160,7 +160,9 @@ jobs:
       - name: Imagem da API compila
         run: |
           set -o pipefail
-          if ! docker build -f apps/api/Dockerfile -t mony-api:ci --progress plain . 2>&1 | tee /tmp/build.log; then
+          # Node pelo espelho do Google, como os serviços: o da AWS bate no limite de dados.
+          if ! docker build -f apps/api/Dockerfile -t mony-api:ci --progress plain \
+            --build-arg IMAGEM_NODE=mirror.gcr.io/library/node:24-bookworm-slim . 2>&1 | tee /tmp/build.log; then
             printf '::error title=Imagem da API não compila::%s\n' \
               "$(grep -v '^$' /tmp/build.log | tail -n 60 | cut -c1-300 | sed 's/%/%25/g' | awk 'BEGIN { ORS = "%0A" } { print }')"
             exit 1
