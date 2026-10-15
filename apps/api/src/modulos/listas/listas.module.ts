@@ -8,10 +8,11 @@ import { RelatoriosModule } from '../relatorios/relatorios.module';
 import { TransacoesModule } from '../transacoes/transacoes.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { ItensListaController, ListasController } from './listas.controller';
+import { ListasGateway } from './listas.gateway';
 import { ListasRepository } from './listas.repository';
 import { ListasService } from './listas.service';
 
-/** Listas de compras (RN-070 a RN-074); o tempo real entra com a T-124b. */
+/** Listas de compras (RN-070 a RN-074), com o tempo real das compartilhadas (T-124b). */
 @Module({
   imports: [
     CategoriasModule,
@@ -23,7 +24,7 @@ import { ListasService } from './listas.service';
     UsuariosModule,
   ],
   controllers: [ListasController, ItensListaController],
-  providers: [ListasService, ListasRepository],
+  providers: [ListasService, ListasRepository, ListasGateway],
   exports: [ListasService],
 })
 export class ListasModule {}

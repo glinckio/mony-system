@@ -23,5 +23,6 @@ export * from './planos.js';
 export * from './rascunhos.js';
 export * from './recorrencias.js';
 export * from './relatorios.js';
+export * from './tempo-real.js';
 export * from './transacoes.js';
 export * from './usuario.js';

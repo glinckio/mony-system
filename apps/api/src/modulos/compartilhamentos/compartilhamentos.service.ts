@@ -12,6 +12,7 @@ import {
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { LimiteTentativas } from '../../core/limites/limite-tentativas';
+import { AvisosTempoReal } from '../../core/tempo-real/avisos-tempo-real';
 import {
   type CompartilhamentoGravado,
   CompartilhamentosRepository,
@@ -52,6 +53,7 @@ export class CompartilhamentosService {
   constructor(
     private readonly repositorio: CompartilhamentosRepository,
     private readonly limites: LimiteTentativas,
+    private readonly avisos: AvisosTempoReal,
   ) {}
 
   async listar(contexto: Contexto): Promise<ListaCompartilhamentos> {
@@ -115,10 +117,11 @@ export class CompartilhamentosService {
     const atual = await this.repositorio.buscar(id);
     if (!atual || atual.usuarioId !== usuarioDoContexto(contexto)) throw naoEncontrado();
     const gravado = await this.repositorio.mudarPermissao(id, dados.permissao);
+    if (gravado.status === 'aceito') this.avisos.listaMudou(gravado.recursoId, 'acesso');
     return this.comNome(gravado);
   }
 
-  /** O dono tira a pessoa da lista, ou a pessoa sai dela. */
+  /** O dono tira a pessoa da lista, ou a pessoa sai dela; os aparelhos dela saem da sala (T-124b). */
   async excluir(contexto: Contexto, id: string): Promise<void> {
     const usuarioId = usuarioDoContexto(contexto);
     const atual = await this.repositorio.buscar(id);
@@ -126,6 +129,10 @@ export class CompartilhamentosService {
       throw naoEncontrado();
     }
     await this.repositorio.excluir(id);
+    if (atual.status === 'aceito') {
+      this.avisos.tirarDaLista(atual.convidadoId, atual.recursoId);
+      this.avisos.listaMudou(atual.recursoId, 'acesso');
+    }
   }
 
   /**
@@ -196,6 +203,7 @@ export class CompartilhamentosService {
             : 'Este convite foi recusado; peça um novo ao dono da lista.',
       });
     }
+    if (para === 'aceito') this.avisos.listaMudou(gravado.recursoId, 'acesso');
     return this.comNome(gravado);
   }
 

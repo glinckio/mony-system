@@ -280,7 +280,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-124a** Compartilhar listas na API: convites para quem tem conta (e-mail ou telefone), aceitar, recusar, sair e remover, permissão `ver` ou `editar`; a lista compartilhada aparece para o convidado com o dono e a permissão; `CompartilhamentosService.verificarAcesso` (PR #85)
   - dep: T-123b, T-084b · RN-074 · docs: 05, 06
   - A T-124 foi dividida: API das listas (T-124a), tempo real (T-124b), lembretes compartilhados (T-124c) e as telas do app (T-124d).
-- [ ] **T-124b** Tempo real das listas compartilhadas: WebSocket `/v1/ws` (Socket.IO com adapter Redis), sala `lista:<id>` só para quem tem acesso, evento a cada mudança da lista
+- [x] **T-124b** Tempo real das listas compartilhadas: WebSocket `/v1/ws` (Socket.IO com adapter Redis), sala `lista:<id>` só para quem tem acesso, evento a cada mudança da lista (PR #86)
   - dep: T-124a · RN-074 · docs: 02, 05
 - [ ] **T-124c** Lembretes compartilhados: convite para o lembrete, o convidado vê e recebe o aviso; quem pode concluir e adiar
   - dep: T-124a · RN-074 · docs: 07, 09

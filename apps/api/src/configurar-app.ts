@@ -4,6 +4,8 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import { Logger } from 'nestjs-pino';
 
 import { configurarOpenApi } from './core/openapi/openapi';
+import { REDIS } from './core/redis/redis.module';
+import { AdaptadorTempoReal } from './core/tempo-real/adaptador-tempo-real';
 
 export const PREFIXO_GLOBAL = 'v1';
 export const CABECALHO_ID_REQUISICAO = 'x-request-id';
@@ -29,7 +31,7 @@ export function criarAdaptadorFastify(): FastifyAdapter {
 
 /**
  * Ajustes da aplicação HTTP que valem para o `main.ts` e para os testes: logger, prefixo `/v1`,
- * desligamento limpo e, fora de produção, a documentação OpenAPI.
+ * desligamento limpo, o Socket.IO com Redis (T-124b) e, fora de produção, a documentação OpenAPI.
  */
 export function configurarApp(
   app: NestFastifyApplication,
@@ -38,6 +40,7 @@ export function configurarApp(
   app.useLogger(app.get(Logger));
   app.setGlobalPrefix(PREFIXO_GLOBAL);
   app.enableShutdownHooks();
+  app.useWebSocketAdapter(new AdaptadorTempoReal(app, app.get(REDIS)));
   if (opcoes.documentacao) {
     configurarOpenApi(app);
   }
