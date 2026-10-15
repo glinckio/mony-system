@@ -5,6 +5,7 @@
 import { z } from 'zod';
 
 import { SENHA_MAXIMO } from './autenticacao.js';
+import { ehDataCalendario } from './datas.js';
 import { PLANOS_PAGOS, type RecursoPlano } from './enums.js';
 
 /** `POST /admin/auth/entrar`. */
@@ -133,6 +134,44 @@ export const esquemaPlanoGratuitoAdmin = z.object({
     }),
 });
 
+/**
+ * Código do cupom (RN-130, T-104d): o que a pessoa digita em "Adicionar código promocional" na
+ * página de pagamento da Stripe. Letras e números, como a Stripe aceita; o painel grava em
+ * maiúsculas (a Stripe não diferencia).
+ */
+export const PADRAO_CODIGO_CUPOM = /^[A-Za-z0-9]{3,20}$/;
+export const PERCENTUAL_CUPOM_MINIMO = 1;
+export const PERCENTUAL_CUPOM_MAXIMO = 100;
+
+/**
+ * `POST /admin/cupons`: desconto em percentual na primeira cobrança da assinatura. `validade` é o
+ * último dia em que o código vale (fuso de São Paulo); `null`, sem prazo.
+ */
+export const esquemaNovoCupom = z.object({
+  codigo: z.string().regex(PADRAO_CODIGO_CUPOM),
+  percentual: z.number().int().min(PERCENTUAL_CUPOM_MINIMO).max(PERCENTUAL_CUPOM_MAXIMO),
+  validade: z
+    .string()
+    .refine(ehDataCalendario, { message: 'Data de calendário no formato AAAA-MM-DD' })
+    .nullable(),
+});
+
+/** `ativo` vale no pagamento; `vencido` passou da validade; `desativado` foi tirado pelo painel. */
+export const SITUACOES_CUPOM = ['ativo', 'vencido', 'desativado'] as const;
+
+export const esquemaCupomAdmin = z.object({
+  id: z.uuid(),
+  codigo: z.string(),
+  percentual: z.number().int(),
+  validade: z.string().nullable(),
+  situacao: z.enum(SITUACOES_CUPOM),
+  criadoEm: z.string(),
+  criadoPor: z.object({ id: z.uuid(), nome: z.string() }).nullable(),
+});
+
+/** `GET /admin/cupons`: do mais novo ao mais antigo. */
+export const esquemaCuponsAdmin = z.array(esquemaCupomAdmin);
+
 export type DadosLoginAdmin = z.infer<typeof esquemaLoginAdmin>;
 export type DesafioAdmin = z.infer<typeof esquemaDesafioAdmin>;
 export type Novo2fa = z.infer<typeof esquemaNovo2fa>;
@@ -145,3 +184,6 @@ export type PrecosAdmin = z.infer<typeof esquemaPrecosAdmin>;
 export type LimiteDeUso = z.infer<typeof esquemaLimiteDeUso>;
 export type LimiteDeQuantidade = z.infer<typeof esquemaLimiteDeQuantidade>;
 export type PlanoGratuitoAdmin = z.infer<typeof esquemaPlanoGratuitoAdmin>;
+export type NovoCupom = z.infer<typeof esquemaNovoCupom>;
+export type SituacaoCupom = (typeof SITUACOES_CUPOM)[number];
+export type CupomAdmin = z.infer<typeof esquemaCupomAdmin>;

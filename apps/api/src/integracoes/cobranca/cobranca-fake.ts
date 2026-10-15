@@ -25,6 +25,8 @@ export const SEGREDO_WEBHOOK_FAKE = 'whsec_mony_fake';
 export class CobrancaFake extends CobrancaProvider {
   readonly assinaturas = new Map<string, AssinaturaExterna>();
   readonly checkouts: { clienteId: string; precoId: string; usuarioId: string }[] = [];
+  /** Os cupons criados (`codigo` → id), para o teste conferir. */
+  readonly cupons = new Map<string, string>();
 
   constructor(private readonly desligada: boolean) {
     super();
@@ -76,6 +78,20 @@ export class CobrancaFake extends CobrancaProvider {
 
   criarPreco(pedido: { plano: string }): Promise<string> {
     return this.responder(() => `price_fake_${pedido.plano}_${randomUUID()}`);
+  }
+
+  criarCupom(pedido: { codigo: string }): Promise<string> {
+    return this.responder(() => {
+      const id = `coupon_fake_${randomUUID()}`;
+      this.cupons.set(pedido.codigo, id);
+      return id;
+    });
+  }
+
+  desativarCupom(cupomId: string): Promise<void> {
+    return this.responder(() => {
+      for (const [codigo, id] of this.cupons) if (id === cupomId) this.cupons.delete(codigo);
+    });
   }
 
   buscarAssinatura(id: string): Promise<AssinaturaExterna | null> {
