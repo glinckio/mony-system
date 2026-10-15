@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import Stripe from 'stripe';
 
 import { ErroDominio } from '../../core/erros/erro-dominio';
@@ -23,7 +25,6 @@ export const SEGREDO_WEBHOOK_FAKE = 'whsec_mony_fake';
 export class CobrancaFake extends CobrancaProvider {
   readonly assinaturas = new Map<string, AssinaturaExterna>();
   readonly checkouts: { clienteId: string; precoId: string; usuarioId: string }[] = [];
-  private clientes = 0;
 
   constructor(private readonly desligada: boolean) {
     super();
@@ -48,10 +49,8 @@ export class CobrancaFake extends CobrancaProvider {
   }
 
   criarCliente(): Promise<string> {
-    return this.responder(() => {
-      this.clientes += 1;
-      return `cus_fake_${String(this.clientes)}`;
-    });
+    // Aleatório: o banco guarda o cliente de rodadas anteriores (`stripe_customer_id` é único).
+    return this.responder(() => `cus_fake_${randomUUID()}`);
   }
 
   criarCheckout(pedido: {

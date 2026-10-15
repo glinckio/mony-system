@@ -53,6 +53,33 @@ sequenceDiagram
 - **Portal do cliente** para trocar plano, cartão e cancelar (`POST /assinatura/portal`).
 - **Regras das lojas no Brasil:** o PDF registra que o iOS (desde 26.5) permite processador próprio ou link externo com comissão da Apple, e que o Android permite link externo, com faturamento alternativo previsto para 2027. **Revalidar as regras e taxas antes de publicar.** A interface `BillingProvider` já prevê "loja" como origem alternativa do status, sem implementação inicial.
 
+- **Como está (T-102):** `integracoes/cobranca`, com o `CobrancaProvider` em duas versões, escolhidas por `COBRANCA_PROVEDOR`:
+  - `stripe` exige `STRIPE_CHAVE_SECRETA` e `STRIPE_SEGREDO_WEBHOOK`. Usa a versão da API fixada pelo pacote `stripe`.
+  - `fake` não cobra ninguém e é o padrão. O checkout devolve o próprio retorno de sucesso. Em produção, responde 503 a tudo, inclusive ao webhook.
+- **Formas de pagamento:** são as ligadas no painel da conta; o código não passa uma lista. O teste do Pix em assinatura (o risco acima) é ligar o Pix no painel e assinar no checkout.
+- **Retorno ao app:** a Stripe só aceita endereço `https` no `success_url`. Por isso, o checkout e o portal voltam para `GET {API_URL_PUBLICA}/v1/assinatura/retorno?resultado=sucesso|cancelado|portal`, que redireciona (302) para `mony://planos?checkout=<resultado>`. O app abre a página com `WebBrowser.openAuthSessionAsync`, que fecha ao ver o `mony://`, e consulta `GET /assinatura` (RN-128).
+- **Cliente:** um cliente na Stripe por pessoa, criado no primeiro checkout (`assinaturas.stripe_customer_id`), com chave de idempotência `cliente-<usuarioId>`. Quem já tem plano pago troca de plano pelo portal; o checkout responde `ASSINATURA_JA_ATIVA`.
+- **Webhook (`POST /v1/webhooks/stripe`):**
+  - Confere o `Stripe-Signature` sobre o corpo bruto (`request.rawBody`, guardado pelo adaptador Fastify) e traduz o evento (`traducao-stripe.ts`).
+  - Grava em `webhook_eventos` uma vez só (`provedor` + `id_externo`), põe na fila `webhooks` e responde 200. Os eventos que o Mony não usa não são gravados.
+  - O worker (`ProcessadorWebhooks`) não confia na ordem dos eventos: lê a assinatura atual na Stripe e grava a situação dela.
+- **Situação na Stripe → Mony:**
+  - `active` e `trialing`: plano do preço, `ativa`.
+  - `past_due`: `inadimplente`, ainda pago (RN-131).
+  - `canceled`, `unpaid`, `incomplete_expired` e `paused`: gratuito, `cancelada`. Só vale se for a assinatura gravada, para o fim de uma antiga não derrubar a nova.
+  - `incomplete`: nada muda.
+  - O plano vem de `planos_precos.stripe_price_id`; se o preço não estiver lá, vem do intervalo da cobrança (mês ou ano).
+- **Avisos (tipo `assinatura`, urgentes, com chat, chave `assinatura:<evento>`):**
+  - cobrança recusada (`invoice.payment_failed`), com a data da próxima tentativa;
+  - renovação (`invoice.upcoming`), só para assinatura ativa sem cancelamento;
+  - fim da assinatura.
+- **Configurar a conta:** `pnpm --filter api build && pnpm --filter api cobranca:configurar --mensal <centavos> --anual <centavos> [--webhook <url>]`, com `STRIPE_CHAVE_SECRETA` e `DATABASE_URL` no ambiente. O script (`src/configurar-stripe.ts`):
+  - Cria ou reaproveita o produto "Monitorizze" e os preços em BRL (`lookup_key` `mony_mensal` e `mony_anual`). Um valor novo cria outro preço (RN-129).
+  - Grava os preços em `planos_precos`.
+  - Configura o portal: trocar entre mensal e anual com proporcional, cartão, notas e cancelar no fim do período.
+  - Com `--webhook`, cria o endpoint com os eventos tratados e mostra o segredo uma vez.
+  - **Na conta:** em Configurações → Cobrança → Assinaturas, deixar "cancelar a assinatura" quando as tentativas acabarem (RN-131).
+
 ## Login social
 
 Google e Apple (RN-002). O app usa os SDKs do doc 02 e manda o `id_token` à API, que confere tudo no servidor (`integracoes/login-social`, T-032):

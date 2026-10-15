@@ -252,7 +252,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-101** Teste de 3 dias: início no cadastro, controle de um teste por pessoa, avisos, encerramento automático (PR #69)
   - dep: T-100, T-080 · RN-124, RN-125, RN-126
   - A T-100 já trata o teste vencido como gratuito (`planoEfetivo`); a rotina só grava a troca e avisa.
-- [ ] **T-102** 👤 Stripe: `BillingProvider`, checkout, webhooks idempotentes, portal, inadimplência
+- [x] **T-102** 👤 Stripe: `BillingProvider`, checkout, webhooks idempotentes, portal, inadimplência (PR #92)
   - dep: T-024, T-101 · RN-128, RN-131 · docs: 10 (Stripe)
 - [ ] **T-103** Telas de planos e assinatura no app
   - dep: T-102
