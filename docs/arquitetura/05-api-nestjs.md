@@ -125,7 +125,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Arquivos | `POST /arquivos` (retorna URL assinada de upload) · `GET /arquivos/:id` (retorna URL assinada de leitura) |
 | Novidades | `GET /novidades` · `POST /novidades/:id/lida` |
 | Admin | `GET /admin/usuarios` · `PATCH /admin/usuarios/:id` · `GET /admin/assinaturas` · `GET /admin/metricas` · CRUD `/admin/novidades` · `GET/PUT /admin/mony/config` · `GET /admin/logs-ia` · `GET/PUT /admin/planos` · `GET/PUT /admin/limites` · CRUD `/admin/cupons` · `GET /admin/auditoria` **(proposta)** |
-| Tempo real | WebSocket `/v1/ws` (Socket.IO), salas `lista:<id>` para listas compartilhadas |
+| Tempo real | WebSocket `/v1/ws` (Socket.IO), salas `lista:<id>` para listas compartilhadas (pronto: T-124b) |
 
 ## Autenticação
 
@@ -500,6 +500,15 @@ Implementado na T-124a (RN-074) para as listas de compras, em `modulos/compartil
 
 - **Acesso:** `CompartilhamentosService.verificarAcesso(usuarioId, 'lista', id, exigido)` devolve o dono e o acesso (`dono`, `editar` ou `ver`). Sem acesso ou com o convite pendente, 404 (não revela a lista); com acesso menor que o exigido, 403 `ACESSO_NEGADO`.
 - **Nas listas:** `ver` lê; `editar` também põe, muda, marca e tira itens e finaliza; o dono também muda nome e tipo, apaga e convida. O item é sempre do dono (`itens_lista.usuario_id`), mesmo posto por convidado; o preço sugerido vem das notas de quem põe. No "Finalizar", a despesa, a cota de lançamento e a categoria padrão são de quem finaliza. A lista conta só na cota do dono (RN-120). `GET /listas` junta as próprias e as recebidas, com `acesso`, `dono` (nulo na própria) e `compartilhadaCom` (quantos aceitaram). Apagar a lista apaga os convites (não há chave estrangeira para o recurso).
+
+### Tempo real das listas
+
+Implementado na T-124b; contrato em `@mony/shared/tempo-real`.
+
+- **Conexão:** Socket.IO em `/v1/ws` (opção `path`), só pelo transporte WebSocket, com o token de acesso em `auth.token`. Sem token ou com token inválido, a conexão é recusada e o `connect_error` traz o código (`NAO_AUTENTICADO` ou `TOKEN_EXPIRADO`, para o app renovar e reconectar). O token é conferido só na conexão: o aviso não leva dados, e buscar a lista exige um token válido.
+- **Salas:** `lista:entrar` e `lista:sair` com `{ listaId }` e ack `{ ok: true }` ou `{ ok: false, codigo }`. Entrar confere `verificarAcesso(…, 'ver')`, com o mesmo 404 (`NAO_ENCONTRADO`) da API para quem não tem acesso. Cada socket também fica em `usuario:<id>`.
+- **Aviso:** `lista:mudou` com `{ listaId, motivo }`, e o app busca a lista de novo (`GET /listas/:id`), porque o detalhe muda conforme quem vê. Motivos: `itens` (pôr, mudar, marcar, tirar), `lista` (nome ou tipo), `finalizada`, `excluida` (e a sala esvazia) e `acesso` (convite aceito, permissão nova, pessoa removida). Quem é removido sai da sala em todos os aparelhos e recebe `acesso` na sala dele. A Mony mexe pelo `ListasService`, então também avisa; vários itens de uma vez geram vários avisos, e o app junta as buscas.
+- **Várias instâncias:** adaptador Redis (`@socket.io/redis-adapter`), ligado em `configurarApp` pelo `AdaptadorTempoReal`; os serviços avisam pelo `AvisosTempoReal` (global), que no worker não faz nada.
 
 ## Planos e cotas do gratuito
 

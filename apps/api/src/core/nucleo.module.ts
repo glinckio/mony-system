@@ -5,9 +5,13 @@ import { ConfigModule } from './config/config.module';
 import { LogModule } from './log/log.module';
 import { PrismaModule } from './prisma/prisma.service';
 import { RedisModule } from './redis/redis.module';
+import { TempoRealModule } from './tempo-real/avisos-tempo-real';
 
-/** Infra comum aos dois entrypoints (API HTTP e worker): configuração, logs, relógio, banco e Redis. */
+/**
+ * Infra comum aos dois entrypoints (API HTTP e worker): configuração, logs, relógio, banco, Redis e
+ * os avisos de tempo real (que no worker não têm servidor).
+ */
 @Module({
-  imports: [ConfigModule, LogModule, ClockModule, PrismaModule, RedisModule],
+  imports: [ConfigModule, LogModule, ClockModule, PrismaModule, RedisModule, TempoRealModule],
 })
 export class NucleoModule {}

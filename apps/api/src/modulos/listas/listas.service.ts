@@ -25,6 +25,7 @@ import type { AcessoLista } from '@mony/shared/compartilhamentos';
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
+import { AvisosTempoReal } from '../../core/tempo-real/avisos-tempo-real';
 import { CategoriasService } from '../categorias/categorias.service';
 import { CompartilhamentosService } from '../compartilhamentos/compartilhamentos.service';
 import { OrcamentosService } from '../orcamentos/orcamentos.service';
@@ -109,6 +110,7 @@ export class ListasService {
     private readonly usuarios: UsuariosService,
     private readonly compartilhamentos: CompartilhamentosService,
     private readonly clock: Clock,
+    private readonly avisos: AvisosTempoReal,
   ) {}
 
   /** As próprias e as compartilhadas com o usuário (RN-074), as abertas primeiro. */
@@ -169,6 +171,7 @@ export class ListasService {
         ...(dados.categoria === undefined ? {} : { categoriaLista: dados.categoria }),
       });
     });
+    this.avisos.listaMudou(id, 'lista');
     return this.buscar(contexto, id);
   }
 
@@ -184,6 +187,7 @@ export class ListasService {
       await this.repositorio.excluir(tx, id);
     });
     await this.compartilhamentos.recursoExcluido(id);
+    this.avisos.fecharLista(id);
   }
 
   /**
@@ -221,6 +225,7 @@ export class ListasService {
         precoEstimado: preco === null ? null : BigInt(preco),
       });
     });
+    this.avisos.listaMudou(listaId, 'itens');
     return this.buscar(contexto, listaId);
   }
 
@@ -253,6 +258,7 @@ export class ListasService {
       });
       return lista.id;
     });
+    this.avisos.listaMudou(listaId, 'itens');
     return this.buscar(contexto, listaId);
   }
 
@@ -263,6 +269,7 @@ export class ListasService {
       await this.repositorio.excluirItem(tx, itemId);
       return lista.id;
     });
+    this.avisos.listaMudou(listaId, 'itens');
     return this.buscar(contexto, listaId);
   }
 
@@ -331,6 +338,7 @@ export class ListasService {
       comprados.map(({ id: itemId }) => itemId),
       transacaoId,
     );
+    this.avisos.listaMudou(id, 'finalizada');
     return this.buscar(contexto, id);
   }
 

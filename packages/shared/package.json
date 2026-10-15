@@ -117,6 +117,10 @@
     "./usuario": {
       "types": "./dist/usuario.d.ts",
       "default": "./dist/usuario.js"
+    },
+    "./tempo-real": {
+      "types": "./dist/tempo-real.d.ts",
+      "default": "./dist/tempo-real.js"
     }
   },
   "scripts": {
