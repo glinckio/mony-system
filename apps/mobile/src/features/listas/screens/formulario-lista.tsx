@@ -116,7 +116,7 @@ export function FormularioLista({ original }: PropsFormularioLista) {
               variante="secundaria"
               larguraTotal
               aoPressionar={() => {
-                router.push('/mais/plano');
+                router.push('/planos');
               }}
             />
           ) : null}

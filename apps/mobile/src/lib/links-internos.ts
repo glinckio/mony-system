@@ -11,7 +11,7 @@ const ROTAS: readonly { padrao: RegExp; rota: (partes: string[], consulta: strin
   { padrao: /^inicio$/, rota: () => '/' },
   { padrao: /^notificacoes$/, rota: () => '/notificacoes' },
   { padrao: /^mony$/, rota: () => '/mony' },
-  { padrao: /^planos$/, rota: () => '/mais/plano' },
+  { padrao: /^planos$/, rota: () => '/planos' },
   { padrao: new RegExp(`^cartoes/${ID}$`), rota: ([, id]) => `/cartoes/${id ?? ''}` },
   {
     padrao: new RegExp(`^cartoes/${ID}/faturas/${ID}$`),

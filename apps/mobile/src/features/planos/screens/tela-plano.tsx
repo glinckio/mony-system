@@ -1,13 +1,16 @@
+import { useSituacaoAssinaturas } from '@mony/api-client';
+import { formatarCentavos } from '@mony/shared/dinheiro';
 import { dataNoFuso, horaNoFuso } from '@mony/shared/datas';
-import type { LimiteUso, UsoPlano } from '@mony/shared/planos';
+import type { LimiteUso, SituacaoAssinaturaPaga, UsoPlano } from '@mony/shared/planos';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 
+import { usePortal } from '@/features/planos/hooks/use-cobranca';
 import { usePlano } from '@/features/planos/hooks/use-plano';
 import { useDataCurta } from '@/lib/datas-texto';
 import { useFusoDoUsuario } from '@/lib/fuso';
-import { BarraProgresso, Cabecalho, Card, Erro, Skeleton, Tela, Texto } from '@/ui';
+import { BarraProgresso, Botao, Cabecalho, Card, Erro, Skeleton, Tela, Texto } from '@/ui';
 
 function ItemLimite({ limite }: { limite: LimiteUso }) {
   const { t } = useTranslation();
@@ -39,25 +42,101 @@ function ItemLimite({ limite }: { limite: LimiteUso }) {
   );
 }
 
-function ConteudoPlano({ plano }: { plano: UsoPlano }) {
+/**
+ * O plano pago (T-103): o valor, a próxima cobrança ou o fim, o aviso de cobrança recusada
+ * (RN-131) e o [Gerenciar assinatura], que abre o portal da Stripe.
+ */
+function AssinaturaPaga({ situacao }: { situacao: SituacaoAssinaturaPaga }) {
   const { t } = useTranslation();
   const fuso = useFusoDoUsuario();
   const dataCurta = useDataCurta();
+  const portal = usePortal();
+  const data = situacao.proximaCobranca
+    ? dataCurta(dataNoFuso(new Date(situacao.proximaCobranca), fuso))
+    : null;
+  return (
+    <View className="gap-3">
+      {situacao.valorCentavos !== null ? (
+        <Texto>
+          {t(situacao.plano === 'anual' ? 'planos.valorAnual' : 'planos.valorMensal', {
+            valor: formatarCentavos(situacao.valorCentavos),
+          })}
+        </Texto>
+      ) : null}
+      {data ? (
+        <Texto variante="corpo-sm" cor="suave">
+          {situacao.cancelamentoAgendado
+            ? t('planos.terminaEm', { data })
+            : t('planos.proximaCobranca', { data })}
+        </Texto>
+      ) : null}
+      {situacao.status === 'inadimplente' ? (
+        <Texto variante="corpo-sm" cor="atencao" accessibilityLiveRegion="polite">
+          {t('planos.inadimplente')}
+        </Texto>
+      ) : null}
+      {situacao.gerenciavel ? (
+        <View className="gap-1.5">
+          <Botao
+            titulo={t('planos.gerenciar')}
+            variante="secundaria"
+            larguraTotal
+            carregando={portal.abrindo}
+            aoPressionar={portal.abrir}
+          />
+          <Texto variante="legenda" cor="suave" className="text-center">
+            {t('planos.gerenciarAjuda')}
+          </Texto>
+        </View>
+      ) : null}
+      {portal.erro ? (
+        <Texto variante="corpo-sm" cor="perigo" accessibilityLiveRegion="polite">
+          {t('planos.erroPortal')}
+        </Texto>
+      ) : null}
+    </View>
+  );
+}
+
+function ConteudoPlano({ plano }: { plano: UsoPlano }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const fuso = useFusoDoUsuario();
+  const dataCurta = useDataCurta();
+  const pago = plano.plano === 'mensal' || plano.plano === 'anual';
+  const situacao = useSituacaoAssinaturas({ query: { enabled: pago, staleTime: 0 } });
   const fimDoTeste = plano.testeFim === null ? null : new Date(plano.testeFim);
   return (
     <ScrollView contentContainerClassName="gap-5 pb-8 pt-3">
-      <Card className="gap-1">
-        <Texto variante="titulo">{t(`planos.nomes.${plano.plano}`)}</Texto>
-        <Texto variante="corpo-sm" cor="suave">
-          {plano.limitado
-            ? t('planos.gratuitoAjuda')
-            : fimDoTeste
-              ? t('planos.testeAte', {
-                  data: dataCurta(dataNoFuso(fimDoTeste, fuso)),
-                  hora: horaNoFuso(fimDoTeste, fuso),
-                })
-              : t('planos.pagoLiberado')}
-        </Texto>
+      <Card className="gap-3">
+        <View className="gap-1">
+          <Texto variante="titulo">{t(`planos.nomes.${plano.plano}`)}</Texto>
+          <Texto variante="corpo-sm" cor="suave">
+            {plano.limitado
+              ? t('planos.gratuitoAjuda')
+              : fimDoTeste
+                ? t('planos.testeAte', {
+                    data: dataCurta(dataNoFuso(fimDoTeste, fuso)),
+                    hora: horaNoFuso(fimDoTeste, fuso),
+                  })
+                : t('planos.pagoLiberado')}
+          </Texto>
+        </View>
+        {pago ? (
+          situacao.data ? (
+            <AssinaturaPaga situacao={situacao.data} />
+          ) : situacao.isError ? null : (
+            <Skeleton altura={60} />
+          )
+        ) : (
+          <Botao
+            titulo={t('planos.verPlanos')}
+            larguraTotal
+            aoPressionar={() => {
+              router.push('/planos');
+            }}
+          />
+        )}
       </Card>
       {plano.limitado ? (
         <View className="gap-2">
@@ -74,19 +153,14 @@ function ConteudoPlano({ plano }: { plano: UsoPlano }) {
           </Card>
         </View>
       ) : null}
-      {plano.plano === 'mensal' || plano.plano === 'anual' ? null : (
-        <Texto variante="corpo-sm" cor="suave">
-          {t('planos.emBreve')}
-        </Texto>
-      )}
     </ScrollView>
   );
 }
 
 /**
  * Seu plano (`/mais/plano`, T-100): o plano que vale agora e, no gratuito, quanto já foi usado de
- * cada limite e quando volta (RN-120, RN-123). É onde o [Ver planos] da Mony leva; a compra dos
- * planos chega com a T-103.
+ * cada limite e quando volta (RN-120, RN-123). Sem plano pago, o [Ver planos] abre a tela de planos
+ * (T-103); com ele, o valor, a próxima cobrança e o portal da Stripe.
  */
 export default function TelaPlano() {
   const { t } = useTranslation();

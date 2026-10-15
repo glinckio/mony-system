@@ -79,7 +79,7 @@ export function FolhaExportar({ visivel, aoFechar, periodo }: PropsFolhaExportar
                 titulo={t('relatorios.exportar.verPlanos')}
                 aoPressionar={() => {
                   fechar();
-                  router.push('/mais/plano');
+                  router.push('/planos');
                 }}
               />
             ) : null}

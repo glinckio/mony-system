@@ -188,7 +188,7 @@ function FormularioFinalizar({ lista, aoFechar }: { lista: DetalheLista; aoFecha
           larguraTotal
           aoPressionar={() => {
             aoFechar();
-            router.push('/mais/plano');
+            router.push('/planos');
           }}
         />
       ) : null}
