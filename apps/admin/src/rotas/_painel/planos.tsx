@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PlanoGratuito } from '@/components/plano-gratuito';
 
 export const Route = createFileRoute('/_painel/planos')({ component: Planos });
 
@@ -31,7 +32,8 @@ const FORMATO_DATA = new Intl.DateTimeFormat('pt-BR', {
 });
 
 /**
- * Planos e preços (T-104b, doc 13): o valor do mensal e do anual e o histórico com data e autor.
+ * Planos e preços (T-104b e T-104c, doc 13): o valor do mensal e do anual, os limites do gratuito,
+ * a duração do teste e o histórico de preços com data e autor.
  * O valor novo vale para quem assinar depois; quem já assina continua no preço antigo (RN-129).
  */
 function Planos() {
@@ -51,6 +53,7 @@ function Planos() {
               />
             ))}
           </div>
+          <PlanoGratuito />
           <Historico historico={precos.data.historico} />
         </>
       ) : precos.isError ? (
@@ -188,7 +191,7 @@ function Historico({ historico }: { historico: PrecoAdmin[] }) {
   return (
     <section className="flex max-w-3xl flex-col gap-3">
       <h2 className="text-lg font-semibold">{t('planos.historico.titulo')}</h2>
-      <table className="w-full text-left text-sm">
+      <table aria-label={t('planos.historico.titulo')} className="w-full text-left text-sm">
         <thead className="border-b text-muted-foreground">
           <tr>
             <th className="py-2 font-medium">{t('planos.historico.plano')}</th>

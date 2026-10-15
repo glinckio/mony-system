@@ -28,6 +28,7 @@ import type {
   LoginAdminDto,
   Novo2faDto,
   NovoPrecoDto,
+  PlanoGratuitoAdminDto,
   PrecosAdminDto,
   SessaoAdminDto,
 } from '../modelos';
@@ -722,4 +723,224 @@ export const useAlterarAdminPlanos = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   return useMutation(getAlterarAdminPlanosMutationOptions(options), queryClient);
+};
+export const getPlanoGratuitoAdminPlanosUrl = () => {
+  return `/v1/admin/planos/gratuito`;
+};
+
+export const planoGratuitoAdminPlanos = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<PlanoGratuitoAdminDto> => {
+  return requisicao<PlanoGratuitoAdminDto>(getPlanoGratuitoAdminPlanosUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getPlanoGratuitoAdminPlanosQueryKey = () => {
+  return [`/v1/admin/planos/gratuito`] as const;
+};
+
+export const getPlanoGratuitoAdminPlanosQueryOptions = <
+  TData = Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>, TError, TData>
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getPlanoGratuitoAdminPlanosQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>> = ({
+    signal,
+  }) => planoGratuitoAdminPlanos({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type PlanoGratuitoAdminPlanosQueryResult = NonNullable<
+  Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>
+>;
+export type PlanoGratuitoAdminPlanosQueryError = unknown;
+
+export function usePlanoGratuitoAdminPlanos<
+  TData = Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>,
+          TError,
+          Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function usePlanoGratuitoAdminPlanos<
+  TData = Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>,
+          TError,
+          Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function usePlanoGratuitoAdminPlanos<
+  TData = Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function usePlanoGratuitoAdminPlanos<
+  TData = Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof planoGratuitoAdminPlanos>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getPlanoGratuitoAdminPlanosQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSalvarPlanoGratuitoAdminPlanosUrl = () => {
+  return `/v1/admin/planos/gratuito`;
+};
+
+export const salvarPlanoGratuitoAdminPlanos = async (
+  planoGratuitoAdminDto: PlanoGratuitoAdminDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<PlanoGratuitoAdminDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<PlanoGratuitoAdminDto>(getSalvarPlanoGratuitoAdminPlanosUrl(), {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(planoGratuitoAdminDto),
+  });
+};
+
+export const getSalvarPlanoGratuitoAdminPlanosMutationKey = () =>
+  ['salvarPlanoGratuitoAdminPlanos'] as const;
+
+export const getSalvarPlanoGratuitoAdminPlanosMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof salvarPlanoGratuitoAdminPlanos>>,
+    TError,
+    SalvarPlanoGratuitoAdminPlanosMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof salvarPlanoGratuitoAdminPlanos>>,
+  TError,
+  SalvarPlanoGratuitoAdminPlanosMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSalvarPlanoGratuitoAdminPlanosMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof salvarPlanoGratuitoAdminPlanos>>,
+    SalvarPlanoGratuitoAdminPlanosMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return salvarPlanoGratuitoAdminPlanos(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SalvarPlanoGratuitoAdminPlanosMutationResult = NonNullable<
+  Awaited<ReturnType<typeof salvarPlanoGratuitoAdminPlanos>>
+>;
+export type SalvarPlanoGratuitoAdminPlanosMutationBody = PlanoGratuitoAdminDto;
+export type SalvarPlanoGratuitoAdminPlanosMutationError = unknown;
+export type SalvarPlanoGratuitoAdminPlanosMutationVariables = { data: PlanoGratuitoAdminDto };
+
+export const useSalvarPlanoGratuitoAdminPlanos = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof salvarPlanoGratuitoAdminPlanos>>,
+      TError,
+      SalvarPlanoGratuitoAdminPlanosMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof salvarPlanoGratuitoAdminPlanos>>,
+  TError,
+  SalvarPlanoGratuitoAdminPlanosMutationVariables,
+  TContext
+> => {
+  return useMutation(getSalvarPlanoGratuitoAdminPlanosMutationOptions(options), queryClient);
 };
