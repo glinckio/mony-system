@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { MAXIMO_FINALIZADAS_LISTA as MAXIMO_FINALIZADAS } from '@mony/shared/listas';
 
 import type { ClientePrisma } from '../../core/prisma/cliente';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -33,10 +34,10 @@ export type ListaGravada = Prisma.ListaComprasGetPayload<{ select: typeof CAMPOS
 /** O que os fluxos das listas usam dentro da transação de banco (e as cotas). */
 export type TransacaoListas = Pick<ClientePrisma, 'listaCompras' | 'itemLista' | '$queryRaw'>;
 
-/** Finalizadas mostradas na lista: as últimas 20. */
-const MAXIMO_FINALIZADAS = 20;
-
-/** Listas de compras e itens (RN-070 a RN-073), sempre do dono. */
+/**
+ * Listas de compras e itens (RN-070 a RN-073), sempre do dono: quem chega por convite (RN-074) passa
+ * pelo `CompartilhamentosService` antes, que diz quem é o dono.
+ */
 @Injectable()
 export class ListasRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -57,6 +58,24 @@ export class ListasRepository {
       }),
     ]);
     return [...abertas, ...finalizadas];
+  }
+
+  /** As listas compartilhadas com alguém (o acesso já foi conferido), com os itens. */
+  listarPorIds(ids: readonly string[]): Promise<ListaGravada[]> {
+    if (ids.length === 0) return Promise.resolve([]);
+    return this.prisma.cliente.listaCompras.findMany({
+      where: { id: { in: [...ids] } },
+      select: CAMPOS_LISTA,
+    });
+  }
+
+  /** A lista do item, sem conferir de quem é (quem chama confere o acesso à lista). */
+  async listaDoItem(itemId: string): Promise<string | null> {
+    const item = await this.prisma.cliente.itemLista.findUnique({
+      where: { id: itemId },
+      select: { listaId: true },
+    });
+    return item?.listaId ?? null;
   }
 
   buscar(usuarioId: string, id: string): Promise<ListaGravada | null> {

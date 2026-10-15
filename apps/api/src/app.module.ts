@@ -15,6 +15,7 @@ import { ArquivosModule } from './modulos/arquivos/arquivos.module';
 import { AutenticacaoModule } from './modulos/autenticacao/autenticacao.module';
 import { CartoesModule } from './modulos/cartoes/cartoes.module';
 import { CategoriasModule } from './modulos/categorias/categorias.module';
+import { CompartilhamentosModule } from './modulos/compartilhamentos/compartilhamentos.module';
 import { ConfigAppModule } from './modulos/config-app/config-app';
 import { ContasModule } from './modulos/contas/contas.module';
 import { DashboardModule } from './modulos/dashboard/dashboard.module';
@@ -58,6 +59,7 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     RelatoriosModule,
     NotificacoesModule,
     PlanosModule,
+    CompartilhamentosModule,
     LembretesModule,
     ListasModule,
   ],

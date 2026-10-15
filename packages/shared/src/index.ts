@@ -3,6 +3,7 @@ export * from './arquivos.js';
 export * from './autenticacao.js';
 export * from './cartoes.js';
 export * from './categorias.js';
+export * from './compartilhamentos.js';
 export * from './config-app.js';
 export * from './contas.js';
 export * from './dashboard.js';
