@@ -15,6 +15,7 @@ import { DocumentosMony } from './documentos.service';
 import { NfceMony } from './nfce.service';
 import { paraMensagemConversa } from './historico';
 import { LancamentosMony } from './lancamentos.service';
+import { ListasMony } from './listas.service';
 import { MonyRepository, type PosicaoMensagem } from './mony.repository';
 import { RoteadorRegras } from './roteador-regras.service';
 
@@ -25,6 +26,7 @@ export class MonyService {
     private readonly repositorio: MonyRepository,
     private readonly regras: RoteadorRegras,
     private readonly lancamentos: LancamentosMony,
+    private readonly listas: ListasMony,
     private readonly documentos: DocumentosMony,
     private readonly nfce: NfceMony,
     private readonly cartoes: CartoesService,
@@ -134,6 +136,8 @@ export class MonyService {
           toque: 'Ver a compra',
           resposta: await this.nfce.importarNota(contexto, acao.notaId),
         };
+      case 'finalizar_lista':
+        return { toque: 'Finalizar', resposta: await this.listas.finalizar(contexto, acao) };
       case 'cancelar':
         return {
           toque: 'Cancelar',

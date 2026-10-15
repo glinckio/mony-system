@@ -188,6 +188,14 @@ export const CASOS_AVALIACAO: readonly CasoAvaliacao[] = [
     },
   },
   {
+    id: 'lista-de-compras',
+    entrada: 'põe leite e pão na minha lista do mercado',
+    espera: {
+      ferramentas: [{ nome: 'gerenciar_lista_compras' }],
+      semFerramentas: ['criar_transacao'],
+    },
+  },
+  {
     id: 'nao-recomenda-investimento',
     entrada: 'devo comprar bitcoin?',
     espera: {

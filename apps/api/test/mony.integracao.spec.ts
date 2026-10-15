@@ -309,6 +309,7 @@ describe.runIf(ativo)('integração: Mony', () => {
       'atualizar_meta',
       'criar_lembrete',
       'consultar_lembretes',
+      'gerenciar_lista_compras',
       'ajuda_app',
     ]);
 
@@ -1443,6 +1444,298 @@ describe.runIf(ativo)('integração: Mony', () => {
       'Relatórios, exportação e histórico de preços',
     );
     expect(semAjuda).toMatchObject({ erro: false, dados: { topicos: [] } });
+  });
+
+  it('RN-070 RN-072 RN-092 gerenciar_lista_compras: cria, põe, marca e tira itens; o Finalizar só lança no toque', async () => {
+    const usuario = await usuarioNovo();
+    const nubank = await cartaoNovo(usuario, 'Nubank');
+    const mercado = await categoriaDo(usuario, 'Mercado', 'despesa');
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'gerenciar_lista_compras',
+            entrada: {
+              acao: 'criar_lista',
+              nome: 'Mercado da semana',
+              itens: [
+                { nome: 'Leite', quantidade: 2, precoEstimadoCentavos: 550 },
+                { nome: 'Pão', precoEstimadoCentavos: 1_200 },
+              ],
+            },
+          },
+          // Sem listaId: vale a única aberta.
+          {
+            nome: 'gerenciar_lista_compras',
+            entrada: {
+              acao: 'adicionar_itens',
+              itens: [{ nome: 'Café', unidade: 'pacote', precoEstimadoCentavos: 2_290 }],
+            },
+          },
+          { nome: 'gerenciar_lista_compras', entrada: { acao: 'adicionar_itens' } },
+        ],
+      },
+      { texto: 'Anotei na lista.' },
+    );
+    const criada = await conversar(usuario, 'cria a lista do mercado com 2 leites, pão e café');
+    const [criar, adicionar, semItens] = resultadosDaFerramenta(1);
+    expect(criar).toMatchObject({
+      erro: false,
+      dados: { criada: true, lista: { categoria: 'mercado', categoriaDespesa: 'Mercado' } },
+    });
+    expect(adicionar).toMatchObject({
+      erro: false,
+      dados: {
+        adicionados: 1,
+        lista: {
+          nome: 'Mercado da semana',
+          itens: [
+            { nome: 'Leite', quantidade: 2, totalEstimadoCentavos: 1_100, comprado: false },
+            { nome: 'Pão', quantidade: 1, totalEstimadoCentavos: 1_200 },
+            { nome: 'Café', unidade: 'pacote', totalEstimadoCentavos: 2_290 },
+          ],
+          totalEstimadoCentavos: 4_590,
+          totalCompradoCentavos: 0,
+        },
+      },
+    });
+    expect(semItens).toMatchObject({
+      erro: true,
+      dados: { erro: { codigo: 'REQUISICAO_INVALIDA' } },
+    });
+    const lista = await prisma.listaCompras.findFirstOrThrow({
+      where: { usuarioId: usuario.usuarioId },
+      include: { itens: { orderBy: { criadoEm: 'asc' } } },
+    });
+    const verLista = criada.eventos
+      .flatMap((evento) => botoes(evento))
+      .find(({ id }) => id === 'ver-lista');
+    expect(verLista?.acao).toEqual({ tipo: 'abrir', link: `mony://listas/${lista.id}` });
+    const idDe = (nome: string) => lista.itens.find((item) => item.nome === nome)?.id ?? '';
+
+    // Antes de marcar, não há o que finalizar; outra pessoa não vê nem mexe na lista.
+    const outro = await usuarioNovo();
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'gerenciar_lista_compras',
+            entrada: { acao: 'finalizar', formaPagamento: 'pix' },
+          },
+        ],
+      },
+      { texto: 'Marque antes.' },
+    );
+    await conversar(usuario, 'finaliza a lista');
+    expect(resultadosDaFerramenta(3)).toMatchObject([
+      { erro: true, dados: { erro: { codigo: 'REQUISICAO_INVALIDA' } } },
+    ]);
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          { nome: 'gerenciar_lista_compras', entrada: { acao: 'consultar', listaId: lista.id } },
+          {
+            nome: 'gerenciar_lista_compras',
+            entrada: { acao: 'remover_itens', itemIds: [idDe('Pão')] },
+          },
+        ],
+      },
+      { texto: 'Não achei.' },
+    );
+    await conversar(outro, 'tira o pão da lista');
+    expect(resultadosDaFerramenta(5)).toMatchObject([
+      { erro: true, dados: { erro: { codigo: 'NAO_ENCONTRADO' } } },
+      { erro: true, dados: { erro: { codigo: 'NAO_ENCONTRADO' } } },
+    ]);
+
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'gerenciar_lista_compras',
+            entrada: { acao: 'marcar_itens', itemIds: [idDe('Leite'), idDe('Café')] },
+          },
+          {
+            nome: 'gerenciar_lista_compras',
+            entrada: { acao: 'remover_itens', itemIds: [idDe('Pão')] },
+          },
+          { nome: 'gerenciar_lista_compras', entrada: { acao: 'consultar' } },
+          { nome: 'gerenciar_lista_compras', entrada: { acao: 'finalizar' } },
+        ],
+      },
+      { texto: 'Deu R$ 33,90. Como você pagou?' },
+    );
+    const pedido = await conversar(usuario, 'peguei o leite e o café, tira o pão e finaliza');
+    const [marcar, remover, consulta, finalizar] = resultadosDaFerramenta(7);
+    expect(marcar).toMatchObject({
+      erro: false,
+      dados: { marcados: 2, lista: { totalCompradoCentavos: 3_390 } },
+    });
+    expect(remover).toMatchObject({ erro: false, dados: { removidos: 1 } });
+    expect(consulta).toMatchObject({
+      erro: false,
+      dados: {
+        listas: [{ id: lista.id, quantidadeItens: 2, quantidadeComprados: 2, finalizada: false }],
+        lista: {
+          id: lista.id,
+          itens: [
+            { nome: 'Leite', comprado: true },
+            { nome: 'Café', comprado: true },
+          ],
+        },
+      },
+    });
+    expect(finalizar).toMatchObject({
+      erro: false,
+      dados: {
+        finalizada: false,
+        itensComprados: 2,
+        valorCentavos: 3_390,
+        categoria: 'Mercado',
+        formas: ['Pix', 'Débito', 'Dinheiro', 'Crédito Nubank'],
+      },
+    });
+    // Sem a forma dita, um botão por forma: o toque já é a confirmação.
+    const opcoes = botoes(pedido.eventos.at(-2));
+    expect(opcoes.map(({ rotulo }) => rotulo)).toEqual([
+      'Pix',
+      'Débito',
+      'Dinheiro',
+      'Crédito Nubank',
+      'Cancelar',
+    ]);
+    expect(opcoes[3]?.acao).toEqual({
+      tipo: 'finalizar_lista',
+      listaId: lista.id,
+      formaPagamento: 'cartao_credito',
+      cartaoId: nubank.id,
+      categoriaId: mercado,
+      valorCentavos: 3_390,
+    });
+    const despesas = () =>
+      prisma.transacao.findMany({
+        where: { usuarioId: usuario.usuarioId, excluidoEm: null },
+        select: {
+          id: true,
+          valor: true,
+          formaPagamento: true,
+          origem: true,
+          categoriaId: true,
+        },
+      });
+    expect(await despesas()).toEqual([]);
+
+    const [pix] = opcoes;
+    if (!pix) throw new Error('sem [Pix]');
+    // De outra pessoa, o toque não acha a lista.
+    expect((await tocar(outro, pix)).statusCode).toBe(404);
+    const pago = await tocar(usuario, pix);
+    expect(pago.statusCode, pago.body).toBe(200);
+    const resposta = pago.json<RespostaAcaoMony>();
+    expect(resposta.texto).toBe(
+      `Pronto, finalizei a lista Mercado da semana e lancei ${formatarCentavos(3_390)} em Mercado.`,
+    );
+    expect(resposta.componente).toMatchObject({
+      tipo: 'resumo',
+      lancamento: { descricao: 'Mercado da semana', valorCentavos: 3_390, formaPagamento: 'pix' },
+      opcoes: [],
+    });
+    expect(await despesas()).toEqual([
+      {
+        id: resposta.transacaoId,
+        valor: 3_390n,
+        formaPagamento: 'pix',
+        origem: 'mony',
+        categoriaId: mercado,
+      },
+    ]);
+    // Dois toques não lançam duas despesas.
+    expect((await tocar(usuario, pix)).statusCode).toBe(409);
+    expect(await despesas()).toHaveLength(1);
+
+    // Finalizada, a lista não muda; sem lista aberta, a Mony é avisada para criar uma.
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'gerenciar_lista_compras',
+            entrada: { acao: 'adicionar_itens', listaId: lista.id, itens: [{ nome: 'Arroz' }] },
+          },
+          {
+            nome: 'gerenciar_lista_compras',
+            entrada: { acao: 'adicionar_itens', itens: [{ nome: 'Arroz' }] },
+          },
+        ],
+      },
+      { texto: 'A lista já foi fechada.' },
+    );
+    await conversar(usuario, 'põe arroz');
+    expect(resultadosDaFerramenta(9)).toMatchObject([
+      { erro: true, dados: { erro: { codigo: 'CONFLITO' } } },
+      { erro: true, dados: { erro: { codigo: 'NAO_ENCONTRADO' } } },
+    ]);
+
+    // Item sem preço: a Mony pergunta o valor; no crédito com um cartão, um botão só.
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'gerenciar_lista_compras',
+            entrada: {
+              acao: 'criar_lista',
+              nome: 'Farmácia',
+              categoria: 'farmacia',
+              itens: [{ nome: 'Xampu Raro' }],
+            },
+          },
+        ],
+      },
+      { texto: 'Criei.' },
+    );
+    await conversar(usuario, 'lista da farmácia com xampu');
+    const farmacia = await prisma.listaCompras.findFirstOrThrow({
+      where: { usuarioId: usuario.usuarioId, nome: 'Farmácia' },
+      include: { itens: true },
+    });
+    const [xampu] = farmacia.itens;
+    expect(xampu?.precoEstimado).toBeNull();
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'gerenciar_lista_compras',
+            entrada: { acao: 'marcar_itens', itemIds: [xampu?.id ?? ''] },
+          },
+          {
+            nome: 'gerenciar_lista_compras',
+            entrada: { acao: 'finalizar', formaPagamento: 'pix' },
+          },
+          {
+            nome: 'gerenciar_lista_compras',
+            entrada: { acao: 'finalizar', formaPagamento: 'cartao_credito', valorCentavos: 1_500 },
+          },
+        ],
+      },
+      { texto: 'Confirma?' },
+    );
+    const credito = await conversar(usuario, 'peguei o xampu, finaliza no crédito');
+    expect(resultadosDaFerramenta(13)).toMatchObject([
+      { erro: false },
+      {
+        erro: true,
+        dados: {
+          erro: {
+            codigo: 'REQUISICAO_INVALIDA',
+            mensagem: expect.stringContaining('valorCentavos') as unknown,
+          },
+        },
+      },
+      { erro: false, dados: { valorCentavos: 1_500, formas: ['Crédito Nubank'] } },
+    ]);
+    expect(botoes(credito.eventos.at(-2)).map(({ rotulo }) => rotulo)).toEqual([
+      `Finalizar ${formatarCentavos(1_500)}`,
+      'Cancelar',
+    ]);
   });
 
   it('RN-081 RN-090 o que foi confirmado para o estabelecimento vem primeiro nos botões e no contexto', async () => {
