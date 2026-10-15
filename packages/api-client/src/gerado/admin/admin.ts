@@ -24,9 +24,12 @@ import type {
 import type {
   AdminDto,
   Codigo2faDto,
+  CupomAdminDto,
+  CuponsAdminDto,
   DesafioAdminDto,
   LoginAdminDto,
   Novo2faDto,
+  NovoCupomDto,
   NovoPrecoDto,
   PlanoGratuitoAdminDto,
   PrecosAdminDto,
@@ -943,4 +946,287 @@ export const useSalvarPlanoGratuitoAdminPlanos = <TError = unknown, TContext = u
   TContext
 > => {
   return useMutation(getSalvarPlanoGratuitoAdminPlanosMutationOptions(options), queryClient);
+};
+export const getListarAdminCuponsUrl = () => {
+  return `/v1/admin/cupons`;
+};
+
+export const listarAdminCupons = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<CuponsAdminDto> => {
+  return requisicao<CuponsAdminDto>(getListarAdminCuponsUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getListarAdminCuponsQueryKey = () => {
+  return [`/v1/admin/cupons`] as const;
+};
+
+export const getListarAdminCuponsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listarAdminCupons>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAdminCupons>>, TError, TData>>;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListarAdminCuponsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listarAdminCupons>>> = ({ signal }) =>
+    listarAdminCupons({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listarAdminCupons>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListarAdminCuponsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listarAdminCupons>>
+>;
+export type ListarAdminCuponsQueryError = unknown;
+
+export function useListarAdminCupons<
+  TData = Awaited<ReturnType<typeof listarAdminCupons>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAdminCupons>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarAdminCupons>>,
+          TError,
+          Awaited<ReturnType<typeof listarAdminCupons>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListarAdminCupons<
+  TData = Awaited<ReturnType<typeof listarAdminCupons>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAdminCupons>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarAdminCupons>>,
+          TError,
+          Awaited<ReturnType<typeof listarAdminCupons>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListarAdminCupons<
+  TData = Awaited<ReturnType<typeof listarAdminCupons>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAdminCupons>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListarAdminCupons<
+  TData = Awaited<ReturnType<typeof listarAdminCupons>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAdminCupons>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListarAdminCuponsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCriarAdminCuponsUrl = () => {
+  return `/v1/admin/cupons`;
+};
+
+export const criarAdminCupons = async (
+  novoCupomDto: NovoCupomDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<CupomAdminDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<CupomAdminDto>(getCriarAdminCuponsUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(novoCupomDto),
+  });
+};
+
+export const getCriarAdminCuponsMutationKey = () => ['criarAdminCupons'] as const;
+
+export const getCriarAdminCuponsMutationOptions = <TError = unknown, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof criarAdminCupons>>,
+    TError,
+    CriarAdminCuponsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof criarAdminCupons>>,
+  TError,
+  CriarAdminCuponsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCriarAdminCuponsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof criarAdminCupons>>,
+    CriarAdminCuponsMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return criarAdminCupons(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CriarAdminCuponsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof criarAdminCupons>>
+>;
+export type CriarAdminCuponsMutationBody = NovoCupomDto;
+export type CriarAdminCuponsMutationError = unknown;
+export type CriarAdminCuponsMutationVariables = { data: NovoCupomDto };
+
+export const useCriarAdminCupons = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof criarAdminCupons>>,
+      TError,
+      CriarAdminCuponsMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof criarAdminCupons>>,
+  TError,
+  CriarAdminCuponsMutationVariables,
+  TContext
+> => {
+  return useMutation(getCriarAdminCuponsMutationOptions(options), queryClient);
+};
+export const getDesativarAdminCuponsUrl = (id: string) => {
+  return `/v1/admin/cupons/${id}/desativar`;
+};
+
+export const desativarAdminCupons = async (
+  id: string,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<CupomAdminDto> => {
+  return requisicao<CupomAdminDto>(getDesativarAdminCuponsUrl(id), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getDesativarAdminCuponsMutationKey = () => ['desativarAdminCupons'] as const;
+
+export const getDesativarAdminCuponsMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof desativarAdminCupons>>,
+    TError,
+    DesativarAdminCuponsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof desativarAdminCupons>>,
+  TError,
+  DesativarAdminCuponsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDesativarAdminCuponsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof desativarAdminCupons>>,
+    DesativarAdminCuponsMutationVariables
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return desativarAdminCupons(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DesativarAdminCuponsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof desativarAdminCupons>>
+>;
+
+export type DesativarAdminCuponsMutationError = unknown;
+export type DesativarAdminCuponsMutationVariables = { id: string };
+
+export const useDesativarAdminCupons = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof desativarAdminCupons>>,
+      TError,
+      DesativarAdminCuponsMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof desativarAdminCupons>>,
+  TError,
+  DesativarAdminCuponsMutationVariables,
+  TContext
+> => {
+  return useMutation(getDesativarAdminCuponsMutationOptions(options), queryClient);
 };
