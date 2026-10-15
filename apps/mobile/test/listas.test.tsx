@@ -71,6 +71,9 @@ const SABAO = item('b4', 'Sabão em pó');
 
 const MERCADO: DetalheLista = {
   id: ID('a1'),
+  acesso: 'dono',
+  dono: null,
+  compartilhadaCom: 0,
   nome: 'Mercado do mês',
   categoria: 'mercado',
   finalizadaEm: null,
@@ -87,6 +90,9 @@ const MERCADO: DetalheLista = {
 /** O resumo de `GET /listas`: a lista sem os itens, o orçamento e a despesa. */
 const resumo = (lista: DetalheLista): ResumoLista => ({
   id: lista.id,
+  acesso: lista.acesso,
+  dono: lista.dono,
+  compartilhadaCom: lista.compartilhadaCom,
   nome: lista.nome,
   categoria: lista.categoria,
   finalizadaEm: lista.finalizadaEm,

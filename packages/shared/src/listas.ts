@@ -3,6 +3,7 @@
  */
 import { z } from 'zod';
 
+import { ACESSOS_LISTA } from './compartilhamentos.js';
 import { ehDataCalendario } from './datas.js';
 import { CATEGORIAS_LISTA, type CategoriaLista, FORMAS_PAGAMENTO } from './enums.js';
 import { normalizar } from './rascunhos.js';
@@ -11,6 +12,8 @@ import { VALOR_MAXIMO_CENTAVOS } from './transacoes.js';
 /** RN-071: o preço sugerido vem das compras dos últimos 90 dias. */
 export const DIAS_HISTORICO_PRECO_LISTA = 90;
 export const MAXIMO_ITENS_LISTA = 200;
+/** As finalizadas que `GET /listas` mostra: as últimas 20. */
+export const MAXIMO_FINALIZADAS_LISTA = 20;
 export const QUANTIDADE_MAXIMA_ITEM = 9_999;
 
 const esquemaData = z
@@ -122,6 +125,12 @@ export const esquemaItemLista = z.object({
 
 const resumoLista = {
   id: z.uuid(),
+  /** RN-074: dona, ou convidada com `ver` ou `editar`. */
+  acesso: z.enum(ACESSOS_LISTA),
+  /** Quem é dono da lista, quando ela foi compartilhada com quem vê; `null` na própria. */
+  dono: z.object({ id: z.uuid(), nome: z.string() }).nullable(),
+  /** Quantas pessoas aceitaram o convite para a lista. */
+  compartilhadaCom: z.number().int(),
   nome: z.string(),
   categoria: z.enum(CATEGORIAS_LISTA),
   finalizadaEm: z.iso.datetime().nullable(),
@@ -134,7 +143,10 @@ const resumoLista = {
 
 export const esquemaResumoLista = z.object(resumoLista);
 
-/** As abertas primeiro (a mais nova primeiro), depois as finalizadas (as últimas 20). */
+/**
+ * As abertas primeiro (a mais nova primeiro), depois as finalizadas (as últimas 20); as próprias e as
+ * compartilhadas com quem vê (RN-074).
+ */
 export const esquemaListaListas = z.object({ itens: z.array(esquemaResumoLista) });
 
 /** RN-073: o orçamento do mês da categoria mapeada, para comparar com o total estimado. */

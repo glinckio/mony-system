@@ -277,8 +277,15 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-123c** Ferramenta da Mony para listas de compras (`gerenciar_lista_compras`) (PR #84)
   - dep: T-123a · RN-070, RN-072 · docs: 08
   - Criar lista, pôr e tirar itens, marcar comprado e consultar o total pelo `ListasService`; o "Finalizar" pela Mony passa pela confirmação como os lançamentos.
-- [ ] **T-124** Compartilhamento de listas e lembretes em tempo real (WebSocket)
-  - dep: T-123b, T-084b · RN-074
+- [x] **T-124a** Compartilhar listas na API: convites para quem tem conta (e-mail ou telefone), aceitar, recusar, sair e remover, permissão `ver` ou `editar`; a lista compartilhada aparece para o convidado com o dono e a permissão; `CompartilhamentosService.verificarAcesso` (PR #85)
+  - dep: T-123b, T-084b · RN-074 · docs: 05, 06
+  - A T-124 foi dividida: API das listas (T-124a), tempo real (T-124b), lembretes compartilhados (T-124c) e as telas do app (T-124d).
+- [ ] **T-124b** Tempo real das listas compartilhadas: WebSocket `/v1/ws` (Socket.IO com adapter Redis), sala `lista:<id>` só para quem tem acesso, evento a cada mudança da lista
+  - dep: T-124a · RN-074 · docs: 02, 05
+- [ ] **T-124c** Lembretes compartilhados: convite para o lembrete, o convidado vê e recebe o aviso; quem pode concluir e adiar
+  - dep: T-124a · RN-074 · docs: 07, 09
+- [ ] **T-124d** Compartilhar no app: convidar pela lista, convites recebidos (aceitar e recusar), avatares e "compartilhada com N pessoas" (doc 04), lista atualizando em tempo real
+  - dep: T-124b, T-124c · RN-074 · docs: 04
 - [x] **T-125** Exportação de relatórios PDF e XLSX no worker (PR #70)
   - dep: T-048, T-100 · RN-151
   - No gratuito, sem exportação (RN-120): `LIMITE_PLANO_ATINGIDO` com `recurso: relatorio`.

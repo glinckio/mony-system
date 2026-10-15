@@ -30,6 +30,10 @@
       "types": "./dist/cartoes.d.ts",
       "default": "./dist/cartoes.js"
     },
+    "./compartilhamentos": {
+      "types": "./dist/compartilhamentos.d.ts",
+      "default": "./dist/compartilhamentos.js"
+    },
     "./config-app": {
       "types": "./dist/config-app.d.ts",
       "default": "./dist/config-app.js"
