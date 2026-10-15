@@ -39,6 +39,12 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 - `POST /admin/planos/precos` (`plano`, `valorCentavos`) cria o preço na Stripe com o `lookup_key` do plano e o põe no portal do cliente ao lado do vigente do outro plano. Depois marca o preço novo como o único vigente em `planos_precos`, com `alterado_por`, e grava `plano.preco_alterado` em `auditoria` com o antes e o depois. O mesmo valor de hoje não cria nada. Sem a Stripe no ambiente (`COBRANCA_PROVEDOR=fake` em produção), responde 503.
 - `GET /admin/planos/precos` devolve os vigentes e os 50 últimos preços, com data e autor. "Configuração inicial" é o preço gravado pelo `cobranca:configurar`.
 
+## Plano gratuito e teste grátis (T-104c)
+
+- O cartão "Plano gratuito e teste grátis" mostra os limites de RN-120 por recurso (por dia e por mês nos de uso; quantidade nos cadastros) e a duração do teste grátis (de 1 a 30 dias; padrão 3, RN-006). Campo vazio é "sem limite"; cada limite vai de 0 a 10.000.
+- `GET /admin/planos/gratuito` devolve tudo; `PUT /admin/planos/gratuito` grava tudo de uma vez em `limites_plano` e `configuracoes` (chave `teste.duracao_dias`) e registra `plano.gratuito_alterado` em `auditoria` com o antes e o depois. Se nada mudou, não grava nem audita.
+- Os limites valem na hora para quem está no gratuito. A duração vale para quem se cadastrar depois; quem já está no teste mantém a data de fim, e os avisos de RN-124 seguem essa data.
+
 ## Telas (do PDF)
 
 | Seção | Funções |

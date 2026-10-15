@@ -66,6 +66,32 @@ export const textosPtBr = {
       script: 'Configuração inicial',
     },
   },
+  gratuito: {
+    titulo: 'Plano gratuito e teste grátis',
+    descricao:
+      'Os limites valem na hora para quem está no gratuito. Campo vazio: sem limite. A duração do teste vale para quem se cadastrar daqui em diante.',
+    duracaoTeste: 'Duração do teste grátis (dias)',
+    duracaoAjuda: 'Quem já está no teste continua com a data de fim que tinha.',
+    recurso: 'Recurso',
+    porDia: 'Por dia',
+    porMes: 'Por mês',
+    quantidade: 'Quantidade',
+    semLimite: 'Sem limite',
+    recursos: {
+      lancamento: 'Lançamentos (manuais e pela Mony)',
+      mensagem_mony: 'Mensagens para a Mony',
+      leitura_documento: 'Leitura de foto, PDF ou NFC-e',
+      cartao: 'Cartões cadastrados',
+      lista_compras: 'Listas de compras',
+      lembrete_ativo: 'Lembretes ativos',
+    },
+    salvar: 'Salvar',
+    salvo: 'Salvo.',
+    invalido:
+      'Confira os valores: o teste vai de {{minimo}} a {{maximo}} dias, e cada limite é um número inteiro de 0 a {{limite}} (ou vazio).',
+    erroSalvar: 'Não foi possível salvar. Tente de novo.',
+    erroCarregar: 'Não foi possível carregar os limites. Recarregue a página.',
+  },
   inicio: {
     titulo: 'Início',
     api: {
