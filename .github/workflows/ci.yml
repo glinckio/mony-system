@@ -99,7 +99,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: public.ecr.aws/docker/library/postgres:18-alpine
+        image: mirror.gcr.io/library/postgres:18-alpine
         env:
           POSTGRES_USER: mony
           POSTGRES_PASSWORD: mony-ci
@@ -207,10 +207,11 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    # Imagens oficiais pelo espelho da AWS: o Docker Hub recusou pulls do runner em 09/10/2026.
+    # Imagens oficiais pelo espelho do Google: o Docker Hub recusou pulls do runner em 09/10/2026 e
+    # o espelho da AWS bateu no limite de dados três vezes em 15/10/2026.
     services:
       postgres:
-        image: public.ecr.aws/docker/library/postgres:18-alpine
+        image: mirror.gcr.io/library/postgres:18-alpine
         env:
           POSTGRES_USER: mony
           POSTGRES_PASSWORD: mony-ci
@@ -223,7 +224,7 @@ jobs:
           --health-timeout 3s
           --health-retries 20
       redis:
-        image: public.ecr.aws/docker/library/redis:8-alpine
+        image: mirror.gcr.io/library/redis:8-alpine
         ports:
           - 6379:6379
         options: >-

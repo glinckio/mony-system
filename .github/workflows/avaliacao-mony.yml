@@ -27,10 +27,10 @@ jobs:
     name: Avaliação da Mony
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # Imagens oficiais pelo espelho da AWS, como no job Banco.
+    # Imagens oficiais pelo espelho do Google, como nos jobs do CI.
     services:
       postgres:
-        image: public.ecr.aws/docker/library/postgres:18-alpine
+        image: mirror.gcr.io/library/postgres:18-alpine
         env:
           POSTGRES_USER: mony
           POSTGRES_PASSWORD: mony-ci
@@ -43,7 +43,7 @@ jobs:
           --health-timeout 3s
           --health-retries 20
       redis:
-        image: public.ecr.aws/docker/library/redis:8-alpine
+        image: mirror.gcr.io/library/redis:8-alpine
         ports:
           - 6379:6379
         options: >-
