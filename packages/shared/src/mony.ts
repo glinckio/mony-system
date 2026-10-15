@@ -79,6 +79,11 @@ export const esquemaResumoLancamento = z.object({
   valorParcelaCentavos: z.number().int().nullable(),
   /** RN-089: só no lançamento que acabou de ser gravado (T-067). */
   impacto: esquemaImpactoLancamento.nullable().optional(),
+  /**
+   * T-149: no lançamento lido a confirmar, o que a pessoa precisa saber antes do toque: parece já
+   * lançado, ou a parcela da fatura que vira o parcelamento inteiro.
+   */
+  aviso: z.string().nullable().optional(),
 });
 
 /**

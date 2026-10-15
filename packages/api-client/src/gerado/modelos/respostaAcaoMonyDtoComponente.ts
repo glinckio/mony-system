@@ -68,6 +68,8 @@ export type RespostaAcaoMonyDtoComponente =
           } | null;
           comentario: string;
         } | null;
+        /** @nullable */
+        aviso?: string | null;
       };
       opcoes: {
         id: string;

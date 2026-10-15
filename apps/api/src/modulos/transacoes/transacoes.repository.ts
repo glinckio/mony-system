@@ -164,6 +164,32 @@ export class TransacoesRepository {
     });
   }
 
+  /**
+   * T-149: os lançamentos com um destes valores, no período ou em parcelamento (a parcela lida na
+   * fatura tem a data da compra, não a da parcela), para a importação não lançar de novo.
+   */
+  parecidas(usuarioId: string, filtro: { valores: readonly bigint[]; de: Date; ate: Date }) {
+    return this.prisma.cliente.transacao.findMany({
+      where: {
+        usuarioId,
+        natureza: 'normal',
+        valor: { in: [...filtro.valores] },
+        OR: [{ data: { gte: filtro.de, lte: filtro.ate } }, { parcelamentoId: { not: null } }],
+      },
+      select: {
+        id: true,
+        tipo: true,
+        descricao: true,
+        valor: true,
+        data: true,
+        cartaoId: true,
+        parcela: { select: { numero: true } },
+        parcelamento: { select: { totalParcelas: true, status: true } },
+      },
+      orderBy: [{ data: 'asc' }, { id: 'asc' }],
+    });
+  }
+
   /** As transações do lote que existem, são do usuário e não foram excluídas. */
   buscarVarias(usuarioId: string, ids: readonly string[]) {
     return this.prisma.cliente.transacao.findMany({

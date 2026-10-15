@@ -9214,6 +9214,12 @@
                                 "type": "null"
                               }
                             ]
+                          },
+                          "aviso": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
                           }
                         },
                         "required": [
@@ -9590,6 +9596,12 @@
                                   {
                                     "type": "null"
                                   }
+                                ]
+                              },
+                              "aviso": {
+                                "type": [
+                                  "string",
+                                  "null"
                                 ]
                               }
                             },

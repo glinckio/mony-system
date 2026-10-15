@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { esquemaLeitura, lerLeitura } from '../src/modulos/mony/leitura';
+import { esquemaLeitura, lerLeitura, parcelaDoLancamento } from '../src/modulos/mony/leitura';
 
 const lancamento = {
   tipo: 'despesa',
@@ -11,6 +11,8 @@ const lancamento = {
   formaPagamento: 'pix',
   cartao: null,
   parcelas: null,
+  parcelaAtual: null,
+  parcelaTotal: null,
   categoria: 'Mercado',
 };
 
@@ -56,5 +58,32 @@ describe('leitura de documento (T-065)', () => {
     expect(esquema.required).toEqual(['documento', 'estabelecimento', 'lancamentos', 'aviso']);
     expect(esquema.properties.lancamentos.items.required).toEqual(Object.keys(lancamento));
     expect(JSON.stringify(esquema)).toContain('Valor em centavos');
+  });
+
+  it('T-149 a parcela da fatura vem dos campos ou do fim da descrição', () => {
+    const lido = {
+      ...lancamento,
+      tipo: 'despesa' as const,
+      formaPagamento: 'cartao_credito' as const,
+    };
+    expect(
+      parcelaDoLancamento({ ...lido, descricao: 'Loja X', parcelaAtual: 2, parcelaTotal: 10 }),
+    ).toEqual({ atual: 2, total: 10, descricao: 'Loja X' });
+    expect(parcelaDoLancamento({ ...lido, descricao: 'Loja X (parcela 2/10)' })).toEqual({
+      atual: 2,
+      total: 10,
+      descricao: 'Loja X',
+    });
+    expect(parcelaDoLancamento({ ...lido, descricao: 'MAGALU PARC 03/12' })).toEqual({
+      atual: 3,
+      total: 12,
+      descricao: 'MAGALU',
+    });
+    // Sem a palavra "parcela", "05/10" pode ser uma data.
+    expect(parcelaDoLancamento({ ...lido, descricao: 'Uber 05/10' })).toBeNull();
+    expect(parcelaDoLancamento(lido)).toBeNull();
+    // Números que não fazem sentido.
+    expect(parcelaDoLancamento({ ...lido, parcelaAtual: 11, parcelaTotal: 10 })).toBeNull();
+    expect(parcelaDoLancamento({ ...lido, descricao: 'Loja (parcela 1/1)' })).toBeNull();
   });
 });

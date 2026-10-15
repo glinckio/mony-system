@@ -61,6 +61,18 @@ const CAMPOS_DOS_ALERTAS = new Set([
  */
 const CAMPOS_SEMPRE_EDITAVEIS = new Set(['categoriaId', 'descricao', 'observacao', 'anexoIds']);
 
+/** T-149: um lançamento já gravado que pode ser o mesmo de uma linha de fatura ou extrato. */
+export interface LancamentoParecido {
+  id: string;
+  tipo: TipoTransacao;
+  descricao: string;
+  valorCentavos: number;
+  data: DataCalendario;
+  cartaoId: string | null;
+  /** Parcela de um parcelamento ativo ou quitado: o número e de quantas. */
+  parcela: { numero: number; total: number } | null;
+}
+
 /**
  * Transações (RN-040 a RN-047). A compra no cartão entra na fatura certa (RN-031) e cada mudança
  * refaz o total das faturas tocadas (RN-046), com o cartão travado. Parcelas e pagamento de fatura
@@ -123,6 +135,39 @@ export class TransacoesService {
       despesasPendentesCentavos: Number(despesasPendentes),
       quantidade,
     };
+  }
+
+  /**
+   * T-149: os lançamentos com um destes valores entre `de` e `ate`, e as parcelas com um destes
+   * valores em qualquer data. Parcelamento cancelado fica de fora.
+   */
+  async parecidas(
+    contexto: Contexto,
+    busca: { valoresCentavos: readonly number[]; de: DataCalendario; ate: DataCalendario },
+  ): Promise<LancamentoParecido[]> {
+    if (busca.valoresCentavos.length === 0) return [];
+    const linhas = await this.repositorio.parecidas(usuarioDoContexto(contexto), {
+      valores: [...new Set(busca.valoresCentavos)].map(BigInt),
+      de: paraDataDoBanco(busca.de),
+      ate: paraDataDoBanco(busca.ate),
+    });
+    return linhas.flatMap((linha) => {
+      if (linha.parcelamento?.status === 'cancelada') return [];
+      return [
+        {
+          id: linha.id,
+          tipo: linha.tipo,
+          descricao: linha.descricao,
+          valorCentavos: Number(linha.valor),
+          data: linha.data.toISOString().slice(0, 10),
+          cartaoId: linha.cartaoId,
+          parcela:
+            linha.parcela && linha.parcelamento
+              ? { numero: linha.parcela.numero, total: linha.parcelamento.totalParcelas }
+              : null,
+        },
+      ];
+    });
   }
 
   async buscar(contexto: Contexto, id: string): Promise<Transacao> {

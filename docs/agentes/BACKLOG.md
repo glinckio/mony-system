@@ -316,5 +316,5 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 
 (Agentes acrescentam aqui ou no fim da fase certa, com o próximo ID livre da faixa da fase.)
 
-- [ ] **T-149** Importação de fatura e extrato pela Mony: reconhecer a parcela ("02/10") como parte de um parcelamento e não duplicar o que já está lançado (mesmo valor, data e cartão), avisando no cartão a confirmar
+- [x] **T-149** Importação de fatura e extrato pela Mony: reconhecer a parcela ("02/10") como parte de um parcelamento e não duplicar o que já está lançado (mesmo valor, data e cartão), avisando no cartão a confirmar (PR #91)
   - dep: T-065 · RN-083 · docs: 08 (Leitura de mídia)
