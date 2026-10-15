@@ -19,8 +19,11 @@ export interface ConfiguracaoCliente {
   aoErro?: (erro: ErroApi) => void;
 }
 
-/** Rotas de sessão (login, renovação, saída): o 401 delas não dispara renovação. */
-const PREFIXO_ROTAS_DE_SESSAO = '/v1/auth/';
+/**
+ * Rotas de sessão (login, renovação, saída), do app e do painel admin: o 401 delas não dispara
+ * renovação (a renovação recusada esperaria por ela mesma).
+ */
+const PREFIXOS_ROTAS_DE_SESSAO = ['/v1/auth/', '/v1/admin/auth/'];
 
 let configuracao: ConfiguracaoCliente = { urlBase: '' };
 let renovacaoEmCurso: Promise<boolean> | null = null;
@@ -68,11 +71,11 @@ export async function requisicao<T>(caminho: string, opcoes: RequestInit = {}): 
   const primeira = await enviar(caminho, opcoes);
   let resposta = primeira.resposta;
   // Token vencido ou revogado: renova uma vez e repete. Sem token, ou nas rotas de sessão
-  // (`/v1/auth/…`, a própria renovação inclusive), o 401 é da rota e volta como erro.
+  // (`/v1/auth/…` e `/v1/admin/auth/…`, a própria renovação inclusive), o 401 é da rota e volta como erro.
   if (
     resposta.status === 401 &&
     primeira.comToken &&
-    !caminho.startsWith(PREFIXO_ROTAS_DE_SESSAO) &&
+    !PREFIXOS_ROTAS_DE_SESSAO.some((prefixo) => caminho.startsWith(prefixo)) &&
     (await renovarSessaoUmaVez())
   ) {
     resposta = (await enviar(caminho, opcoes)).resposta;
@@ -95,7 +98,8 @@ async function enviar(
   for (const [nome, valor] of Object.entries(configuracao.cabecalhos?.() ?? {})) {
     if (!cabecalhos.has(nome)) cabecalhos.set(nome, valor);
   }
-  const token = await configuracao.obterToken?.();
+  // `Authorization` passado na chamada vence (o desafio do 2FA do painel admin).
+  const token = cabecalhos.has('authorization') ? null : await configuracao.obterToken?.();
   if (token) cabecalhos.set('authorization', `Bearer ${token}`);
   if (opcoes.body !== undefined && !cabecalhos.has('content-type')) {
     cabecalhos.set('content-type', 'application/json');

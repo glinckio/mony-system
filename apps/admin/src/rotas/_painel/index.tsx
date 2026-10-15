@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export const Route = createFileRoute('/')({ component: Inicio });
+export const Route = createFileRoute('/_painel/')({ component: Inicio });
 
 function Inicio() {
   const { t } = useTranslation();

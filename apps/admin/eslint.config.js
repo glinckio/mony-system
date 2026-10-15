@@ -10,5 +10,12 @@ export default defineConfig(
   {
     files: ['**/*.{ts,tsx}'],
     extends: [reactHooks.configs.flat.recommended],
+    rules: {
+      // O TanStack Router redireciona com `throw redirect(...)`, que não é um Error.
+      '@typescript-eslint/only-throw-error': [
+        'error',
+        { allow: [{ from: 'package', package: '@tanstack/router-core', name: 'Redirect' }] },
+      ],
+    },
   },
 );

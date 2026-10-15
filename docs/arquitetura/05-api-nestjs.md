@@ -554,7 +554,7 @@ Implementado na T-102 (RN-128, RN-131), em `modulos/assinaturas`; a Stripe está
 | `@UsuarioAtual()` | Injeta `{ id, papel, sessaoId, dispositivoId }` do token de acesso |
 | `@RecursoLimitado('lancamento')` | Marca a rota que pode responder `LIMITE_PLANO_ATINGIDO` (`x-recurso-limitado` no OpenAPI); a conta é do `CotasService`, no Service que grava (ver "Planos e cotas do gratuito") |
 | `@ExigePlano('pago')` | Bloqueia Open Finance, detecção de apps e ligação no gratuito (RN-121) |
-| `@Admin()` | Papel admin + sessão de admin com 2FA |
+| `@Admin()` | Rota do painel: só aceita o token do login do admin com 2FA (audiência `mony-admin`, T-104a, doc 13). Sem o decorador, a rota só aceita o token do app; trocar um pelo outro dá 403 `ACESSO_NEGADO` |
 | `@Webhook('open-finance')` **(proposta)** | Valida assinatura do corpo bruto, registra evento e deduplica. A Stripe (T-102) faz isso no `AssinaturasService.receberWebhook`, sem decorador; vira decorador se o Open Finance repetir o mesmo caminho |
 
 ## Webhooks

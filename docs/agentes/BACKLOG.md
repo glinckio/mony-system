@@ -258,7 +258,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-102
   - Parte de "Seu plano" (`/mais/plano`, T-100), que o [Ver planos] da Mony abre; os formulários que recebem `LIMITE_PLANO_ATINGIDO` e os relatórios no gratuito podem mostrar o [Ver planos] também.
 - [ ] **T-104** Admin: preços (novo Price na Stripe), limites, duração do teste, cupons, histórico. Dividida em T-104a a T-104d: o painel ainda não tinha login.
-- [ ] **T-104a** Login do painel admin: e-mail e senha de quem tem papel `admin`, 2FA TOTP obrigatório (configurado no primeiro acesso), sessão curta, `@Admin()` na API, auditoria das entradas e um comando para promover o primeiro admin
+- [x] **T-104a** Login do painel admin: e-mail e senha de quem tem papel `admin`, 2FA TOTP obrigatório (configurado no primeiro acesso), sessão curta, `@Admin()` na API, auditoria das entradas e um comando para promover o primeiro admin (PR #94)
   - dep: T-012 · docs: 11, 13
 - [ ] **T-104b** Admin: preços do mensal e do anual (novo Price na Stripe, só para novas assinaturas) e histórico com data e autor
   - dep: T-104a, T-102 · RN-129 · docs: 13

@@ -1,3 +1,4 @@
+export * from './admin/admin';
 export * from './app/app';
 export * from './arquivos/arquivos';
 export * from './assinatura/assinatura';

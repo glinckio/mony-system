@@ -147,7 +147,7 @@ describe('cabeçalhos e renovação da sessão (doc 04)', () => {
     expect(fetchFalso).toHaveBeenCalledTimes(6);
   });
 
-  it('renovação recusada (ou que falha) devolve o 401; sem token ou em /v1/auth não tenta renovar', async () => {
+  it('renovação recusada (ou que falha) devolve o 401; sem token ou em /v1/auth e /v1/admin/auth não tenta renovar', async () => {
     const renovarSessao = vi.fn(() => Promise.resolve(false));
     configurarCliente({ urlBase: 'https://api.teste', obterToken: () => 't', renovarSessao });
     fetchFalso.mockImplementation(() =>
@@ -168,8 +168,19 @@ describe('cabeçalhos e renovação da sessão (doc 04)', () => {
     await expect(requisicao('/v1/auth/renovar', { method: 'POST' })).rejects.toBeInstanceOf(
       ErroApi,
     );
+    await expect(requisicao('/v1/admin/auth/renovar', { method: 'POST' })).rejects.toBeInstanceOf(
+      ErroApi,
+    );
     configurarCliente({ urlBase: 'https://api.teste', renovarSessao });
     await expect(requisicao('/v1/teste', { method: 'POST' })).rejects.toBeInstanceOf(ErroApi);
     expect(renovarSessao).not.toHaveBeenCalled();
+  });
+
+  it('Authorization passado na chamada vence o token configurado', async () => {
+    configurarCliente({ urlBase: 'https://api.teste', obterToken: () => 'do-app' });
+    fetchFalso.mockImplementation(() => Promise.resolve(responder(200, { ok: true })));
+    await requisicao('/v1/admin/auth/2fa', { headers: { authorization: 'Bearer desafio' } });
+    const [, opcoes] = fetchFalso.mock.calls[0] ?? [];
+    expect(new Headers(opcoes?.headers).get('authorization')).toBe('Bearer desafio');
   });
 });

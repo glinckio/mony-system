@@ -9,109 +9,125 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './rotas/__root';
-import { Route as IndexRouteImport } from './rotas/index';
-import { Route as AssinaturasRouteImport } from './rotas/assinaturas';
-import { Route as AuditoriaRouteImport } from './rotas/auditoria';
-import { Route as ConfiguracoesRouteImport } from './rotas/configuracoes';
-import { Route as FilasRouteImport } from './rotas/filas';
-import { Route as MetricasRouteImport } from './rotas/metricas';
-import { Route as MonyRouteImport } from './rotas/mony';
-import { Route as NovidadesRouteImport } from './rotas/novidades';
-import { Route as PlanosRouteImport } from './rotas/planos';
-import { Route as UsuariosRouteImport } from './rotas/usuarios';
+import { Route as PainelRouteImport } from './rotas/_painel';
+import { Route as EntrarRouteImport } from './rotas/entrar';
+import { Route as PainelIndexRouteImport } from './rotas/_painel/index';
+import { Route as PainelAssinaturasRouteImport } from './rotas/_painel/assinaturas';
+import { Route as PainelAuditoriaRouteImport } from './rotas/_painel/auditoria';
+import { Route as PainelConfiguracoesRouteImport } from './rotas/_painel/configuracoes';
+import { Route as PainelFilasRouteImport } from './rotas/_painel/filas';
+import { Route as PainelMetricasRouteImport } from './rotas/_painel/metricas';
+import { Route as PainelMonyRouteImport } from './rotas/_painel/mony';
+import { Route as PainelNovidadesRouteImport } from './rotas/_painel/novidades';
+import { Route as PainelPlanosRouteImport } from './rotas/_painel/planos';
+import { Route as PainelUsuariosRouteImport } from './rotas/_painel/usuarios';
 
-const IndexRoute = IndexRouteImport.update({
+const PainelRoute = PainelRouteImport.update({
+  id: '/_painel',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const EntrarRoute = EntrarRouteImport.update({
+  id: '/entrar',
+  path: '/entrar',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const PainelIndexRoute = PainelIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PainelRoute,
 } as any);
-const AssinaturasRoute = AssinaturasRouteImport.update({
+const PainelAssinaturasRoute = PainelAssinaturasRouteImport.update({
   id: '/assinaturas',
   path: '/assinaturas',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PainelRoute,
 } as any);
-const AuditoriaRoute = AuditoriaRouteImport.update({
+const PainelAuditoriaRoute = PainelAuditoriaRouteImport.update({
   id: '/auditoria',
   path: '/auditoria',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PainelRoute,
 } as any);
-const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+const PainelConfiguracoesRoute = PainelConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PainelRoute,
 } as any);
-const FilasRoute = FilasRouteImport.update({
+const PainelFilasRoute = PainelFilasRouteImport.update({
   id: '/filas',
   path: '/filas',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PainelRoute,
 } as any);
-const MetricasRoute = MetricasRouteImport.update({
+const PainelMetricasRoute = PainelMetricasRouteImport.update({
   id: '/metricas',
   path: '/metricas',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PainelRoute,
 } as any);
-const MonyRoute = MonyRouteImport.update({
+const PainelMonyRoute = PainelMonyRouteImport.update({
   id: '/mony',
   path: '/mony',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PainelRoute,
 } as any);
-const NovidadesRoute = NovidadesRouteImport.update({
+const PainelNovidadesRoute = PainelNovidadesRouteImport.update({
   id: '/novidades',
   path: '/novidades',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PainelRoute,
 } as any);
-const PlanosRoute = PlanosRouteImport.update({
+const PainelPlanosRoute = PainelPlanosRouteImport.update({
   id: '/planos',
   path: '/planos',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PainelRoute,
 } as any);
-const UsuariosRoute = UsuariosRouteImport.update({
+const PainelUsuariosRoute = PainelUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => PainelRoute,
 } as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute;
-  '/assinaturas': typeof AssinaturasRoute;
-  '/auditoria': typeof AuditoriaRoute;
-  '/configuracoes': typeof ConfiguracoesRoute;
-  '/filas': typeof FilasRoute;
-  '/metricas': typeof MetricasRoute;
-  '/mony': typeof MonyRoute;
-  '/novidades': typeof NovidadesRoute;
-  '/planos': typeof PlanosRoute;
-  '/usuarios': typeof UsuariosRoute;
+  '/': typeof PainelIndexRoute;
+  '/entrar': typeof EntrarRoute;
+  '/assinaturas': typeof PainelAssinaturasRoute;
+  '/auditoria': typeof PainelAuditoriaRoute;
+  '/configuracoes': typeof PainelConfiguracoesRoute;
+  '/filas': typeof PainelFilasRoute;
+  '/metricas': typeof PainelMetricasRoute;
+  '/mony': typeof PainelMonyRoute;
+  '/novidades': typeof PainelNovidadesRoute;
+  '/planos': typeof PainelPlanosRoute;
+  '/usuarios': typeof PainelUsuariosRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute;
-  '/assinaturas': typeof AssinaturasRoute;
-  '/auditoria': typeof AuditoriaRoute;
-  '/configuracoes': typeof ConfiguracoesRoute;
-  '/filas': typeof FilasRoute;
-  '/metricas': typeof MetricasRoute;
-  '/mony': typeof MonyRoute;
-  '/novidades': typeof NovidadesRoute;
-  '/planos': typeof PlanosRoute;
-  '/usuarios': typeof UsuariosRoute;
+  '/entrar': typeof EntrarRoute;
+  '/assinaturas': typeof PainelAssinaturasRoute;
+  '/auditoria': typeof PainelAuditoriaRoute;
+  '/configuracoes': typeof PainelConfiguracoesRoute;
+  '/filas': typeof PainelFilasRoute;
+  '/metricas': typeof PainelMetricasRoute;
+  '/mony': typeof PainelMonyRoute;
+  '/novidades': typeof PainelNovidadesRoute;
+  '/planos': typeof PainelPlanosRoute;
+  '/usuarios': typeof PainelUsuariosRoute;
+  '/': typeof PainelIndexRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
-  '/': typeof IndexRoute;
-  '/assinaturas': typeof AssinaturasRoute;
-  '/auditoria': typeof AuditoriaRoute;
-  '/configuracoes': typeof ConfiguracoesRoute;
-  '/filas': typeof FilasRoute;
-  '/metricas': typeof MetricasRoute;
-  '/mony': typeof MonyRoute;
-  '/novidades': typeof NovidadesRoute;
-  '/planos': typeof PlanosRoute;
-  '/usuarios': typeof UsuariosRoute;
+  '/_painel': typeof PainelRouteWithChildren;
+  '/entrar': typeof EntrarRoute;
+  '/_painel/assinaturas': typeof PainelAssinaturasRoute;
+  '/_painel/auditoria': typeof PainelAuditoriaRoute;
+  '/_painel/configuracoes': typeof PainelConfiguracoesRoute;
+  '/_painel/filas': typeof PainelFilasRoute;
+  '/_painel/metricas': typeof PainelMetricasRoute;
+  '/_painel/mony': typeof PainelMonyRoute;
+  '/_painel/novidades': typeof PainelNovidadesRoute;
+  '/_painel/planos': typeof PainelPlanosRoute;
+  '/_painel/usuarios': typeof PainelUsuariosRoute;
+  '/_painel/': typeof PainelIndexRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
     | '/'
+    | '/entrar'
     | '/assinaturas'
     | '/auditoria'
     | '/configuracoes'
@@ -123,7 +139,7 @@ export interface FileRouteTypes {
     | '/usuarios';
   fileRoutesByTo: FileRoutesByTo;
   to:
-    | '/'
+    | '/entrar'
     | '/assinaturas'
     | '/auditoria'
     | '/configuracoes'
@@ -132,120 +148,150 @@ export interface FileRouteTypes {
     | '/mony'
     | '/novidades'
     | '/planos'
-    | '/usuarios';
+    | '/usuarios'
+    | '/';
   id:
     | '__root__'
-    | '/'
-    | '/assinaturas'
-    | '/auditoria'
-    | '/configuracoes'
-    | '/filas'
-    | '/metricas'
-    | '/mony'
-    | '/novidades'
-    | '/planos'
-    | '/usuarios';
+    | '/_painel'
+    | '/entrar'
+    | '/_painel/assinaturas'
+    | '/_painel/auditoria'
+    | '/_painel/configuracoes'
+    | '/_painel/filas'
+    | '/_painel/metricas'
+    | '/_painel/mony'
+    | '/_painel/novidades'
+    | '/_painel/planos'
+    | '/_painel/usuarios'
+    | '/_painel/';
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  AssinaturasRoute: typeof AssinaturasRoute;
-  AuditoriaRoute: typeof AuditoriaRoute;
-  ConfiguracoesRoute: typeof ConfiguracoesRoute;
-  FilasRoute: typeof FilasRoute;
-  MetricasRoute: typeof MetricasRoute;
-  MonyRoute: typeof MonyRoute;
-  NovidadesRoute: typeof NovidadesRoute;
-  PlanosRoute: typeof PlanosRoute;
-  UsuariosRoute: typeof UsuariosRoute;
+  PainelRoute: typeof PainelRouteWithChildren;
+  EntrarRoute: typeof EntrarRoute;
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/';
+    '/_painel': {
+      id: '/_painel';
+      path: '';
+      fullPath: '/';
+      preLoaderRoute: typeof PainelRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/entrar': {
+      id: '/entrar';
+      path: '/entrar';
+      fullPath: '/entrar';
+      preLoaderRoute: typeof EntrarRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/_painel/': {
+      id: '/_painel/';
       path: '/';
       fullPath: '/';
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
+      preLoaderRoute: typeof PainelIndexRouteImport;
+      parentRoute: typeof PainelRoute;
     };
-    '/assinaturas': {
-      id: '/assinaturas';
+    '/_painel/assinaturas': {
+      id: '/_painel/assinaturas';
       path: '/assinaturas';
       fullPath: '/assinaturas';
-      preLoaderRoute: typeof AssinaturasRouteImport;
-      parentRoute: typeof rootRouteImport;
+      preLoaderRoute: typeof PainelAssinaturasRouteImport;
+      parentRoute: typeof PainelRoute;
     };
-    '/auditoria': {
-      id: '/auditoria';
+    '/_painel/auditoria': {
+      id: '/_painel/auditoria';
       path: '/auditoria';
       fullPath: '/auditoria';
-      preLoaderRoute: typeof AuditoriaRouteImport;
-      parentRoute: typeof rootRouteImport;
+      preLoaderRoute: typeof PainelAuditoriaRouteImport;
+      parentRoute: typeof PainelRoute;
     };
-    '/configuracoes': {
-      id: '/configuracoes';
+    '/_painel/configuracoes': {
+      id: '/_painel/configuracoes';
       path: '/configuracoes';
       fullPath: '/configuracoes';
-      preLoaderRoute: typeof ConfiguracoesRouteImport;
-      parentRoute: typeof rootRouteImport;
+      preLoaderRoute: typeof PainelConfiguracoesRouteImport;
+      parentRoute: typeof PainelRoute;
     };
-    '/filas': {
-      id: '/filas';
+    '/_painel/filas': {
+      id: '/_painel/filas';
       path: '/filas';
       fullPath: '/filas';
-      preLoaderRoute: typeof FilasRouteImport;
-      parentRoute: typeof rootRouteImport;
+      preLoaderRoute: typeof PainelFilasRouteImport;
+      parentRoute: typeof PainelRoute;
     };
-    '/metricas': {
-      id: '/metricas';
+    '/_painel/metricas': {
+      id: '/_painel/metricas';
       path: '/metricas';
       fullPath: '/metricas';
-      preLoaderRoute: typeof MetricasRouteImport;
-      parentRoute: typeof rootRouteImport;
+      preLoaderRoute: typeof PainelMetricasRouteImport;
+      parentRoute: typeof PainelRoute;
     };
-    '/mony': {
-      id: '/mony';
+    '/_painel/mony': {
+      id: '/_painel/mony';
       path: '/mony';
       fullPath: '/mony';
-      preLoaderRoute: typeof MonyRouteImport;
-      parentRoute: typeof rootRouteImport;
+      preLoaderRoute: typeof PainelMonyRouteImport;
+      parentRoute: typeof PainelRoute;
     };
-    '/novidades': {
-      id: '/novidades';
+    '/_painel/novidades': {
+      id: '/_painel/novidades';
       path: '/novidades';
       fullPath: '/novidades';
-      preLoaderRoute: typeof NovidadesRouteImport;
-      parentRoute: typeof rootRouteImport;
+      preLoaderRoute: typeof PainelNovidadesRouteImport;
+      parentRoute: typeof PainelRoute;
     };
-    '/planos': {
-      id: '/planos';
+    '/_painel/planos': {
+      id: '/_painel/planos';
       path: '/planos';
       fullPath: '/planos';
-      preLoaderRoute: typeof PlanosRouteImport;
-      parentRoute: typeof rootRouteImport;
+      preLoaderRoute: typeof PainelPlanosRouteImport;
+      parentRoute: typeof PainelRoute;
     };
-    '/usuarios': {
-      id: '/usuarios';
+    '/_painel/usuarios': {
+      id: '/_painel/usuarios';
       path: '/usuarios';
       fullPath: '/usuarios';
-      preLoaderRoute: typeof UsuariosRouteImport;
-      parentRoute: typeof rootRouteImport;
+      preLoaderRoute: typeof PainelUsuariosRouteImport;
+      parentRoute: typeof PainelRoute;
     };
   }
 }
 
+interface PainelRouteChildren {
+  PainelAssinaturasRoute: typeof PainelAssinaturasRoute;
+  PainelAuditoriaRoute: typeof PainelAuditoriaRoute;
+  PainelConfiguracoesRoute: typeof PainelConfiguracoesRoute;
+  PainelFilasRoute: typeof PainelFilasRoute;
+  PainelMetricasRoute: typeof PainelMetricasRoute;
+  PainelMonyRoute: typeof PainelMonyRoute;
+  PainelNovidadesRoute: typeof PainelNovidadesRoute;
+  PainelPlanosRoute: typeof PainelPlanosRoute;
+  PainelUsuariosRoute: typeof PainelUsuariosRoute;
+  PainelIndexRoute: typeof PainelIndexRoute;
+}
+
+const PainelRouteChildren: PainelRouteChildren = {
+  PainelAssinaturasRoute: PainelAssinaturasRoute,
+  PainelAuditoriaRoute: PainelAuditoriaRoute,
+  PainelConfiguracoesRoute: PainelConfiguracoesRoute,
+  PainelFilasRoute: PainelFilasRoute,
+  PainelMetricasRoute: PainelMetricasRoute,
+  PainelMonyRoute: PainelMonyRoute,
+  PainelNovidadesRoute: PainelNovidadesRoute,
+  PainelPlanosRoute: PainelPlanosRoute,
+  PainelUsuariosRoute: PainelUsuariosRoute,
+  PainelIndexRoute: PainelIndexRoute,
+};
+
+const PainelRouteWithChildren =
+  PainelRoute._addFileChildren(PainelRouteChildren);
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AssinaturasRoute: AssinaturasRoute,
-  AuditoriaRoute: AuditoriaRoute,
-  ConfiguracoesRoute: ConfiguracoesRoute,
-  FilasRoute: FilasRoute,
-  MetricasRoute: MetricasRoute,
-  MonyRoute: MonyRoute,
-  NovidadesRoute: NovidadesRoute,
-  PlanosRoute: PlanosRoute,
-  UsuariosRoute: UsuariosRoute,
+  PainelRoute: PainelRouteWithChildren,
+  EntrarRoute: EntrarRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
