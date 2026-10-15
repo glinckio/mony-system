@@ -14,6 +14,7 @@ import {
 } from '@mony/shared/mony';
 import { parcelasSemJuros } from '@mony/shared/parcelamentos';
 import { acharPorNome, type DadosRascunho, normalizar, proximoCampo } from '@mony/shared/rascunhos';
+import { VALOR_MAXIMO_CENTAVOS } from '@mony/shared/transacoes';
 import { z } from 'zod';
 
 import { Clock } from '../../core/clock/clock';
@@ -28,14 +29,17 @@ import {
 import type { ArquivoMony } from '../arquivos/arquivos.service';
 import { CartoesService } from '../cartoes/cartoes.service';
 import { CategoriasService } from '../categorias/categorias.service';
+import { TransacoesService } from '../transacoes/transacoes.service';
 import { UsuariosService } from '../usuarios/usuarios.service';
 import { avisoDoLimite, botaoVerPlanos } from './aviso-limite';
+import { acharJaLancados } from './ja-lancados';
 import { LancamentosMony } from './lancamentos.service';
 import {
   esquemaLeitura,
   FERRAMENTA_LEITURA,
   type Leitura,
   lerLeitura,
+  parcelaDoLancamento,
   TIPOS_DOCUMENTO,
   type TipoDocumento,
 } from './leitura';
@@ -73,6 +77,16 @@ const esquemaItem = z.object({
   estado: z.enum(ESTADOS_ITEM),
   transacaoId: z.uuid().nullable(),
   parcelamentoId: z.uuid().nullable(),
+  /**
+   * T-149: a parcela da compra lida na fatura ("02/10"). `valorCentavos` é o da parcela; confirmar
+   * lança a compra inteira, em `parcela.total` vezes. Opcional: leituras de antes não têm.
+   */
+  parcela: z.object({ atual: z.number().int(), total: z.number().int() }).nullable().optional(),
+  /** T-149: o lançamento que parece ser o mesmo (valor, data e cartão; ou a mesma parcela). */
+  jaLancado: z
+    .object({ transacaoId: z.uuid(), descricao: z.string(), data: z.string() })
+    .nullable()
+    .optional(),
 });
 
 /** `importacoes_documento.resultado` (T-065). */
@@ -178,6 +192,7 @@ export class DocumentosMony {
     private readonly categorias: CategoriasService,
     private readonly cartoes: CartoesService,
     private readonly usuarios: UsuariosService,
+    private readonly transacoes: TransacoesService,
     private readonly clock: Clock,
   ) {
     const esquemaEntrada: Record<string, unknown> = z.toJSONSchema(esquemaLeitura, {
@@ -287,6 +302,8 @@ export class DocumentosMony {
           formaPagamento: compra.formaPagamento,
           cartao: null,
           parcelas: null,
+          parcelaAtual: null,
+          parcelaTotal: null,
           categoria: null,
         },
       ],
@@ -383,14 +400,17 @@ export class DocumentosMony {
     importacaoId: string,
   ): Promise<RespostaAcaoMony> {
     const reservados = await this.reservar(contexto, importacaoId, null);
-    const incompletos = reservados.filter(({ completo }) => !completo).length;
+    const repetidos = reservados.filter(({ repetido }) => repetido).length;
+    const incompletos = reservados.filter(
+      ({ completo, repetido }) => !completo && !repetido,
+    ).length;
     const finais = new Map<number, Partial<ItemImportacao>>();
     let total = 0;
     let falhas = 0;
     let limite: string | null = null;
     try {
       for (const item of reservados) {
-        if (!item.completo) continue;
+        if (!item.completo || item.repetido) continue;
         try {
           if (item.tipo === 'receita') {
             finais.set(item.indice, (await this.gravarReceita(contexto, item)).final);
@@ -409,7 +429,7 @@ export class DocumentosMony {
                   : null,
             });
           }
-          total += item.valorCentavos;
+          total += valorDoLancamento(item);
         } catch (erro) {
           const aviso = avisoDoLimite(erro);
           if (aviso) {
@@ -438,6 +458,13 @@ export class DocumentosMony {
     if (incompletos > 0) {
       partes.push(
         `Em ${plural(incompletos, 'lançamento', 'lançamentos')} falta informação: toque em Confirmar em cada um para eu perguntar.`,
+      );
+    }
+    if (repetidos > 0) {
+      partes.push(
+        repetidos === 1
+          ? 'Deixei de fora o que parece já estar lançado: se for outro, toque em Confirmar nele.'
+          : `Deixei de fora ${String(repetidos)} que parecem já estar lançados: se for outro, toque em Confirmar nele.`,
       );
     }
     if (falhas > 0) {
@@ -498,7 +525,7 @@ export class DocumentosMony {
     contexto: Contexto,
     importacaoId: string,
     indices: number[] | null,
-  ): Promise<(ItemReservado & { indice: number; completo: boolean })[]> {
+  ): Promise<(ItemReservado & { indice: number; completo: boolean; repetido: boolean })[]> {
     const resultado = await this.repositorio.alterarImportacao(
       usuarioDoContexto(contexto),
       importacaoId,
@@ -512,9 +539,11 @@ export class DocumentosMony {
             throw new ErroDominio('CONFLITO', { mensagem: MENSAGEM_ESTADO[item.estado] });
           }
           const completo = estaCompleto(item);
-          // No "todos", o incompleto fica pendente: ele precisa das perguntas, uma por vez.
-          if (indices !== null || completo) item.estado = 'gravando';
-          return { ...item, indice, completo, notaNfceId: lido.notaNfceId ?? null };
+          // No "todos", o incompleto fica pendente: ele precisa das perguntas, uma por vez. O que
+          // parece já lançado (T-149) também: só o [Confirmar] dele grava.
+          const repetido = indices === null && Boolean(item.jaLancado);
+          if (indices !== null || (completo && !repetido)) item.estado = 'gravando';
+          return { ...item, indice, completo, repetido, notaNfceId: lido.notaNfceId ?? null };
         });
         return { status: statusDe(lido.itens), resultado: lido, retorno: reservados };
       },
@@ -720,9 +749,24 @@ export class DocumentosMony {
           parcelas = lido.parcelas ?? (deFatura ? 1 : null);
         }
       }
+      // T-149: a parcela ("02/10") de uma compra no crédito vira o parcelamento inteiro; fora do
+      // crédito (ou com um total que não cabe), fica um lançamento só, com a parcela na descrição.
+      const lida = lido.tipo === 'despesa' ? parcelaDoLancamento(lido) : null;
+      const parcela =
+        lida !== null &&
+        formaPagamento === 'cartao_credito' &&
+        lido.valorCentavos * lida.total <= VALOR_MAXIMO_CENTAVOS
+          ? { atual: lida.atual, total: lida.total }
+          : null;
+      if (parcela !== null) parcelas = parcela.total;
       itens.push({
         tipo: lido.tipo,
-        descricao: lido.descricao,
+        descricao:
+          lida === null
+            ? lido.descricao
+            : parcela === null
+              ? `${lida.descricao} (parcela ${String(lida.atual)}/${String(lida.total)})`
+              : lida.descricao,
         valorCentavos: lido.valorCentavos,
         data: lido.data !== null && ehDataCalendario(lido.data) ? lido.data : catalogo.hoje,
         categoriaId,
@@ -732,9 +776,52 @@ export class DocumentosMony {
         estado: 'pendente',
         transacaoId: null,
         parcelamentoId: null,
+        parcela,
+        jaLancado: null,
       });
     }
-    return itens;
+    return deFatura ? await this.marcarJaLancados(contexto, itens) : itens;
+  }
+
+  /**
+   * T-149: a linha da fatura ou do extrato que já foi lançada (o mesmo valor, data e cartão; na
+   * parcela, a mesma parcela do mesmo parcelamento) fica marcada: o cartão a confirmar avisa, e o
+   * [Confirmar todos] passa por ela.
+   */
+  private async marcarJaLancados(
+    contexto: Contexto,
+    itens: ItemImportacao[],
+  ): Promise<ItemImportacao[]> {
+    const datas = itens.map(({ data }) => data).sort();
+    const [de, ate] = [datas[0], datas.at(-1)];
+    if (de === undefined || ate === undefined) return itens;
+    const lancados = await this.transacoes.parecidas(contexto, {
+      valoresCentavos: itens.flatMap(({ valorCentavos, parcela }) =>
+        parcela ? [valorCentavos - 1, valorCentavos, valorCentavos + 1] : [valorCentavos],
+      ),
+      de,
+      ate,
+    });
+    const achados = acharJaLancados(
+      itens.map((item) => ({
+        tipo: item.tipo,
+        valorCentavos: item.valorCentavos,
+        data: item.data,
+        cartaoId: item.cartaoId,
+        noCredito: item.formaPagamento === 'cartao_credito',
+        parcela: item.parcela ?? null,
+      })),
+      lancados,
+    );
+    return itens.map((item, indice) => {
+      const achado = achados[indice];
+      return achado
+        ? {
+            ...item,
+            jaLancado: { transacaoId: achado.id, descricao: achado.descricao, data: achado.data },
+          }
+        : item;
+    });
   }
 
   /** O texto da Mony e um cartão por lançamento a confirmar, com [Confirmar todos] (RN-086). */
@@ -749,6 +836,7 @@ export class DocumentosMony {
     const doEmissor = resultado.estabelecimento ? ` de ${resultado.estabelecimento}` : '';
     const documento = `${NOME_DOCUMENTO[resultado.documento]}${doEmissor}`;
     const total = pendentes.reduce((soma, { item }) => soma + item.valorCentavos, 0);
+    const repetidos = pendentes.filter(({ item }) => item.jaLancado).length;
     const partes = [
       resultado.itens.length === 0
         ? `Li ${documento}, mas não achei nenhum lançamento.`
@@ -760,6 +848,13 @@ export class DocumentosMony {
     ];
     if (resultado.ignorados > 0) {
       partes.push(`${plural(resultado.ignorados, 'linha ficou', 'linhas ficaram')} de fora.`);
+    }
+    if (repetidos > 0) {
+      partes.push(
+        repetidos === 1
+          ? 'Um deles parece já estar lançado: confira antes de confirmar.'
+          : `${String(repetidos)} deles parecem já estar lançados: confira antes de confirmar.`,
+      );
     }
     if (resultado.aviso) partes.push(resultado.aviso);
     const botao = (
@@ -776,16 +871,18 @@ export class DocumentosMony {
         parcelamentoId: null,
         tipo: item.tipo,
         descricao: item.descricao,
-        valorCentavos: item.valorCentavos,
+        valorCentavos: valorDoLancamento(item),
         data: item.data,
         categoria: catalogo.categorias.find(({ id }) => id === item.categoriaId)?.nome ?? null,
         formaPagamento: item.formaPagamento,
         cartao: catalogo.cartoes.find(({ id }) => id === item.cartaoId)?.nome ?? null,
         parcelas: item.parcelas !== null && item.parcelas > 1 ? item.parcelas : null,
-        valorParcelaCentavos:
-          item.parcelas !== null && item.parcelas > 1
+        valorParcelaCentavos: item.parcela
+          ? item.valorCentavos
+          : item.parcelas !== null && item.parcelas > 1
             ? (parcelasSemJuros(item.valorCentavos, item.parcelas)[0]?.valorCentavos ?? null)
             : null,
+        aviso: avisoDoItem(item),
       },
       opcoes: [
         botao('confirmar', 'Confirmar', 'confirmar_importacao', indice),
@@ -857,7 +954,7 @@ function statusDe(itens: readonly ItemImportacao[]): StatusImportacao {
 /** A despesa para o rascunho (RN-080): o que falta vira pergunta; a origem fica `foto`. */
 function paraRascunho(item: ItemImportacao & { notaNfceId?: string | null }): DadosRascunho {
   return {
-    valorCentavos: item.valorCentavos,
+    valorCentavos: valorDoLancamento(item),
     descricao: item.descricao,
     data: item.data,
     ...(item.categoriaId === null ? {} : { categoriaId: item.categoriaId }),
@@ -867,6 +964,27 @@ function paraRascunho(item: ItemImportacao & { notaNfceId?: string | null }): Da
     deDocumento: true,
     ...(item.notaNfceId ? { notaNfceId: item.notaNfceId } : {}),
   };
+}
+
+/** O que confirmar lança: na parcela da fatura (T-149), a compra inteira. */
+function valorDoLancamento(item: ItemImportacao): number {
+  return item.parcela ? item.valorCentavos * item.parcela.total : item.valorCentavos;
+}
+
+/** "DD/MM" de uma data `AAAA-MM-DD`. */
+const diaMes = (data: string) => `${data.slice(8, 10)}/${data.slice(5, 7)}`;
+
+/** T-149: o aviso no cartão a confirmar: já lançado, ou a parcela que vira o parcelamento. */
+function avisoDoItem(item: ItemImportacao): string | null {
+  if (item.jaLancado) {
+    const { descricao, data } = item.jaLancado;
+    return `Parece que já está lançado: ${descricao}, ${diaMes(data)}. Confirme só se for outro.`;
+  }
+  if (item.parcela) {
+    const { atual, total } = item.parcela;
+    return `Parcela ${String(atual)} de ${String(total)}: confirmar lança a compra de ${diaMes(item.data)} em ${String(total)}x.`;
+  }
+  return null;
 }
 
 function estaCompleto(item: ItemImportacao): boolean {

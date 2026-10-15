@@ -48,6 +48,8 @@ interface Lido {
   formaPagamento?: string | null;
   cartao?: string | null;
   parcelas?: number | null;
+  parcelaAtual?: number | null;
+  parcelaTotal?: number | null;
   categoria?: string | null;
 }
 
@@ -66,6 +68,8 @@ function leitura(
       formaPagamento: null,
       cartao: null,
       parcelas: null,
+      parcelaAtual: null,
+      parcelaTotal: null,
       categoria: null,
       ...lido,
     })),
@@ -463,7 +467,7 @@ describe.runIf(ativo)('integração: foto, print e PDF na Mony', () => {
     expect(modelo.pedidos).toEqual([]);
   });
 
-  it('fatura em PDF: crédito no cartão achado pelo final, à vista, e o PDF vai como documento', async () => {
+  it('fatura em PDF: crédito no cartão achado pelo final, a parcela vira o parcelamento e o PDF vai como documento', async () => {
     const usuario = await usuarioNovo();
     const cartao = await chamar(usuario, 'POST', '/cartoes', {
       nome: 'Roxinho',
@@ -493,10 +497,13 @@ describe.runIf(ativo)('integração: foto, print e PDF na Mony', () => {
             categoria: 'Educação',
           },
           {
-            descricao: 'Loja X (parcela 2/10)',
+            descricao: 'Loja X',
             valorCentavos: 5_000,
             cartao: 'final 1234',
             categoria: 'Compras',
+            data: '2026-09-14',
+            parcelaAtual: 2,
+            parcelaTotal: 10,
           },
         ],
         { documento: 'fatura', estabelecimento: 'Roxinho' },
@@ -511,17 +518,44 @@ describe.runIf(ativo)('integração: foto, print e PDF na Mony', () => {
     expect(modelo.pedidos[0]?.mensagens[0]?.conteudo).toMatchObject([{ tipo: 'documento' }, {}]);
     expect(modelo.pedidos[0]?.sistema[1]).toContain('Roxinho (final 1234)');
     expect(componentes[0]).toMatchObject({
-      lancamento: { formaPagamento: 'cartao_credito', cartao: 'Roxinho', parcelas: null },
+      lancamento: {
+        formaPagamento: 'cartao_credito',
+        cartao: 'Roxinho',
+        parcelas: null,
+        aviso: null,
+      },
+    });
+    // T-149: a parcela 2/10 da fatura é a compra de 14/09 em 10x, e o cartão avisa.
+    expect(componentes[1]).toMatchObject({
+      lancamento: {
+        descricao: 'Loja X',
+        valorCentavos: 50_000,
+        data: '2026-09-14',
+        parcelas: 10,
+        valorParcelaCentavos: 5_000,
+        aviso: 'Parcela 2 de 10: confirmar lança a compra de 14/09 em 10x.',
+      },
     });
     const todos = (
       await tocar(usuario, opcao(componentes[2], 'confirmar-todos'))
     ).json<RespostaAcaoMony>();
-    expect(todos.texto).toBe(`Pronto! Anotei 2 lançamentos, ${formatarCentavos(13_990)} no total.`);
+    expect(todos.texto).toBe(`Pronto! Anotei 2 lançamentos, ${formatarCentavos(58_990)} no total.`);
+    const parcelamento = await prisma.parcelamento.findFirstOrThrow({
+      where: { usuarioId: usuario.usuarioId },
+      select: { nome: true, totalParcelas: true, valorTotal: true, dataInicio: true },
+    });
+    expect(parcelamento).toEqual({
+      nome: 'Loja X',
+      totalParcelas: 10,
+      valorTotal: 50_000n,
+      dataInicio: new Date('2026-09-14T00:00:00Z'),
+    });
     const gravadas = await prisma.transacao.findMany({
       where: { usuarioId: usuario.usuarioId },
       select: { origem: true, formaPagamento: true, cartaoId: true, faturaId: true },
     });
-    expect(gravadas).toHaveLength(2);
+    // A livraria e as 10 parcelas da Loja X.
+    expect(gravadas).toHaveLength(11);
     for (const gravada of gravadas) {
       expect(gravada).toMatchObject({
         origem: 'foto',
@@ -537,6 +571,104 @@ describe.runIf(ativo)('integração: foto, print e PDF na Mony', () => {
         })
       ).tipo,
     ).toBe('pdf');
+  });
+
+  it('RN-083 T-149 fatura: o que já está lançado fica marcado, e o [Confirmar todos] passa por ele', async () => {
+    const usuario = await usuarioNovo();
+    const cartao = await chamar(usuario, 'POST', '/cartoes', {
+      nome: 'Roxinho',
+      bandeira: 'mastercard',
+      final: '1234',
+      limiteTotalCentavos: 500_000,
+      diaFechamento: 3,
+      diaVencimento: 10,
+      cor: '#820AD1',
+    });
+    expect(cartao.statusCode, cartao.body).toBe(201);
+    const cartaoId = cartao.json<{ id: string }>().id;
+    const categorias = await chamar(usuario, 'GET', '/categorias');
+    const compras = categorias
+      .json<{ itens: { id: string; nome: string }[] }>()
+      .itens.find(({ nome }) => nome === 'Compras');
+    if (!compras) throw new Error('sem a categoria Compras');
+    // Já lançados à mão: a livraria e a compra da Loja Y em 3x (a parcela 2 é de 100,00).
+    const livraria = await chamar(usuario, 'POST', '/transacoes', {
+      tipo: 'despesa',
+      descricao: 'Livraria Letra',
+      valorCentavos: 8_990,
+      data: '2026-10-02',
+      categoriaId: compras.id,
+      formaPagamento: 'cartao_credito',
+      cartaoId,
+    });
+    expect(livraria.statusCode, livraria.body).toBe(201);
+    const lojaY = await chamar(usuario, 'POST', '/parcelamentos', {
+      tipo: 'compra_cartao',
+      nome: 'Loja Y',
+      valorCentavos: 30_000,
+      totalParcelas: 3,
+      dataInicio: '2026-09-02',
+      categoriaId: compras.id,
+      cartaoId,
+    });
+    expect(lojaY.statusCode, lojaY.body).toBe(201);
+    const antes = (await transacoesDo(usuario.usuarioId)).length;
+
+    lerComo(
+      leitura(
+        [
+          { descricao: 'LIVRARIA LETRA', valorCentavos: 8_990, data: '2026-10-02' },
+          {
+            descricao: 'LOJA Y',
+            valorCentavos: 10_000,
+            data: '2026-09-02',
+            parcelaAtual: 2,
+            parcelaTotal: 3,
+          },
+          { descricao: 'Padaria Sol', valorCentavos: 1_500, data: '2026-10-05' },
+          // Uma segunda compra igual à da livraria, no mesmo dia: só uma está lançada.
+          { descricao: 'LIVRARIA LETRA', valorCentavos: 8_990, data: '2026-10-02' },
+        ].map((lido) => ({ ...lido, cartao: 'final 1234', categoria: 'Compras' })),
+        { documento: 'fatura', estabelecimento: 'Roxinho' },
+      ),
+    );
+    const { componentes, texto } = await conversar(
+      usuario,
+      await arquivo(usuario, { tipo: 'pdf', tipoConteudo: 'application/pdf' }),
+    );
+
+    expect(texto).toContain('2 deles parecem já estar lançados: confira antes de confirmar.');
+    const [livrariaLida, lojaYLida, padaria, segundaLivraria, todos] = componentes;
+    expect(livrariaLida).toMatchObject({
+      lancamento: {
+        aviso: 'Parece que já está lançado: Livraria Letra, 02/10. Confirme só se for outro.',
+      },
+    });
+    expect(lojaYLida).toMatchObject({
+      lancamento: {
+        aviso: 'Parece que já está lançado: Loja Y (2/3), 02/10. Confirme só se for outro.',
+      },
+    });
+    expect(padaria).toMatchObject({ lancamento: { aviso: null } });
+    expect(segundaLivraria).toMatchObject({ lancamento: { aviso: null } });
+
+    const resposta = (
+      await tocar(usuario, opcao(todos, 'confirmar-todos'))
+    ).json<RespostaAcaoMony>();
+    expect(resposta.texto).toBe(
+      `Pronto! Anotei 2 lançamentos, ${formatarCentavos(10_490)} no total. Deixei de fora 2 que parecem já estar lançados: se for outro, toque em Confirmar nele.`,
+    );
+    expect(await transacoesDo(usuario.usuarioId)).toHaveLength(antes + 2);
+
+    // Era outra compra: o [Confirmar] dele grava mesmo assim.
+    const outra = await tocar(usuario, opcao(livrariaLida, 'confirmar'));
+    expect(outra.statusCode, outra.body).toBe(200);
+    expect(await transacoesDo(usuario.usuarioId)).toHaveLength(antes + 3);
+    expect((await tocar(usuario, opcao(lojaYLida, 'descartar'))).statusCode).toBe(200);
+    const importacao = await prisma.importacaoDocumento.findFirstOrThrow({
+      where: { usuarioId: usuario.usuarioId },
+    });
+    expect(importacao.status).toBe('confirmada');
   });
 
   it('leitura que falha tenta de novo e, com a mesma chave, lê de novo; depois não lê mais', async () => {

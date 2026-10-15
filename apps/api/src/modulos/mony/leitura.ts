@@ -57,6 +57,22 @@ export const esquemaLancamentoLido = z.object({
     .max(MAXIMO_PARCELAS)
     .nullable()
     .describe('No crédito: 1 se diz à vista, N se diz parcelado em N; senão null'),
+  parcelaAtual: z
+    .number()
+    .int()
+    .min(1)
+    .max(MAXIMO_PARCELAS)
+    .nullable()
+    .describe('Parcela de compra na fatura ("02/10"): a parcela desta fatura (2); senão null'),
+  parcelaTotal: z
+    .number()
+    .int()
+    .min(2)
+    .max(MAXIMO_PARCELAS)
+    .nullable()
+    .describe(
+      'Parcela de compra na fatura ("02/10"): quantas parcelas a compra tem (10); senão null',
+    ),
   categoria: z
     .string()
     .trim()
@@ -83,6 +99,35 @@ export const esquemaLeitura = z.object({
 });
 
 export type LancamentoLido = z.infer<typeof esquemaLancamentoLido>;
+
+/**
+ * "(parcela 2/10)" ou "parc 02/10" no fim da descrição. Sem a palavra, "02/10" pode ser uma data.
+ */
+const PARCELA_NA_DESCRICAO =
+  /\s*\(?\s*parc(?:ela)?\.?\s*(\d{1,2})\s*(?:\/|de)\s*(\d{1,2})\s*\)?\s*$/i;
+
+/** A parcela de uma compra parcelada lida na fatura, e a descrição sem ela. */
+export interface ParcelaLida {
+  atual: number;
+  total: number;
+  descricao: string;
+}
+
+/**
+ * T-149: a parcela da compra ("02/10"), pelos campos do modelo ou, se ele a deixou só na descrição,
+ * pelo fim da descrição. `null` quando não é parcela (ou os números não fazem sentido).
+ */
+export function parcelaDoLancamento(lido: LancamentoLido): ParcelaLida | null {
+  const naDescricao = PARCELA_NA_DESCRICAO.exec(lido.descricao);
+  const descricao = naDescricao
+    ? lido.descricao.slice(0, naDescricao.index).trim()
+    : lido.descricao;
+  const atual = lido.parcelaAtual ?? (naDescricao ? Number(naDescricao[1]) : null);
+  const total = lido.parcelaTotal ?? (naDescricao ? Number(naDescricao[2]) : null);
+  if (atual === null || total === null) return null;
+  if (total < 2 || total > MAXIMO_PARCELAS || atual < 1 || atual > total) return null;
+  return { atual, total, descricao: descricao === '' ? lido.descricao : descricao };
+}
 
 /** A leitura validada: os itens inválidos saem, e quantos saíram. */
 export interface Leitura {

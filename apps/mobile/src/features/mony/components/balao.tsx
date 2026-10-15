@@ -126,7 +126,10 @@ const COR_DA_FAIXA: Record<FaixaOrcamento, CorTexto> = {
   estourado: 'perigo',
 };
 
-/** O que a Mony gravou (RN-082): valor, descrição, categoria, data e forma, com o [Desfazer]. */
+/**
+ * O que a Mony gravou (RN-082): valor, descrição, categoria, data e forma, com o [Desfazer]. No lido
+ * a confirmar, o aviso da API (T-149): parece já lançado, ou a parcela que vira o parcelamento.
+ */
 function CartaoResumo({
   lancamento,
   aConfirmar,
@@ -182,6 +185,11 @@ function CartaoResumo({
       <Texto variante="corpo-sm" cor="suave">
         {[categoria, dataCurta(lancamento.data), forma].filter(Boolean).join(' · ')}
       </Texto>
+      {lancamento.aviso ? (
+        <Texto variante="corpo-sm" cor="atencao" testID="mony-aviso">
+          {lancamento.aviso}
+        </Texto>
+      ) : null}
       {impacto ? (
         <Texto variante="corpo-sm" cor={COR_DA_FAIXA[faixa]} testID="mony-impacto">
           {impacto.comentario}

@@ -68,6 +68,8 @@ export type PaginaConversaDtoItensItemComponentesItem =
           } | null;
           comentario: string;
         } | null;
+        /** @nullable */
+        aviso?: string | null;
       };
       opcoes: {
         id: string;
