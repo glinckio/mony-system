@@ -85,8 +85,12 @@ function api(post: () => Promise<Response>, put?: (corpo: unknown) => Promise<Re
   return enviados;
 }
 
+/**
+ * O primeiro teste do arquivo paga o carregamento da rota (código dividido por rota); no CI isso já
+ * passou dos 5 s padrão, então a espera pelo cartão vai até 15 s (o teste tem 20 s).
+ */
 async function cartao(nome: string): Promise<HTMLElement> {
-  const titulo = await screen.findByRole('heading', { name: nome });
+  const titulo = await screen.findByRole('heading', { name: nome }, { timeout: 15_000 });
   const achado = titulo.closest<HTMLElement>('[data-slot="card"]');
   if (!achado) throw new Error(`Cartão ${nome} não encontrado`);
   return achado;
