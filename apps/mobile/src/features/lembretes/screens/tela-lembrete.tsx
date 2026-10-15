@@ -6,10 +6,29 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 
+import { BotaoSair } from '@/features/compartilhamentos/components/botao-sair';
+import { FolhaCompartilhar } from '@/features/compartilhamentos/components/folha-compartilhar';
+import { PessoasDoRecurso } from '@/features/compartilhamentos/components/pessoas-do-recurso';
+import { useCompartilhamentos } from '@/features/compartilhamentos/hooks/use-compartilhamentos';
+import {
+  enviadosDoRecurso,
+  nomesDasPessoas,
+} from '@/features/compartilhamentos/lib/compartilhamentos';
 import { dataParaTexto } from '@/features/transacoes/lib/periodo';
 import { mensagemDeErro } from '@/lib/formularios';
 import { useFusoDoUsuario } from '@/lib/fuso';
-import { Botao, Cabecalho, Card, Erro, Etiqueta, Folha, Skeleton, Tela, Texto } from '@/ui';
+import {
+  Botao,
+  BotaoIcone,
+  Cabecalho,
+  Card,
+  Erro,
+  Etiqueta,
+  Folha,
+  Skeleton,
+  Tela,
+  Texto,
+} from '@/ui';
 
 import {
   useAdiarLembrete,
@@ -41,6 +60,9 @@ function Linha({ rotulo, valor }: { rotulo: string; valor: string }) {
  * O lembrete (`/lembretes/<id>`, também aberto pela notificação): quando toca, a repetição e os
  * canais. Daqui ele fica feito ([Feito]; na repetição, pula para a próxima), é adiado (10 min,
  * 1 h ou amanhã, RN-076), editado ou excluído. O feito pode ser lembrado de novo (com data nova).
+ *
+ * Compartilhado (RN-074, T-124d): só o dono edita, exclui e convida; com `editar`, quem recebeu dá
+ * o [Feito] e adia; com `ver`, só vê. Quem recebeu pode sair do lembrete.
  */
 export default function TelaLembrete() {
   const { t } = useTranslation();
@@ -55,6 +77,8 @@ export default function TelaLembrete() {
   const semana = t('comum.semana', { returnObjects: true });
   const [adiando, definirAdiando] = useState(false);
   const [excluindo, definirExcluindo] = useState(false);
+  const [compartilhando, definirCompartilhando] = useState(false);
+  const compartilhamentos = useCompartilhamentos();
   const lembrete = consulta.data;
 
   function voltar() {
@@ -79,6 +103,9 @@ export default function TelaLembrete() {
   }
 
   const ativo = lembrete.status === 'ativo';
+  const ehDono = lembrete.acesso === 'dono';
+  const podeAgir = lembrete.acesso !== 'ver';
+  const enviados = ehDono ? enviadosDoRecurso(compartilhamentos.data, 'lembrete', id) : [];
   const { data, hora } = momentoLocal(lembrete.dataHora, fuso);
   const quando = t('lembretes.detalhe.dataHora', {
     dia: semana[diaDaSemana(data)] ?? '',
@@ -93,7 +120,22 @@ export default function TelaLembrete() {
 
   return (
     <Tela className="gap-4 px-4 pt-2">
-      <Cabecalho titulo={t('lembretes.titulo')} aoVoltar={voltar} />
+      <Cabecalho
+        titulo={t('lembretes.titulo')}
+        aoVoltar={voltar}
+        acao={
+          ehDono ? (
+            <BotaoIcone
+              icone="user-plus"
+              comFundo
+              rotulo={t('compartilhamentos.compartilhar')}
+              aoPressionar={() => {
+                definirCompartilhando(true);
+              }}
+            />
+          ) : undefined
+        }
+      />
       <ScrollView contentContainerClassName="gap-4 pb-8">
         <Card className="gap-4">
           <View className="flex-row items-start gap-3">
@@ -123,6 +165,20 @@ export default function TelaLembrete() {
           {lembrete.pendente ? (
             <Texto cor="atencao">{t('lembretes.detalhe.pendente')}</Texto>
           ) : null}
+          <PessoasDoRecurso
+            recurso="lembrete"
+            acesso={lembrete.acesso}
+            dono={lembrete.dono}
+            quantidade={lembrete.compartilhadoCom}
+            nomes={nomesDasPessoas(lembrete.dono, enviados)}
+            aoPressionar={
+              ehDono
+                ? () => {
+                    definirCompartilhando(true);
+                  }
+                : undefined
+            }
+          />
         </Card>
 
         {erro ? (
@@ -130,7 +186,7 @@ export default function TelaLembrete() {
             {mensagemDeErro(erro, t('lembretes.semConexao'))}
           </Texto>
         ) : null}
-        {ativo ? (
+        {ativo && podeAgir ? (
           <>
             <Botao
               titulo={t('lembretes.detalhe.feito')}
@@ -151,27 +207,50 @@ export default function TelaLembrete() {
                 definirAdiando(true);
               }}
             />
-            <Botao
-              variante="secundaria"
-              titulo={t('lembretes.detalhe.editar')}
-              larguraTotal
-              aoPressionar={editar}
-            />
           </>
+        ) : null}
+        {!ehDono ? null : ativo ? (
+          <Botao
+            variante="secundaria"
+            titulo={t('lembretes.detalhe.editar')}
+            larguraTotal
+            aoPressionar={editar}
+          />
         ) : (
           <Botao titulo={t('lembretes.detalhe.lembrarDeNovo')} larguraTotal aoPressionar={editar} />
         )}
-        <Botao
-          variante="perigo"
-          icone="trash"
-          titulo={t('lembretes.detalhe.excluir')}
-          larguraTotal
-          aoPressionar={() => {
-            excluir.reset();
-            definirExcluindo(true);
+        {ehDono ? (
+          <Botao
+            variante="perigo"
+            icone="trash"
+            titulo={t('lembretes.detalhe.excluir')}
+            larguraTotal
+            aoPressionar={() => {
+              excluir.reset();
+              definirExcluindo(true);
+            }}
+          />
+        ) : lembrete.dono === null ? null : (
+          <BotaoSair
+            recurso="lembrete"
+            recursoId={id}
+            donoNome={lembrete.dono.nome}
+            aoSair={() => {
+              router.dismissTo('/lembretes');
+            }}
+          />
+        )}
+      </ScrollView>
+      {ehDono ? (
+        <FolhaCompartilhar
+          recurso="lembrete"
+          recursoId={id}
+          visivel={compartilhando}
+          aoFechar={() => {
+            definirCompartilhando(false);
           }}
         />
-      </ScrollView>
+      ) : null}
 
       <Folha
         visivel={adiando}

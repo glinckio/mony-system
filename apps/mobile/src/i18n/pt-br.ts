@@ -4,6 +4,7 @@ import { textosAtualizacao } from '@/features/atualizacao/atualizacao.strings';
 import { textosAuth } from '@/features/auth/auth.strings';
 import { textosCartoes } from '@/features/cartoes/cartoes.strings';
 import { textosCategorias } from '@/features/categorias/categorias.strings';
+import { textosCompartilhamentos } from '@/features/compartilhamentos/compartilhamentos.strings';
 import { textosContas } from '@/features/contas/contas.strings';
 import { textosInicio } from '@/features/inicio/inicio.strings';
 import { textosLembretes } from '@/features/lembretes/lembretes.strings';
@@ -42,6 +43,7 @@ export const textosPtBr = {
   metas: textosMetas,
   lembretes: textosLembretes,
   listas: textosListas,
+  compartilhamentos: textosCompartilhamentos,
   relatorios: textosRelatorios,
   planos: textosPlanos,
 };

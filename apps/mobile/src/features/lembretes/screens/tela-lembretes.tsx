@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RefreshControl, ScrollView, View } from 'react-native';
 
+import { ConvitesRecebidos } from '@/features/compartilhamentos/components/convites-recebidos';
+import { useCompartilhamentos } from '@/features/compartilhamentos/hooks/use-compartilhamentos';
 import { useFusoDoUsuario, useHoje } from '@/lib/fuso';
 import {
   BotaoIcone,
@@ -47,7 +49,8 @@ function DicaDoChat() {
 /**
  * Lembretes (design, página 6; RN-075): Próximos (os que tocaram e esperam o [Feito], hoje,
  * amanhã e os próximos dias), Recorrentes e Feitos. Tocar abre o lembrete; o "+" cria um novo.
- * O calendário do design (a agenda) entra com a T-085.
+ * No topo, os convites para lembretes de outras pessoas (RN-074). O calendário do design (a
+ * agenda) entra com a T-085.
  */
 export default function TelaLembretes() {
   const { t } = useTranslation();
@@ -58,6 +61,7 @@ export default function TelaLembretes() {
   const ativos = useLembretes('ativo');
   const feitos = useLembretes('concluido', aba === 'feitos');
   const consulta = aba === 'feitos' ? feitos : ativos;
+  const compartilhamentos = useCompartilhamentos();
 
   function novo() {
     router.push('/lembretes/novo');
@@ -148,10 +152,12 @@ export default function TelaLembretes() {
             tintColor={cores.texto}
             onRefresh={() => {
               void consulta.refetch();
+              void compartilhamentos.refetch();
             }}
           />
         }
       >
+        {aba === 'feitos' ? null : <ConvitesRecebidos recurso="lembrete" />}
         {conteudo()}
         {aba === 'feitos' ? null : <DicaDoChat />}
       </ScrollView>
