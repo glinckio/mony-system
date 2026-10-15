@@ -442,6 +442,66 @@
         ]
       }
     },
+    "/v1/admin/planos/precos": {
+      "get": {
+        "operationId": "precosAdminPlanos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "O preço vigente de cada plano e o histórico, com data e autor (RN-129).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrecosAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "operationId": "alterarAdminPlanos",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovoPrecoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Valor novo de um plano: cria um preço novo na Stripe, que passa a ser o vendido. Quem já assina fica no preço antigo (RN-129).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrecosAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/v1/me": {
       "get": {
         "operationId": "perfilUsuarios",
@@ -4968,6 +5028,162 @@
           "id",
           "nome",
           "email"
+        ]
+      },
+      "PrecosAdminDto": {
+        "type": "object",
+        "properties": {
+          "vigentes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "plano": {
+                  "type": "string",
+                  "enum": [
+                    "mensal",
+                    "anual"
+                  ]
+                },
+                "valorCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "vigente": {
+                  "type": "boolean"
+                },
+                "vigenteDesde": {
+                  "type": "string"
+                },
+                "alteradoPor": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "nome": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "plano",
+                "valorCentavos",
+                "vigente",
+                "vigenteDesde",
+                "alteradoPor"
+              ]
+            }
+          },
+          "historico": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "plano": {
+                  "type": "string",
+                  "enum": [
+                    "mensal",
+                    "anual"
+                  ]
+                },
+                "valorCentavos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "vigente": {
+                  "type": "boolean"
+                },
+                "vigenteDesde": {
+                  "type": "string"
+                },
+                "alteradoPor": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                        },
+                        "nome": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "plano",
+                "valorCentavos",
+                "vigente",
+                "vigenteDesde",
+                "alteradoPor"
+              ]
+            }
+          }
+        },
+        "required": [
+          "vigentes",
+          "historico"
+        ]
+      },
+      "NovoPrecoDto": {
+        "type": "object",
+        "properties": {
+          "plano": {
+            "type": "string",
+            "enum": [
+              "mensal",
+              "anual"
+            ]
+          },
+          "valorCentavos": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 1000000
+          }
+        },
+        "required": [
+          "plano",
+          "valorCentavos"
         ]
       },
       "PerfilDto": {

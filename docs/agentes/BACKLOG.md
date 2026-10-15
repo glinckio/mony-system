@@ -260,7 +260,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-104** Admin: preços (novo Price na Stripe), limites, duração do teste, cupons, histórico. Dividida em T-104a a T-104d: o painel ainda não tinha login.
 - [x] **T-104a** Login do painel admin: e-mail e senha de quem tem papel `admin`, 2FA TOTP obrigatório (configurado no primeiro acesso), sessão curta, `@Admin()` na API, auditoria das entradas e um comando para promover o primeiro admin (PR #94)
   - dep: T-012 · docs: 11, 13
-- [ ] **T-104b** Admin: preços do mensal e do anual (novo Price na Stripe, só para novas assinaturas) e histórico com data e autor
+- [x] **T-104b** Admin: preços do mensal e do anual (novo Price na Stripe, só para novas assinaturas) e histórico com data e autor (PR #95)
   - dep: T-104a, T-102 · RN-129 · docs: 13
 - [ ] **T-104c** Admin: limites do plano gratuito e duração do teste grátis
   - dep: T-104a · RN-120, RN-124 · docs: 13

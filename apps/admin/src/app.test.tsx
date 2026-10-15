@@ -85,10 +85,10 @@ describe('painel admin', () => {
     vi.stubGlobal('fetch', respostaDaApi(200, { status: 'ok' }));
     const { roteador } = abrir('/');
     const menu = await screen.findByRole('navigation', { name: 'Seções do painel' });
-    await userEvent.click(within(menu).getByRole('link', { name: 'Planos e preços' }));
-    expect(await screen.findByRole('heading', { name: 'Planos e preços' })).toBeInTheDocument();
-    expect(roteador.state.location.pathname).toBe('/planos');
-    expect(within(menu).getByRole('link', { name: 'Planos e preços' })).toHaveAttribute(
+    await userEvent.click(within(menu).getByRole('link', { name: 'Usuários' }));
+    expect(await screen.findByRole('heading', { name: 'Usuários' })).toBeInTheDocument();
+    expect(roteador.state.location.pathname).toBe('/usuarios');
+    expect(within(menu).getByRole('link', { name: 'Usuários' })).toHaveAttribute(
       'data-status',
       'active',
     );
