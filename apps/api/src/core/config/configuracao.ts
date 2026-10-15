@@ -91,6 +91,25 @@ export class Configuracao {
     return this.config.get('INFOSIMPLES_TOKEN', { infer: true });
   }
 
+  get provedorCobranca(): Ambiente['COBRANCA_PROVEDOR'] {
+    return this.config.get('COBRANCA_PROVEDOR', { infer: true });
+  }
+
+  /** Chave secreta da Stripe; obrigatória com `COBRANCA_PROVEDOR=stripe`. */
+  get chaveSecretaStripe(): string | undefined {
+    return this.config.get('STRIPE_CHAVE_SECRETA', { infer: true });
+  }
+
+  /** Segredo de assinatura do webhook da Stripe (`whsec_…`); obrigatório com a Stripe. */
+  get segredoWebhookStripe(): string | undefined {
+    return this.config.get('STRIPE_SEGREDO_WEBHOOK', { infer: true });
+  }
+
+  /** Endereço público da API, sem barra no fim. */
+  get urlPublicaApi(): string {
+    return this.config.get('API_URL_PUBLICA', { infer: true }).replace(/\/+$/, '');
+  }
+
   get provedorPush(): Ambiente['PUSH_PROVEDOR'] {
     return this.config.get('PUSH_PROVEDOR', { infer: true });
   }

@@ -4151,6 +4151,120 @@
           "dashboard"
         ]
       }
+    },
+    "/v1/planos": {
+      "get": {
+        "operationId": "planosPlanos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Os preços vigentes (RN-129).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanosAVendaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "assinatura"
+        ]
+      }
+    },
+    "/v1/assinatura": {
+      "get": {
+        "operationId": "situacaoAssinaturas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "O plano que vale agora e a assinatura paga. Depois do checkout, o app consulta aqui (RN-128).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SituacaoAssinaturaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "assinatura"
+        ]
+      }
+    },
+    "/v1/assinatura/checkout": {
+      "post": {
+        "operationId": "checkoutAssinaturas",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoCheckoutDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A página de pagamento da Stripe, para abrir no navegador do app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkCobrancaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "assinatura"
+        ]
+      }
+    },
+    "/v1/assinatura/portal": {
+      "post": {
+        "operationId": "portalAssinaturas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "O portal da Stripe: trocar plano, forma de pagamento e cancelar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkCobrancaDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "assinatura"
+        ]
+      }
     }
   },
   "info": {
@@ -14256,6 +14370,141 @@
           "orcamentos",
           "onboarding",
           "notificacoesNaoLidas"
+        ]
+      },
+      "PlanosAVendaDto": {
+        "type": "object",
+        "properties": {
+          "planos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "plano": {
+                  "type": "string",
+                  "enum": [
+                    "mensal",
+                    "anual"
+                  ]
+                },
+                "valorCentavos": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "plano",
+                "valorCentavos"
+              ]
+            }
+          }
+        },
+        "required": [
+          "planos"
+        ]
+      },
+      "SituacaoAssinaturaDto": {
+        "type": "object",
+        "properties": {
+          "plano": {
+            "type": "string",
+            "enum": [
+              "teste",
+              "gratuito",
+              "mensal",
+              "anual"
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ativa",
+                  "inadimplente",
+                  "cancelada"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "valorCentavos": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "proximaCobranca": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cancelamentoAgendado": {
+            "type": "boolean"
+          },
+          "testeFim": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gerenciavel": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "plano",
+          "status",
+          "valorCentavos",
+          "proximaCobranca",
+          "cancelamentoAgendado",
+          "testeFim",
+          "gerenciavel"
+        ]
+      },
+      "PedidoCheckoutDto": {
+        "type": "object",
+        "properties": {
+          "plano": {
+            "type": "string",
+            "enum": [
+              "mensal",
+              "anual"
+            ]
+          }
+        },
+        "required": [
+          "plano"
+        ]
+      },
+      "LinkCobrancaDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "url"
         ]
       }
     }
