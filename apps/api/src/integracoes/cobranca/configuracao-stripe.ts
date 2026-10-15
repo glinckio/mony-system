@@ -130,6 +130,30 @@ async function webhook(
 }
 
 /**
+ * Valor novo de um plano pelo painel (T-104b): cria o preço com o `lookup_key` (o antigo continua
+ * ativo para quem já assina, RN-129) e põe o preço novo no portal, ao lado do vigente do outro
+ * plano, para a troca entre mensal e anual oferecer o valor atual.
+ */
+export async function criarPrecoVigente(
+  stripe: Stripe,
+  plano: PlanoPago,
+  valorCentavos: number,
+): Promise<string> {
+  const produtoId = await produto(stripe);
+  const novo = await preco(stripe, produtoId, plano, valorCentavos);
+  const outro: PlanoPago = plano === 'mensal' ? 'anual' : 'mensal';
+  const doOutro = (await stripe.prices.list({ lookup_keys: [CHAVE_DO_PRECO[outro]], active: true }))
+    .data[0];
+  const precos = plano === 'mensal' ? [novo.id, doOutro?.id] : [doOutro?.id, novo.id];
+  await portal(
+    stripe,
+    produtoId,
+    precos.filter((id): id is string => id !== undefined),
+  );
+  return novo.id;
+}
+
+/**
  * Deixa a conta da Stripe pronta para o Mony (T-102) e grava os preços em `planos_precos`. Pode
  * rodar de novo: reaproveita o produto, os preços de mesmo valor, o portal e o webhook.
  */

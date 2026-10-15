@@ -33,6 +33,12 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 - Papéis **(decisão técnica)**: `admin` (tudo), `suporte` (usuários e assinaturas em leitura, estender teste), `financeiro` (planos, preços, cupons, métricas). Começar só com `admin` e deixar o papel no token.
 - Toda ação e toda visualização de dados de usuário gravam em `auditoria` (quem, o quê, antes/depois, IP).
 
+## Planos e preços (T-104b)
+
+- O cartão de cada plano mostra o valor de hoje e um campo para o valor novo (de R$ 1,00 a R$ 10.000,00). Antes de salvar, o painel confirma: "passa de X para Y para quem assinar daqui em diante; quem já assina continua pagando X" (RN-129).
+- `POST /admin/planos/precos` (`plano`, `valorCentavos`) cria o preço na Stripe com o `lookup_key` do plano e o põe no portal do cliente ao lado do vigente do outro plano. Depois marca o preço novo como o único vigente em `planos_precos`, com `alterado_por`, e grava `plano.preco_alterado` em `auditoria` com o antes e o depois. O mesmo valor de hoje não cria nada. Sem a Stripe no ambiente (`COBRANCA_PROVEDOR=fake` em produção), responde 503.
+- `GET /admin/planos/precos` devolve os vigentes e os 50 últimos preços, com data e autor. "Configuração inicial" é o preço gravado pelo `cobranca:configurar`.
+
 ## Telas (do PDF)
 
 | Seção | Funções |

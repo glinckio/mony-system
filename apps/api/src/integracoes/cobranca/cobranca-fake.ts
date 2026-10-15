@@ -74,6 +74,10 @@ export class CobrancaFake extends CobrancaProvider {
     return this.responder(() => ({ url: pedido.urlRetorno }));
   }
 
+  criarPreco(pedido: { plano: string }): Promise<string> {
+    return this.responder(() => `price_fake_${pedido.plano}_${randomUUID()}`);
+  }
+
   buscarAssinatura(id: string): Promise<AssinaturaExterna | null> {
     return this.responder(() => this.assinaturas.get(id) ?? null);
   }

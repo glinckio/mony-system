@@ -32,6 +32,9 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'jsdom',
       setupFiles: ['./src/testes/preparar.ts'],
+      // No CI, a primeira página de cada arquivo transforma as rotas sob demanda (code splitting) com
+      // os outros pacotes rodando ao lado, e passou dos 5 s padrão.
+      testTimeout: 20_000,
     },
   };
 });

@@ -1,3 +1,4 @@
+import type { PlanoPago } from '@mony/shared/enums';
 import Stripe from 'stripe';
 
 import {
@@ -6,6 +7,7 @@ import {
   ErroAssinaturaWebhook,
   type EventoCobranca,
 } from './cobranca.provider';
+import { criarPrecoVigente } from './configuracao-stripe';
 import { assinaturaDaStripe, eventoDaStripe } from './traducao-stripe';
 
 /** Tempo máximo de cada chamada à Stripe; o app espera a resposta do checkout. */
@@ -74,6 +76,10 @@ export class CobrancaStripe extends CobrancaProvider {
       locale: 'pt-BR',
     });
     return { url: sessao.url };
+  }
+
+  criarPreco(pedido: { plano: PlanoPago; valorCentavos: number }): Promise<string> {
+    return criarPrecoVigente(this.stripe, pedido.plano, pedido.valorCentavos);
   }
 
   async buscarAssinatura(id: string): Promise<AssinaturaExterna | null> {

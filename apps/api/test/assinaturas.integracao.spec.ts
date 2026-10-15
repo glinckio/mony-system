@@ -393,4 +393,106 @@ describe.runIf(ativo)('integração: assinaturas pela Stripe', () => {
     });
     expect(await notificacoes(usuario)).toEqual([]);
   });
+
+  it('RN-129 preço novo no admin vale para quem assina depois; quem já assina fica no antigo', async () => {
+    // Já assina no mensal de R$ 19,90.
+    const antigo = await usuarioNovo();
+    const assinaturaId = `sub_${randomUUID()}`;
+    definirAssinatura({ id: assinaturaId, clienteId: await assinar(antigo) });
+    await eventoDaAssinatura('customer.subscription.created', assinaturaId);
+    const precoAntigo = await prisma.planoPreco.findUniqueOrThrow({
+      where: { stripePriceId: precos.mensal },
+    });
+
+    const admin = await usuarioNovo();
+    await prisma.usuario.update({ where: { id: admin.usuarioId }, data: { papel: 'admin' } });
+    const { token } = await app
+      .get(TokensAcesso)
+      .emitirAdmin(admin.usuarioId, randomUUID(), Math.floor(Date.parse(AGORA) / 1000));
+    const doPainel = (method: 'GET' | 'POST', payload?: object) =>
+      app.inject({
+        method,
+        url: '/v1/admin/planos/precos',
+        headers: { authorization: `Bearer ${token}` },
+        ...(payload === undefined ? {} : { payload }),
+      });
+
+    // O token do app não mexe em preço.
+    expect((await chamar(admin, 'POST', '/admin/planos/precos', {})).statusCode).toBe(403);
+    expect((await doPainel('POST', { plano: 'mensal', valorCentavos: 50 })).statusCode).toBe(400);
+
+    const alterado = await doPainel('POST', { plano: 'mensal', valorCentavos: 2490 });
+    expect(alterado.statusCode).toBe(200);
+    const tabela = alterado.json<{
+      vigentes: { plano: string; valorCentavos: number; alteradoPor: { nome: string } | null }[];
+      historico: { id: string; vigente: boolean }[];
+    }>();
+    expect(tabela.vigentes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          plano: 'mensal',
+          valorCentavos: 2490,
+          vigenteDesde: '2026-10-15T15:00:00.000Z',
+          alteradoPor: { id: admin.usuarioId, nome: 'Ana Souza' },
+        }),
+        expect.objectContaining({ plano: 'anual', valorCentavos: 19900 }),
+      ]),
+    );
+    expect(tabela.vigentes).toHaveLength(2);
+    expect(tabela.historico).toContainEqual(
+      expect.objectContaining({ id: precoAntigo.id, vigente: false }),
+    );
+    const novo = await prisma.planoPreco.findFirstOrThrow({
+      where: { plano: 'mensal', vigente: true },
+    });
+    expect(novo.stripePriceId).toMatch(/^price_fake_mensal_/);
+
+    // O mesmo valor de novo não cria outro preço.
+    const repetido = await doPainel('POST', { plano: 'mensal', valorCentavos: 2490 });
+    expect(repetido.json<{ historico: unknown[] }>().historico).toHaveLength(
+      tabela.historico.length,
+    );
+    expect((await doPainel('GET')).json()).toEqual(tabela);
+
+    // Quem assina agora paga o novo; quem já assinava continua no antigo.
+    expect((await chamar(await usuarioNovo(), 'GET', '/planos')).json()).toEqual({
+      planos: [
+        { plano: 'mensal', valorCentavos: 2490 },
+        { plano: 'anual', valorCentavos: 19900 },
+      ],
+    });
+    const depois = await usuarioNovo();
+    await assinar(depois);
+    expect(cobranca.checkouts.at(-1)).toMatchObject({
+      usuarioId: depois.usuarioId,
+      precoId: novo.stripePriceId,
+    });
+    expect(
+      await prisma.assinatura.findUniqueOrThrow({ where: { usuarioId: antigo.usuarioId } }),
+    ).toMatchObject({ planoPrecoId: precoAntigo.id });
+    expect((await chamar(antigo, 'GET', '/assinatura')).json()).toMatchObject({
+      plano: 'mensal',
+      valorCentavos: 1990,
+    });
+
+    // Histórico com data e autor, e a auditoria com o antes e o depois.
+    expect(
+      await prisma.registroAuditoria.findMany({
+        where: { usuarioId: admin.usuarioId, acao: 'plano.preco_alterado' },
+        select: { entidade: true, entidadeId: true, antes: true, depois: true },
+      }),
+    ).toEqual([
+      {
+        entidade: 'plano_preco',
+        entidadeId: novo.id,
+        antes: { plano: 'mensal', id: precoAntigo.id, valorCentavos: 1990 },
+        depois: {
+          plano: 'mensal',
+          id: novo.id,
+          valorCentavos: 2490,
+          stripePriceId: novo.stripePriceId,
+        },
+      },
+    ]);
+  });
 });
