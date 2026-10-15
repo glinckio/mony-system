@@ -11,6 +11,7 @@ import { NucleoModule } from './core/nucleo.module';
 import { SaudeController } from './core/saude/saude.controller';
 import { VersaoAppModule } from './core/versao-app/versao-app';
 import { ArmazenamentoModule } from './core/arquivos/armazenamento-arquivos';
+import { AdminModule } from './modulos/admin/admin.module';
 import { ArquivosModule } from './modulos/arquivos/arquivos.module';
 import { AutenticacaoModule } from './modulos/autenticacao/autenticacao.module';
 import { CartoesModule } from './modulos/cartoes/cartoes.module';
@@ -43,6 +44,7 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     AuthModule,
     LimitesModule,
     AutenticacaoModule,
+    AdminModule,
     UsuariosModule,
     ConfigAppModule,
     CategoriasModule,

@@ -3,13 +3,15 @@ import { Reflector } from '@nestjs/core';
 import type { FastifyRequest } from 'fastify';
 
 import { ErroDominio } from '../erros/erro-dominio';
+import { ROTA_ADMIN } from './admin.decorator';
 import { ROTA_PUBLICA } from './publico.decorator';
 import { TokensAcesso } from './tokens-acesso';
 
 /**
  * Guarda global: toda rota exige `Authorization: Bearer <token de acesso>`, menos as marcadas com
  * `@Publico()`. Token válido preenche `request.usuario`, que o `@ContextoAtual()` e o
- * `@UsuarioAtual()` leem.
+ * `@UsuarioAtual()` leem. As rotas com `@Admin()` só aceitam o token do painel (T-104a); as outras,
+ * só o do app.
  */
 @Injectable()
 export class GuardaAutenticacao implements CanActivate {
@@ -30,7 +32,15 @@ export class GuardaAutenticacao implements CanActivate {
     if (tipo?.toLowerCase() !== 'bearer' || !token) {
       throw new ErroDominio('NAO_AUTENTICADO');
     }
-    requisicao.usuario = await this.tokens.verificar(token);
+    const usuario = await this.tokens.verificar(token);
+    const rotaAdmin = this.reflector.getAllAndOverride<boolean | undefined>(ROTA_ADMIN, [
+      execucao.getHandler(),
+      execucao.getClass(),
+    ]);
+    if ((usuario.escopo === 'admin') !== Boolean(rotaAdmin)) {
+      throw new ErroDominio('ACESSO_NEGADO');
+    }
+    requisicao.usuario = usuario;
     return true;
   }
 }
