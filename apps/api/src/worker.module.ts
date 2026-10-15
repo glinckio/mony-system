@@ -5,6 +5,7 @@ import { ArmazenamentoModule } from './core/arquivos/armazenamento-arquivos';
 import { EventosModule } from './core/eventos/eventos.module';
 import { ProcessadorEventos } from './core/eventos/processador-eventos';
 import { FilasModule } from './core/filas/filas.module';
+import { LimitesModule } from './core/limites/limite-tentativas';
 import { NucleoModule } from './core/nucleo.module';
 import { ProcessadorRotinas } from './core/rotinas/rotinas';
 import { EmailModule } from './integracoes/email/email.module';
@@ -35,6 +36,8 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
   imports: [
     NucleoModule,
     FilasModule,
+    // O `CompartilhamentosService` (lembretes compartilhados, T-124c) limita os convites.
+    LimitesModule,
     EventosModule,
     EmailModule,
     DiscoveryModule,

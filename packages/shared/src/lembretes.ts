@@ -8,6 +8,7 @@
  */
 import { z } from 'zod';
 
+import { ACESSOS_RECURSO } from './compartilhamentos.js';
 import {
   type DataCalendario,
   dataNoFuso,
@@ -324,6 +325,15 @@ export const esquemaLembrete = z.object({
   adiadoAte: z.iso.datetime().nullable(),
   /** Tocou e ainda espera o [Feito] (o único, ou o último de uma repetição que acabou). */
   pendente: z.boolean(),
+  /**
+   * Como o lembrete chega a quem vê (RN-074, T-124c): dono, ou convidado com `ver` (vê e recebe o
+   * aviso) ou `editar` (também conclui e adia).
+   */
+  acesso: z.enum(ACESSOS_RECURSO),
+  /** Quem é dono, quando o lembrete foi compartilhado com quem vê; `null` no próprio. */
+  dono: z.object({ id: z.uuid(), nome: z.string() }).nullable(),
+  /** Quantas pessoas aceitaram o convite. */
+  compartilhadoCom: z.number().int(),
   criadoEm: z.iso.datetime(),
   atualizadoEm: z.iso.datetime(),
 });

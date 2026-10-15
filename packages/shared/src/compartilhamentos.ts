@@ -1,20 +1,21 @@
 /**
- * Compartilhamento de listas (RN-074, T-124a): convite para quem já tem conta, pelo e-mail ou pelo
- * telefone, com permissão `ver` ou `editar`. Os lembretes entram com a T-124c.
+ * Compartilhamento de listas (RN-074, T-124a) e de lembretes (T-124c): convite para quem já tem
+ * conta, pelo e-mail ou pelo telefone, com permissão `ver` ou `editar`.
  */
 import { z } from 'zod';
 
 import { PERMISSOES_COMPARTILHAMENTO, STATUS_CONVITE } from './enums.js';
 
-/** Os recursos que já podem ser compartilhados (a lista de compras; o lembrete na T-124c). */
-export const RECURSOS_COM_CONVITE = ['lista'] as const;
+/** Os recursos que podem ser compartilhados: a lista de compras e o lembrete. */
+export const RECURSOS_COM_CONVITE = ['lista', 'lembrete'] as const;
+export type RecursoComConvite = (typeof RECURSOS_COM_CONVITE)[number];
 
 /** Decisão técnica: convites que uma pessoa manda por hora (o convite revela se o contato tem conta). */
 export const MAXIMO_CONVITES_POR_HORA = 20;
 
-/** Como a lista chega a quem a vê: dona, ou convidada com `ver` ou `editar`. */
-export const ACESSOS_LISTA = ['dono', ...PERMISSOES_COMPARTILHAMENTO] as const;
-export type AcessoLista = (typeof ACESSOS_LISTA)[number];
+/** Como a lista ou o lembrete chega a quem vê: dono, ou convidado com `ver` ou `editar`. */
+export const ACESSOS_RECURSO = ['dono', ...PERMISSOES_COMPARTILHAMENTO] as const;
+export type AcessoRecurso = (typeof ACESSOS_RECURSO)[number];
 
 /** `POST /compartilhamentos`: o contato é o e-mail ou o telefone da conta do convidado. */
 export const esquemaNovoCompartilhamento = z.object({
@@ -35,7 +36,7 @@ export const esquemaCompartilhamento = z.object({
   id: z.uuid(),
   recurso: z.enum(RECURSOS_COM_CONVITE),
   recursoId: z.uuid(),
-  /** O nome da lista, para o convite dizer o que é. */
+  /** O nome da lista ou o título do lembrete, para o convite dizer o que é. */
   recursoNome: z.string(),
   permissao: z.enum(PERMISSOES_COMPARTILHAMENTO),
   status: z.enum(STATUS_CONVITE),

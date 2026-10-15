@@ -116,7 +116,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Orçamentos e metas | `GET /orcamentos?competencia=` · `PUT /orcamentos` · `GET /metas` · `POST /metas` · `PATCH /metas/:id` · `POST /metas/:id/aportes` |
 | Dashboard e relatórios | `GET /dashboard?periodo=` · `GET /relatorios/:tipo?inicio=&fim=` · `POST /relatorios/exportar` |
 | Listas de compras | `GET /listas` · `GET /listas/:id` · `POST /listas` · `PATCH /listas/:id` · `DELETE /listas/:id` · `POST /listas/:id/itens` · `PATCH /itens/:id` · `DELETE /itens/:id` **(proposta)** · `POST /listas/:id/finalizar` (prontas: T-123a) |
-| Compartilhamento | `GET /compartilhamentos` · `POST /compartilhamentos` · `POST /compartilhamentos/:id/aceitar` · `POST /compartilhamentos/:id/recusar` · `PATCH /compartilhamentos/:id` · `DELETE /compartilhamentos/:id` (prontas para listas: T-124a) |
+| Compartilhamento | `GET /compartilhamentos` · `POST /compartilhamentos` · `POST /compartilhamentos/:id/aceitar` · `POST /compartilhamentos/:id/recusar` · `PATCH /compartilhamentos/:id` · `DELETE /compartilhamentos/:id` (prontas para listas, T-124a, e lembretes, T-124c) |
 | Lembretes e agenda | `GET /lembretes` · `POST /lembretes` · `PATCH /lembretes/:id` · `DELETE /lembretes/:id` · `POST /lembretes/:id/concluir` · `POST /lembretes/:id/adiar` · `GET /lembretes/alarmes` (prontas: T-084a) · `GET /agenda?inicio=&fim=` · `POST /agendas/conectar` · `GET /agendas/oauth/callback` **(proposta)** · `POST /compromissos` · `PATCH /compromissos/:id` **(proposta)** |
 | Notificações | `GET /notificacoes` · `POST /notificacoes/:id/lida` · `GET /preferencias-alerta` · `PUT /preferencias-alerta` |
 | Apps de compra | `GET /apps-monitorados` · `PUT /apps-monitorados` · `POST /eventos/app-compra-aberto` |
@@ -488,18 +488,19 @@ As rotas de item devolvem a lista inteira. Uma lista finalizada não muda mais: 
 
 ## Compartilhamento
 
-Implementado na T-124a (RN-074) para as listas de compras, em `modulos/compartilhamentos`; contrato em `@mony/shared/compartilhamentos`. Lembretes compartilhados chegam com a T-124c.
+Implementado na T-124a (RN-074) para as listas de compras e na T-124c para os lembretes, em `modulos/compartilhamentos`; contrato em `@mony/shared/compartilhamentos`.
 
 | Rota | O que faz |
 |---|---|
-| `GET /compartilhamentos` | `recebidos` (pendentes e aceitos) e `enviados` (todos, com os recusados), os mais novos primeiro, com o nome da lista, o dono e o convidado |
-| `POST /compartilhamentos` | `{ recurso: 'lista', recursoId, contato, permissao }`: só o dono convida, só quem tem conta ativa. `contato` é o e-mail (sem caixa e espaços) ou o telefone (com ou sem +55); telefone em mais de uma conta pede o e-mail. Convidar de novo usa o mesmo convite: recusado volta a pendente, aceito só muda a permissão. Até 20 por hora por pessoa (`MUITAS_TENTATIVAS`), porque a resposta diz se o contato tem conta |
+| `GET /compartilhamentos` | `recebidos` (pendentes e aceitos) e `enviados` (todos, com os recusados), os mais novos primeiro, com o nome da lista (ou o título do lembrete), o dono e o convidado |
+| `POST /compartilhamentos` | `{ recurso: 'lista' \| 'lembrete', recursoId, contato, permissao }`: só o dono convida, só quem tem conta ativa. `contato` é o e-mail (sem caixa e espaços) ou o telefone (com ou sem +55); telefone em mais de uma conta pede o e-mail. Convidar de novo usa o mesmo convite: recusado volta a pendente, aceito só muda a permissão. Até 20 por hora por pessoa (`MUITAS_TENTATIVAS`), porque a resposta diz se o contato tem conta |
 | `POST /compartilhamentos/:id/aceitar` e `/recusar` | Só o convidado, só do pendente (aceitar de novo devolve o mesmo; aceitar o recusado é `CONFLITO`) |
 | `PATCH /compartilhamentos/:id` | O dono muda a permissão |
 | `DELETE /compartilhamentos/:id` | O dono tira a pessoa ou a pessoa sai |
 
-- **Acesso:** `CompartilhamentosService.verificarAcesso(usuarioId, 'lista', id, exigido)` devolve o dono e o acesso (`dono`, `editar` ou `ver`). Sem acesso ou com o convite pendente, 404 (não revela a lista); com acesso menor que o exigido, 403 `ACESSO_NEGADO`.
+- **Acesso:** `CompartilhamentosService.verificarAcesso(usuarioId, recurso, id, exigido)` devolve o dono e o acesso (`dono`, `editar` ou `ver`). Sem acesso ou com o convite pendente, 404 (não revela a lista nem o lembrete; o lembrete excluído também é 404); com acesso menor que o exigido, 403 `ACESSO_NEGADO`.
 - **Nas listas:** `ver` lê; `editar` também põe, muda, marca e tira itens e finaliza; o dono também muda nome e tipo, apaga e convida. O item é sempre do dono (`itens_lista.usuario_id`), mesmo posto por convidado; o preço sugerido vem das notas de quem põe. No "Finalizar", a despesa, a cota de lançamento e a categoria padrão são de quem finaliza. A lista conta só na cota do dono (RN-120). `GET /listas` junta as próprias e as recebidas, com `acesso`, `dono` (nulo na própria) e `compartilhadaCom` (quantos aceitaram). Apagar a lista apaga os convites (não há chave estrangeira para o recurso).
+- **Nos lembretes (T-124c):** o lembrete continua do dono: a hora, o fuso, os alarmes do aparelho e a cota (RN-120) são dele. `ver` vê e recebe o aviso; `editar` também dá o [Feito] e o [Adiar], que valem para todos (a soneca é uma só, e "amanhã" é no fuso do dono); mudar, excluir e convidar são do dono. `GET /lembretes` junta os próprios e os recebidos, na mesma ordem, com `acesso`, `dono` e `compartilhadoCom`. Na hora, a rotina manda a quem aceitou o mesmo push urgente (mesma chave, mesmo link), com a hora no fuso dele e o nome do dono ("Lembrete das 10:00, de Ana Souza"), mesmo que o dono só tenha o alarme. `GET /lembretes/alarmes` traz só os próprios. Excluir o lembrete apaga os convites.
 
 ### Tempo real das listas
 

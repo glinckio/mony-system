@@ -5,7 +5,9 @@
  * API do app Monitorizze e da assistente Mony.
  * OpenAPI spec version: 1
  */
+import type { ListaLembretesDtoItensItemAcesso } from './listaLembretesDtoItensItemAcesso';
 import type { ListaLembretesDtoItensItemCanaisItem } from './listaLembretesDtoItensItemCanaisItem';
+import type { ListaLembretesDtoItensItemDono } from './listaLembretesDtoItensItemDono';
 import type { ListaLembretesDtoItensItemStatus } from './listaLembretesDtoItensItemStatus';
 
 export type ListaLembretesDtoItensItem = {
@@ -20,6 +22,13 @@ export type ListaLembretesDtoItensItem = {
   status: ListaLembretesDtoItensItemStatus;
   adiadoAte: string | null;
   pendente: boolean;
+  acesso: ListaLembretesDtoItensItemAcesso;
+  dono: ListaLembretesDtoItensItemDono;
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  compartilhadoCom: number;
   /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
   criadoEm: string;
   /** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */

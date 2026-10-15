@@ -11,4 +11,5 @@ export type ListaCompartilhamentosDtoRecebidosItemRecurso =
 
 export const ListaCompartilhamentosDtoRecebidosItemRecurso = {
   lista: 'lista',
+  lembrete: 'lembrete',
 } as const;

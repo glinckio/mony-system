@@ -98,7 +98,7 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 | Repetir orçamentos | Dia 1, 00:15 | Copia do mês anterior os orçamentos com `repetir_mensal` (RN-060); o mês é o de São Paulo (T-043) |
 | Sincronização Open Finance | A cada 6 h | Além dos webhooks |
 | Aviso de consentimento | Diária | 7 dias antes de vencer (RN-144) |
-| Disparo de lembretes e ligações (`disparar-lembretes`) | A cada minuto | Lembretes com `data_hora` (ou `adiado_ate`) vencidos e ainda não tocados: push urgente com [Feito] [Adiar]; a repetição passa para a próxima ocorrência. Implementada na T-084a (doc 05, "Lembretes"); as ligações, na T-122 |
+| Disparo de lembretes e ligações (`disparar-lembretes`) | A cada minuto | Lembretes com `data_hora` (ou `adiado_ate`) vencidos e ainda não tocados: push urgente com [Feito] [Adiar], também para quem aceitou o convite do lembrete (T-124c); a repetição passa para a próxima ocorrência. Implementada na T-084a (doc 05, "Lembretes"); as ligações, na T-122 |
 | Sincronização de agendas externas | A cada 15 min | Google e Microsoft (prefira webhooks/delta quando disponíveis) |
 | Liberação do silêncio (`liberar-silencio`) | A cada 15 min | Envia alertas adiados cujo silêncio terminou; mais de 3 para o mesmo usuário saem num envio agrupado. Implementada na T-080 |
 | Limpeza | Diária 03:00 | Rascunhos, códigos, sessões expiradas; arquivos fora do prazo de retenção (RN-162). Os rascunhos da Mony já saem na `limpar-rascunhos` (T-061, RN-088) |

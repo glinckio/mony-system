@@ -282,10 +282,11 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - A T-124 foi dividida: API das listas (T-124a), tempo real (T-124b), lembretes compartilhados (T-124c) e as telas do app (T-124d).
 - [x] **T-124b** Tempo real das listas compartilhadas: WebSocket `/v1/ws` (Socket.IO com adapter Redis), sala `lista:<id>` só para quem tem acesso, evento a cada mudança da lista (PR #86)
   - dep: T-124a · RN-074 · docs: 02, 05
-- [ ] **T-124c** Lembretes compartilhados: convite para o lembrete, o convidado vê e recebe o aviso; quem pode concluir e adiar
+- [x] **T-124c** Lembretes compartilhados: convite para o lembrete, o convidado vê e recebe o aviso; quem pode concluir e adiar (PR #88)
   - dep: T-124a · RN-074 · docs: 07, 09
 - [ ] **T-124d** Compartilhar no app: convidar pela lista, convites recebidos (aceitar e recusar), avatares e "compartilhada com N pessoas" (doc 04), lista atualizando em tempo real
   - dep: T-124b, T-124c · RN-074 · docs: 04
+  - Lembrete recebido com `ver`: sem [Feito] e [Adiar] na tela; se tocar no botão do push, mostrar a mensagem do 403 (DECISOES, T-124c).
 - [x] **T-125** Exportação de relatórios PDF e XLSX no worker (PR #70)
   - dep: T-048, T-100 · RN-151
   - No gratuito, sem exportação (RN-120): `LIMITE_PLANO_ATINGIDO` com `recurso: relatorio`.
