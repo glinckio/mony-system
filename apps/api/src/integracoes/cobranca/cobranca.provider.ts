@@ -1,3 +1,5 @@
+import type { PlanoPago } from '@mony/shared/enums';
+
 /**
  * Situação de uma assinatura no provedor, já traduzida:
  * - `ativa`: paga (ou em período de teste da Stripe);
@@ -84,6 +86,12 @@ export abstract class CobrancaProvider {
 
   /** A assinatura como está agora; `null` se o provedor não a conhece. */
   abstract buscarAssinatura(id: string): Promise<AssinaturaExterna | null>;
+
+  /**
+   * Um preço novo para o plano, que passa a ser o vendido (RN-129, T-104b). Quem já assina fica no
+   * preço antigo. Devolve o id do preço no provedor (`price_…`).
+   */
+  abstract criarPreco(pedido: { plano: PlanoPago; valorCentavos: number }): Promise<string>;
 
   /** Confere a assinatura do corpo bruto e traduz o evento. Lança `ErroAssinaturaWebhook`. */
   abstract lerEvento(corpo: Buffer, assinatura: string | undefined): EventoCobranca;
