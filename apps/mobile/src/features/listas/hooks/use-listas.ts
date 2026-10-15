@@ -20,8 +20,10 @@ import type {
   DetalheLista,
 } from '@mony/shared/listas';
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 import { invalidarDadosFinanceiros } from '@/lib/api/invalidar';
+import { ouvirLista } from '@/lib/tempo-real';
 
 import { comItemMarcado } from '../lib/listas';
 
@@ -39,6 +41,21 @@ export function useLista(id: string) {
     queryKey: getBuscarListasQueryKey(id),
     queryFn: async ({ signal }) => await buscarListas(id, { signal }),
   });
+}
+
+/**
+ * A lista aberta muda na hora quando outra pessoa mexe nela (RN-074, T-124b): a cada aviso, a lista
+ * e as listas buscam de novo (o aviso não leva os dados). Só a compartilhada ouve.
+ */
+export function useListaAoVivo(id: string, compartilhada: boolean) {
+  const cliente = useQueryClient();
+  useEffect(() => {
+    if (!compartilhada) return undefined;
+    return ouvirLista(id, () => {
+      void cliente.invalidateQueries({ queryKey: getBuscarListasQueryKey(id), exact: true });
+      void invalidarListas(cliente);
+    });
+  }, [cliente, id, compartilhada]);
 }
 
 /** A lista de listas e o uso do plano (RN-120: no gratuito, uma lista aberta). */

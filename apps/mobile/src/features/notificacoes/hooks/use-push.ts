@@ -1,6 +1,7 @@
 import {
   adiarLembretes,
   concluirLembretes,
+  ErroApi,
   marcarLidaNotificacoes,
   pagarFaturas,
 } from '@mony/api-client';
@@ -10,6 +11,7 @@ import { useRouter } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Alert } from 'react-native';
 
 import { useSincronizarAlarmes } from '@/features/lembretes/hooks/use-alarmes-locais';
 import { invalidarDadosFinanceiros } from '@/lib/api/invalidar';
@@ -29,7 +31,7 @@ function ehDoPush(chave: readonly unknown[]): boolean {
  * - **Abertura:** prepara os canais e os botões, e registra o token (`POST /me/dispositivos`), de
  *   novo quando o sistema troca o token.
  * - **Toque:** abre o `linkInterno`. [Feito] e [Adiar] mexem no lembrete; [Paguei] paga a fatura.
- *   Cada toque marca a notificação como lida. O toque que abriu o app fechado vem pela última
+ *   Cada toque marca a notificação como lida. Sem permissão (403), mostra a mensagem da API. O toque que abriu o app fechado vem pela última
  *   resposta.
  * - **Push silencioso** (`sincronizar_alarmes`, T-084a): com o app aberto, busca os alarmes de novo.
  *   Com o app fechado, a próxima abertura sincroniza.
@@ -73,8 +75,10 @@ export function usePushNoApp(): void {
           await pagarFaturas(acao.faturaId, {}, { headers: { 'Idempotency-Key': acao.chave } });
           void invalidarDadosFinanceiros(consultas);
         }
-      } catch {
-        // A tela que abre mostra o estado de verdade; a pessoa faz de novo por lá.
+      } catch (erro) {
+        // A tela que abre mostra o estado de verdade; a pessoa faz de novo por lá. O 403 (lembrete
+        // recebido com `ver`, RN-074) diz por que o botão não fez nada.
+        if (erro instanceof ErroApi && erro.status === 403) Alert.alert(erro.message);
       }
       if (acao.tipo === 'feito' || acao.tipo === 'adiar') void agenda();
       void consultas.invalidateQueries({ predicate: ({ queryKey }) => ehDoPush(queryKey) });

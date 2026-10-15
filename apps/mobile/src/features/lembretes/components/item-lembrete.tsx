@@ -67,8 +67,19 @@ export function ItemLembrete({ lembrete, fuso, bloco, aoAbrir }: PropsItemLembre
               {detalhe}
             </Texto>
           )}
+          {lembrete.dono === null ? null : (
+            <Texto variante="legenda" cor="suave" numberOfLines={1}>
+              {t('compartilhamentos.deOutro.lembrete', { nome: lembrete.dono.nome })}
+            </Texto>
+          )}
         </View>
-        <Etiqueta texto={t(`lembretes.canais.${canalPrincipal(lembrete)}`)} tom="primaria" />
+        {/* O recebido chega só por push: o alarme é do aparelho do dono (T-124c). */}
+        <Etiqueta
+          texto={t(
+            `lembretes.canais.${lembrete.dono === null ? canalPrincipal(lembrete) : 'push'}`,
+          )}
+          tom="primaria"
+        />
       </Card>
     </Pressable>
   );

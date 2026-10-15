@@ -3,7 +3,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 
 import type { ModuloAlarmes } from '@/lib/alarmes';
 import { acaoDoPush, prepararPush } from '@/lib/push';
@@ -263,6 +263,45 @@ describe('push no app (T-088)', () => {
       await waitFor(() => {
         expect(modulo.sincronizar.mock.calls.length).toBeGreaterThanOrEqual(2);
       }, ESPERA);
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'RN-074 [Feito] no lembrete recebido só para ver mostra a mensagem do 403 e abre o lembrete',
+    async () => {
+      api();
+      const comum = globalThis.fetch;
+      const ehConcluir = (url: Parameters<typeof fetch>[0]) =>
+        (typeof url === 'string' ? url : url instanceof URL ? url.href : url.url).endsWith(
+          '/concluir',
+        );
+      const pedidos = jest.fn<typeof fetch>((url, opcoes) =>
+        ehConcluir(url)
+          ? Promise.resolve(
+              new Response(
+                JSON.stringify({
+                  erro: {
+                    codigo: 'ACESSO_NEGADO',
+                    mensagem: 'Você só pode ver este lembrete.',
+                    detalhes: null,
+                  },
+                }),
+                { status: 403 },
+              ),
+            )
+          : comum(url, opcoes),
+      );
+      globalThis.fetch = pedidos;
+      const alerta = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+      const app = renderRouter(ROTAS, { initialUrl: '/' });
+      await screen.findByRole('header', { name: 'Início' }, ESPERA);
+      push.tocar('feito', { linkInterno: `mony://lembretes/${ID('e7')}` }, 'push-so-ver');
+      await waitFor(() => {
+        expect(app.getPathname()).toBe(`/lembretes/${ID('e7')}`);
+      }, ESPERA);
+      expect(alerta).toHaveBeenCalledWith('Você só pode ver este lembrete.');
+      expect(pedidos.mock.calls.some(([url]) => ehConcluir(url))).toBe(true);
     },
     TEMPO_LIMITE_MS,
   );

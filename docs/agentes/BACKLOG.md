@@ -284,7 +284,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-124a · RN-074 · docs: 02, 05
 - [x] **T-124c** Lembretes compartilhados: convite para o lembrete, o convidado vê e recebe o aviso; quem pode concluir e adiar (PR #88)
   - dep: T-124a · RN-074 · docs: 07, 09
-- [ ] **T-124d** Compartilhar no app: convidar pela lista, convites recebidos (aceitar e recusar), avatares e "compartilhada com N pessoas" (doc 04), lista atualizando em tempo real
+- [x] **T-124d** Compartilhar no app: convidar pela lista, convites recebidos (aceitar e recusar), avatares e "compartilhada com N pessoas" (doc 04), lista atualizando em tempo real (PR #90)
   - dep: T-124b, T-124c · RN-074 · docs: 04
   - Lembrete recebido com `ver`: sem [Feito] e [Adiar] na tela; se tocar no botão do push, mostrar a mensagem do 403 (DECISOES, T-124c).
 - [x] **T-125** Exportação de relatórios PDF e XLSX no worker (PR #70)

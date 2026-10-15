@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 
+import { ConvitesRecebidos } from '@/features/compartilhamentos/components/convites-recebidos';
+import { useCompartilhamentos } from '@/features/compartilhamentos/hooks/use-compartilhamentos';
 import { useDataCurta } from '@/lib/datas-texto';
 import { useFusoDoUsuario } from '@/lib/fuso';
 import {
@@ -47,10 +49,17 @@ function CartaoLista({
       : t('listas.finalizadaEm', {
           data: dataCurta(dataNoFuso(new Date(lista.finalizadaEm), fuso)),
         });
+  // RN-074: de quem é a lista recebida, ou com quantas pessoas a própria é dividida.
+  const compartilhada =
+    lista.dono !== null
+      ? t('compartilhamentos.deOutro.lista', { nome: lista.dono.nome })
+      : lista.compartilhadaCom > 0
+        ? t('compartilhamentos.compartilhadaCom', { count: lista.compartilhadaCom })
+        : null;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${lista.nome}, ${detalhe}`}
+      accessibilityLabel={[lista.nome, detalhe, compartilhada].filter(Boolean).join(', ')}
       onPress={aoAbrir}
       className="active:opacity-70"
       testID={`lista-${lista.id}`}
@@ -63,6 +72,14 @@ function CartaoLista({
           <Texto variante="corpo-sm" cor="suave">
             {`${t(`listas.categorias.${lista.categoria}`)} · ${detalhe}`}
           </Texto>
+          {compartilhada === null ? null : (
+            <View className="flex-row items-center gap-1">
+              <Icone nome="user" tamanho={14} cor={cores['texto-suave']} />
+              <Texto variante="corpo-sm" cor="suave" numberOfLines={1}>
+                {compartilhada}
+              </Texto>
+            </View>
+          )}
         </View>
         <Valor centavos={lista.totalEstimadoCentavos} variante="corpo" />
         <Icone nome="chevron-right" tamanho={18} cor={cores['texto-suave']} />
@@ -73,8 +90,8 @@ function CartaoLista({
 
 /**
  * Listas de compras (design, página 6; RN-070): os chips por tipo de lista, as abertas e as
- * últimas finalizadas. Tocar abre a lista; o "+" cria uma nova. Quem divide a lista (RN-074) entra
- * com a T-124.
+ * últimas finalizadas. Tocar abre a lista; o "+" cria uma nova. No topo, os convites para listas
+ * de outras pessoas; cada lista diz de quem é ou com quantas pessoas é dividida (RN-074).
  */
 export default function TelaListas() {
   const { t } = useTranslation();
@@ -82,6 +99,7 @@ export default function TelaListas() {
   const fuso = useFusoDoUsuario();
   const [filtro, definirFiltro] = useState<FiltroListas>('todas');
   const consulta = useListas();
+  const compartilhamentos = useCompartilhamentos();
 
   function nova() {
     router.push('/listas/nova');
@@ -109,6 +127,7 @@ export default function TelaListas() {
     const { abertas, finalizadas } = separarListas(consulta.data.itens, filtro);
     return (
       <>
+        <ConvitesRecebidos recurso="lista" />
         {abertas.length === 0 ? (
           <Card>
             <Vazio
@@ -183,6 +202,7 @@ export default function TelaListas() {
             tintColor={cores.texto}
             onRefresh={() => {
               void consulta.refetch();
+              void compartilhamentos.refetch();
             }}
           />
         }

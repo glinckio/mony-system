@@ -316,7 +316,7 @@ Telas em `src/features/listas`, no design da página 6, sobre as rotas da T-123a
   - **Chips:** Todas, Mercado, Casa, Carro, Farmácia e Outra. Filtram as listas pelo tipo.
   - **Cada lista:** o nome, o tipo, "2 de 4 itens" (a finalizada: "Finalizada em 12/out") e o total estimado. As finalizadas ficam embaixo, em "Finalizadas".
   - **Diferença do design:** o design mostra uma lista aberta direto na tela das listas. O app abre a lista numa tela própria, porque cada tipo pode ter várias listas (RN-070).
-  - **Fora:** quem divide a lista (os avatares e "compartilhada com 1 pessoa") entra com a T-124.
+  - **Compartilhada (T-124d):** a lista diz "Compartilhada com 1 pessoa", ou "Lista de Ana" quando é de outra pessoa.
 - **A lista** (`/listas/<id>`, também pelo link `mony://listas/<id>`):
   - **O topo:** o nome, quantos já foram comprados e o total estimado contra o orçamento livre da categoria ("Orçamento livre em Mercado: R$ 40,00"), em laranja e com o aviso "A lista passa do orçamento livre." quando passa (RN-073). Sem orçamento, "Sem orçamento para Mercado".
   - **Os itens:** na ordem em que entraram, com a caixa de comprado. O comprado fica riscado. Ao lado do nome, a quantidade ("(x6)" ou "(1,5 kg)") e o total do item, ou "Sem preço"; embaixo, "subiu 12% desde a última compra" em laranja (ou "caiu", em verde).
@@ -330,6 +330,22 @@ Telas em `src/features/listas`, no design da página 6, sobre as rotas da T-123a
 - **Nova** (`/listas/nova`, pelo "+") e **editar** (`/listas/<id>/editar`, pelo lápis da lista): o nome e o tipo.
   - **Nova:** abre a lista criada. No gratuito, a segunda lista aberta mostra a frase do limite com [Ver planos] (RN-120).
   - **Editar:** manda só o que mudou e tem "Excluir lista", com confirmação. A despesa de uma lista finalizada continua.
+
+## Compartilhar listas e lembretes (T-124d)
+
+Telas em `src/features/compartilhamentos`, sobre as rotas de `/compartilhamentos` (doc 05; RN-074):
+
+- **Convites recebidos:** no topo das Listas (os de lista) e dos Lembretes (os de lembrete, fora da aba Feitos), um card "Convites para você" com "Ana chamou você para a lista “Feira”", [Aceitar] e [Recusar]. Responder busca de novo os convites, as listas e os lembretes.
+- **Quem divide:** na lista e no lembrete, os avatares (até três, com as iniciais) e "Compartilhada com 2 pessoas" (no lembrete, "Compartilhado"); no de outra pessoa, o avatar do dono e "Lista de Ana", com "Você só pode ver." quando o acesso é `ver`. Na própria sem ninguém, nada.
+- **Compartilhar (só o dono):** o ícone de convidar no topo, ou um toque nos avatares, abre a folha:
+  - **Convite:** o e-mail ou o celular de quem tem conta, e "Só ver" ou "Ver e mudar" (o padrão). A recusa da API (sem conta, limite de convites) aparece no campo; o enviado, em "Convite enviado para Ana.".
+  - **Quem tem acesso:** cada pessoa com "Convite enviado", "Aceitou" ou "Recusou" (quem recusou fica no fim), os chips da permissão e a lixeira para tirar.
+- **O que cada acesso faz:**
+  - **Lista:** com `ver`, as caixas ficam paradas e somem o campo de pôr item e o "Finalizar". Nome, tipo e excluir (o lápis) são só do dono.
+  - **Lembrete:** com `ver`, sem [Feito] e [Adiar]; com `editar`, os dois. Editar, "Lembrar de novo" e excluir são só do dono. Na lista dos lembretes, o recebido diz "Lembrete de Ana" e o selo é sempre Push (o alarme é do aparelho do dono).
+  - **Sair:** quem recebeu tem "Sair da lista" (ou "do lembrete"), com confirmação; apaga o próprio convite e volta para a lista das listas (ou dos lembretes).
+- **Tempo real (T-124b):** a lista aberta que é de outra pessoa, ou que a própria divide, ouve o Socket.IO da API (`src/lib/tempo-real.ts`): uma conexão só, aberta na primeira lista e fechada quando nenhuma tela ouve, só pelo WebSocket, com o token da sessão em `auth.token`. Entra em `lista:entrar` ao conectar (e de novo a cada reconexão) e, a cada `lista:mudou`, busca a lista e as listas. Token vencido: renova uma vez (`renovarSessaoUmaVez`) e conecta de novo.
+- **Push do lembrete recebido com `ver`:** o [Feito] ou o [Adiar] da notificação recebe 403; o app mostra a mensagem da API num alerta e abre o lembrete.
 
 ## Aba Mais e Perfil (T-057)
 

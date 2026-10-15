@@ -5,6 +5,14 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
+import { BotaoSair } from '@/features/compartilhamentos/components/botao-sair';
+import { FolhaCompartilhar } from '@/features/compartilhamentos/components/folha-compartilhar';
+import { PessoasDoRecurso } from '@/features/compartilhamentos/components/pessoas-do-recurso';
+import { useCompartilhamentos } from '@/features/compartilhamentos/hooks/use-compartilhamentos';
+import {
+  enviadosDoRecurso,
+  nomesDasPessoas,
+} from '@/features/compartilhamentos/lib/compartilhamentos';
 import { mensagemDeErro } from '@/lib/formularios';
 import { useFusoDoUsuario } from '@/lib/fuso';
 import { Botao, BotaoIcone, Cabecalho, Campo, Card, Erro, Skeleton, Tela, Texto } from '@/ui';
@@ -13,13 +21,17 @@ import { FolhaFinalizar } from '../components/folha-finalizar';
 import { FolhaItem } from '../components/folha-item';
 import { ItemDaLista } from '../components/item-da-lista';
 import { ResumoDaLista } from '../components/resumo-da-lista';
-import { useAdicionarItem, useAtualizarItem, useLista } from '../hooks/use-listas';
+import { useAdicionarItem, useAtualizarItem, useLista, useListaAoVivo } from '../hooks/use-listas';
 
 /**
  * A lista de compras (`/listas/<id>`, design, página 6): o total estimado contra o orçamento livre
  * (RN-073), os itens com a caixa de comprado e a variação do preço (RN-071), o campo para pôr um
  * item (a API sugere o preço pelas notas) e o "Finalizar e lançar despesa" (RN-072). Tocar no item
  * abre a edição. A finalizada só mostra os itens e leva à despesa lançada.
+ *
+ * Compartilhada (RN-074, T-124d): os avatares de quem divide, a folha de convidar (só o dono, que
+ * também é o único que edita o nome e exclui), "Sair da lista" para quem recebeu, e a lista muda na
+ * hora quando outra pessoa mexe. Com `ver`, a lista não tem caixas, campo nem "Finalizar".
  */
 export default function TelaLista() {
   const { t } = useTranslation();
@@ -32,7 +44,13 @@ export default function TelaLista() {
   const [novoItem, definirNovoItem] = useState('');
   const [editando, definirEditando] = useState<ItemLista | null>(null);
   const [finalizando, definirFinalizando] = useState(false);
+  const [compartilhando, definirCompartilhando] = useState(false);
+  const compartilhamentos = useCompartilhamentos();
   const lista = consulta.data;
+  useListaAoVivo(
+    id,
+    lista !== undefined && (lista.acesso !== 'dono' || lista.compartilhadaCom > 0),
+  );
 
   function voltar() {
     if (router.canGoBack()) router.back();
@@ -55,7 +73,10 @@ export default function TelaLista() {
     );
   }
 
+  const ehDono = lista.acesso === 'dono';
   const aberta = lista.finalizadaEm === null;
+  const editavel = aberta && lista.acesso !== 'ver';
+  const enviados = ehDono ? enviadosDoRecurso(compartilhamentos.data, 'lista', id) : [];
   const erro = adicionar.error ?? atualizar.error;
 
   function adicionarItem() {
@@ -85,11 +106,42 @@ export default function TelaLista() {
           titulo={t('listas.titulo')}
           aoVoltar={voltar}
           acao={
-            <BotaoIcone icone="pencil" comFundo rotulo={t('listas.editar')} aoPressionar={editar} />
+            ehDono ? (
+              <View className="flex-row gap-2">
+                <BotaoIcone
+                  icone="user-plus"
+                  comFundo
+                  rotulo={t('compartilhamentos.compartilhar')}
+                  aoPressionar={() => {
+                    definirCompartilhando(true);
+                  }}
+                />
+                <BotaoIcone
+                  icone="pencil"
+                  comFundo
+                  rotulo={t('listas.editar')}
+                  aoPressionar={editar}
+                />
+              </View>
+            ) : undefined
           }
         />
         <ScrollView contentContainerClassName="gap-4 pb-8 pt-3" keyboardShouldPersistTaps="handled">
           <ResumoDaLista lista={lista} fuso={fuso} />
+          <PessoasDoRecurso
+            recurso="lista"
+            acesso={lista.acesso}
+            dono={lista.dono}
+            quantidade={lista.compartilhadaCom}
+            nomes={nomesDasPessoas(lista.dono, enviados)}
+            aoPressionar={
+              ehDono
+                ? () => {
+                    definirCompartilhando(true);
+                  }
+                : undefined
+            }
+          />
 
           <Card className="py-2">
             {lista.itens.map((item, indice) => (
@@ -98,14 +150,14 @@ export default function TelaLista() {
                 item={item}
                 separado={indice > 0}
                 aoMarcar={
-                  aberta
+                  editavel
                     ? (comprado) => {
                         atualizar.mutate({ id: item.id, dados: { comprado } });
                       }
                     : null
                 }
                 aoEditar={
-                  aberta
+                  editavel
                     ? () => {
                         definirEditando(item);
                       }
@@ -113,7 +165,7 @@ export default function TelaLista() {
                 }
               />
             ))}
-            {aberta ? (
+            {editavel ? (
               <View
                 className={
                   lista.itens.length > 0
@@ -149,7 +201,7 @@ export default function TelaLista() {
             </Texto>
           ) : null}
 
-          {aberta ? (
+          {editavel ? (
             <View className="gap-2">
               <Botao
                 titulo={t('listas.finalizar.botao')}
@@ -179,6 +231,16 @@ export default function TelaLista() {
               }}
             />
           )}
+          {lista.dono === null ? null : (
+            <BotaoSair
+              recurso="lista"
+              recursoId={id}
+              donoNome={lista.dono.nome}
+              aoSair={() => {
+                router.dismissTo('/listas');
+              }}
+            />
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
       <FolhaItem
@@ -188,6 +250,16 @@ export default function TelaLista() {
           definirEditando(null);
         }}
       />
+      {ehDono ? (
+        <FolhaCompartilhar
+          recurso="lista"
+          recursoId={id}
+          visivel={compartilhando}
+          aoFechar={() => {
+            definirCompartilhando(false);
+          }}
+        />
+      ) : null}
       <FolhaFinalizar
         lista={lista}
         visivel={finalizando}

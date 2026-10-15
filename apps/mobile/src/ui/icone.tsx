@@ -70,6 +70,7 @@ import Trash from 'lucide-react-native/icons/trash';
 import TrendingUp from 'lucide-react-native/icons/trending-up';
 import TriangleAlert from 'lucide-react-native/icons/triangle-alert';
 import User from 'lucide-react-native/icons/user';
+import UserPlus from 'lucide-react-native/icons/user-plus';
 import Wallet from 'lucide-react-native/icons/wallet';
 import WifiOff from 'lucide-react-native/icons/wifi-off';
 import X from 'lucide-react-native/icons/x';
@@ -153,6 +154,7 @@ const ICONES = {
   'trending-up': TrendingUp,
   'triangle-alert': TriangleAlert,
   user: User,
+  'user-plus': UserPlus,
   wallet: Wallet,
   'wifi-off': WifiOff,
   x: X,
