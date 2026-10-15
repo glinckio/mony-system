@@ -18,10 +18,17 @@ import { ErroDominio } from '../erros/erro-dominio';
 
 /** Token de acesso vale 15 minutos (RN-004). */
 export const VALIDADE_ACESSO_SEGUNDOS = 15 * 60;
+/** O desafio do admin (senha certa, falta o 2FA) vale 5 minutos (docs/arquitetura/11). */
+export const VALIDADE_DESAFIO_ADMIN_SEGUNDOS = 5 * 60;
+/** A sessão do admin renova de 15 em 15 minutos, até 8 horas depois do login com 2FA. */
+export const DURACAO_MAXIMA_SESSAO_ADMIN_SEGUNDOS = 8 * 60 * 60;
 
 const ALGORITMO = 'ES256';
 const EMISSOR = 'mony-api';
 const AUDIENCIA = 'mony';
+/** Token do painel: outra audiência, para o do app não abrir o admin, nem o contrário. */
+const AUDIENCIA_ADMIN = 'mony-admin';
+const AUDIENCIA_DESAFIO_ADMIN = 'mony-admin-2fa';
 
 /** O que a API sabe de quem fez a requisição, tirado do token de acesso. */
 export interface UsuarioAutenticado {
@@ -29,6 +36,12 @@ export interface UsuarioAutenticado {
   papel: PapelUsuario;
   sessaoId: string;
   dispositivoId: string | null;
+  /**
+   * `admin`: token do painel, emitido depois da senha e do 2FA, com a hora do login (`auth_time`,
+   * em segundos). Sem o campo, é token do app.
+   */
+  escopo?: 'admin';
+  autenticadoEm?: number;
 }
 
 /**
@@ -81,25 +94,100 @@ export class TokensAcesso implements OnModuleInit {
     return { token, expiraEm: new Date(expiraEm * 1000) };
   }
 
-  /** Confere assinatura, emissor, audiência e validade. Lança `TOKEN_EXPIRADO` ou `NAO_AUTENTICADO`. */
+  /**
+   * Token do painel admin (T-104a): só depois da senha e do 2FA. `autenticadoEm` (segundos) é a
+   * hora do login e segue igual nas renovações, que param 8 horas depois dela.
+   */
+  async emitirAdmin(
+    usuarioId: string,
+    sessaoId: string,
+    autenticadoEm: number,
+  ): Promise<{ token: string; expiraEm: Date }> {
+    const agora = Math.floor(this.clock.agora().getTime() / 1000);
+    const expiraEm = Math.min(
+      agora + VALIDADE_ACESSO_SEGUNDOS,
+      autenticadoEm + DURACAO_MAXIMA_SESSAO_ADMIN_SEGUNDOS,
+    );
+    const token = await this.assinar(
+      { papel: 'admin', sid: sessaoId, auth_time: autenticadoEm },
+      usuarioId,
+      AUDIENCIA_ADMIN,
+      agora,
+      expiraEm,
+    );
+    return { token, expiraEm: new Date(expiraEm * 1000) };
+  }
+
+  /** O desafio do 2FA: prova que a senha de um admin estava certa, por 5 minutos. */
+  async emitirDesafioAdmin(usuarioId: string): Promise<{ token: string; expiraEm: Date }> {
+    const agora = Math.floor(this.clock.agora().getTime() / 1000);
+    const expiraEm = agora + VALIDADE_DESAFIO_ADMIN_SEGUNDOS;
+    const token = await this.assinar({}, usuarioId, AUDIENCIA_DESAFIO_ADMIN, agora, expiraEm);
+    return { token, expiraEm: new Date(expiraEm * 1000) };
+  }
+
+  /** O id do admin do desafio. Lança `SESSAO_INVALIDA` se não é um desafio válido. */
+  async verificarDesafioAdmin(token: string): Promise<string> {
+    try {
+      const { payload } = await jwtVerify(token, this.chavePublica, {
+        algorithms: [ALGORITMO],
+        issuer: EMISSOR,
+        audience: AUDIENCIA_DESAFIO_ADMIN,
+        currentDate: this.clock.agora(),
+        requiredClaims: ['sub', 'exp'],
+      });
+      if (typeof payload.sub !== 'string') throw new Error('claims');
+      return payload.sub;
+    } catch {
+      throw new ErroDominio('SESSAO_INVALIDA');
+    }
+  }
+
+  private assinar(
+    claims: Record<string, unknown>,
+    assunto: string,
+    audiencia: string,
+    agora: number,
+    expiraEm: number,
+  ): Promise<string> {
+    return new SignJWT(claims)
+      .setProtectedHeader({ alg: ALGORITMO, kid: this.config.idChaveJwt, typ: 'JWT' })
+      .setSubject(assunto)
+      .setIssuer(EMISSOR)
+      .setAudience(audiencia)
+      .setIssuedAt(agora)
+      .setExpirationTime(expiraEm)
+      .sign(this.chavePrivada);
+  }
+
+  /**
+   * Confere assinatura, emissor, audiência (app ou painel) e validade. Lança `TOKEN_EXPIRADO` ou
+   * `NAO_AUTENTICADO`. O desafio do 2FA não passa aqui: a audiência dele é outra.
+   */
   async verificar(token: string): Promise<UsuarioAutenticado> {
     try {
       const { payload } = await jwtVerify(token, this.chavePublica, {
         algorithms: [ALGORITMO],
         issuer: EMISSOR,
-        audience: AUDIENCIA,
+        audience: [AUDIENCIA, AUDIENCIA_ADMIN],
         currentDate: this.clock.agora(),
         requiredClaims: ['sub', 'exp', 'sid'],
       });
-      const { sub, papel, sid, did } = payload;
+      const { sub, papel, sid, did, aud, auth_time: autenticadoEm } = payload;
       if (typeof sub !== 'string' || typeof sid !== 'string') throw new Error('claims');
       if (papel !== 'usuario' && papel !== 'admin') throw new Error('papel');
-      return {
+      const usuario: UsuarioAutenticado = {
         id: sub,
         papel,
         sessaoId: sid,
         dispositivoId: typeof did === 'string' ? did : null,
       };
+      const audiencias = Array.isArray(aud) ? aud : [aud];
+      if (audiencias.includes(AUDIENCIA_ADMIN)) {
+        if (papel !== 'admin' || typeof autenticadoEm !== 'number') throw new Error('admin');
+        return { ...usuario, escopo: 'admin', autenticadoEm };
+      }
+      return usuario;
     } catch (erro) {
       if (erro instanceof errors.JWTExpired) throw new ErroDominio('TOKEN_EXPIRADO');
       throw new ErroDominio('NAO_AUTENTICADO');

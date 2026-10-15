@@ -257,8 +257,15 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-103** Telas de planos e assinatura no app (PR #93)
   - dep: T-102
   - Parte de "Seu plano" (`/mais/plano`, T-100), que o [Ver planos] da Mony abre; os formulários que recebem `LIMITE_PLANO_ATINGIDO` e os relatórios no gratuito podem mostrar o [Ver planos] também.
-- [ ] **T-104** Admin: preços (novo Price na Stripe), limites, duração do teste, cupons, histórico
-  - dep: T-102, T-012 · RN-129, RN-130
+- [ ] **T-104** Admin: preços (novo Price na Stripe), limites, duração do teste, cupons, histórico. Dividida em T-104a a T-104d: o painel ainda não tinha login.
+- [x] **T-104a** Login do painel admin: e-mail e senha de quem tem papel `admin`, 2FA TOTP obrigatório (configurado no primeiro acesso), sessão curta, `@Admin()` na API, auditoria das entradas e um comando para promover o primeiro admin (PR #94)
+  - dep: T-012 · docs: 11, 13
+- [ ] **T-104b** Admin: preços do mensal e do anual (novo Price na Stripe, só para novas assinaturas) e histórico com data e autor
+  - dep: T-104a, T-102 · RN-129 · docs: 13
+- [ ] **T-104c** Admin: limites do plano gratuito e duração do teste grátis
+  - dep: T-104a · RN-120, RN-124 · docs: 13
+- [ ] **T-104d** Admin: cupons espelhados na Stripe
+  - dep: T-104a, T-102 · RN-130 · docs: 13
 - [ ] **T-105** Pix no plano anual como pagamento único que libera 12 meses (Checkout `mode=payment`), com aviso antes do fim e renovação por novo pagamento **(confirmar com cliente: pergunta 9 do doc 15)**
   - dep: T-102 · RN-128 · docs: 10 (Stripe)
   - A Stripe não aceita Pix em assinatura recorrente (teste da T-102). O mensal fica só no cartão.
@@ -301,7 +308,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - No app, "Exportar meus dados" e "Excluir conta" entram na seção Privacidade do Perfil (T-057).
   - Excluir conta mantém os resumos da `controle_teste` (RN-125, T-101): sem eles, excluir e cadastrar de novo daria outro teste grátis.
 - [ ] **T-141** Admin completo: usuários, assinaturas, métricas, novidades, Mony (prompt e custos), auditoria, filas
-  - dep: T-104, T-068 · docs: 13
+  - dep: T-104b, T-104c, T-104d, T-068 · docs: 13
 - [ ] **T-142** Monitoramento e alertas (Sentry, métricas, alarmes de fila, webhook, custo de IA, backup)
   - dep: T-013 · docs: 12
 - [ ] **T-143** Testes E2E com Maestro dos fluxos principais

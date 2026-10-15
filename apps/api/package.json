@@ -17,7 +17,8 @@
     "seed": "prisma db seed",
     "openapi:exportar": "pnpm run generate && pnpm run build && node dist/exportar-openapi.js",
     "mony:avaliar": "node dist/avaliar-mony.js",
-    "cobranca:configurar": "node dist/configurar-stripe.js"
+    "cobranca:configurar": "node dist/configurar-stripe.js",
+    "admin:promover": "node dist/promover-admin.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1146.0",

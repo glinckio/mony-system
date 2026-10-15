@@ -15,7 +15,7 @@ O app guarda dados financeiros e acessa contas bancárias. Segurança e LGPD sã
 | Limite de tentativas | Contadores por e-mail (resumo SHA-256) e por IP no Redis, janela fixa de 15 minutos (`core/limites`, RN-008), separados para login, pedido de código e conferência de código. Login com sucesso zera o contador do e-mail; código certo zera o da conferência; senha redefinida zera o do login. Limite geral por IP (`@nestjs/throttler` ou WAF) fica para o hardening (T-144) |
 | Posse do recurso | Repositories sempre filtram `usuario_id`; testes de acesso cruzado por rota |
 | Login social | Validar `id_token` do Google e da Apple no servidor (assinatura, `aud`, `iss`, `nonce`; ver [10](10-integracoes.md#login-social)). Token de uso único. Login social com e-mail de conta existente só vincula depois do login com senha ou código (RN-002). Conta nova exige e-mail confirmado no provedor |
-| Admin | Login separado, 2FA TOTP obrigatório, sessão curta, IP allowlist opcional |
+| Admin | Login separado, 2FA TOTP obrigatório, sessão curta (token de 15 minutos, no máximo 8 horas por login), IP allowlist opcional. Detalhes no doc 13, "Acesso" |
 
 ## Dados e infraestrutura
 

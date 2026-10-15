@@ -1,10 +1,11 @@
 import { createMemoryHistory } from '@tanstack/react-router';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './app';
 import { configurarApi, criarClienteConsultas } from './lib/api';
+import { encerrarSessaoAdmin, guardarSessaoAdmin } from './lib/sessao';
 import { criarRoteador } from './roteador';
 
 const SECOES = [
@@ -38,7 +39,16 @@ function respostaDaApi(status: number, corpo: unknown) {
 }
 
 describe('painel admin', () => {
+  beforeEach(() => {
+    guardarSessaoAdmin({
+      admin: { id: '00000000-0000-4000-8000-000000000001', nome: 'Ana', email: 'ana@teste.com' },
+      token: 'token-admin',
+      expiraEm: new Date(Date.now() + 15 * 60_000).toISOString(),
+    });
+  });
+
   afterEach(() => {
+    encerrarSessaoAdmin();
     vi.unstubAllGlobals();
   });
 

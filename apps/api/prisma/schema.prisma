@@ -405,6 +405,10 @@ model Usuario {
   fusoHorario          String        @default("America/Sao_Paulo") @map("fuso_horario")
   /// Ligação de voz só para número verificado (RN-078).
   telefoneVerificadoEm DateTime?     @map("telefone_verificado_em") @db.Timestamptz(6)
+  /// 2FA do painel admin (T-104a): segredo TOTP cifrado (`CifraSegredos`); nulo sem 2FA.
+  totpSegredo          String?       @map("totp_segredo")
+  /// Quando o admin confirmou o primeiro código; antes disso, o segredo ainda pode ser trocado.
+  totpAtivadoEm        DateTime?     @map("totp_ativado_em") @db.Timestamptz(6)
   criadoEm             DateTime      @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm         DateTime      @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 

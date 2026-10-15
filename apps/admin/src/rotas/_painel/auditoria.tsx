@@ -2,6 +2,6 @@ import { createFileRoute } from '@tanstack/react-router';
 
 import { SecaoProvisoria } from '@/components/secao-provisoria';
 
-export const Route = createFileRoute('/configuracoes')({
-  component: () => <SecaoProvisoria secao="configuracoes" />,
+export const Route = createFileRoute('/_painel/auditoria')({
+  component: () => <SecaoProvisoria secao="auditoria" />,
 });

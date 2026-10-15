@@ -297,6 +297,151 @@
         ]
       }
     },
+    "/v1/admin/auth/entrar": {
+      "post": {
+        "operationId": "entrarAdminAutenticacao",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Senha certa de um admin: o desafio do 2FA (5 minutos). Quem não é admin recebe CREDENCIAIS_INVALIDAS.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesafioAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/auth/2fa/novo": {
+      "post": {
+        "operationId": "novo2faAdminAutenticacao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Primeiro acesso (com o desafio no Authorization): o segredo do aplicativo autenticador. CONFLITO se o 2FA já está configurado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Novo2faDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/auth/2fa": {
+      "post": {
+        "operationId": "conferir2faAdminAutenticacao",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Codigo2faDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "O código do 2FA (com o desafio no Authorization): abre a sessão do painel.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/auth/renovar": {
+      "post": {
+        "operationId": "renovarAdminAutenticacao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Token novo da mesma sessão, até 8 horas depois do login.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessaoAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/eu": {
+      "get": {
+        "operationId": "euAdminAutenticacao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Quem está no painel.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/v1/me": {
       "get": {
         "operationId": "perfilUsuarios",
@@ -4699,6 +4844,130 @@
           "codigo",
           "senha",
           "dispositivo"
+        ]
+      },
+      "LoginAdminDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "senha": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "email",
+          "senha"
+        ]
+      },
+      "DesafioAdminDto": {
+        "type": "object",
+        "properties": {
+          "desafio": {
+            "type": "string"
+          },
+          "expiraEm": {
+            "type": "string"
+          },
+          "configurar2fa": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "desafio",
+          "expiraEm",
+          "configurar2fa"
+        ]
+      },
+      "Novo2faDto": {
+        "type": "object",
+        "properties": {
+          "segredo": {
+            "type": "string"
+          },
+          "endereco": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "segredo",
+          "endereco"
+        ]
+      },
+      "Codigo2faDto": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "pattern": "^\\d{6}$"
+          }
+        },
+        "required": [
+          "codigo"
+        ]
+      },
+      "SessaoAdminDto": {
+        "type": "object",
+        "properties": {
+          "admin": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "nome": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "nome",
+              "email"
+            ]
+          },
+          "token": {
+            "type": "string"
+          },
+          "expiraEm": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "admin",
+          "token",
+          "expiraEm"
+        ]
+      },
+      "AdminDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "email"
         ]
       },
       "PerfilDto": {
