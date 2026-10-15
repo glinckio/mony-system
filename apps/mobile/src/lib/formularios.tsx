@@ -47,3 +47,8 @@ export function CampoControlado<T extends FieldValues>({
 export function mensagemDeErro(erro: unknown, semConexao: string): string {
   return erro instanceof ErroApi && erro.resposta ? erro.message : semConexao;
 }
+
+/** A API recusou porque o plano gratuito chegou ao limite (RN-120): a tela mostra o [Ver planos]. */
+export function ehLimiteDoPlano(erro: unknown): boolean {
+  return erro instanceof ErroApi && erro.codigo === 'LIMITE_PLANO_ATINGIDO';
+}

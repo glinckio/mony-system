@@ -355,7 +355,7 @@ describe('baixar o relatório (T-125, RN-151)', () => {
       ).toBeOnTheScreen();
       fireEvent.press(screen.getByRole('button', { name: 'Ver planos' }));
       await waitFor(() => {
-        expect(app.getPathname()).toBe('/mais/plano');
+        expect(app.getPathname()).toBe('/planos');
       }, ESPERA);
     },
     TEMPO_LIMITE_MS,

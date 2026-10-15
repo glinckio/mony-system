@@ -254,7 +254,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - A T-100 já trata o teste vencido como gratuito (`planoEfetivo`); a rotina só grava a troca e avisa.
 - [x] **T-102** 👤 Stripe: `BillingProvider`, checkout, webhooks idempotentes, portal, inadimplência (PR #92)
   - dep: T-024, T-101 · RN-128, RN-131 · docs: 10 (Stripe)
-- [ ] **T-103** Telas de planos e assinatura no app
+- [x] **T-103** Telas de planos e assinatura no app (PR #93)
   - dep: T-102
   - Parte de "Seu plano" (`/mais/plano`, T-100), que o [Ver planos] da Mony abre; os formulários que recebem `LIMITE_PLANO_ATINGIDO` e os relatórios no gratuito podem mostrar o [Ver planos] também.
 - [ ] **T-104** Admin: preços (novo Price na Stripe), limites, duração do teste, cupons, histórico

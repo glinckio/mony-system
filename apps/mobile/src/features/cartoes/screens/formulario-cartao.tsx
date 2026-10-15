@@ -19,8 +19,9 @@ import {
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 
+import { BotaoVerPlanos } from '@/features/planos/components/botao-ver-planos';
 import { useContas } from '@/features/contas/hooks/use-contas';
-import { CampoControlado, mensagemDeErro } from '@/lib/formularios';
+import { CampoControlado, ehLimiteDoPlano, mensagemDeErro } from '@/lib/formularios';
 import {
   Botao,
   Cabecalho,
@@ -149,6 +150,7 @@ export function FormularioCartao({ original }: PropsFormularioCartao) {
   const atualizar = useAtualizarCartao();
   const excluir = useExcluirCartao();
   const [erroEnvio, definirErroEnvio] = useState<string | null>(null);
+  const [limite, definirLimite] = useState(false);
   const [excluindo, definirExcluindo] = useState(false);
   const doBanco = original?.origem === 'open_finance';
 
@@ -211,6 +213,7 @@ export function FormularioCartao({ original }: PropsFormularioCartao) {
 
   const salvar = formulario.handleSubmit(async (valores) => {
     definirErroEnvio(null);
+    definirLimite(false);
     try {
       if (original === null) {
         await criar.mutateAsync(dadosDoCartao(valores));
@@ -221,6 +224,7 @@ export function FormularioCartao({ original }: PropsFormularioCartao) {
       voltar();
     } catch (falha) {
       definirErroEnvio(mensagemDeErro(falha, t('cartoes.semConexao')));
+      definirLimite(ehLimiteDoPlano(falha));
     }
   });
 
@@ -424,6 +428,7 @@ export function FormularioCartao({ original }: PropsFormularioCartao) {
               {erroEnvio}
             </Texto>
           )}
+          {limite ? <BotaoVerPlanos /> : null}
           <Botao
             titulo={t('cartoes.formulario.salvar')}
             larguraTotal

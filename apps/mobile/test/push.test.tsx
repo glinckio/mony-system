@@ -350,7 +350,7 @@ describe('push no app (T-088)', () => {
       const pedidos = api();
       const app = renderRouter(ROTAS, { initialUrl: '/' });
       await waitFor(() => {
-        expect(app.getPathname()).toBe('/mais/plano');
+        expect(app.getPathname()).toBe('/planos');
       }, ESPERA);
       expect(push.estado.ultima).toBeNull();
       // Ao abrir, uma sincronização.

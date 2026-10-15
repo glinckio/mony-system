@@ -1,8 +1,9 @@
 import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import type { UsoPlano } from '@mony/shared/planos';
+import type { SituacaoAssinaturaPaga, UsoPlano } from '@mony/shared/planos';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import * as WebBrowser from 'expo-web-browser';
 
 import { rotaDoLink } from '@/lib/links-internos';
 import { relogio } from '@/lib/relogio';
@@ -10,6 +11,11 @@ import { useSessao } from '@/stores/sessao';
 
 // A dica da primeira conversa (T-046) busca o onboarding; aqui o assunto é o [Ver planos].
 jest.mock('@/features/onboarding/components/dica', () => ({ Dica: () => null }));
+// O navegador do app (Stripe Checkout e portal): cada teste diz como ele fecha.
+jest.mock('expo-web-browser', () => ({
+  openAuthSessionAsync: jest.fn(),
+  WebBrowserResultType: { CANCEL: 'cancel' },
+}));
 
 const ROTAS = path.resolve(__dirname, '../app');
 const ESPERA = { timeout: 10_000 };
@@ -87,7 +93,42 @@ const CONVERSA = {
   sugestoes: [],
 };
 
-function api(uso: UsoPlano) {
+const PRECOS = {
+  planos: [
+    { plano: 'mensal', valorCentavos: 1990 },
+    { plano: 'anual', valorCentavos: 19900 },
+  ],
+};
+
+const ANUAL: UsoPlano = { plano: 'anual', limitado: false, testeFim: null, limites: [] };
+
+const SITUACAO_ANUAL: SituacaoAssinaturaPaga = {
+  plano: 'anual',
+  status: 'ativa',
+  valorCentavos: 19900,
+  proximaCobranca: '2027-10-15T19:42:05.000Z',
+  cancelamentoAgendado: false,
+  testeFim: null,
+  gerenciavel: true,
+};
+
+const SITUACAO_TESTE: SituacaoAssinaturaPaga = {
+  plano: 'teste',
+  status: 'ativa',
+  valorCentavos: null,
+  proximaCobranca: null,
+  cancelamentoAgendado: false,
+  testeFim: TESTE.testeFim,
+  gerenciavel: false,
+};
+
+/** O que a API responde agora; o teste troca no meio (ex.: o webhook liberou o plano). */
+interface EstadoApi {
+  uso: UsoPlano;
+  situacao: SituacaoAssinaturaPaga;
+}
+
+function api(uso: UsoPlano, estado: EstadoApi = { uso, situacao: SITUACAO_TESTE }) {
   const pedidos: string[] = [];
   globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
     const endereco = new URL(
@@ -97,7 +138,15 @@ function api(uso: UsoPlano) {
     pedidos.push(chave);
     const json = (corpo: unknown) =>
       Promise.resolve(new Response(JSON.stringify(corpo), { status: 200 }));
-    if (chave === 'GET /v1/assinatura/uso') return json(uso);
+    if (chave === 'GET /v1/assinatura/uso') return json(estado.uso);
+    if (chave === 'GET /v1/assinatura') return json(estado.situacao);
+    if (chave === 'GET /v1/planos') return json(PRECOS);
+    if (chave === 'POST /v1/assinatura/checkout') {
+      return json({ url: 'https://checkout.stripe.com/c/pay/cs_test_1' });
+    }
+    if (chave === 'POST /v1/assinatura/portal') {
+      return json({ url: 'https://billing.stripe.com/p/session/test_1' });
+    }
     if (chave === 'GET /v1/mony/conversa') return json(CONVERSA);
     if (chave === 'GET /v1/me') {
       return json({
@@ -135,8 +184,8 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
     jest.restoreAllMocks();
   });
 
-  it('RN-123 o link dos planos abre a tela do plano', () => {
-    expect(rotaDoLink('mony://planos')).toBe('/mais/plano');
+  it('RN-123 o link dos planos abre a tela de planos (T-103)', () => {
+    expect(rotaDoLink('mony://planos')).toBe('/planos');
   });
 
   it(
@@ -158,7 +207,7 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
       );
       expect(limites[4]).toHaveTextContent(/Cartões1 de 1.*Para ter mais, conheça os planos\./);
       expect(screen.getByText('Os relatórios mostram só o mês atual.')).toBeOnTheScreen();
-      expect(screen.getByText('Os planos pagos chegam em breve.')).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Ver planos' })).toBeOnTheScreen();
     },
     TEMPO_LIMITE_MS,
   );
@@ -199,16 +248,146 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
   );
 
   it(
-    'RN-123 o [Ver planos] da Mony abre o seu plano, sem ir a /mony/acoes',
+    'RN-123 o [Ver planos] da Mony abre a tela de planos, sem ir a /mony/acoes',
     async () => {
       const pedidos = api(GRATUITO);
       const app = renderRouter(ROTAS, { initialUrl: '/mony' });
       fireEvent.press(await screen.findByRole('button', { name: 'Ver planos' }, ESPERA));
       await waitFor(() => {
+        expect(app.getPathname()).toBe('/planos');
+      }, ESPERA);
+      expect(
+        await screen.findByText('Continue com a Mony cuidando do seu dinheiro', {}, ESPERA),
+      ).toBeOnTheScreen();
+      expect(pedidos.some((pedido) => pedido.includes('/mony/acoes'))).toBe(false);
+    },
+    TEMPO_LIMITE_MS,
+  );
+  it(
+    'T-103 os planos com os preços da API, o anual escolhido e quanto falta do teste',
+    async () => {
+      api(TESTE);
+      renderRouter(ROTAS, { initialUrl: '/planos' });
+      const anual = await screen.findByRole('radio', { name: 'Anual, R$ 199,00/ano' }, ESPERA);
+      expect(anual).toBeChecked();
+      expect(screen.getByRole('radio', { name: 'Mensal, R$ 19,90/mês' })).not.toBeChecked();
+      expect(screen.getByText('equivale a R$ 16,58 por mês')).toBeOnTheScreen();
+      expect(screen.getByText('Seu teste termina em 3 dias')).toBeOnTheScreen();
+      expect(screen.getByText('Lançamentos ilimitados com a Mony')).toBeOnTheScreen();
+      // A Stripe não aceita Pix em assinatura (T-102): o rodapé fala só do cartão.
+      expect(
+        screen.getByText('Cartão · renovação automática · cancele quando quiser'),
+      ).toBeOnTheScreen();
+
+      fireEvent.press(screen.getByRole('radio', { name: 'Mensal, R$ 19,90/mês' }));
+      expect(screen.getByRole('button', { name: 'Assinar plano mensal' })).toBeOnTheScreen();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'RN-128 assinar: abre o checkout, volta ao app e espera a API liberar o plano',
+    async () => {
+      const estado: EstadoApi = { uso: TESTE, situacao: SITUACAO_TESTE };
+      const pedidos = api(TESTE, estado);
+      jest.mocked(WebBrowser.openAuthSessionAsync).mockImplementation(() => {
+        // Enquanto a página da Stripe está aberta, o webhook libera o plano.
+        estado.uso = ANUAL;
+        estado.situacao = SITUACAO_ANUAL;
+        return Promise.resolve({ type: 'success', url: 'mony://planos?checkout=sucesso' });
+      });
+      const app = renderRouter(ROTAS, { initialUrl: '/planos' });
+      fireEvent.press(await screen.findByRole('button', { name: 'Assinar plano anual' }, ESPERA));
+
+      await waitFor(() => {
         expect(app.getPathname()).toBe('/mais/plano');
       }, ESPERA);
-      expect(await screen.findByText('Plano gratuito', {}, ESPERA)).toBeOnTheScreen();
-      expect(pedidos.some((pedido) => pedido.includes('/mony/acoes'))).toBe(false);
+      expect(WebBrowser.openAuthSessionAsync).toHaveBeenCalledWith(
+        'https://checkout.stripe.com/c/pay/cs_test_1',
+        'mony://planos',
+      );
+      expect(pedidos).toContain('POST /v1/assinatura/checkout');
+      expect(await screen.findByText('Plano anual', {}, ESPERA)).toBeOnTheScreen();
+      expect(await screen.findByText('R$ 199,00 por ano', {}, ESPERA)).toBeOnTheScreen();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'RN-128 fechar o checkout sem pagar deixa a pessoa nos planos, sem esperar',
+    async () => {
+      const pedidos = api(TESTE);
+      jest
+        .mocked(WebBrowser.openAuthSessionAsync)
+        .mockResolvedValue({ type: WebBrowser.WebBrowserResultType.CANCEL });
+      const app = renderRouter(ROTAS, { initialUrl: '/planos' });
+      fireEvent.press(await screen.findByRole('button', { name: 'Assinar plano anual' }, ESPERA));
+      await waitFor(() => {
+        expect(pedidos.filter((pedido) => pedido === 'GET /v1/assinatura')).toHaveLength(1);
+      }, ESPERA);
+      expect(
+        await screen.findByRole('button', { name: 'Assinar plano anual' }, ESPERA),
+      ).toBeEnabled();
+      expect(screen.queryByText('Confirmando o pagamento…')).toBeNull();
+      expect(app.getPathname()).toBe('/planos');
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'T-103 com plano pago, os planos levam ao seu plano: valor, próxima cobrança e o portal',
+    async () => {
+      const pedidos = api(ANUAL, { uso: ANUAL, situacao: SITUACAO_ANUAL });
+      jest
+        .mocked(WebBrowser.openAuthSessionAsync)
+        .mockResolvedValue({ type: WebBrowser.WebBrowserResultType.CANCEL });
+      const app = renderRouter(ROTAS, { initialUrl: '/planos' });
+      await waitFor(() => {
+        expect(app.getPathname()).toBe('/mais/plano');
+      }, ESPERA);
+      expect(await screen.findByText('R$ 199,00 por ano', {}, ESPERA)).toBeOnTheScreen();
+      expect(screen.getByText('Próxima cobrança em 15/out.')).toBeOnTheScreen();
+      expect(screen.queryByRole('button', { name: 'Ver planos' })).toBeNull();
+
+      fireEvent.press(screen.getByRole('button', { name: 'Gerenciar assinatura' }));
+      await waitFor(() => {
+        expect(WebBrowser.openAuthSessionAsync).toHaveBeenCalledWith(
+          'https://billing.stripe.com/p/session/test_1',
+          'mony://planos',
+        );
+      }, ESPERA);
+      expect(pedidos).toContain('POST /v1/assinatura/portal');
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'RN-131 cobrança recusada: o aviso para atualizar a forma de pagamento',
+    async () => {
+      api(ANUAL, {
+        uso: ANUAL,
+        situacao: { ...SITUACAO_ANUAL, status: 'inadimplente', cancelamentoAgendado: false },
+      });
+      renderRouter(ROTAS, { initialUrl: '/mais/plano' });
+      expect(
+        await screen.findByText(
+          'Não consegui cobrar a última fatura. Atualize a forma de pagamento para não voltar ao plano gratuito.',
+          {},
+          ESPERA,
+        ),
+      ).toBeOnTheScreen();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'T-103 cancelamento agendado: quando termina, sem renovar',
+    async () => {
+      api(ANUAL, { uso: ANUAL, situacao: { ...SITUACAO_ANUAL, cancelamentoAgendado: true } });
+      renderRouter(ROTAS, { initialUrl: '/mais/plano' });
+      expect(
+        await screen.findByText('Termina em 15/out. Não vai ser renovado.', {}, ESPERA),
+      ).toBeOnTheScreen();
     },
     TEMPO_LIMITE_MS,
   );

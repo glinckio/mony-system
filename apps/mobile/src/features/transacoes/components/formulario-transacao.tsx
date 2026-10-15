@@ -20,7 +20,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, Switch, View } from 'react-native';
 
-import { CampoControlado, mensagemDeErro } from '@/lib/formularios';
+import { BotaoVerPlanos } from '@/features/planos/components/botao-ver-planos';
+import { CampoControlado, ehLimiteDoPlano, mensagemDeErro } from '@/lib/formularios';
 import { useHoje } from '@/lib/fuso';
 import {
   Botao,
@@ -89,6 +90,7 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
   // Uma chave por formulário: tentar de novo depois de uma falha não duplica (doc 04).
   const [chaveIdempotencia] = useState(() => randomUUID());
   const [erroEnvio, definirErroEnvio] = useState<string | null>(null);
+  const [limite, definirLimite] = useState(false);
   const [confirmandoExclusao, definirConfirmandoExclusao] = useState(false);
   const [anexos, definirAnexos] = useState<AnexoNaTela[]>(() => [...(original?.anexos ?? [])]);
 
@@ -163,6 +165,7 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
     const resultado = validarFormulario(valores, original);
     if (!resultado.valido) return;
     definirErroEnvio(null);
+    definirLimite(false);
     try {
       const { pedido } = resultado;
       if (pedido.tipo === 'novo') {
@@ -175,6 +178,7 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
       voltar();
     } catch (falha) {
       definirErroEnvio(mensagemDeErro(falha, t('transacoes.semConexao')));
+      definirLimite(ehLimiteDoPlano(falha));
     }
   });
 
@@ -471,6 +475,7 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
               {erroEnvio}
             </Texto>
           )}
+          {limite ? <BotaoVerPlanos /> : null}
 
           <Botao
             titulo={t('transacoes.formulario.salvar')}

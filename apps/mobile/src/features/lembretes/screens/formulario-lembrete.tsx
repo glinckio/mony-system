@@ -13,8 +13,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
+import { BotaoVerPlanos } from '@/features/planos/components/botao-ver-planos';
 import { dataParaTexto, mascararData, textoParaData } from '@/features/transacoes/lib/periodo';
-import { mensagemDeErro } from '@/lib/formularios';
+import { ehLimiteDoPlano, mensagemDeErro } from '@/lib/formularios';
 import { useFusoDoUsuario } from '@/lib/fuso';
 import { mascararHora } from '@/lib/mascaras';
 import { relogio } from '@/lib/relogio';
@@ -92,6 +93,7 @@ export function FormularioLembrete({ original }: PropsFormularioLembrete) {
   );
   const [tentou, definirTentou] = useState(false);
   const [erroEnvio, definirErroEnvio] = useState<string | null>(null);
+  const [limite, definirLimite] = useState(false);
   const [permissoes, definirPermissoes] = useState<('alarmeExato' | 'telaCheia')[]>([]);
   const salvando = criar.isPending || atualizar.isPending;
 
@@ -153,6 +155,7 @@ export function FormularioLembrete({ original }: PropsFormularioLembrete) {
   async function salvar() {
     definirTentou(true);
     definirErroEnvio(null);
+    definirLimite(false);
     if (problemas.length > 0 || instante === null || !regra.ok) return;
     try {
       if (original === null) {
@@ -178,6 +181,7 @@ export function FormularioLembrete({ original }: PropsFormularioLembrete) {
       }
     } catch (falha) {
       definirErroEnvio(mensagemDeErro(falha, t('lembretes.semConexao')));
+      definirLimite(ehLimiteDoPlano(falha));
       return;
     }
     const faltam = canais.includes('alarme') ? await permissoesParaPedir() : [];
@@ -326,6 +330,7 @@ export function FormularioLembrete({ original }: PropsFormularioLembrete) {
               {erroEnvio}
             </Texto>
           )}
+          {limite ? <BotaoVerPlanos /> : null}
           <Botao
             titulo={t('lembretes.formulario.salvar')}
             larguraTotal

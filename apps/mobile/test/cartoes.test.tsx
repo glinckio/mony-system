@@ -316,6 +316,50 @@ describe('cartões e faturas no app (T-050)', () => {
   );
 
   it(
+    'RN-120 no limite de cartões do gratuito, a mensagem da API e o [Ver planos] (T-103)',
+    async () => {
+      api((pedido) =>
+        pedido.metodo === 'POST' && pedido.rota === '/v1/cartoes'
+          ? {
+              status: 403,
+              corpo: {
+                erro: {
+                  codigo: 'LIMITE_PLANO_ATINGIDO',
+                  mensagem: 'No plano gratuito você tem 1 cartão. Quer ver os planos?',
+                  detalhes: {
+                    recurso: 'cartao',
+                    periodo: 'quantidade',
+                    limite: 1,
+                    renovaEm: null,
+                  },
+                },
+              },
+            }
+          : undefined,
+      );
+      const app = renderRouter(ROTAS, { initialUrl: '/cartoes' });
+      fireEvent.press(await screen.findByRole('button', { name: 'Novo cartão' }, ESPERA));
+      fireEvent.changeText(await screen.findByLabelText('Nome', {}, ESPERA), 'Inter');
+      fireEvent.changeText(screen.getByLabelText('Limite total'), '300000');
+      fireEvent.changeText(screen.getByLabelText('Dia do fechamento'), '5');
+      fireEvent.changeText(screen.getByLabelText('Dia do vencimento'), '12');
+      fireEvent.press(screen.getByRole('button', { name: 'Salvar' }));
+      expect(
+        await screen.findByText(
+          'No plano gratuito você tem 1 cartão. Quer ver os planos?',
+          {},
+          ESPERA,
+        ),
+      ).toBeOnTheScreen();
+      fireEvent.press(screen.getByRole('button', { name: 'Ver planos' }));
+      await waitFor(() => {
+        expect(app.getPathname()).toBe('/planos');
+      }, ESPERA);
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
     'RN-030 RN-038 cadastro do cartão: valida e manda limite, dias, cor e avisos',
     async () => {
       const pedidos = api();
