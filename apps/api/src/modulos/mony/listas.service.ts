@@ -175,7 +175,6 @@ export class ListasMony {
     if (valorCentavos === null) {
       throw new ErroDominio('REQUISICAO_INVALIDA', {
         mensagem: 'Há itens comprados sem preço: pergunte o valor total da compra (valorCentavos).',
-        detalhes: { campo: 'valorCentavos' },
       });
     }
     const categoria =
@@ -186,7 +185,6 @@ export class ListasMony {
       throw new ErroDominio('REQUISICAO_INVALIDA', {
         mensagem:
           'A lista não tem categoria de despesa padrão: pergunte a categoria (categoriaId).',
-        detalhes: { campo: 'categoriaId' },
       });
     }
     const formas = await this.formas(contexto, pedido);
@@ -264,8 +262,7 @@ export class ListasMony {
     }
     if (abertas.length > 1) {
       throw new ErroDominio('REQUISICAO_INVALIDA', {
-        mensagem: `Há ${String(abertas.length)} listas abertas: diga qual (listaId de consultar).`,
-        detalhes: { listas: abertas.map(({ id, nome }) => ({ id, nome })) },
+        mensagem: `Há ${String(abertas.length)} listas abertas (${abertas.map(({ nome }) => nome).join(', ')}): diga qual (listaId de consultar).`,
       });
     }
     return this.listas.buscar(contexto, unica.id);

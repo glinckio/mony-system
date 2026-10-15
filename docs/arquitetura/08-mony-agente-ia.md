@@ -85,7 +85,7 @@ Cada ferramenta é um objeto com `nome`, `descricao`, `schema` (Zod, convertido 
 | `consultar_orcamentos` | `OrcamentosService.situacao` | |
 | `definir_orcamento` | `OrcamentosService.definir` | |
 | `consultar_metas`, `atualizar_meta` | `MetasService` | |
-| `gerenciar_lista_compras` | `ListasService` | Criar lista, adicionar, remover, marcar |
+| `gerenciar_lista_compras` | `ListasService` | Consultar, criar lista, adicionar, marcar, remover; finalizar por confirmação em botão (T-123c) |
 | `criar_lembrete` | `LembretesService.criar` | Com canal |
 | `criar_compromisso` | `AgendaService.criarCompromisso` | Na agenda padrão |
 | `consultar_lembretes` | `LembretesService.listar` | Os ativos (T-086a) |
@@ -98,7 +98,7 @@ Ferramentas que gravam (`criar_*`, `editar_*`, `pagar_fatura`, `definir_orcament
 
 - Dados completos vindos de texto → grava direto e devolve componente de resumo com [Desfazer] (RN-082).
 - Dados vindos de foto/PDF → devolve cartão(ões) de resumo com [Confirmar]/[Descartar], sem gravar (RN-083). Editar fica para a tela completa do chat (T-069); o que falta vira pergunta na confirmação.
-- Exclusão e pagamento → sempre confirmação por botão (RN-092).
+- Exclusão, pagamento e o "Finalizar" da lista de compras → sempre confirmação por botão (RN-092).
 
 **Como está (T-062a e T-062b):**
 
@@ -106,7 +106,8 @@ Ferramentas que gravam (`criar_*`, `editar_*`, `pagar_fatura`, `definir_orcament
 - `executar(contexto, entrada)` recebe o contexto da Mony (origem `mony`) com a conversa e devolve `{ dados, componentes }`: os `dados` voltam ao modelo em JSON; os componentes saem no SSE depois da resposta e ficam na mensagem gravada, mesmo se uma chamada seguinte ao modelo falhar.
 - `criar_transacao`: receita grava direto (precisa da categoria); despesa segue o rascunho (T-061): completa, grava e devolve o resumo; faltando categoria ou forma, guarda o rascunho e o app pergunta com botões (RN-080). Categoria e cartão de outra pessoa dão `NAO_ENCONTRADO` (RN-092).
 - **Cartão de resumo** (componente `resumo`): tipo, descrição, valor, data, categoria, forma, cartão e parcelas, com [Desfazer] (RN-082). Um por lançamento (RN-086). O fim do rascunho também mostra o resumo. Edição mostra o resumo sem [Desfazer].
-- **Ações por botão** (`POST /mony/acoes { acao }`, `tipo`): `rascunho`, `desfazer` (até 24 h depois de gravar e só para origem `mony` ou `foto`; parcelamento sai cancelado; depois do prazo, 410 `DESFAZER_EXPIRADO`), `excluir_transacao` e `pagar_fatura` (as confirmações pedidas pelas ferramentas; o pagamento vale o valor mostrado no botão, total ou parcial, hoje), `confirmar_importacao` e `descartar_importacao` (um lançamento lido de foto ou PDF pelo `indice`, ou todos com `indice: null`, T-065) e `cancelar`.
+- **Ações por botão** (`POST /mony/acoes { acao }`, `tipo`): `rascunho`, `desfazer` (até 24 h depois de gravar e só para origem `mony` ou `foto`; parcelamento sai cancelado; depois do prazo, 410 `DESFAZER_EXPIRADO`), `excluir_transacao`, `pagar_fatura` e `finalizar_lista` (as confirmações pedidas pelas ferramentas; o pagamento e o "Finalizar" valem o valor mostrado no botão), `confirmar_importacao` e `descartar_importacao` (um lançamento lido de foto ou PDF pelo `indice`, ou todos com `indice: null`, T-065) e `cancelar`.
+- `gerenciar_lista_compras` (T-123c), com `acao`: `consultar` (as listas e, com uma só aberta ou o `listaId`, os itens com id, os totais e o orçamento da categoria), `criar_lista` (com itens; sem tipo, mercado), `adicionar_itens` (sem `listaId`, a única lista aberta; sem preço, o sugerido pelas notas, RN-071), `marcar_itens` (ou desmarcar com `comprado: false`), `remover_itens` e `finalizar`. Pôr, marcar e tirar gravam direto e devolvem o [Ver lista]. `finalizar` confere os comprados, o valor (o total deles, ou o dito; item comprado sem preço pede o valor) e a categoria (a padrão da lista, RN-072, ou a dita) e devolve os botões: com a forma dita, [Finalizar R$ X]; sem ela, um por forma (Pix, Débito, Dinheiro e o crédito de cada cartão), e o toque já confirma. A ação `finalizar_lista` lança a despesa pelo `ListasService.finalizar` (origem `mony`) e responde com o cartão de resumo, sem [Desfazer]: a lista já ficou fechada.
 - `definir_orcamento` e `atualizar_meta` gravam direto e respondem em texto, sem cartão de resumo nem [Desfazer] (DECISOES, T-062b).
 - **Lembretes e ajuda (T-086a):**
   - **`criar_lembrete`:** recebe título, data (`AAAA-MM-DD`) e hora (`HH:MM`) no fuso do usuário, e a API converte para o instante. A repetição vem estruturada (`frequencia`, `intervalo`, `dias` como `seg`… `dom`, `ate`) e vira a RRULE. Com `alarme`, os canais são notificação e alarme. Grava direto (`LembretesService.criar`, RN-075) e devolve a data e a hora do primeiro aviso (com repetição, pode ser outro dia que o pedido) e o botão [Ver lembrete], que abre `mony://lembretes/<id>`. Data passada e o limite do gratuito voltam como falha (RN-087, RN-120 com [Ver planos]).
