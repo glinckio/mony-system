@@ -5,20 +5,29 @@
  * API do app Monitorizze e da assistente Mony.
  * OpenAPI spec version: 1
  */
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import type { UsoPlanoDto } from '../modelos';
+import type {
+  LinkCobrancaDto,
+  PedidoCheckoutDto,
+  PlanosAVendaDto,
+  SituacaoAssinaturaDto,
+  UsoPlanoDto,
+} from '../modelos';
 
 import { requisicao } from '../../requisicao';
 
@@ -145,3 +154,376 @@ export function useUsoAssinatura<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getPlanosPlanosUrl = () => {
+  return `/v1/planos`;
+};
+
+export const planosPlanos = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<PlanosAVendaDto> => {
+  return requisicao<PlanosAVendaDto>(getPlanosPlanosUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getPlanosPlanosQueryKey = () => {
+  return [`/v1/planos`] as const;
+};
+
+export const getPlanosPlanosQueryOptions = <
+  TData = Awaited<ReturnType<typeof planosPlanos>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof planosPlanos>>, TError, TData>>;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getPlanosPlanosQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof planosPlanos>>> = ({ signal }) =>
+    planosPlanos({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof planosPlanos>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type PlanosPlanosQueryResult = NonNullable<Awaited<ReturnType<typeof planosPlanos>>>;
+export type PlanosPlanosQueryError = unknown;
+
+export function usePlanosPlanos<TData = Awaited<ReturnType<typeof planosPlanos>>, TError = unknown>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof planosPlanos>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof planosPlanos>>,
+          TError,
+          Awaited<ReturnType<typeof planosPlanos>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function usePlanosPlanos<TData = Awaited<ReturnType<typeof planosPlanos>>, TError = unknown>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof planosPlanos>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof planosPlanos>>,
+          TError,
+          Awaited<ReturnType<typeof planosPlanos>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function usePlanosPlanos<TData = Awaited<ReturnType<typeof planosPlanos>>, TError = unknown>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof planosPlanos>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function usePlanosPlanos<TData = Awaited<ReturnType<typeof planosPlanos>>, TError = unknown>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof planosPlanos>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getPlanosPlanosQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSituacaoAssinaturasUrl = () => {
+  return `/v1/assinatura`;
+};
+
+export const situacaoAssinaturas = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<SituacaoAssinaturaDto> => {
+  return requisicao<SituacaoAssinaturaDto>(getSituacaoAssinaturasUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getSituacaoAssinaturasQueryKey = () => {
+  return [`/v1/assinatura`] as const;
+};
+
+export const getSituacaoAssinaturasQueryOptions = <
+  TData = Awaited<ReturnType<typeof situacaoAssinaturas>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof situacaoAssinaturas>>, TError, TData>>;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSituacaoAssinaturasQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof situacaoAssinaturas>>> = ({ signal }) =>
+    situacaoAssinaturas({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof situacaoAssinaturas>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SituacaoAssinaturasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof situacaoAssinaturas>>
+>;
+export type SituacaoAssinaturasQueryError = unknown;
+
+export function useSituacaoAssinaturas<
+  TData = Awaited<ReturnType<typeof situacaoAssinaturas>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof situacaoAssinaturas>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof situacaoAssinaturas>>,
+          TError,
+          Awaited<ReturnType<typeof situacaoAssinaturas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSituacaoAssinaturas<
+  TData = Awaited<ReturnType<typeof situacaoAssinaturas>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof situacaoAssinaturas>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof situacaoAssinaturas>>,
+          TError,
+          Awaited<ReturnType<typeof situacaoAssinaturas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useSituacaoAssinaturas<
+  TData = Awaited<ReturnType<typeof situacaoAssinaturas>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof situacaoAssinaturas>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useSituacaoAssinaturas<
+  TData = Awaited<ReturnType<typeof situacaoAssinaturas>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof situacaoAssinaturas>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getSituacaoAssinaturasQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCheckoutAssinaturasUrl = () => {
+  return `/v1/assinatura/checkout`;
+};
+
+export const checkoutAssinaturas = async (
+  pedidoCheckoutDto: PedidoCheckoutDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<LinkCobrancaDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<LinkCobrancaDto>(getCheckoutAssinaturasUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(pedidoCheckoutDto),
+  });
+};
+
+export const getCheckoutAssinaturasMutationKey = () => ['checkoutAssinaturas'] as const;
+
+export const getCheckoutAssinaturasMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof checkoutAssinaturas>>,
+    TError,
+    CheckoutAssinaturasMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof checkoutAssinaturas>>,
+  TError,
+  CheckoutAssinaturasMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCheckoutAssinaturasMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof checkoutAssinaturas>>,
+    CheckoutAssinaturasMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return checkoutAssinaturas(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CheckoutAssinaturasMutationResult = NonNullable<
+  Awaited<ReturnType<typeof checkoutAssinaturas>>
+>;
+export type CheckoutAssinaturasMutationBody = PedidoCheckoutDto;
+export type CheckoutAssinaturasMutationError = unknown;
+export type CheckoutAssinaturasMutationVariables = { data: PedidoCheckoutDto };
+
+export const useCheckoutAssinaturas = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof checkoutAssinaturas>>,
+      TError,
+      CheckoutAssinaturasMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof checkoutAssinaturas>>,
+  TError,
+  CheckoutAssinaturasMutationVariables,
+  TContext
+> => {
+  return useMutation(getCheckoutAssinaturasMutationOptions(options), queryClient);
+};
+export const getPortalAssinaturasUrl = () => {
+  return `/v1/assinatura/portal`;
+};
+
+export const portalAssinaturas = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<LinkCobrancaDto> => {
+  return requisicao<LinkCobrancaDto>(getPortalAssinaturasUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getPortalAssinaturasMutationKey = () => ['portalAssinaturas'] as const;
+
+export const getPortalAssinaturasMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof portalAssinaturas>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<Awaited<ReturnType<typeof portalAssinaturas>>, TError, void, TContext> => {
+  const mutationKey = getPortalAssinaturasMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof portalAssinaturas>>, void> = () => {
+    return portalAssinaturas(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PortalAssinaturasMutationResult = NonNullable<
+  Awaited<ReturnType<typeof portalAssinaturas>>
+>;
+
+export type PortalAssinaturasMutationError = unknown;
+
+export const usePortalAssinaturas = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof portalAssinaturas>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<Awaited<ReturnType<typeof portalAssinaturas>>, TError, void, TContext> => {
+  return useMutation(getPortalAssinaturasMutationOptions(options), queryClient);
+};

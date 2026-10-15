@@ -513,7 +513,7 @@ Implementado na T-124b; contrato em `@mony/shared/tempo-real`.
 
 ## Planos e cotas do gratuito
 
-Implementado na T-100 (RN-120 a RN-123, RN-127), em `modulos/planos`; o teste de 3 dias na T-101 (ver "Teste grátis"). A Stripe e as telas de compra chegam com a T-102 e a T-103.
+Implementado na T-100 (RN-120 a RN-123, RN-127), em `modulos/planos`; o teste de 3 dias na T-101 (ver "Teste grátis"); a assinatura paga pela Stripe na T-102 (ver "Assinatura paga"). As telas de compra chegam com a T-103.
 
 - **Plano que vale agora** (`planoEfetivo`): `teste` até o `teste_fim` (depois, gratuito, mesmo antes da rotina diária da T-101); `mensal` e `anual`, inclusive inadimplente (RN-131); assinatura cancelada ou ausente, gratuito. Só o gratuito tem limite.
 - **Quem conta:** o que vem do app e da Mony (`contexto.origem` `app` ou `mony`). Rotinas (ocorrências de recorrência), Open Finance e admin não contam.
@@ -534,6 +534,17 @@ Implementado na T-101 (RN-124 a RN-126), em `modulos/planos` (`dominio/teste.ts`
 - **Avisos (RN-124):** na rotina `alertas-diarios` (09:00 de cada pessoa), tipo `assinatura`, com push, central e mensagem da Mony, abrindo `mony://planos`: no 2º dia do teste; no último (faltando menos de 24 horas: "acaba hoje às 12:00" ou "amanhã às 07:00"), com o que a pessoa já registrou (lançamentos e despesas, cartões, orçamentos e metas); e na primeira rodada depois do fim, para quem não assinou. Chaves `assinatura:teste:segundo-dia`, `:ultimo-dia` e `:fim`. Não são urgentes: esperam o fim do horário de silêncio.
 - **Encerramento (RN-126):** a rotina `encerrar-testes`, todo dia às 01:15, passa para o `gratuito` o teste que acabou (as datas ficam). Antes dela, o teste vencido já vale como gratuito (`planoEfetivo`).
 
+## Assinatura paga
+
+Implementado na T-102 (RN-128, RN-131), em `modulos/assinaturas`; a Stripe está no doc [10](10-integracoes-externas.md#stripe).
+
+- **`GET /planos`:** os preços vigentes (`planos_precos.vigente`), um por plano, em centavos. Sem preço configurado, a lista vem vazia.
+- **`GET /assinatura`:** `plano` (o que vale agora, como em `/assinatura/uso`), `status` da assinatura paga (`ativa` ou `inadimplente`; `null` fora do pago), `valorCentavos`, `proximaCobranca`, `cancelamentoAgendado`, `testeFim` e `gerenciavel` (já tem cliente na Stripe, então o portal abre).
+- **`POST /assinatura/checkout` `{ plano: 'mensal' | 'anual' }`:** devolve `{ url }` da página da Stripe. Erros: `ASSINATURA_JA_ATIVA` (409) para quem já paga, que troca pelo portal; `SERVICO_INDISPONIVEL` (503) sem preço vigente ou com a Stripe fora.
+- **`POST /assinatura/portal`:** `{ url }` do portal; `ASSINATURA_SEM_CLIENTE` (409) para quem nunca passou pelo checkout.
+- **`GET /assinatura/retorno?resultado=…`** (pública): 302 para `mony://planos?checkout=sucesso|cancelado|portal`.
+- **`POST /webhooks/stripe`** (pública): ver "Webhooks". O processamento, no worker, muda `assinaturas` na hora (RN-128) e manda os avisos do tipo `assinatura`.
+
 ## Guardas e decoradores
 
 | Decorador | Função |
@@ -544,7 +555,7 @@ Implementado na T-101 (RN-124 a RN-126), em `modulos/planos` (`dominio/teste.ts`
 | `@RecursoLimitado('lancamento')` | Marca a rota que pode responder `LIMITE_PLANO_ATINGIDO` (`x-recurso-limitado` no OpenAPI); a conta é do `CotasService`, no Service que grava (ver "Planos e cotas do gratuito") |
 | `@ExigePlano('pago')` | Bloqueia Open Finance, detecção de apps e ligação no gratuito (RN-121) |
 | `@Admin()` | Papel admin + sessão de admin com 2FA |
-| `@Webhook('stripe')`, `@Webhook('open-finance')` | Valida assinatura do corpo bruto, registra evento e deduplica |
+| `@Webhook('open-finance')` **(proposta)** | Valida assinatura do corpo bruto, registra evento e deduplica. A Stripe (T-102) faz isso no `AssinaturasService.receberWebhook`, sem decorador; vira decorador se o Open Finance repetir o mesmo caminho |
 
 ## Webhooks
 

@@ -28,6 +28,8 @@ describe('variáveis de ambiente', () => {
       TRANSCRICAO_PROVEDOR: 'fake',
       TRANSCRICAO_MODELO: 'nova-3',
       NFCE_PROVEDOR: 'fake',
+      COBRANCA_PROVEDOR: 'fake',
+      API_URL_PUBLICA: 'http://localhost:3000',
       APP_VERSAO_MINIMA_IOS: '0.0.0',
       APP_VERSAO_MINIMA_ANDROID: '0.0.0',
       AWS_REGION: 'sa-east-1',
@@ -38,6 +40,20 @@ describe('variáveis de ambiente', () => {
     expect(validarAmbiente({ ...banco, ...jwt, PORT: '8080', NODE_ENV: 'production' }).PORT).toBe(
       8080,
     );
+  });
+
+  it('T-102 a Stripe exige a chave secreta e o segredo do webhook', () => {
+    expect(() => validarAmbiente({ ...banco, COBRANCA_PROVEDOR: 'stripe' })).toThrow(
+      /STRIPE_CHAVE_SECRETA[\s\S]*STRIPE_SEGREDO_WEBHOOK/,
+    );
+    expect(
+      validarAmbiente({
+        ...banco,
+        COBRANCA_PROVEDOR: 'stripe',
+        STRIPE_CHAVE_SECRETA: 'sk_test_x',
+        STRIPE_SEGREDO_WEBHOOK: 'whsec_x',
+      }).COBRANCA_PROVEDOR,
+    ).toBe('stripe');
   });
 
   it('recusa valor inválido com mensagem que aponta a variável', () => {

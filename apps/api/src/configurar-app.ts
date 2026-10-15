@@ -11,11 +11,22 @@ export const PREFIXO_GLOBAL = 'v1';
 export const CABECALHO_ID_REQUISICAO = 'x-request-id';
 
 /**
+ * Guarda o corpo bruto do JSON em `request.rawBody`, além do corpo lido: o webhook da Stripe
+ * confere a assinatura sobre os bytes que chegaram (T-102). É o `rawBody: true` do Nest, mas no
+ * adaptador, para valer também nos testes, que criam a aplicação sem essa opção.
+ */
+class AdaptadorFastifyComCorpoBruto extends FastifyAdapter {
+  override registerParserMiddleware(prefixo?: string): void {
+    super.registerParserMiddleware(prefixo, true);
+  }
+}
+
+/**
  * Adaptador Fastify da API. Cada requisição recebe um id: o `x-request-id` que veio (ex.: do ALB)
  * ou um UUID novo. O id volta no cabeçalho da resposta e aparece como `reqId` nos logs.
  */
 export function criarAdaptadorFastify(): FastifyAdapter {
-  const adaptador = new FastifyAdapter({
+  const adaptador = new AdaptadorFastifyComCorpoBruto({
     requestIdHeader: CABECALHO_ID_REQUISICAO,
     genReqId: () => randomUUID(),
     // Em produção a API só recebe tráfego pelo ALB: o IP do cliente vem no X-Forwarded-For, usado

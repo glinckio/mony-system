@@ -90,6 +90,18 @@ export const esquemaAmbiente = z
     NFCE_PROVEDOR: z.enum(['fake', 'infosimples']).default('fake'),
     INFOSIMPLES_TOKEN: z.preprocess(vazioComoAusente, z.string().optional()),
     /**
+     * Assinaturas (doc 10, T-102): `stripe`, com a chave secreta e o segredo do webhook; `fake` não
+     * cobra ninguém (desenvolvimento e testes) e, em produção, responde 503.
+     */
+    COBRANCA_PROVEDOR: z.enum(['fake', 'stripe']).default('fake'),
+    STRIPE_CHAVE_SECRETA: z.preprocess(vazioComoAusente, z.string().optional()),
+    STRIPE_SEGREDO_WEBHOOK: z.preprocess(vazioComoAusente, z.string().optional()),
+    /**
+     * Endereço público da API, para onde a Stripe devolve a pessoa depois do checkout e do portal
+     * (`/v1/assinatura/retorno`, que abre o app).
+     */
+    API_URL_PUBLICA: z.url().default('http://localhost:3000'),
+    /**
      * Arquivos (anexos, áudios, exportações) no S3 privado, só por URL assinada (doc 11). Sem
      * bucket, o envio de arquivos fica desligado. `S3_ENDPOINT` só para S3 compatível local
      * (SeaweedFS do `docker compose`); na AWS fica vazio e as credenciais vêm do papel da tarefa.
@@ -149,6 +161,17 @@ export const esquemaAmbiente = z
         path: ['INFOSIMPLES_TOKEN'],
         message: 'obrigatória com NFCE_PROVEDOR=infosimples',
       });
+    }
+    if (variaveis.COBRANCA_PROVEDOR === 'stripe') {
+      for (const nome of ['STRIPE_CHAVE_SECRETA', 'STRIPE_SEGREDO_WEBHOOK'] as const) {
+        if (variaveis[nome] === undefined) {
+          contexto.addIssue({
+            code: 'custom',
+            path: [nome],
+            message: 'obrigatória com COBRANCA_PROVEDOR=stripe',
+          });
+        }
+      }
     }
     if (variaveis.IA_PROVEDOR === 'anthropic' && variaveis.ANTHROPIC_CHAVE_API === undefined) {
       contexto.addIssue({

@@ -86,7 +86,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [ ] **T-023b** PoC alarme no iOS: `mony-alarm` com AlarmKit no iOS 26+ e notificação local com som de alarme (até 30 s) abaixo
   - dep: T-023a · docs: 04, 09 · requer Mac com Xcode 26 (ou um job de macOS no CI) e um iPhone para validar
   - Mesmas funções do Android (`permissoes`, `sincronizar`, `estado`…), para o JS e a tela de teste não mudarem; relatório em `docs/agentes/poc/T-023b.md`.
-- [ ] **T-024** 👤 PoC Stripe: assinatura com cartão e Pix em conta BR, checkout externo com retorno por deep link
+- [x] **T-024** 👤 PoC Stripe: assinatura com cartão e Pix em conta BR, checkout externo com retorno por deep link (feita no teste da T-102, PR #92: cartão ok; Pix recorrente não existe na Stripe, ver doc 10)
   - dep: T-008, T-010 · docs: 10 (Stripe)
 - [ ] **T-025** 👤 PoC Open Finance: widget do agregador no Expo, ida ao app do banco e volta
   - dep: T-010 · docs: 10 (Open Finance) · requer sandbox do agregador
@@ -252,13 +252,16 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-101** Teste de 3 dias: início no cadastro, controle de um teste por pessoa, avisos, encerramento automático (PR #69)
   - dep: T-100, T-080 · RN-124, RN-125, RN-126
   - A T-100 já trata o teste vencido como gratuito (`planoEfetivo`); a rotina só grava a troca e avisa.
-- [ ] **T-102** 👤 Stripe: `BillingProvider`, checkout, webhooks idempotentes, portal, inadimplência
+- [x] **T-102** 👤 Stripe: `BillingProvider`, checkout, webhooks idempotentes, portal, inadimplência (PR #92)
   - dep: T-024, T-101 · RN-128, RN-131 · docs: 10 (Stripe)
 - [ ] **T-103** Telas de planos e assinatura no app
   - dep: T-102
   - Parte de "Seu plano" (`/mais/plano`, T-100), que o [Ver planos] da Mony abre; os formulários que recebem `LIMITE_PLANO_ATINGIDO` e os relatórios no gratuito podem mostrar o [Ver planos] também.
 - [ ] **T-104** Admin: preços (novo Price na Stripe), limites, duração do teste, cupons, histórico
   - dep: T-102, T-012 · RN-129, RN-130
+- [ ] **T-105** Pix no plano anual como pagamento único que libera 12 meses (Checkout `mode=payment`), com aviso antes do fim e renovação por novo pagamento **(confirmar com cliente: pergunta 9 do doc 15)**
+  - dep: T-102 · RN-128 · docs: 10 (Stripe)
+  - A Stripe não aceita Pix em assinatura recorrente (teste da T-102). O mensal fica só no cartão.
 
 ## Fase 5 — Recursos pagos e colaboração
 

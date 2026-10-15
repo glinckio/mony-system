@@ -80,6 +80,15 @@ export const CATALOGO_ERROS = {
     status: 403,
     mensagem: 'Este recurso está disponível só nos planos pagos.',
   },
+  // Assinatura (T-102)
+  ASSINATURA_JA_ATIVA: {
+    status: 409,
+    mensagem: 'Você já tem um plano pago. Para trocar de plano, use Gerenciar assinatura.',
+  },
+  ASSINATURA_SEM_CLIENTE: {
+    status: 409,
+    mensagem: 'Você ainda não tem uma assinatura para gerenciar.',
+  },
 
   // Finanças
   CATEGORIA_DUPLICADA: {
