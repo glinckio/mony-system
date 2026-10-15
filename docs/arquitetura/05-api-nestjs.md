@@ -116,7 +116,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Orçamentos e metas | `GET /orcamentos?competencia=` · `PUT /orcamentos` · `GET /metas` · `POST /metas` · `PATCH /metas/:id` · `POST /metas/:id/aportes` |
 | Dashboard e relatórios | `GET /dashboard?periodo=` · `GET /relatorios/:tipo?inicio=&fim=` · `POST /relatorios/exportar` |
 | Listas de compras | `GET /listas` · `GET /listas/:id` · `POST /listas` · `PATCH /listas/:id` · `DELETE /listas/:id` · `POST /listas/:id/itens` · `PATCH /itens/:id` · `DELETE /itens/:id` **(proposta)** · `POST /listas/:id/finalizar` (prontas: T-123a) |
-| Compartilhamento | `POST /compartilhamentos` · `POST /compartilhamentos/:id/aceitar` · `DELETE /compartilhamentos/:id` |
+| Compartilhamento | `GET /compartilhamentos` · `POST /compartilhamentos` · `POST /compartilhamentos/:id/aceitar` · `POST /compartilhamentos/:id/recusar` · `PATCH /compartilhamentos/:id` · `DELETE /compartilhamentos/:id` (prontas para listas: T-124a) |
 | Lembretes e agenda | `GET /lembretes` · `POST /lembretes` · `PATCH /lembretes/:id` · `DELETE /lembretes/:id` · `POST /lembretes/:id/concluir` · `POST /lembretes/:id/adiar` · `GET /lembretes/alarmes` (prontas: T-084a) · `GET /agenda?inicio=&fim=` · `POST /agendas/conectar` · `GET /agendas/oauth/callback` **(proposta)** · `POST /compromissos` · `PATCH /compromissos/:id` **(proposta)** |
 | Notificações | `GET /notificacoes` · `POST /notificacoes/:id/lida` · `GET /preferencias-alerta` · `PUT /preferencias-alerta` |
 | Apps de compra | `GET /apps-monitorados` · `PUT /apps-monitorados` · `POST /eventos/app-compra-aberto` |
@@ -456,7 +456,7 @@ Implementado na T-084a (RN-075 a RN-077), em `modulos/lembretes`; a regra da rep
 
 ## Listas de compras
 
-Implementado na T-123a (RN-070 a RN-073), em `modulos/listas`; o contrato e as contas puras ficam em `@mony/shared/listas`. As telas chegam com a T-123b, a ferramenta da Mony com a T-123c e o compartilhamento (RN-074) com a T-124.
+Implementado na T-123a (RN-070 a RN-073), em `modulos/listas`; o contrato e as contas puras ficam em `@mony/shared/listas`. As telas chegam com a T-123b, a ferramenta da Mony com a T-123c e o compartilhamento (RN-074) com a T-124a (o tempo real na T-124b e as telas na T-124d).
 
 | Rota | O que faz |
 |---|---|
@@ -485,6 +485,21 @@ As rotas de item devolvem a lista inteira. Uma lista finalizada não muda mais: 
   - **As recusas:** sem item comprado, "Marque os itens comprados antes de finalizar."; com item comprado sem preço e sem `valorCentavos`, o erro aponta o campo `valorCentavos`.
   - **Dois toques:** a lista é reservada (`finalizada_em` gravado só se ainda está aberta) antes do lançamento, e volta a aberta se ele falhar. Dois "Finalizar" ao mesmo tempo lançam uma despesa só: o segundo recebe `CONFLITO`.
 - **Gratuito (RN-120):** uma lista aberta, conferida ao criar (`conferirQuantidade(contexto, 'lista_compras', tx)`). A finalizada não conta, então finalizar libera outra.
+
+## Compartilhamento
+
+Implementado na T-124a (RN-074) para as listas de compras, em `modulos/compartilhamentos`; contrato em `@mony/shared/compartilhamentos`. Lembretes compartilhados chegam com a T-124c.
+
+| Rota | O que faz |
+|---|---|
+| `GET /compartilhamentos` | `recebidos` (pendentes e aceitos) e `enviados` (todos, com os recusados), os mais novos primeiro, com o nome da lista, o dono e o convidado |
+| `POST /compartilhamentos` | `{ recurso: 'lista', recursoId, contato, permissao }`: só o dono convida, só quem tem conta ativa. `contato` é o e-mail (sem caixa e espaços) ou o telefone (com ou sem +55); telefone em mais de uma conta pede o e-mail. Convidar de novo usa o mesmo convite: recusado volta a pendente, aceito só muda a permissão. Até 20 por hora por pessoa (`MUITAS_TENTATIVAS`), porque a resposta diz se o contato tem conta |
+| `POST /compartilhamentos/:id/aceitar` e `/recusar` | Só o convidado, só do pendente (aceitar de novo devolve o mesmo; aceitar o recusado é `CONFLITO`) |
+| `PATCH /compartilhamentos/:id` | O dono muda a permissão |
+| `DELETE /compartilhamentos/:id` | O dono tira a pessoa ou a pessoa sai |
+
+- **Acesso:** `CompartilhamentosService.verificarAcesso(usuarioId, 'lista', id, exigido)` devolve o dono e o acesso (`dono`, `editar` ou `ver`). Sem acesso ou com o convite pendente, 404 (não revela a lista); com acesso menor que o exigido, 403 `ACESSO_NEGADO`.
+- **Nas listas:** `ver` lê; `editar` também põe, muda, marca e tira itens e finaliza; o dono também muda nome e tipo, apaga e convida. O item é sempre do dono (`itens_lista.usuario_id`), mesmo posto por convidado; o preço sugerido vem das notas de quem põe. No "Finalizar", a despesa, a cota de lançamento e a categoria padrão são de quem finaliza. A lista conta só na cota do dono (RN-120). `GET /listas` junta as próprias e as recebidas, com `acesso`, `dono` (nulo na própria) e `compartilhadaCom` (quantos aceitaram). Apagar a lista apaga os convites (não há chave estrangeira para o recurso).
 
 ## Planos e cotas do gratuito
 

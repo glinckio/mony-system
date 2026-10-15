@@ -277,7 +277,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-123c** Ferramenta da Mony para listas de compras (`gerenciar_lista_compras`) (PR #84)
   - dep: T-123a · RN-070, RN-072 · docs: 08
   - Criar lista, pôr e tirar itens, marcar comprado e consultar o total pelo `ListasService`; o "Finalizar" pela Mony passa pela confirmação como os lançamentos.
-- [ ] **T-124a** Compartilhar listas na API: convites para quem tem conta (e-mail ou telefone), aceitar, recusar, sair e remover, permissão `ver` ou `editar`; a lista compartilhada aparece para o convidado com o dono e a permissão; `CompartilhamentosService.verificarAcesso`
+- [x] **T-124a** Compartilhar listas na API: convites para quem tem conta (e-mail ou telefone), aceitar, recusar, sair e remover, permissão `ver` ou `editar`; a lista compartilhada aparece para o convidado com o dono e a permissão; `CompartilhamentosService.verificarAcesso` (PR #85)
   - dep: T-123b, T-084b · RN-074 · docs: 05, 06
   - A T-124 foi dividida: API das listas (T-124a), tempo real (T-124b), lembretes compartilhados (T-124c) e as telas do app (T-124d).
 - [ ] **T-124b** Tempo real das listas compartilhadas: WebSocket `/v1/ws` (Socket.IO com adapter Redis), sala `lista:<id>` só para quem tem acesso, evento a cada mudança da lista

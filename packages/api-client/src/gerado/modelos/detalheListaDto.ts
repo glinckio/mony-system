@@ -5,14 +5,23 @@
  * API do app Monitorizze e da assistente Mony.
  * OpenAPI spec version: 1
  */
+import type { DetalheListaDtoAcesso } from './detalheListaDtoAcesso';
 import type { DetalheListaDtoCategoria } from './detalheListaDtoCategoria';
 import type { DetalheListaDtoCategoriaDespesa } from './detalheListaDtoCategoriaDespesa';
+import type { DetalheListaDtoDono } from './detalheListaDtoDono';
 import type { DetalheListaDtoItensItem } from './detalheListaDtoItensItem';
 import type { DetalheListaDtoOrcamento } from './detalheListaDtoOrcamento';
 
 export interface DetalheListaDto {
   /** @pattern ^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$ */
   id: string;
+  acesso: DetalheListaDtoAcesso;
+  dono: DetalheListaDtoDono;
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  compartilhadaCom: number;
   nome: string;
   categoria: DetalheListaDtoCategoria;
   finalizadaEm: string | null;
