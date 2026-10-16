@@ -173,7 +173,7 @@ Por mensagem (do PDF): data de hoje (no fuso do usuário), nome, categorias, car
 - `ConfigMonyService.ativa()` lê a versão ativa de `mony_config` (relida a cada minuto): `prompt_sistema` substitui o prompt do código, `ferramentas.descricoes` troca a descrição das ferramentas pelo nome e `modelo` vai em `PedidoLlm.modelo`. Sem versão ativa, com uma que não se lê ou com o banco fora do ar, vale o prompt do código (`prompts/sistema.ts`). A leitura de documentos tem prompt próprio, fora daqui.
 - Versão nova: `criarVersao` grava a próxima, inativa (descrição só de ferramenta que existe). `ativar` exige `mony_config.avaliacao` com 95% ou mais; a anterior sai na mesma transação.
 - Avaliação: `modulos/mony/avaliacao/casos.ts` (as frases, tipadas, no lugar do `casos.yaml`) e `avaliador.ts` (um usuário novo por frase, com o estado do caso, a conversa de verdade e as chamadas de ferramenta anotadas; os usuários são apagados no fim). Confere ferramentas e argumentos (em qualquer ordem, só os campos que importam), ferramentas proibidas, o primeiro componente (tipo, pergunta do rascunho, primeiro botão, botões) e trechos que o texto deve ou não ter.
-- `pnpm --filter api mony:avaliar [--criar arquivo] [--versao n] [--gravar] [--ativar] [--so-regras]` roda contra o banco e o provedor do ambiente; com `IA_PROVEDOR=fake`, só as frases resolvidas por regra. Até o painel (T-141), publicar uma versão é por aqui.
+- `pnpm --filter api mony:avaliar [--criar arquivo] [--versao n] [--gravar] [--ativar] [--so-regras]` roda contra o banco e o provedor do ambiente; com `IA_PROVEDOR=fake`, só as frases resolvidas por regra. O painel (T-141e, [13](13-painel-admin.md#mony-t-141e)) cria, avalia e ativa versões: a avaliação roda este mesmo comando, pelo worker, com `--versao <n> --gravar`; a última linha da saída é o motivo que o painel mostra quando falha.
 - CI: as frases por regra rodam no job Banco (`mony-avaliacao.integracao.spec.ts`); o workflow "Avaliação da Mony" roda todas com o modelo de verdade quando muda prompt, ferramenta, provedor ou caso, se houver o segredo `ANTHROPIC_CHAVE_API`.
 
 ## Leitura de mídia
@@ -209,7 +209,7 @@ Mídias pesadas são processadas na fila; o chat mostra "lendo seu documento…"
 ## Controle de custo e qualidade (do PDF)
 
 - **Limites por usuário por dia** de mensagens e leituras de imagem, configuráveis no admin (além das cotas do gratuito).
-- **`logs_ia`** em toda chamada: modelo, tokens de entrada/saída, ferramenta, duração, erro. Custo calculado por tabela de preços do provedor no admin.
+- **`logs_ia`** em toda chamada: modelo, tokens de entrada/saída, ferramenta, duração, erro. Custo calculado por tabela de preços do provedor no admin (centavos de dólar por milhão de tokens, `configuracoes.precos_ia`, T-141e).
 - **Alerta de custo diário** acima do limite para o responsável técnico ([12](12-infra-e-devops.md#monitoramento)).
 - **Mensagens simples por regra**: toques em botão, "sim/não", "desfazer", respostas a rascunho.
 - **Conjunto de frases de teste** (`avaliacao/casos.yaml`): entrada + estado do usuário → ferramentas esperadas e argumentos esperados. Exemplos:

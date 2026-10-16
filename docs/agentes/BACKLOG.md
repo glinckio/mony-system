@@ -317,7 +317,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-104a · docs: 13
 - [x] **T-141d** Admin: novidades (criar, editar, agendar e desativar comunicados com título, texto, vídeo e validade; push opcional) (PR #102)
   - dep: T-104a · docs: 13 · vídeo por URL ou upload no S3 **(confirmar com cliente)**
-- [ ] **T-141e** Admin: Mony (prompt do sistema versionado com avaliação antes de ativar, logs de conversas com erro, custo por período)
+- [x] **T-141e** Admin: Mony (prompt do sistema versionado com avaliação antes de ativar, logs de conversas com erro, custo por período) (PR #103)
   - dep: T-104a, T-068 · docs: 08, 13
 - [ ] **T-141f** Admin: métricas (usuários ativos, lançamentos por origem, alertas enviados) por materialized views
   - dep: T-104a · docs: 13
@@ -344,3 +344,5 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-065 · RN-083 · docs: 08 (Leitura de mídia)
 - [ ] **T-150** Novidades no app: `GET /novidades` (as que estão no ar e valem) e `POST /novidades/:id/lida`, aba Novidades na central com o vídeo, e o contador de não lidas
   - dep: T-141d, T-087 · docs: 05, 09, 13 · o push da novidade já chega na central como notificação (T-141d)
+- [ ] **T-151** Limites de uso da Mony por usuário por dia, para todos os planos (mensagens e leituras de imagem), editáveis na seção Mony do painel; ao chegar no limite, a Mony avisa e para até o dia seguinte
+  - dep: T-141e · docs: 08 (Controle de custo e qualidade), 13 · o gratuito já tem cotas próprias (RN-120, T-104c); este limite é de custo e vale também para quem paga
