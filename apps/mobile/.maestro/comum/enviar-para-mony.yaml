@@ -10,4 +10,5 @@ appId: com.monitorizze.app.preview
 - tapOn:
     id: mony-campo
 - inputText: ${MENSAGEM}
-- tapOn: Enviar
+# O campo envia pela tecla do teclado (returnKeyType send), como o botão Enviar.
+- pressKey: Enter

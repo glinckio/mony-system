@@ -6,12 +6,24 @@ appId: com.monitorizze.app.preview
 - tapOn:
     id: campo-nome
 - inputText: ${NOME}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: campo-limiteCentavos
 - tapOn:
     id: campo-limiteCentavos
 - inputText: '500000'
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: campo-diaFechamento
 - tapOn:
     id: campo-diaFechamento
 - inputText: '10'
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: campo-diaVencimento
 - tapOn:
     id: campo-diaVencimento
 - inputText: '20'
