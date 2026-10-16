@@ -197,6 +197,37 @@ export class MonyRepository {
     }
   }
 
+  /**
+   * T-151: as mensagens do usuário (de qualquer conversa) desde o instante, dos tipos pedidos. As
+   * que a Mony recusou pelo limite também contam: o limite já está batido.
+   */
+  contarMensagensDoUsuario(
+    usuarioId: string,
+    desde: Date,
+    tipos: readonly TipoMensagem[],
+  ): Promise<number> {
+    return this.prisma.cliente.mensagem.count({
+      where: { usuarioId, autor: 'usuario', tipo: { in: [...tipos] }, criadoEm: { gte: desde } },
+    });
+  }
+
+  async fusoDoUsuario(usuarioId: string): Promise<string> {
+    const usuario = await this.prisma.cliente.usuario.findUniqueOrThrow({
+      where: { id: usuarioId },
+      select: { fusoHorario: true },
+    });
+    return usuario.fusoHorario;
+  }
+
+  /** O valor de uma linha de `configuracoes` (`undefined`: sem linha). */
+  async configuracao(chave: string): Promise<unknown> {
+    const linha = await this.prisma.cliente.configuracao.findUnique({
+      where: { chave },
+      select: { valor: true },
+    });
+    return linha?.valor;
+  }
+
   /** A mensagem que já usa o anexo (o áudio só vale para uma mensagem). */
   mensagemDoAnexo(anexoId: string): Promise<{ id: string } | null> {
     return this.prisma.cliente.mensagem.findUnique({ where: { anexoId }, select: { id: true } });

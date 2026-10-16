@@ -1308,7 +1308,8 @@ model Mensagem {
   logsIa   LogIa[]
 
   @@unique([conversaId, idempotencyKey])
-  @@index([usuarioId])
+  /// T-151: as mensagens do usuário de hoje, para os limites diários da Mony.
+  @@index([usuarioId, criadoEm])
   @@index([conversaId, criadoEm(sort: Desc)])
   @@index([rascunhoId])
   @@map("mensagens")

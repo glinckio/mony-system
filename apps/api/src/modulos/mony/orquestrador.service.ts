@@ -21,6 +21,7 @@ import { avisoDoLimite, ehVerPlanos } from './aviso-limite';
 import { ConfigMonyService } from './config.service';
 import { ContextoMonyService } from './contexto.service';
 import { DocumentosMony, type LeituraNoChat } from './documentos.service';
+import { LimitesMonyService } from './limites.service';
 import { type ContextoFerramenta, RegistroFerramentas } from './ferramentas/registro';
 import { componentesDaMensagem, conversaParaModelo } from './historico';
 import { type MensagemSalva, MonyRepository } from './mony.repository';
@@ -73,6 +74,7 @@ export class MonyOrquestrador {
     private readonly documentos: DocumentosMony,
     private readonly config: ConfigMonyService,
     private readonly cotas: CotasService,
+    private readonly limites: LimitesMonyService,
   ) {}
 
   /**
@@ -80,7 +82,8 @@ export class MonyOrquestrador {
    * idempotência repete a resposta já gravada; se a primeira tentativa caiu antes de responder, a
    * mensagem do usuário não é gravada de novo e a resposta é refeita. No gratuito, a mensagem
    * (texto ou áudio) e a leitura de foto ou PDF contam na cota (RN-120); passou do limite, a Mony
-   * só avisa, com o [Ver planos] (RN-123).
+   * só avisa, com o [Ver planos] (RN-123). Em todos os planos, passou do limite de custo do dia
+   * (T-151), a Mony avisa que volta amanhã, sem botão.
    */
   async *processar(
     contexto: Contexto,
@@ -115,8 +118,17 @@ export class MonyOrquestrador {
         return;
       }
     }
-    let aviso: ReturnType<typeof avisoDoLimite> = null;
+    let aviso: { texto: string; componente: ComponenteMony | null } | null = null;
     if (!pergunta) {
+      // T-151: o limite de custo do dia vale para todos os planos e vem antes da cota do gratuito
+      // (a mensagem recusada não gasta a cota).
+      const limite = await this.limites.conferir(
+        usuarioId,
+        arquivo === null || arquivo.tipo === 'audio' ? 'mensagem' : 'leitura',
+      );
+      if (limite !== null) aviso = { texto: limite, componente: null };
+    }
+    if (!pergunta && aviso === null) {
       try {
         await this.cotas.consumir(
           contexto,
@@ -147,9 +159,11 @@ export class MonyOrquestrador {
     let falha: string | null = null;
     if (aviso) {
       texto = aviso.texto;
-      componentes.push(aviso.componente);
       yield { tipo: 'texto.delta', texto };
-      yield { tipo: 'componente', componente: aviso.componente };
+      if (aviso.componente) {
+        componentes.push(aviso.componente);
+        yield { tipo: 'componente', componente: aviso.componente };
+      }
     }
     // T-065: foto, print ou PDF vira lançamentos a confirmar, sem as regras nem a conversa.
     const documento =
