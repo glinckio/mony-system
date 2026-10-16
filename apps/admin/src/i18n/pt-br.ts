@@ -353,6 +353,14 @@ export const textosPtBr = {
     salvarPrecos: 'Salvar preços',
     precoInvalido: 'Preencha o modelo e os dois preços (ex.: 3,00).',
     precosSalvos: 'Preços salvos.',
+    limites: 'Limites por usuário por dia',
+    descricaoLimites:
+      'Valem em todos os planos, além das cotas do gratuito, e zeram à meia-noite no fuso de cada usuário. No limite, a Mony avisa e volta a responder no dia seguinte.',
+    mensagensPorDia: 'Mensagens (texto ou áudio)',
+    leiturasPorDia: 'Leituras (foto ou PDF)',
+    salvarLimites: 'Salvar limites',
+    limiteInvalido: 'Use números inteiros de 1 a {{maximo}}.',
+    limitesSalvos: 'Limites salvos. Valem em até 30 segundos.',
     logs: 'Chamadas com erro',
     descricaoLogs:
       'As chamadas ao modelo que deram erro, da mais nova à mais antiga, com a mensagem de quem falava com a Mony. Ver esta lista fica na auditoria.',

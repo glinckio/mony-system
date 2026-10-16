@@ -141,6 +141,9 @@ function api(opcoes: { avaliacaoDisponivel?: boolean } = {}) {
       }
       if (caminho.endsWith('/admin/mony/custo')) return resposta(CUSTO);
       if (caminho.endsWith('/admin/mony/precos')) return resposta(corpo ?? PRECOS);
+      if (caminho.endsWith('/admin/mony/limites')) {
+        return resposta(corpo ?? { mensagensPorDia: 200, leiturasPorDia: 30 });
+      }
       if (caminho.endsWith('/admin/mony/logs')) return resposta(LOGS);
       return resposta({}, 404);
     }),
@@ -262,6 +265,35 @@ describe('Mony (T-141e)', () => {
         { modelo: 'claude-modelo', entradaCentavosPorMilhao: 300, saidaCentavosPorMilhao: 1500 },
         { modelo: 'modelo-novo', entradaCentavosPorMilhao: 80, saidaCentavosPorMilhao: 400 },
       ],
+    });
+  });
+
+  it('T-151 edita os limites por usuário por dia e recusa valor fora da faixa', async () => {
+    const pedidos = api();
+    abrir();
+    const mensagens = await screen.findByLabelText(
+      'Mensagens (texto ou áudio)',
+      {},
+      { timeout: 15_000 },
+    );
+    expect(mensagens).toHaveValue('200');
+    expect(screen.getByLabelText('Leituras (foto ou PDF)')).toHaveValue('30');
+
+    await userEvent.clear(mensagens);
+    await userEvent.type(mensagens, '0');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar limites' }));
+    expect(await screen.findByText('Use números inteiros de 1 a 10000.')).toBeInTheDocument();
+    expect(pedidos.some(({ metodo }) => metodo === 'PUT')).toBe(false);
+
+    await userEvent.clear(mensagens);
+    await userEvent.type(mensagens, '150');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar limites' }));
+    expect(
+      await screen.findByText('Limites salvos. Valem em até 30 segundos.'),
+    ).toBeInTheDocument();
+    expect(pedidos.find(({ metodo }) => metodo === 'PUT')).toMatchObject({
+      url: expect.stringContaining('/admin/mony/limites') as unknown,
+      corpo: { mensagensPorDia: 150, leiturasPorDia: 30 },
     });
   });
 

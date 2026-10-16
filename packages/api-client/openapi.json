@@ -1600,6 +1600,66 @@
         ]
       }
     },
+    "/v1/admin/mony/limites": {
+      "get": {
+        "operationId": "limitesAdminMony",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Mensagens e leituras por usuário por dia, em todos os planos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LimitesMonyDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      },
+      "put": {
+        "operationId": "salvarLimitesAdminMony",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LimitesMonyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Vale em até 30 s em todos os processos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LimitesMonyDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/v1/admin/metricas": {
       "get": {
         "operationId": "lerAdminMetricas",
@@ -8452,6 +8512,25 @@
         },
         "required": [
           "precos"
+        ]
+      },
+      "LimitesMonyDto": {
+        "type": "object",
+        "properties": {
+          "mensagensPorDia": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "leiturasPorDia": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "mensagensPorDia",
+          "leiturasPorDia"
         ]
       },
       "MetricasAdminDto": {

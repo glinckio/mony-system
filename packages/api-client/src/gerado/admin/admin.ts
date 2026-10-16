@@ -40,6 +40,7 @@ import type {
   FilasAdminDto,
   FiltrosAuditoriaAdminDto,
   LerAdminMetricasParams,
+  LimitesMonyDto,
   ListarAdminAssinaturasParams,
   LoginAdminDto,
   LogsAdminMonyParams,
@@ -3726,6 +3727,212 @@ export const useSalvarPrecosAdminMony = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   return useMutation(getSalvarPrecosAdminMonyMutationOptions(options), queryClient);
+};
+export const getLimitesAdminMonyUrl = () => {
+  return `/v1/admin/mony/limites`;
+};
+
+export const limitesAdminMony = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<LimitesMonyDto> => {
+  return requisicao<LimitesMonyDto>(getLimitesAdminMonyUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getLimitesAdminMonyQueryKey = () => {
+  return [`/v1/admin/mony/limites`] as const;
+};
+
+export const getLimitesAdminMonyQueryOptions = <
+  TData = Awaited<ReturnType<typeof limitesAdminMony>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof limitesAdminMony>>, TError, TData>>;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getLimitesAdminMonyQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof limitesAdminMony>>> = ({ signal }) =>
+    limitesAdminMony({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof limitesAdminMony>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type LimitesAdminMonyQueryResult = NonNullable<Awaited<ReturnType<typeof limitesAdminMony>>>;
+export type LimitesAdminMonyQueryError = unknown;
+
+export function useLimitesAdminMony<
+  TData = Awaited<ReturnType<typeof limitesAdminMony>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof limitesAdminMony>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof limitesAdminMony>>,
+          TError,
+          Awaited<ReturnType<typeof limitesAdminMony>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useLimitesAdminMony<
+  TData = Awaited<ReturnType<typeof limitesAdminMony>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof limitesAdminMony>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof limitesAdminMony>>,
+          TError,
+          Awaited<ReturnType<typeof limitesAdminMony>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useLimitesAdminMony<
+  TData = Awaited<ReturnType<typeof limitesAdminMony>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof limitesAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useLimitesAdminMony<
+  TData = Awaited<ReturnType<typeof limitesAdminMony>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof limitesAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getLimitesAdminMonyQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSalvarLimitesAdminMonyUrl = () => {
+  return `/v1/admin/mony/limites`;
+};
+
+export const salvarLimitesAdminMony = async (
+  limitesMonyDto: LimitesMonyDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<LimitesMonyDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<LimitesMonyDto>(getSalvarLimitesAdminMonyUrl(), {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(limitesMonyDto),
+  });
+};
+
+export const getSalvarLimitesAdminMonyMutationKey = () => ['salvarLimitesAdminMony'] as const;
+
+export const getSalvarLimitesAdminMonyMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof salvarLimitesAdminMony>>,
+    TError,
+    SalvarLimitesAdminMonyMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof salvarLimitesAdminMony>>,
+  TError,
+  SalvarLimitesAdminMonyMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSalvarLimitesAdminMonyMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof salvarLimitesAdminMony>>,
+    SalvarLimitesAdminMonyMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return salvarLimitesAdminMony(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SalvarLimitesAdminMonyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof salvarLimitesAdminMony>>
+>;
+export type SalvarLimitesAdminMonyMutationBody = LimitesMonyDto;
+export type SalvarLimitesAdminMonyMutationError = unknown;
+export type SalvarLimitesAdminMonyMutationVariables = { data: LimitesMonyDto };
+
+export const useSalvarLimitesAdminMony = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof salvarLimitesAdminMony>>,
+      TError,
+      SalvarLimitesAdminMonyMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof salvarLimitesAdminMony>>,
+  TError,
+  SalvarLimitesAdminMonyMutationVariables,
+  TContext
+> => {
+  return useMutation(getSalvarLimitesAdminMonyMutationOptions(options), queryClient);
 };
 export const getLerAdminMetricasUrl = (params: LerAdminMetricasParams) => {
   const normalizedParams = new URLSearchParams();

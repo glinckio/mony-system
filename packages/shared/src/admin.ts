@@ -541,6 +541,22 @@ export const esquemaPrecosIaAdmin = z.object({
     }),
 });
 
+/**
+ * T-151: limites de custo da Mony por usuário por dia, para todos os planos (o gratuito também
+ * tem as cotas dele, RN-120). Padrões da decisão técnica; o painel muda.
+ */
+export const LIMITES_MONY_PADRAO = { mensagensPorDia: 200, leiturasPorDia: 30 } as const;
+export const LIMITE_MONY_MAXIMO = 10_000;
+
+/**
+ * `GET /admin/mony/limites` e `PUT /admin/mony/limites`: mensagens (texto ou áudio) e leituras
+ * (foto ou PDF) por usuário por dia, no fuso do usuário.
+ */
+export const esquemaLimitesMony = z.object({
+  mensagensPorDia: z.number().int().min(1).max(LIMITE_MONY_MAXIMO),
+  leiturasPorDia: z.number().int().min(1).max(LIMITE_MONY_MAXIMO),
+});
+
 /** Um ano, contando o dia de início. */
 export const DIAS_CUSTO_MONY_MAXIMO = 366;
 
@@ -682,6 +698,7 @@ export type PrecosIaAdmin = z.infer<typeof esquemaPrecosIaAdmin>;
 export type ConsultaCustoMonyAdmin = z.infer<typeof esquemaConsultaCustoMonyAdmin>;
 export type CustoModeloMony = z.infer<typeof esquemaCustoModeloMony>;
 export type CustoMonyAdmin = z.infer<typeof esquemaCustoMonyAdmin>;
+export type LimitesMony = z.infer<typeof esquemaLimitesMony>;
 export type ConsultaMetricasAdmin = z.infer<typeof esquemaConsultaMetricasAdmin>;
 export type MetricasAdmin = z.infer<typeof esquemaMetricasAdmin>;
 

@@ -41,6 +41,7 @@ import { ResumoPeriodoTool } from './ferramentas/resumo-periodo.tool';
 import { FERRAMENTAS_MONY, type Ferramenta, RegistroFerramentas } from './ferramentas/registro';
 import { MonyController } from './mony.controller';
 import { LancamentosMony } from './lancamentos.service';
+import { LimitesMonyService } from './limites.service';
 import { ListasMony } from './listas.service';
 import { MonyService } from './mony.service';
 import { NfceMony } from './nfce.service';
@@ -108,6 +109,7 @@ const FERRAMENTAS = [
     ListasMony,
     ConsultoriaMony,
     ConfigMonyService,
+    LimitesMonyService,
     DocumentosMony,
     NfceMony,
     PreferenciasService,
@@ -120,7 +122,7 @@ const FERRAMENTAS = [
       useFactory: (...ferramentas: Ferramenta[]) => ferramentas,
     },
   ],
-  // O painel (T-141e) cria, avalia e ativa versões do prompt.
-  exports: [ConfigMonyService],
+  // O painel cria, avalia e ativa versões do prompt (T-141e) e muda os limites do dia (T-151).
+  exports: [ConfigMonyService, LimitesMonyService],
 })
 export class MonyModule {}

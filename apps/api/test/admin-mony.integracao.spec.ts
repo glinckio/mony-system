@@ -7,12 +7,14 @@ import { randomInt, randomUUID } from 'node:crypto';
 
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import type {
-  CustoMonyAdmin,
-  LogsMonyAdmin,
-  PrecosIaAdmin,
-  VersaoMonyAdmin,
-  VersoesMonyAdmin,
+import {
+  type CustoMonyAdmin,
+  type LimitesMony,
+  type LogsMonyAdmin,
+  type PrecosIaAdmin,
+  type VersaoMonyAdmin,
+  type VersoesMonyAdmin,
+  LIMITES_MONY_PADRAO,
 } from '@mony/shared/admin';
 import { VERSOES_DOCUMENTOS } from '@mony/shared/autenticacao';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -28,6 +30,7 @@ import {
   ProcessadorAvaliacaoMony,
 } from '../src/modulos/mony/avaliacao/pedidos-avaliacao';
 import { ConfigMonyService } from '../src/modulos/mony/config.service';
+import { CONFIGURACAO_LIMITES_MONY } from '../src/modulos/mony/limites.service';
 import { PROMPT_SISTEMA } from '../src/modulos/mony/prompts/sistema';
 
 const ativo = process.env.TESTES_INTEGRACAO === '1';
@@ -342,6 +345,39 @@ describe.runIf(ativo)('integração: Mony no painel (T-141e)', () => {
       });
     } finally {
       await chamar('PUT', '/v1/admin/mony/precos', antes);
+    }
+  });
+
+  it('T-151 limites diários: padrões sem linha, salvar com auditoria e recusar fora da faixa', async () => {
+    const linha = await prisma.configuracao.findUnique({
+      where: { chave: CONFIGURACAO_LIMITES_MONY },
+    });
+    const antes = (await chamar('GET', '/v1/admin/mony/limites')).json<LimitesMony>();
+    if (linha === null) expect(antes).toEqual(LIMITES_MONY_PADRAO);
+    try {
+      // Acima dos padrões: os outros arquivos de teste não chegam perto.
+      const novos = { mensagensPorDia: 500, leiturasPorDia: 60 };
+      const salvos = await chamar('PUT', '/v1/admin/mony/limites', novos);
+      expect(salvos.statusCode).toBe(200);
+      expect(salvos.json()).toEqual(novos);
+      expect((await chamar('GET', '/v1/admin/mony/limites')).json()).toEqual(novos);
+      expect(
+        await prisma.registroAuditoria.findFirst({
+          where: { usuarioId: adminId, acao: 'mony.limites_alterados' },
+          orderBy: { criadoEm: 'desc' },
+          select: { antes: true, depois: true, entidadeId: true },
+        }),
+      ).toEqual({ antes, depois: novos, entidadeId: CONFIGURACAO_LIMITES_MONY });
+      expect(
+        (await chamar('PUT', '/v1/admin/mony/limites', { mensagensPorDia: 0, leiturasPorDia: 5 }))
+          .statusCode,
+      ).toBe(400);
+    } finally {
+      if (linha === null) {
+        await prisma.configuracao.delete({ where: { chave: CONFIGURACAO_LIMITES_MONY } });
+      } else {
+        await chamar('PUT', '/v1/admin/mony/limites', antes);
+      }
     }
   });
 });

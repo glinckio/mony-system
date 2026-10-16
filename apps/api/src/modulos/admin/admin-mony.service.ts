@@ -5,6 +5,7 @@ import type {
   ConsultaCustoMonyAdmin,
   ConsultaLogsMonyAdmin,
   CustoMonyAdmin,
+  LimitesMony,
   LogsMonyAdmin,
   NovaVersaoMony,
   PrecosIaAdmin,
@@ -26,6 +27,7 @@ import {
   MINIMO_AVALIACAO,
   type ResultadoAvaliacao,
 } from '../mony/config.service';
+import { LimitesMonyService } from '../mony/limites.service';
 import { PROMPT_SISTEMA } from '../mony/prompts/sistema';
 import { AdminMonyRepository, type LinhaResumoVersaoMony } from './admin-mony.repository';
 import { AVALIACAO_PARADA_MS, custoDoModelo, situacaoDaAvaliacao } from './dominio/mony';
@@ -35,14 +37,15 @@ const MENSAGEM_NO_LOG = 500;
 
 /**
  * A seção Mony do painel (T-141e, doc 13): versões do prompt do sistema (criar, avaliar no worker,
- * ativar com 95% ou mais, doc 08), chamadas ao modelo com erro e custo por período pela tabela de
- * preços. Ver logs (com o texto do usuário) e mudar qualquer coisa grava `auditoria`.
+ * ativar com 95% ou mais, doc 08), chamadas ao modelo com erro, custo por período pela tabela de
+ * preços e os limites de uso por usuário por dia (T-151). Ver logs (com o texto do usuário) e mudar qualquer coisa grava `auditoria`.
  */
 @Injectable()
 export class AdminMonyService {
   constructor(
     private readonly repositorio: AdminMonyRepository,
     private readonly config: ConfigMonyService,
+    private readonly limitesMony: LimitesMonyService,
     private readonly configuracao: Configuracao,
     private readonly clock: Clock,
     @InjectQueue(FILAS.monyAvaliacao) private readonly fila: Queue<DadosJobAvaliacao>,
@@ -242,6 +245,18 @@ export class AdminMonyService {
     const antes = await this.repositorio.precos();
     await this.repositorio.salvarPrecos({ precos: dados.precos, antes, adminId, ip });
     return this.precos();
+  }
+
+  /** T-151: os limites diários que valem agora (os padrões, sem linha salva). */
+  async limites(): Promise<LimitesMony> {
+    this.limitesMony.esquecer();
+    return this.limitesMony.obter();
+  }
+
+  async salvarLimites(adminId: string, dados: LimitesMony, ip: string): Promise<LimitesMony> {
+    const antes = await this.limites();
+    await this.repositorio.salvarLimites({ limites: dados, antes, adminId, ip });
+    return this.limites();
   }
 
   private avaliacaoDisponivel(): boolean {
