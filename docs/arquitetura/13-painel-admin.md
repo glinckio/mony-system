@@ -90,8 +90,9 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 - **Ativar** (`POST …/:versao/ativar`) só aparece e só passa com a avaliação em 95% ou mais (`ConfigMonyService.ativar`, doc 08); a anterior sai na mesma transação e as outras instâncias passam a usar a nova em até 1 minuto.
 - **Custo por período** (`GET /admin/mony/custo?de=&ate=`, dias de São Paulo, até 1 ano): chamadas, tokens de entrada e saída e custo por modelo, o total, e quantas chamadas deram erro. O custo vem da **tabela de preços** (`GET` e `PUT /admin/mony/precos`, guardada em `configuracoes.precos_ia`) em centavos de dólar por milhão de tokens, a moeda em que o provedor cobra; arredonda uma vez por modelo. Modelo sem preço fica fora do total, com aviso e um botão para pôr o preço dele. A transcrição de áudio grava tokens 0 e não entra no custo.
 - **Chamadas com erro** (`GET /admin/mony/logs?de=&ate=`, 50 por vez, cursor): quando, quem (link para a conta), a mensagem do usuário que levou à chamada (até 500 caracteres), o erro, a ferramenta, o modelo e a duração.
-- Auditoria: `mony.versao_criada`, `mony.avaliacao_pedida`, `mony.versao_ativada` (antes e depois), `mony.precos_alterados` (antes e depois) e `mony.logs_vistos` a cada página aberta, porque mostra o texto dos usuários.
-- Os limites de uso por usuário por dia (para todos os planos) e o alerta de custo diário ainda não existem: são a T-151 e a T-142.
+- **Limites por usuário por dia (T-151)** (`GET` e `PUT /admin/mony/limites`, guardados em `configuracoes.limites_mony`): mensagens (texto ou áudio) e leituras (foto ou PDF) por dia, de 1 a 10.000, para todos os planos. Sem linha valem os padrões, 200 mensagens e 30 leituras. Mudar vale em até 30 s em todos os processos (doc 08).
+- Auditoria: `mony.versao_criada`, `mony.avaliacao_pedida`, `mony.versao_ativada` (antes e depois), `mony.precos_alterados` (antes e depois), `mony.limites_alterados` (antes e depois) e `mony.logs_vistos` a cada página aberta, porque mostra o texto dos usuários.
+- O alerta de custo diário ainda não existe: é a T-142.
 
 ## Métricas (T-141f)
 

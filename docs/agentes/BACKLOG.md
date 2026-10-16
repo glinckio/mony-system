@@ -346,7 +346,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-065 · RN-083 · docs: 08 (Leitura de mídia)
 - [x] **T-150** Novidades no app: `GET /novidades` (as que estão no ar e valem) e `POST /novidades/:id/lida`, aba Novidades na central com o vídeo, e o contador de não lidas (PR #106)
   - dep: T-141d, T-087 · docs: 05, 09, 13 · o push da novidade já chega na central como notificação (T-141d)
-- [ ] **T-151** Limites de uso da Mony por usuário por dia, para todos os planos (mensagens e leituras de imagem), editáveis na seção Mony do painel; ao chegar no limite, a Mony avisa e para até o dia seguinte
+- [x] **T-151** Limites de uso da Mony por usuário por dia, para todos os planos (mensagens e leituras de imagem), editáveis na seção Mony do painel; ao chegar no limite, a Mony avisa e para até o dia seguinte (PR #107)
   - dep: T-141e · docs: 08 (Controle de custo e qualidade), 13 · o gratuito já tem cotas próprias (RN-120, T-104c); este limite é de custo e vale também para quem paga
 - [ ] **T-152** Teste de integração instável: `recorrencias-cartao.integracao.spec.ts` › "editar refaz as ocorrências livres nas faturas" às vezes vê R$ 100 em vez de R$ 75 em dez/2026 (uma ocorrência a mais) quando roda com a suíte inteira; sozinho passa. Achar a corrida (provavelmente a rotina ou outro teste gerando ocorrências no mesmo instante) e tornar o teste determinístico
   - dep: — · visto nas verificações locais das T-141f e T-150

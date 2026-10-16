@@ -208,7 +208,7 @@ Mídias pesadas são processadas na fila; o chat mostra "lendo seu documento…"
 
 ## Controle de custo e qualidade (do PDF)
 
-- **Limites por usuário por dia** de mensagens e leituras de imagem, configuráveis no admin (além das cotas do gratuito).
+- **Limites por usuário por dia** de mensagens e leituras de imagem, configuráveis no admin (além das cotas do gratuito). Implementado na T-151 (`LimitesMonyService`): conta as mensagens do usuário gravadas desde a meia-noite no fuso dele (texto e áudio contam como mensagem; foto e PDF como leitura), sem tabela de contador. A conferência vem antes da cota do gratuito: no limite, a pergunta fica na conversa e a Mony responde só "Você chegou ao limite de N mensagens para a Mony hoje. Amanhã eu volto a responder." (ou a frase das leituras), sem botão, sem chamar o modelo e sem gastar a cota. Padrões **(decisão técnica)**: 200 mensagens e 30 leituras por dia; o painel muda ([13](13-painel-admin.md#mony-t-141e)). A leitura do QR Code da NFC-e não conta (é consulta à Sefaz, não ao modelo).
 - **`logs_ia`** em toda chamada: modelo, tokens de entrada/saída, ferramenta, duração, erro. Custo calculado por tabela de preços do provedor no admin (centavos de dólar por milhão de tokens, `configuracoes.precos_ia`, T-141e).
 - **Alerta de custo diário** acima do limite para o responsável técnico ([12](12-infra-e-devops.md#monitoramento)).
 - **Mensagens simples por regra**: toques em botão, "sim/não", "desfazer", respostas a rascunho.
