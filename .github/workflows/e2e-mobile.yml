@@ -127,8 +127,9 @@ jobs:
             android/app/src/main/AndroidManifest.xml
           # O build de release dos módulos do Expo estoura o Metaspace padrão (512 MB) no runner.
           sed -i '/^org.gradle.jvmargs=/d' android/gradle.properties
-          echo 'org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g' >> android/gradle.properties
-          echo 'kotlin.daemon.jvmargs=-Xmx3g' >> android/gradle.properties
+          # O arquivo gerado não termina em quebra de linha.
+          printf '\norg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g\nkotlin.daemon.jvmargs=-Xmx3g\n' \
+            >> android/gradle.properties
           grep jvmargs android/gradle.properties
           cd android
           ./gradlew --console=plain app:assembleRelease -PreactNativeArchitectures=x86_64
