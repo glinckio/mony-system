@@ -148,7 +148,7 @@ describe('parâmetros do painel (T-141g)', () => {
     return { parametros: new ParametrosService(prisma, config, clock), findUnique, clock };
   }
 
-  it('sem linha valem os padrões do código, com a versão mínima do ambiente', async () => {
+  it('RN-078, RN-103, RN-104 e RN-106: sem linha valem os padrões do código, e a versão mínima do ambiente', async () => {
     const { parametros, findUnique } = servico(() => Promise.resolve(null));
     expect(await parametros.obter()).toEqual({
       alertas: {
