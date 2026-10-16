@@ -313,7 +313,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-104a · docs: 13
 - [x] **T-141b** Admin: assinaturas (em teste, gratuitos, ativas, canceladas, inadimplentes; conversão do teste; MRR) (PR #99)
   - dep: T-104a, T-102 · docs: 13
-- [ ] **T-141c** Admin: auditoria (registro das ações dos administradores, com filtros)
+- [x] **T-141c** Admin: auditoria (registro das ações dos administradores, com filtros) (PR #100)
   - dep: T-104a · docs: 13
 - [ ] **T-141d** Admin: novidades (criar, editar, agendar e desativar comunicados com título, texto, vídeo e validade; push opcional)
   - dep: T-104a · docs: 13 · vídeo por URL ou upload no S3 **(confirmar com cliente)**

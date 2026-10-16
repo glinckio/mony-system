@@ -67,6 +67,12 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 - **Conversão do teste:** dos testes que acabaram nos últimos 30 dias, quantos assinaram um plano pago (mesmo que depois tenham cancelado; `assinaturas.inicio` gravado). Quem assina no meio do teste entra na conta quando o teste acabaria.
 - Só leitura, sem auditoria das listas (como a lista de usuários sem busca); abrir a conta de alguém grava a visualização (T-141a). Contagens em consulta direta, que basta para o volume do início; se pesar, vão para as *materialized views* da T-141f.
 
+## Auditoria (T-141c)
+
+- A tabela `auditoria` recebe toda ação e visualização de dados dos admins (o login no painel, preços, limites, cupons, usuários). A seção mostra os registros do mais novo ao mais antigo, 50 por vez com [Carregar mais] (`GET /admin/auditoria`): quando, quem, a ação, sobre o quê (com link para a conta quando é um usuário), o antes e o depois numa linha e o IP.
+- **Filtros:** admin, ação e entidade (as listas vêm de `GET /admin/auditoria/filtros`, com o que existe no registro), id da entidade e período. O período usa dias de São Paulo, os dois inclusos; início depois do fim responde 400.
+- Consultar a auditoria não gera registro, para a lista não crescer sozinha. Ninguém edita nem apaga registros pelo painel. O admin cuja conta foi apagada aparece como "Conta apagada" (`usuario_id` vira nulo).
+
 ## Telas (do PDF)
 
 | Seção | Funções |
