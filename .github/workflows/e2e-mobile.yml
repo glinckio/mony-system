@@ -1,0 +1,164 @@
+# Testes de ponta a ponta do app com o Maestro (T-143a, doc 14): o app em build de release, num
+# emulador Android, contra a API local com os provedores de teste (IA, e-mail, push e cobrança
+# fake). Roda manualmente (Actions → E2E do app → Run workflow) e quando os fluxos ou este arquivo
+# mudam; não é check obrigatório da main. Antes do release, os mesmos fluxos rodam contra staging
+# (T-143b).
+name: E2E do app
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'apps/mobile/.maestro/**'
+      - '.github/workflows/e2e-mobile.yml'
+
+concurrency:
+  group: e2e-mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android (Maestro)
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    # Imagens oficiais pelo espelho do Google, como no CI.
+    services:
+      postgres:
+        image: mirror.gcr.io/library/postgres:18-alpine
+        env:
+          POSTGRES_USER: mony
+          POSTGRES_PASSWORD: mony-e2e
+          POSTGRES_DB: mony
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mony -d mony"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+      redis:
+        image: mirror.gcr.io/library/redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      HUSKY: '0'
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
+      DATABASE_URL: postgresql://mony:mony-e2e@localhost:5432/mony
+      REDIS_URL: redis://localhost:6379
+      MAESTRO_VERSION: 1.41.0
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v7
+
+      - name: Instalar pnpm (versão do packageManager) com cache do store
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - name: Instalar Node (versão do .nvmrc)
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Instalar o JDK 17 (o do Android Gradle Plugin)
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle com cache
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Compilar a API e os pacotes do app
+        run: pnpm turbo run build --filter=api... --filter=@mony/api-client...
+
+      - name: Banco com as migrações e os dados iniciais
+        working-directory: apps/api
+        run: |
+          pnpm exec prisma migrate deploy
+          pnpm exec prisma db seed
+
+      - name: Subir a API com os provedores de teste
+        working-directory: apps/api
+        env:
+          NODE_ENV: development
+          PORT: '3000'
+          LOG_LEVEL: info
+          EMAIL_PROVEDOR: fake
+          PUSH_PROVEDOR: fake
+          IA_PROVEDOR: fake
+          TRANSCRICAO_PROVEDOR: fake
+          NFCE_PROVEDOR: fake
+          COBRANCA_PROVEDOR: fake
+          API_URL_PUBLICA: http://10.0.2.2:3000
+        run: |
+          nohup node dist/main.js > "$RUNNER_TEMP/api.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -s -o /dev/null http://localhost:3000/v1; then exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/api.log"
+          exit 1
+
+      - name: Build de release do app (APK x86_64 para o emulador)
+        working-directory: apps/mobile
+        env:
+          APP_ENV: preview
+          # O emulador chega ao computador que o roda por 10.0.2.2.
+          EXPO_PUBLIC_API_URL: http://10.0.2.2:3000
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
+          NODE_ENV: production
+        run: |
+          pnpm exec expo prebuild --platform android --no-install
+          # Release não aceita HTTP sem TLS; a API local não tem certificado.
+          sed -i 's/<application /<application android:usesCleartextTraffic="true" /' \
+            android/app/src/main/AndroidManifest.xml
+          cd android
+          ./gradlew --console=plain app:assembleRelease -PreactNativeArchitectures=x86_64
+
+      - name: Instalar o Maestro
+        run: |
+          curl -fsSL https://get.maestro.mobile.dev | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Liberar o KVM para o emulador
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Rodar os fluxos no emulador
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: |
+            adb install -r apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+            maestro test -e API_URL=http://localhost:3000 apps/mobile/.maestro --format junit --output "$RUNNER_TEMP/maestro.xml" --debug-output "$RUNNER_TEMP/maestro"
+
+      - name: Guardar o log da API, as capturas e o relatório
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-mobile
+          path: |
+            ${{ runner.temp }}/api.log
+            ${{ runner.temp }}/maestro.xml
+            ${{ runner.temp }}/maestro/
+          if-no-files-found: ignore

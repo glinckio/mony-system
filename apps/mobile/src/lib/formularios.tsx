@@ -29,6 +29,8 @@ export function CampoControlado<T extends FieldValues>({
       name={nome}
       render={({ field, fieldState }) => (
         <Campo
+          // Os testes E2E (Maestro, T-143a) acham o campo pelo nome do formulário.
+          testID={`campo-${nome}`}
           {...props}
           ref={field.ref}
           value={typeof field.value === 'string' ? field.value : ''}

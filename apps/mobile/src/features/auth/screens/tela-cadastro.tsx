@@ -98,6 +98,7 @@ export default function TelaCadastro() {
           if (marcada) definirFaltaAceite(false);
         }}
         erro={faltaAceite ? t('auth.validacao.aceite') : null}
+        testID="cadastro-aceite"
       />
       <ErroDoFormulario mensagem={erro} />
       <Botao
@@ -105,6 +106,7 @@ export default function TelaCadastro() {
         aoPressionar={() => void criar()}
         carregando={formulario.formState.isSubmitting}
         larguraTotal
+        testID="cadastro-criar"
       />
       <Botao
         variante="fantasma"

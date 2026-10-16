@@ -178,6 +178,7 @@ export default function TelaMony() {
                 onChangeText={definirTexto}
                 returnKeyType="send"
                 onSubmitEditing={() => void enviar()}
+                testID="mony-campo"
               />
             </View>
             {livre ? (

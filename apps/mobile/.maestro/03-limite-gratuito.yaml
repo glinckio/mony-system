@@ -1,0 +1,47 @@
+# Fluxo 3 do doc 14: limite do gratuito → [Ver planos] (RN-120, T-103).
+appId: com.monitorizze.app.preview
+name: Limite do plano gratuito e tela de planos
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: allow
+# Uma conta pela API gasta o teste grátis do e-mail; o cadastro pelo app com "+tag" no mesmo
+# e-mail começa no gratuito (RN-125).
+- runScript: scripts/email-unico.js
+- evalScript: ${output.base = output.email.replace('@', '+app@')}
+- runScript:
+    file: scripts/criar-conta-pela-api.js
+    env:
+      # API_URL vem do `maestro test -e`: o script roda no computador, não no emulador.
+      API_URL: ${API_URL}
+      EMAIL: ${output.email}
+- runFlow:
+    file: comum/cadastrar.yaml
+    env:
+      EMAIL: ${output.base}
+# O gratuito permite 1 cartão: o segundo mostra o limite e o [Ver planos].
+- tapOn:
+    id: aba-cartoes
+- runFlow:
+    file: comum/cadastrar-cartao.yaml
+    env:
+      INICIO: Cadastrar cartão
+      NOME: Nubank
+- extendedWaitUntil:
+    visible: Limite usado
+    timeout: 15000
+- runFlow:
+    file: comum/cadastrar-cartao.yaml
+    env:
+      INICIO: Novo cartão
+      NOME: Inter
+- extendedWaitUntil:
+    visible: 'O plano gratuito permite 1 cartão.*'
+    timeout: 15000
+- scrollUntilVisible:
+    element: Ver planos
+- tapOn: Ver planos
+- extendedWaitUntil:
+    visible: Continue com a Mony cuidando do seu dinheiro
+    timeout: 15000
