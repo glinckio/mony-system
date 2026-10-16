@@ -23,18 +23,21 @@ import type {
 
 import type {
   AdminDto,
+  AssinaturasAdminDto,
   BuscarAdminUsuariosParams,
   Codigo2faDto,
   CupomAdminDto,
   CuponsAdminDto,
   DesafioAdminDto,
   EstenderTesteDto,
+  ListarAdminAssinaturasParams,
   LoginAdminDto,
   Novo2faDto,
   NovoCupomDto,
   NovoPrecoDto,
   PlanoGratuitoAdminDto,
   PrecosAdminDto,
+  ResumoAssinaturasAdminDto,
   SessaoAdminDto,
   UsuarioAdminDto,
   UsuariosAdminDto,
@@ -1760,3 +1763,260 @@ export const useEstenderTesteAdminUsuarios = <TError = unknown, TContext = unkno
 > => {
   return useMutation(getEstenderTesteAdminUsuariosMutationOptions(options), queryClient);
 };
+export const getResumoAdminAssinaturasUrl = () => {
+  return `/v1/admin/assinaturas/resumo`;
+};
+
+export const resumoAdminAssinaturas = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<ResumoAssinaturasAdminDto> => {
+  return requisicao<ResumoAssinaturasAdminDto>(getResumoAdminAssinaturasUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getResumoAdminAssinaturasQueryKey = () => {
+  return [`/v1/admin/assinaturas/resumo`] as const;
+};
+
+export const getResumoAdminAssinaturasQueryOptions = <
+  TData = Awaited<ReturnType<typeof resumoAdminAssinaturas>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof resumoAdminAssinaturas>>, TError, TData>
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getResumoAdminAssinaturasQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof resumoAdminAssinaturas>>> = ({ signal }) =>
+    resumoAdminAssinaturas({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof resumoAdminAssinaturas>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ResumoAdminAssinaturasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof resumoAdminAssinaturas>>
+>;
+export type ResumoAdminAssinaturasQueryError = unknown;
+
+export function useResumoAdminAssinaturas<
+  TData = Awaited<ReturnType<typeof resumoAdminAssinaturas>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof resumoAdminAssinaturas>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof resumoAdminAssinaturas>>,
+          TError,
+          Awaited<ReturnType<typeof resumoAdminAssinaturas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useResumoAdminAssinaturas<
+  TData = Awaited<ReturnType<typeof resumoAdminAssinaturas>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof resumoAdminAssinaturas>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof resumoAdminAssinaturas>>,
+          TError,
+          Awaited<ReturnType<typeof resumoAdminAssinaturas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useResumoAdminAssinaturas<
+  TData = Awaited<ReturnType<typeof resumoAdminAssinaturas>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof resumoAdminAssinaturas>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useResumoAdminAssinaturas<
+  TData = Awaited<ReturnType<typeof resumoAdminAssinaturas>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof resumoAdminAssinaturas>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getResumoAdminAssinaturasQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListarAdminAssinaturasUrl = (params: ListarAdminAssinaturasParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/admin/assinaturas?${stringifiedParams}`
+    : `/v1/admin/assinaturas`;
+};
+
+export const listarAdminAssinaturas = async (
+  params: ListarAdminAssinaturasParams,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<AssinaturasAdminDto> => {
+  return requisicao<AssinaturasAdminDto>(getListarAdminAssinaturasUrl(params), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getListarAdminAssinaturasQueryKey = (params?: ListarAdminAssinaturasParams) => {
+  return [`/v1/admin/assinaturas`, ...(params ? [params] : [])] as const;
+};
+
+export const getListarAdminAssinaturasQueryOptions = <
+  TData = Awaited<ReturnType<typeof listarAdminAssinaturas>>,
+  TError = unknown,
+>(
+  params: ListarAdminAssinaturasParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listarAdminAssinaturas>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListarAdminAssinaturasQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listarAdminAssinaturas>>> = ({ signal }) =>
+    listarAdminAssinaturas(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listarAdminAssinaturas>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListarAdminAssinaturasQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listarAdminAssinaturas>>
+>;
+export type ListarAdminAssinaturasQueryError = unknown;
+
+export function useListarAdminAssinaturas<
+  TData = Awaited<ReturnType<typeof listarAdminAssinaturas>>,
+  TError = unknown,
+>(
+  params: ListarAdminAssinaturasParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listarAdminAssinaturas>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarAdminAssinaturas>>,
+          TError,
+          Awaited<ReturnType<typeof listarAdminAssinaturas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListarAdminAssinaturas<
+  TData = Awaited<ReturnType<typeof listarAdminAssinaturas>>,
+  TError = unknown,
+>(
+  params: ListarAdminAssinaturasParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listarAdminAssinaturas>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarAdminAssinaturas>>,
+          TError,
+          Awaited<ReturnType<typeof listarAdminAssinaturas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListarAdminAssinaturas<
+  TData = Awaited<ReturnType<typeof listarAdminAssinaturas>>,
+  TError = unknown,
+>(
+  params: ListarAdminAssinaturasParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listarAdminAssinaturas>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListarAdminAssinaturas<
+  TData = Awaited<ReturnType<typeof listarAdminAssinaturas>>,
+  TError = unknown,
+>(
+  params: ListarAdminAssinaturasParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listarAdminAssinaturas>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListarAdminAssinaturasQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}

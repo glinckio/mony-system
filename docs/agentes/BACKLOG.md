@@ -311,7 +311,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-104b, T-104c, T-104d, T-068 · docs: 13
 - [x] **T-141a** Admin: usuários (busca, dados da conta, aparelhos e conexões, bloquear e reativar, estender teste grátis, auditoria das visualizações) (PR #98)
   - dep: T-104a · docs: 13
-- [ ] **T-141b** Admin: assinaturas (em teste, gratuitos, ativas, canceladas, inadimplentes; conversão do teste; MRR)
+- [x] **T-141b** Admin: assinaturas (em teste, gratuitos, ativas, canceladas, inadimplentes; conversão do teste; MRR) (PR #99)
   - dep: T-104a, T-102 · docs: 13
 - [ ] **T-141c** Admin: auditoria (registro das ações dos administradores, com filtros)
   - dep: T-104a · docs: 13

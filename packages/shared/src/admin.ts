@@ -257,6 +257,77 @@ export const esquemaEstenderTeste = z.object({
   dias: z.number().int().min(1).max(DIAS_EXTENSAO_TESTE_MAXIMO),
 });
 
+/**
+ * Situações de assinatura do painel (T-141b, doc 13), uma por conta, seguindo o plano que vale agora:
+ * - `teste`: teste grátis valendo;
+ * - `ativa`: plano pago em dia;
+ * - `inadimplente`: plano pago com cobrança recusada, enquanto a Stripe tenta de novo (RN-131);
+ * - `cancelada`: o plano pago acabou (cancelado ou sem pagamento) e a pessoa voltou ao gratuito;
+ * - `gratuito`: o resto, inclusive o teste vencido (RN-126) e quem nunca assinou.
+ */
+export const SITUACOES_ASSINATURA_ADMIN = [
+  'teste',
+  'gratuito',
+  'ativa',
+  'inadimplente',
+  'cancelada',
+] as const;
+
+/** A conversão do teste olha os testes que acabaram nestes últimos dias. */
+export const DIAS_CONVERSAO_TESTE = 30;
+
+/** `GET /admin/assinaturas/resumo`: contas por situação, conversão do teste e MRR. */
+export const esquemaResumoAssinaturasAdmin = z.object({
+  situacoes: z.object({
+    teste: z.number().int(),
+    gratuito: z.number().int(),
+    ativa: z.number().int(),
+    inadimplente: z.number().int(),
+    cancelada: z.number().int(),
+  }),
+  /** As ativas e as inadimplentes, por plano. */
+  pagasPorPlano: z.object({ mensal: z.number().int(), anual: z.number().int() }),
+  /** Ativas com o cancelamento marcado para o fim do período. */
+  cancelamentoAgendado: z.number().int(),
+  /** Receita mensal recorrente das ativas: o mensal mais um doze avos do anual, em centavos. */
+  mrrCentavos: z.number().int(),
+  /** A parte do MRR das inadimplentes, que pode se perder (fora do `mrrCentavos`). */
+  mrrInadimplenteCentavos: z.number().int(),
+  conversaoTeste: z.object({
+    dias: z.number().int(),
+    /** Testes que acabaram nos últimos `dias`. */
+    encerrados: z.number().int(),
+    /** Desses, os que assinaram um plano pago (mesmo que depois tenham cancelado). */
+    convertidos: z.number().int(),
+  }),
+});
+
+/** `GET /admin/assinaturas`: as contas de uma situação, das mais novas às mais antigas. */
+export const esquemaConsultaAssinaturasAdmin = z.object({
+  situacao: z.enum(SITUACOES_ASSINATURA_ADMIN),
+  cursor: z.uuid().optional(),
+  limite: z.coerce.number().int().min(1).max(LIMITE_PAGINA_USUARIOS_ADMIN).default(20),
+});
+
+export const esquemaAssinaturaResumoAdmin = z.object({
+  usuarioId: z.uuid(),
+  nome: z.string(),
+  email: z.string(),
+  situacao: z.enum(SITUACOES_ASSINATURA_ADMIN),
+  /** O plano gravado (o pago que foi cancelado aparece como gratuito). Sem assinatura: `null`. */
+  plano: z.enum(PLANOS).nullable(),
+  valorCentavos: z.number().int().nullable(),
+  testeFim: z.string().nullable(),
+  proximaCobranca: z.string().nullable(),
+  cancelamentoAgendado: z.boolean(),
+  canceladaEm: z.string().nullable(),
+});
+
+export const esquemaAssinaturasAdmin = z.object({
+  itens: z.array(esquemaAssinaturaResumoAdmin),
+  proximoCursor: z.string().nullable(),
+});
+
 export type DadosLoginAdmin = z.infer<typeof esquemaLoginAdmin>;
 export type DesafioAdmin = z.infer<typeof esquemaDesafioAdmin>;
 export type Novo2fa = z.infer<typeof esquemaNovo2fa>;
@@ -277,3 +348,8 @@ export type UsuarioResumoAdmin = z.infer<typeof esquemaUsuarioResumoAdmin>;
 export type UsuariosAdmin = z.infer<typeof esquemaUsuariosAdmin>;
 export type UsuarioAdmin = z.infer<typeof esquemaUsuarioAdmin>;
 export type DadosEstenderTeste = z.infer<typeof esquemaEstenderTeste>;
+export type SituacaoAssinaturaAdmin = (typeof SITUACOES_ASSINATURA_ADMIN)[number];
+export type ResumoAssinaturasAdmin = z.infer<typeof esquemaResumoAssinaturasAdmin>;
+export type ConsultaAssinaturasAdmin = z.infer<typeof esquemaConsultaAssinaturasAdmin>;
+export type AssinaturaResumoAdmin = z.infer<typeof esquemaAssinaturaResumoAdmin>;
+export type AssinaturasAdmin = z.infer<typeof esquemaAssinaturasAdmin>;

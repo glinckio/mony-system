@@ -864,6 +864,95 @@
         ]
       }
     },
+    "/v1/admin/assinaturas/resumo": {
+      "get": {
+        "operationId": "resumoAdminAssinaturas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Contas por situação, conversão do teste nos últimos 30 dias e MRR em centavos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumoAssinaturasAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/assinaturas": {
+      "get": {
+        "operationId": "listarAdminAssinaturas",
+        "parameters": [
+          {
+            "name": "situacao",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "teste",
+                "gratuito",
+                "ativa",
+                "inadimplente",
+                "cancelada"
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "As contas de uma situação, das mais novas às mais antigas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssinaturasAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/v1/me": {
       "get": {
         "operationId": "perfilUsuarios",
@@ -6148,6 +6237,224 @@
         },
         "required": [
           "dias"
+        ]
+      },
+      "ResumoAssinaturasAdminDto": {
+        "type": "object",
+        "properties": {
+          "situacoes": {
+            "type": "object",
+            "properties": {
+              "teste": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "gratuito": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "ativa": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "inadimplente": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "cancelada": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "teste",
+              "gratuito",
+              "ativa",
+              "inadimplente",
+              "cancelada"
+            ]
+          },
+          "pagasPorPlano": {
+            "type": "object",
+            "properties": {
+              "mensal": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "anual": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "mensal",
+              "anual"
+            ]
+          },
+          "cancelamentoAgendado": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "mrrCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "mrrInadimplenteCentavos": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "conversaoTeste": {
+            "type": "object",
+            "properties": {
+              "dias": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "encerrados": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "convertidos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "dias",
+              "encerrados",
+              "convertidos"
+            ]
+          }
+        },
+        "required": [
+          "situacoes",
+          "pagasPorPlano",
+          "cancelamentoAgendado",
+          "mrrCentavos",
+          "mrrInadimplenteCentavos",
+          "conversaoTeste"
+        ]
+      },
+      "AssinaturasAdminDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "usuarioId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "nome": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "situacao": {
+                  "type": "string",
+                  "enum": [
+                    "teste",
+                    "gratuito",
+                    "ativa",
+                    "inadimplente",
+                    "cancelada"
+                  ]
+                },
+                "plano": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "teste",
+                        "gratuito",
+                        "mensal",
+                        "anual"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "valorCentavos": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "testeFim": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "proximaCobranca": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "cancelamentoAgendado": {
+                  "type": "boolean"
+                },
+                "canceladaEm": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "usuarioId",
+                "nome",
+                "email",
+                "situacao",
+                "plano",
+                "valorCentavos",
+                "testeFim",
+                "proximaCobranca",
+                "cancelamentoAgendado",
+                "canceladaEm"
+              ]
+            }
+          },
+          "proximoCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "itens",
+          "proximoCursor"
         ]
       },
       "PerfilDto": {

@@ -59,6 +59,14 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 - **Estender teste** (`POST …/estender-teste`, de 1 a 30 dias) soma os dias ao fim do teste que ainda vale, ou a agora se já acabou (a pessoa volta ao teste), e grava `usuario.teste_estendido` com o antes e o depois. Plano pago responde 409.
 - **Auditoria das visualizações:** abrir a conta grava `usuario.visualizado`; a busca com texto grava `usuarios.buscados` (o texto e quantos vieram), só na primeira página. O painel não relê a conta sozinho, para não gravar visualizações que ninguém fez.
 
+## Assinaturas (T-141b)
+
+- **Situações** (uma por conta, pelo plano que vale agora): **em teste** (teste valendo), **ativas** (plano pago em dia), **inadimplentes** (plano pago com cobrança recusada, enquanto a Stripe tenta de novo, RN-131), **canceladas** (o plano pago acabou e a pessoa voltou ao gratuito) e **gratuitos** (o resto, inclusive o teste vencido, RN-126, e quem nunca assinou). O teste estendido pelo admin conta como teste mesmo para quem tinha cancelado. Contas excluídas ficam de fora.
+- `GET /admin/assinaturas/resumo` traz as contagens, as pagas por plano, quantas ativas têm o cancelamento agendado, o **MRR** e a **conversão do teste**. Clicar numa situação lista as contas dela (`GET /admin/assinaturas?situacao=&cursor=&limite=`, das mais novas às mais antigas, com link para a conta).
+- **MRR** (centavos): o valor do mensal mais um doze avos do anual, das ativas, pelo preço que cada assinatura paga (RN-129; sem preço gravado, o vigente do plano). O cupom vale só na primeira cobrança (RN-130) e fica de fora. A parte das inadimplentes aparece à parte, como receita em risco.
+- **Conversão do teste:** dos testes que acabaram nos últimos 30 dias, quantos assinaram um plano pago (mesmo que depois tenham cancelado; `assinaturas.inicio` gravado). Quem assina no meio do teste entra na conta quando o teste acabaria.
+- Só leitura, sem auditoria das listas (como a lista de usuários sem busca); abrir a conta de alguém grava a visualização (T-141a). Contagens em consulta direta, que basta para o volume do início; se pesar, vão para as *materialized views* da T-141f.
+
 ## Telas (do PDF)
 
 | Seção | Funções |
