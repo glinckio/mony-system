@@ -24,12 +24,14 @@ import type {
 import type {
   AdminDto,
   AssinaturasAdminDto,
+  AuditoriaAdminDto,
   BuscarAdminUsuariosParams,
   Codigo2faDto,
   CupomAdminDto,
   CuponsAdminDto,
   DesafioAdminDto,
   EstenderTesteDto,
+  FiltrosAuditoriaAdminDto,
   ListarAdminAssinaturasParams,
   LoginAdminDto,
   Novo2faDto,
@@ -37,6 +39,7 @@ import type {
   NovoPrecoDto,
   PlanoGratuitoAdminDto,
   PrecosAdminDto,
+  RegistrosAdminAuditoriaParams,
   ResumoAssinaturasAdminDto,
   SessaoAdminDto,
   UsuarioAdminDto,
@@ -2013,6 +2016,265 @@ export function useListarAdminAssinaturas<
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getListarAdminAssinaturasQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getRegistrosAdminAuditoriaUrl = (params?: RegistrosAdminAuditoriaParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/admin/auditoria?${stringifiedParams}`
+    : `/v1/admin/auditoria`;
+};
+
+export const registrosAdminAuditoria = async (
+  params?: RegistrosAdminAuditoriaParams,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<AuditoriaAdminDto> => {
+  return requisicao<AuditoriaAdminDto>(getRegistrosAdminAuditoriaUrl(params), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getRegistrosAdminAuditoriaQueryKey = (params?: RegistrosAdminAuditoriaParams) => {
+  return [`/v1/admin/auditoria`, ...(params ? [params] : [])] as const;
+};
+
+export const getRegistrosAdminAuditoriaQueryOptions = <
+  TData = Awaited<ReturnType<typeof registrosAdminAuditoria>>,
+  TError = unknown,
+>(
+  params?: RegistrosAdminAuditoriaParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof registrosAdminAuditoria>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getRegistrosAdminAuditoriaQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof registrosAdminAuditoria>>> = ({
+    signal,
+  }) => registrosAdminAuditoria(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof registrosAdminAuditoria>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type RegistrosAdminAuditoriaQueryResult = NonNullable<
+  Awaited<ReturnType<typeof registrosAdminAuditoria>>
+>;
+export type RegistrosAdminAuditoriaQueryError = unknown;
+
+export function useRegistrosAdminAuditoria<
+  TData = Awaited<ReturnType<typeof registrosAdminAuditoria>>,
+  TError = unknown,
+>(
+  params: undefined | RegistrosAdminAuditoriaParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof registrosAdminAuditoria>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof registrosAdminAuditoria>>,
+          TError,
+          Awaited<ReturnType<typeof registrosAdminAuditoria>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useRegistrosAdminAuditoria<
+  TData = Awaited<ReturnType<typeof registrosAdminAuditoria>>,
+  TError = unknown,
+>(
+  params?: RegistrosAdminAuditoriaParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof registrosAdminAuditoria>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof registrosAdminAuditoria>>,
+          TError,
+          Awaited<ReturnType<typeof registrosAdminAuditoria>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useRegistrosAdminAuditoria<
+  TData = Awaited<ReturnType<typeof registrosAdminAuditoria>>,
+  TError = unknown,
+>(
+  params?: RegistrosAdminAuditoriaParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof registrosAdminAuditoria>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useRegistrosAdminAuditoria<
+  TData = Awaited<ReturnType<typeof registrosAdminAuditoria>>,
+  TError = unknown,
+>(
+  params?: RegistrosAdminAuditoriaParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof registrosAdminAuditoria>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getRegistrosAdminAuditoriaQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getFiltrosAdminAuditoriaUrl = () => {
+  return `/v1/admin/auditoria/filtros`;
+};
+
+export const filtrosAdminAuditoria = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<FiltrosAuditoriaAdminDto> => {
+  return requisicao<FiltrosAuditoriaAdminDto>(getFiltrosAdminAuditoriaUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getFiltrosAdminAuditoriaQueryKey = () => {
+  return [`/v1/admin/auditoria/filtros`] as const;
+};
+
+export const getFiltrosAdminAuditoriaQueryOptions = <
+  TData = Awaited<ReturnType<typeof filtrosAdminAuditoria>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof filtrosAdminAuditoria>>, TError, TData>
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getFiltrosAdminAuditoriaQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof filtrosAdminAuditoria>>> = ({ signal }) =>
+    filtrosAdminAuditoria({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof filtrosAdminAuditoria>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type FiltrosAdminAuditoriaQueryResult = NonNullable<
+  Awaited<ReturnType<typeof filtrosAdminAuditoria>>
+>;
+export type FiltrosAdminAuditoriaQueryError = unknown;
+
+export function useFiltrosAdminAuditoria<
+  TData = Awaited<ReturnType<typeof filtrosAdminAuditoria>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof filtrosAdminAuditoria>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof filtrosAdminAuditoria>>,
+          TError,
+          Awaited<ReturnType<typeof filtrosAdminAuditoria>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFiltrosAdminAuditoria<
+  TData = Awaited<ReturnType<typeof filtrosAdminAuditoria>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof filtrosAdminAuditoria>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof filtrosAdminAuditoria>>,
+          TError,
+          Awaited<ReturnType<typeof filtrosAdminAuditoria>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFiltrosAdminAuditoria<
+  TData = Awaited<ReturnType<typeof filtrosAdminAuditoria>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof filtrosAdminAuditoria>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFiltrosAdminAuditoria<
+  TData = Awaited<ReturnType<typeof filtrosAdminAuditoria>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof filtrosAdminAuditoria>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFiltrosAdminAuditoriaQueryOptions(options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;

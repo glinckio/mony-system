@@ -328,6 +328,55 @@ export const esquemaAssinaturasAdmin = z.object({
   proximoCursor: z.string().nullable(),
 });
 
+const dataDoFiltro = z
+  .string()
+  .refine(ehDataCalendario, { message: 'Data de calendário no formato AAAA-MM-DD' });
+
+/**
+ * `GET /admin/auditoria` (T-141c): o registro das ações dos admins, da mais nova à mais antiga, com
+ * filtros. `de` e `ate` são dias no fuso do painel (São Paulo), os dois inclusos.
+ */
+export const esquemaConsultaAuditoriaAdmin = z
+  .object({
+    adminId: z.uuid().optional(),
+    acao: z.string().trim().min(1).max(60).optional(),
+    entidade: z.string().trim().min(1).max(60).optional(),
+    entidadeId: z.string().trim().min(1).max(100).optional(),
+    de: dataDoFiltro.optional(),
+    ate: dataDoFiltro.optional(),
+    cursor: z.uuid().optional(),
+    limite: z.coerce.number().int().min(1).max(LIMITE_PAGINA_USUARIOS_ADMIN).default(50),
+  })
+  .refine((consulta) => !consulta.de || !consulta.ate || consulta.de <= consulta.ate, {
+    message: 'O início do período não pode ser depois do fim.',
+    path: ['de'],
+  });
+
+export const esquemaRegistroAuditoriaAdmin = z.object({
+  id: z.uuid(),
+  /** Quem fez a ação. `null`: a conta foi apagada. */
+  admin: z.object({ id: z.uuid(), nome: z.string(), email: z.string() }).nullable(),
+  acao: z.string(),
+  entidade: z.string(),
+  entidadeId: z.string().nullable(),
+  antes: z.record(z.string(), z.unknown()).nullable(),
+  depois: z.record(z.string(), z.unknown()).nullable(),
+  ip: z.string().nullable(),
+  criadoEm: z.string(),
+});
+
+export const esquemaAuditoriaAdmin = z.object({
+  itens: z.array(esquemaRegistroAuditoriaAdmin),
+  proximoCursor: z.string().nullable(),
+});
+
+/** `GET /admin/auditoria/filtros`: o que existe no registro, para as listas dos filtros. */
+export const esquemaFiltrosAuditoriaAdmin = z.object({
+  admins: z.array(z.object({ id: z.uuid(), nome: z.string() })),
+  acoes: z.array(z.string()),
+  entidades: z.array(z.string()),
+});
+
 export type DadosLoginAdmin = z.infer<typeof esquemaLoginAdmin>;
 export type DesafioAdmin = z.infer<typeof esquemaDesafioAdmin>;
 export type Novo2fa = z.infer<typeof esquemaNovo2fa>;
@@ -353,3 +402,7 @@ export type ResumoAssinaturasAdmin = z.infer<typeof esquemaResumoAssinaturasAdmi
 export type ConsultaAssinaturasAdmin = z.infer<typeof esquemaConsultaAssinaturasAdmin>;
 export type AssinaturaResumoAdmin = z.infer<typeof esquemaAssinaturaResumoAdmin>;
 export type AssinaturasAdmin = z.infer<typeof esquemaAssinaturasAdmin>;
+export type ConsultaAuditoriaAdmin = z.infer<typeof esquemaConsultaAuditoriaAdmin>;
+export type RegistroAuditoriaAdmin = z.infer<typeof esquemaRegistroAuditoriaAdmin>;
+export type AuditoriaAdmin = z.infer<typeof esquemaAuditoriaAdmin>;
+export type FiltrosAuditoriaAdmin = z.infer<typeof esquemaFiltrosAuditoriaAdmin>;
