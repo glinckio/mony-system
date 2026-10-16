@@ -224,7 +224,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-084b** Lembretes no app: lista (ativos e feitos), novo e editar (título, data e hora, repetição diária, semanal com os dias, mensal ou anual, a cada N, até; canais notificação e alarme), [Feito] e [Adiar] na lista, a tela do lembrete (`mony://lembretes/:id`) e os atalhos (Mais e o "Lembrete" do Início) (PR #78)
   - dep: T-084a · docs: 04, 09 · RN-075, RN-076
   - Alarme local pelo `mony-alarm` (T-023a): o app chama `sincronizar` com `GET /lembretes/alarmes` ao abrir e depois de criar, editar, concluir, adiar ou excluir; pede o alarme exato e a tela cheia no primeiro lembrete com alarme. No iOS, o alarme chega com a T-023b; até lá, o lembrete com alarme sai só como notificação (a API já manda o push para quem tem iPhone).
-- [ ] **T-085** 👤 Agendas Google e Outlook (OAuth no servidor) e agenda do aparelho
+- [ ] **T-085** 👤 Agendas Google e Outlook (OAuth no servidor) e agenda do aparelho; na exclusão da conta, revogar também no provedor (`ExclusaoContaService.excluir`, RN-161, T-140b)
   - dep: T-084a · RN-079 · requer verificação do app no Google
 - [x] **T-086a** Ferramentas da Mony: `criar_lembrete`, `consultar_lembretes` e `ajuda_app` (base de ajuda versionada) (PR #79)
   - dep: T-084a, T-062b
@@ -272,7 +272,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 
 ## Fase 5 — Recursos pagos e colaboração
 
-- [ ] **T-120** 👤 Open Finance: `OpenFinanceProvider`, conexão, webhooks, importação, dedupe, conflito manual, categoria, consentimento
+- [ ] **T-120** 👤 Open Finance: `OpenFinanceProvider`, conexão, webhooks, importação, dedupe, conflito manual, categoria, consentimento; na exclusão da conta, revogar também no provedor (`ExclusaoContaService.excluir`, RN-161, T-140b)
   - dep: T-025, T-102 · RN-121, RN-140 a RN-144
 - [ ] **T-121** 👤 Detecção de apps de compra (iOS e Android) com endpoint e alerta
   - dep: T-021, T-022, T-081 · RN-104, RN-121
@@ -311,7 +311,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Excluir conta mantém os resumos da `controle_teste` (RN-125, T-101): sem eles, excluir e cadastrar de novo daria outro teste grátis.
   - Dividida em T-140a a T-140d; só a T-140d depende da T-120 (os aceites de termos já existem desde a T-030, RN-007).
   - [x] **T-140a** Exportar meus dados: pedido no Perfil (Privacidade), job no worker com JSON e XLSX de todas as tabelas do usuário, links assinados de 24 h no app e por e-mail · RN-160 (PR #114)
-  - [ ] **T-140b** Excluir conta: confirmação com senha ou código, 7 dias de arrependimento, depois cancela a Stripe, revoga conexões, apaga arquivos e apaga ou anonimiza os dados (mantém a `controle_teste`) · RN-161
+  - [x] **T-140b** Excluir conta: confirmação com senha ou código, 7 dias de arrependimento, depois cancela a Stripe, revoga conexões, apaga arquivos e apaga ou anonimiza os dados (mantém a `controle_teste`) · RN-161 (PR #115)
   - [ ] **T-140c** Retenção de fotos e áudios: limpeza diária apaga o arquivo depois do prazo (padrão 90 dias, no painel) e o lançamento fica · RN-162
   - [ ] **T-140d** Consentimentos separados e revogáveis (tabela `consentimentos`) para Open Finance, agenda, apps de compra e ligações; revogar desliga o recurso (dep: T-120)
 - [x] **T-141** Admin completo: usuários, assinaturas, métricas, novidades, Mony (prompt e custos), auditoria, filas. Dividida em T-141a a T-141g, uma seção do painel por vez.
