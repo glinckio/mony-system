@@ -764,6 +764,22 @@ export const esquemaReprocessadosAdmin = z.object({ reprocessados: z.number().in
 const inteiro = (minimo: number, maximo: number) => z.number().int().min(minimo).max(maximo);
 
 /**
+ * Os limites dos alertas técnicos (T-142a, doc 12), com os padrões que valem enquanto ninguém
+ * salvou (inclusive em parâmetros salvos antes da T-142a).
+ */
+export const MONITORAMENTO_PADRAO = {
+  /** Custo de IA do dia (São Paulo) em centavos de dólar; 0 desliga o alerta. US$ 50,00. */
+  custoIaDiarioCentavos: 5_000,
+  /** Um job esperando há mais que isso numa fila é fila parada. */
+  filaParadaMinutos: 15,
+} as const;
+
+export const esquemaMonitoramento = z.object({
+  custoIaDiarioCentavos: inteiro(0, 100_000_000),
+  filaParadaMinutos: inteiro(5, 1440),
+});
+
+/**
  * Os parâmetros que o painel edita (T-141g, doc 13), na `configuracoes` (chave `parametros`).
  * A API e o worker leem a cada uso, com o padrão do código (e do ambiente, na versão mínima)
  * enquanto ninguém salvou.
@@ -788,6 +804,8 @@ export const esquemaParametros = z.object({
     ios: z.string().regex(REGEX_VERSAO_APP, 'Use o formato 1.2.3.'),
     android: z.string().regex(REGEX_VERSAO_APP, 'Use o formato 1.2.3.'),
   }),
+  /** Alertas técnicos (T-142a). Nos parâmetros salvos antes dela, a API completa com os padrões. */
+  monitoramento: esquemaMonitoramento,
 });
 
 /** `GET /admin/configuracoes`: os valores em uso e quem salvou por último. */

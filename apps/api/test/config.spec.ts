@@ -35,6 +35,7 @@ describe('variáveis de ambiente', () => {
       AWS_REGION: 'sa-east-1',
       GOOGLE_CLIENT_IDS: [],
       APPLE_CLIENT_IDS: [],
+      ALERTAS_TECNICOS_EMAILS: [],
       ...banco,
     });
     expect(validarAmbiente({ ...banco, ...jwt, PORT: '8080', NODE_ENV: 'production' }).PORT).toBe(
@@ -54,6 +55,16 @@ describe('variáveis de ambiente', () => {
         STRIPE_SEGREDO_WEBHOOK: 'whsec_x',
       }).COBRANCA_PROVEDOR,
     ).toBe('stripe');
+  });
+
+  it('T-142a os e-mails dos alertas técnicos vêm separados por vírgula e precisam ser e-mails', () => {
+    expect(
+      validarAmbiente({ ...banco, ALERTAS_TECNICOS_EMAILS: ' a@exemplo.test, b@exemplo.test ,' })
+        .ALERTAS_TECNICOS_EMAILS,
+    ).toEqual(['a@exemplo.test', 'b@exemplo.test']);
+    expect(() =>
+      validarAmbiente({ ...banco, ALERTAS_TECNICOS_EMAILS: 'a@exemplo.test, x' }),
+    ).toThrow(/ALERTAS_TECNICOS_EMAILS/);
   });
 
   it('recusa valor inválido com mensagem que aponta a variável', () => {

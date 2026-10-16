@@ -122,6 +122,11 @@ export const esquemaAmbiente = z
      */
     GOOGLE_CLIENT_IDS: listaPorVirgula,
     APPLE_CLIENT_IDS: listaPorVirgula,
+    /**
+     * Quem recebe os alertas técnicos do worker (T-142a, doc 12), separados por vírgula: fila
+     * parada, falha em webhook, custo de IA do dia. Vazio: só o log `alerta_tecnico`.
+     */
+    ALERTAS_TECNICOS_EMAILS: listaPorVirgula.pipe(z.array(z.email()).max(10)),
   })
   .superRefine((variaveis, contexto) => {
     if (variaveis.NODE_ENV === 'production' && variaveis.JWT_CHAVE_PRIVADA === undefined) {
