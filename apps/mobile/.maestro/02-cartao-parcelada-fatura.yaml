@@ -29,7 +29,7 @@ name: Cartão, compra parcelada e pagamento da fatura
 - extendedWaitUntil:
     visible: '.*Anotei R\$.600,00 em Compras, no Nubank em 3x de R\$.200,00.*'
     timeout: 30000
-# A primeira parcela entra na fatura atual; pagar o que falta deixa a fatura paga (RN-036).
+# A primeira parcela entra na fatura atual; pagar o que falta zera o saldo dela (RN-036).
 - tapOn:
     id: aba-cartoes
 - scrollUntilVisible:
@@ -40,7 +40,10 @@ name: Cartão, compra parcelada e pagamento da fatura
       id: folha-pagar-fatura
     timeout: 10000
 - tapOn: 'Pagar R\$.200,00'
+# A fatura ainda não fechou: a etiqueta continua "Aberta" (statusDaFatura) e o botão some porque
+# não falta pagar nada.
+- extendedWaitUntil:
+    notVisible: Marcar fatura como paga
+    timeout: 10000
 - scrollUntilVisible:
-    element: Paga
-    direction: UP
-- assertNotVisible: Marcar fatura como paga
+    element: Ver fatura
