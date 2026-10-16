@@ -33,8 +33,15 @@ export const CONTEUDOS_DO_TIPO: Record<
 /** Doc 11: áudio de até 10 minutos. */
 export const DURACAO_MAXIMA_AUDIO_SEGUNDOS = 10 * 60;
 
-/** 10 MB: foto comprimida no aparelho (lado maior até ~2000 px, doc 04) ou PDF de comprovante. */
+/** 10 MB: foto comprimida no aparelho (lado maior até ~2000 px, doc 04) ou áudio (doc 11). */
 export const TAMANHO_MAXIMO_ANEXO = 10 * 1024 * 1024;
+
+/** 20 MB: PDF, como a fatura de vários meses (doc 11, T-144b). */
+export const TAMANHO_MAXIMO_PDF = 20 * 1024 * 1024;
+
+/** O tamanho máximo de um arquivo pelo tipo de conteúdo: PDF até 20 MB, o resto até 10 MB. */
+export const tamanhoMaximoDoConteudo = (tipoConteudo: string): number =>
+  tipoConteudo === 'application/pdf' ? TAMANHO_MAXIMO_PDF : TAMANHO_MAXIMO_ANEXO;
 
 /** Validade das URLs assinadas (doc 11). */
 export const VALIDADE_URL_ENVIO_SEGUNDOS = 5 * 60;
@@ -45,11 +52,15 @@ export const esquemaNovoArquivo = z
     tipo: z.enum(TIPOS_ANEXO),
     tipoConteudo: z.enum(TIPOS_CONTEUDO_ANEXO),
     /** Tamanho em bytes; conferido de novo quando o arquivo é ligado ao recurso. */
-    tamanho: z.number().int().min(1).max(TAMANHO_MAXIMO_ANEXO),
+    tamanho: z.number().int().min(1).max(TAMANHO_MAXIMO_PDF),
   })
   .refine(({ tipo, tipoConteudo }) => CONTEUDOS_DO_TIPO[tipo].includes(tipoConteudo), {
     message: 'Tipo de conteúdo que não combina com o tipo do arquivo',
     path: ['tipoConteudo'],
+  })
+  .refine(({ tipoConteudo, tamanho }) => tamanho <= tamanhoMaximoDoConteudo(tipoConteudo), {
+    message: 'Arquivo maior que o máximo do tipo (PDF até 20 MB, o resto até 10 MB)',
+    path: ['tamanho'],
   });
 
 export const esquemaEnvioArquivo = z.object({

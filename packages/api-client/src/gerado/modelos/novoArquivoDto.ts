@@ -13,7 +13,7 @@ export interface NovoArquivoDto {
   tipoConteudo: NovoArquivoDtoTipoConteudo;
   /**
    * @minimum 1
-   * @maximum 10485760
+   * @maximum 20971520
    */
   tamanho: number;
 }

@@ -1,5 +1,5 @@
 import { lerArquivos, prepararArquivos } from '@mony/api-client';
-import { TAMANHO_MAXIMO_ANEXO, TIPOS_CONTEUDO_ANEXO } from '@mony/shared/arquivos';
+import { TIPOS_CONTEUDO_ANEXO, tamanhoMaximoDoConteudo } from '@mony/shared/arquivos';
 import type { TipoAnexo } from '@mony/shared/enums';
 import type { Transacao } from '@mony/shared/transacoes';
 import * as DocumentPicker from 'expo-document-picker';
@@ -77,7 +77,7 @@ export async function escolherPdf(): Promise<ArquivoEscolhido | null> {
  */
 export async function enviarAnexo(arquivo: ArquivoEscolhido): Promise<AnexoNaTela> {
   const conteudo = await (await fetch(arquivo.uri)).blob();
-  if (conteudo.size > TAMANHO_MAXIMO_ANEXO) throw new FalhaAnexo('grande');
+  if (conteudo.size > tamanhoMaximoDoConteudo(arquivo.tipoConteudo)) throw new FalhaAnexo('grande');
   const envio = await prepararArquivos({
     tipo: arquivo.tipo,
     tipoConteudo: arquivo.tipoConteudo,

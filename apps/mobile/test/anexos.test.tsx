@@ -247,7 +247,13 @@ describe('anexos no lançamento (T-058)', () => {
       galeria.mockResolvedValueOnce(foto('file:///galeria/pequena.jpg', 1200, 1600));
       manipulador.__salvar.mockResolvedValueOnce({ uri: 'file:///cache/enorme.jpg' });
       fireEvent.press(screen.getByRole('button', { name: 'Galeria' }));
-      expect(await screen.findByText('O arquivo passa de 10 MB.', {}, ESPERA)).toBeOnTheScreen();
+      expect(
+        await screen.findByText(
+          'O arquivo é grande demais: fotos até 10 MB, PDF até 20 MB.',
+          {},
+          ESPERA,
+        ),
+      ).toBeOnTheScreen();
       expect(manipulador.__contexto.resize).not.toHaveBeenCalled();
       expect(pedidos.some(({ rota }) => rota === '/v1/arquivos')).toBe(false);
       expect(screen.getByText('Anexos (0 de 5)')).toBeOnTheScreen();

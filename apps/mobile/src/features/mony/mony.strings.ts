@@ -51,7 +51,7 @@ export const textosMony = {
     qr: 'QR Code do cupom fiscal',
     erros: {
       semPermissao: 'Libere a câmera nas configurações do aparelho para fotografar.',
-      grande: 'O arquivo passa de 10 MB.',
+      grande: 'O arquivo é grande demais: fotos até 10 MB, PDF até 20 MB.',
       tipo: 'Escolha um arquivo PDF.',
       envio: 'Não consegui enviar o arquivo. Tente de novo.',
     },

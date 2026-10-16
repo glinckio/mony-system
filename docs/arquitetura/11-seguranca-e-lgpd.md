@@ -35,7 +35,7 @@ O app guarda dados financeiros e acessa contas bancárias. Segurança e LGPD sã
 
 Complementos **(decisão técnica)**:
 - WAF na frente do ALB (regras gerenciadas + limite por IP).
-- Validação de upload: tipo real do arquivo (magic bytes), tamanho máximo (20 MB PDF, 10 MB imagem, 10 min de áudio).
+- Validação de upload (T-144b): ao ligar o arquivo (lançamento ou mensagem da Mony), a API lê os primeiros 64 bytes no S3 (`Range`) e confere o tipo real (`core/arquivos/tipo-real.ts`): JPEG, PNG, WebP, HEIC, PDF, M4A, AAC, MP3 ou WebM, no mesmo grupo do declarado (imagem, PDF ou áudio; PDF só com PDF). Tamanho máximo pelo tipo: PDF 20 MB, imagem e áudio 10 MB (10 min de voz a 64 kbps dão uns 5 MB). Fora disso, o arquivo é apagado do S3 e a ligação responde 400. A Mony recebe o tipo real.
 - Proteção contra SSRF na consulta de NFC-e (lista de domínios Sefaz).
 - Logs sem dados sensíveis: o pino troca por `[redigido]` os cabeçalhos `authorization`, `cookie` e `stripe-signature` e os campos `senha`, `senhaNova`, `senhaAtual`, `renovacao`, `refreshToken`, `tokenPush`, `idToken`, `token`, `totpSegredo`, `cpf` e `numeroCartao`, no topo, um nível abaixo e no corpo da requisição (`CAMINHOS_REDIGIDOS` em `core/log/log.module.ts`, T-144a). Campo sensível novo entra nessa lista.
 - Dependências: Dependabot semanal para npm (Expo e React Native ficam de fora, sobem com o SDK), mensal para Actions e Terraform. O job **Dependências** do CI roda `pnpm audit --prod`: vulnerabilidade crítica bloqueia; as altas aparecem no log sem bloquear até a T-144d.

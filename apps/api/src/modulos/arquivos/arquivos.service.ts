@@ -5,13 +5,21 @@ import {
   type DadosNovoArquivo,
   type EnvioArquivo,
   type LeituraArquivo,
-  TAMANHO_MAXIMO_ANEXO,
+  tamanhoMaximoDoConteudo,
   VALIDADE_URL_ENVIO_SEGUNDOS,
   VALIDADE_URL_LEITURA_SEGUNDOS,
 } from '@mony/shared/arquivos';
 import type { TipoAnexo } from '@mony/shared/enums';
 
-import { ArmazenamentoArquivos } from '../../core/arquivos/armazenamento-arquivos';
+import {
+  ArmazenamentoArquivos,
+  type ObjetoArquivo,
+} from '../../core/arquivos/armazenamento-arquivos';
+import {
+  BYTES_PARA_TIPO,
+  type TipoConteudoReal,
+  tipoRealConferido,
+} from '../../core/arquivos/tipo-real';
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
@@ -109,7 +117,7 @@ export class ArquivosService {
 
   /**
    * Antes de ligar anexos a uma transação: são do usuário, estão livres (ou já nesta transação) e
-   * o arquivo chegou ao S3 dentro do tamanho máximo. Grava o tamanho real.
+   * o arquivo chegou ao S3 dentro do tamanho máximo e do tipo declarado. Grava o tamanho real.
    */
   async conferirParaVincular(
     usuarioId: string,
@@ -133,20 +141,7 @@ export class ArquivosService {
           detalhes: { anexoId: anexo.id },
         });
       }
-      const objeto = await this.armazenamento.consultar(anexo.arquivoUrl);
-      if (objeto === null) {
-        throw new ErroDominio('REQUISICAO_INVALIDA', {
-          mensagem: 'O arquivo ainda não terminou de ser enviado.',
-          detalhes: { anexoId: anexo.id },
-        });
-      }
-      if (objeto.tamanho > TAMANHO_MAXIMO_ANEXO) {
-        await this.armazenamento.apagar(anexo.arquivoUrl);
-        throw new ErroDominio('REQUISICAO_INVALIDA', {
-          mensagem: 'O arquivo passa de 10 MB.',
-          detalhes: { anexoId: anexo.id },
-        });
-      }
+      const { objeto } = await this.conferirArquivo(anexo, { anexoId: anexo.id });
       if (objeto.tamanho !== anexo.tamanho) {
         await this.repositorio.atualizarTamanho(anexo.id, objeto.tamanho);
       }
@@ -155,24 +150,13 @@ export class ArquivosService {
 
   /**
    * O arquivo de uma mensagem para a Mony: do usuário, fora de lançamento e já no S3 dentro do
-   * tamanho máximo. Áudio vai para a transcrição (T-064); foto, print ou PDF, para a leitura
+   * tamanho máximo e do tipo declarado. Áudio vai para a transcrição (T-064); foto, print ou PDF, para a leitura
    * (T-065), que não aceita HEIC nem imagem acima de 5 MB. Devolve a URL de leitura (15 min).
    */
   async arquivoParaMony(contexto: Contexto, id: string): Promise<ArquivoMony> {
     const anexo = await this.repositorio.buscar(usuarioDoContexto(contexto), id);
     if (!anexo || anexo.transacaoId !== null) throw new ErroDominio('NAO_ENCONTRADO');
-    const objeto = await this.armazenamento.consultar(anexo.arquivoUrl);
-    if (objeto === null) {
-      throw new ErroDominio('REQUISICAO_INVALIDA', {
-        mensagem: 'O arquivo ainda não terminou de ser enviado.',
-      });
-    }
-    if (objeto.tamanho > TAMANHO_MAXIMO_ANEXO) {
-      await this.armazenamento.apagar(anexo.arquivoUrl);
-      throw new ErroDominio('REQUISICAO_INVALIDA', { mensagem: 'O arquivo passa de 10 MB.' });
-    }
-    const extensao = anexo.arquivoUrl.slice(anexo.arquivoUrl.lastIndexOf('.') + 1);
-    const tipoConteudo = objeto.tipoConteudo ?? TIPO_DA_EXTENSAO.get(extensao) ?? '';
+    const { objeto, tipoConteudo } = await this.conferirArquivo(anexo);
     const tipo = tipoParaMony(anexo.tipo, tipoConteudo);
     if (tipo === 'imagem' && objeto.tamanho > TAMANHO_MAXIMO_IMAGEM_LEITURA) {
       throw new ErroDominio('REQUISICAO_INVALIDA', {
@@ -184,6 +168,43 @@ export class ArquivosService {
       tipoConteudo,
       url: await this.armazenamento.urlDeLeitura(anexo.arquivoUrl, VALIDADE_URL_LEITURA_SEGUNDOS),
     };
+  }
+
+  /**
+   * O arquivo chegou ao S3, cabe no tamanho máximo do tipo e começa como o tipo declarado no envio
+   * (doc 11, T-144b). Fora disso, é apagado do S3 e a ligação é recusada. Devolve o tipo real.
+   */
+  private async conferirArquivo(
+    anexo: { arquivoUrl: string },
+    detalhes?: Record<string, unknown>,
+  ): Promise<{ objeto: ObjetoArquivo; tipoConteudo: TipoConteudoReal }> {
+    const objeto = await this.armazenamento.consultar(anexo.arquivoUrl);
+    if (objeto === null) {
+      throw new ErroDominio('REQUISICAO_INVALIDA', {
+        mensagem: 'O arquivo ainda não terminou de ser enviado.',
+        ...(detalhes === undefined ? {} : { detalhes }),
+      });
+    }
+    const extensao = anexo.arquivoUrl.slice(anexo.arquivoUrl.lastIndexOf('.') + 1);
+    const declarado = objeto.tipoConteudo ?? TIPO_DA_EXTENSAO.get(extensao) ?? '';
+    const maximo = tamanhoMaximoDoConteudo(declarado);
+    if (objeto.tamanho > maximo) {
+      await this.armazenamento.apagar(anexo.arquivoUrl);
+      throw new ErroDominio('REQUISICAO_INVALIDA', {
+        mensagem: `O arquivo passa de ${String(maximo / (1024 * 1024))} MB.`,
+        ...(detalhes === undefined ? {} : { detalhes }),
+      });
+    }
+    const inicio = await this.armazenamento.lerInicio(anexo.arquivoUrl, BYTES_PARA_TIPO);
+    const tipoConteudo = tipoRealConferido(declarado, inicio);
+    if (tipoConteudo === null) {
+      await this.armazenamento.apagar(anexo.arquivoUrl);
+      throw new ErroDominio('REQUISICAO_INVALIDA', {
+        mensagem: 'O arquivo não é do tipo informado. Envie uma foto, um PDF ou um áudio.',
+        ...(detalhes === undefined ? {} : { detalhes }),
+      });
+    }
+    return { objeto, tipoConteudo };
   }
 
   private expiraEm(segundos: number): string {
