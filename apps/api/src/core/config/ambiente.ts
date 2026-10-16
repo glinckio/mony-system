@@ -127,6 +127,8 @@ export const esquemaAmbiente = z
      * parada, falha em webhook, custo de IA do dia. Vazio: só o log `alerta_tecnico`.
      */
     ALERTAS_TECNICOS_EMAILS: listaPorVirgula.pipe(z.array(z.email()).max(10)),
+    /** Namespace das métricas que o worker escreve no log para o CloudWatch (T-142d). */
+    METRICAS_NAMESPACE: z.string().min(1).default('Mony/local'),
   })
   .superRefine((variaveis, contexto) => {
     if (variaveis.NODE_ENV === 'production' && variaveis.JWT_CHAVE_PRIVADA === undefined) {

@@ -20,6 +20,8 @@ import {
   alertaDeFilaParada,
   alertaDoCustoIa,
   FILAS_DE_WEBHOOK,
+  linhaDeMetricas,
+  type UnidadeMetrica,
 } from './dominio/alertas-tecnicos';
 import { MonitoramentoRepository } from './monitoramento.repository';
 
@@ -44,7 +46,8 @@ export async function esperaDoMaisAntigo(fila: Queue, agora: Date): Promise<numb
 
 /**
  * Alertas técnicos (T-142a, doc 12), a cada 5 minutos no worker: fila parada, falha nas filas de
- * webhook (Stripe e agregador) e custo de IA do dia acima do limite do painel. Cada alerta sai no
+ * webhook (Stripe e agregador) e custo de IA do dia acima do limite do painel. Na mesma volta,
+ * escreve as métricas das filas e do custo de IA no formato que o CloudWatch lê (T-142d). Cada alerta sai no
  * log (`evento: alerta_tecnico`, que o CloudWatch da T-142b transforma em alarme) e por e-mail
  * para `ALERTAS_TECNICOS_EMAILS`, direto no provedor: se a fila `emails` estiver parada, o aviso
  * ainda sai. O mesmo alerta não se repete (chaves no Redis).
@@ -71,6 +74,7 @@ export class MonitoramentoService {
       () => this.filasParadas(agora, monitoramento.filaParadaMinutos),
       () => this.falhasDeWebhook(),
       () => this.custoIa(agora, monitoramento.custoIaDiarioCentavos),
+      () => this.metricasDasFilas(agora),
     ];
     const enviados: AlertaTecnico[] = [];
     // Uma verificação com erro não impede as outras.
@@ -129,13 +133,33 @@ export class MonitoramentoService {
     return alertas;
   }
 
+  /** Tamanho e falhas de cada fila, como métricas do CloudWatch (T-142d). */
+  private async metricasDasFilas(agora: Date): Promise<AlertaTecnico[]> {
+    for (const nome of Object.values(FILAS)) {
+      const fila = this.fila(nome);
+      const [aguardando, falhos] = await Promise.all([
+        fila.getWaitingCount(),
+        fila.getFailedCount(),
+      ]);
+      this.metricas({ Fila: nome }, agora, {
+        Aguardando: { valor: aguardando, unidade: 'Count' },
+        Falhos: { valor: falhos, unidade: 'Count' },
+      });
+    }
+    return [];
+  }
+
   private async custoIa(agora: Date, limiteCentavos: number): Promise<AlertaTecnico[]> {
-    if (limiteCentavos <= 0) return [];
     const hoje = dataNoFuso(agora);
     const custo = await this.repositorio.custoIa(
       inicioDoDiaNoFuso(hoje),
       inicioDoDiaNoFuso(somarDias(hoje, 1)),
     );
+    // O custo acumulado de hoje: o máximo do dia no CloudWatch é o custo do dia (T-142d).
+    this.metricas({}, agora, {
+      CustoIaHojeCentavosDolar: { valor: custo.centavos, unidade: 'None' },
+    });
+    if (limiteCentavos <= 0) return [];
     const alerta = alertaDoCustoIa(hoje, custo.centavos, limiteCentavos, custo.modelosSemPreco);
     if (!alerta) return [];
     const chave = `${PREFIXO_MONITORAMENTO}:custo-ia:${hoje}`;
@@ -175,6 +199,25 @@ export class MonitoramentoService {
       );
     }
     return falhas.length < destinatarios.length;
+  }
+
+  private metricas(
+    dimensoes: Record<string, string>,
+    agora: Date,
+    metricas: Record<string, { valor: number; unidade: UnidadeMetrica }>,
+  ): void {
+    this.log.log(
+      {
+        evento: 'metricas',
+        ...linhaDeMetricas({
+          namespace: this.config.namespaceMetricas,
+          instante: agora,
+          dimensoes,
+          metricas,
+        }),
+      },
+      'Métricas',
+    );
   }
 
   private fila(nome: string): Queue {

@@ -99,6 +99,7 @@ locals {
     { name = "S3_BUCKET", value = aws_s3_bucket.arquivos.bucket },
     { name = "AWS_REGION", value = local.regiao },
     { name = "ALERTAS_TECNICOS_EMAILS", value = join(",", var.emails_alertas) },
+    { name = "METRICAS_NAMESPACE", value = local.namespace_metricas },
   ]
 
   segredos_container = [

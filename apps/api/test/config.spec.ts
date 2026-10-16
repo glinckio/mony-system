@@ -36,6 +36,7 @@ describe('variáveis de ambiente', () => {
       GOOGLE_CLIENT_IDS: [],
       APPLE_CLIENT_IDS: [],
       ALERTAS_TECNICOS_EMAILS: [],
+      METRICAS_NAMESPACE: 'Mony/local',
       ...banco,
     });
     expect(validarAmbiente({ ...banco, ...jwt, PORT: '8080', NODE_ENV: 'production' }).PORT).toBe(

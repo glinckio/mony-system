@@ -181,6 +181,25 @@ run "alarmes" {
   }
 }
 
+run "painel" {
+  command = apply
+
+  assert {
+    condition     = length(jsondecode(aws_cloudwatch_dashboard.principal.dashboard_body).widgets) == 7
+    error_message = "O painel tem a API, as filas, o custo de IA e as consultas por rota."
+  }
+
+  assert {
+    condition     = one([for variavel in jsondecode(aws_ecs_task_definition.worker.container_definitions)[0].environment : variavel.value if variavel.name == "METRICAS_NAMESPACE"]) == "Mony/staging"
+    error_message = "O worker escreve as métricas no namespace do ambiente."
+  }
+
+  assert {
+    condition     = strcontains(aws_cloudwatch_query_definition.tempo_por_rota.query_string, "by req.method, rota")
+    error_message = "A consulta salva agrupa por rota."
+  }
+}
+
 run "email_invalido" {
   command = plan
 

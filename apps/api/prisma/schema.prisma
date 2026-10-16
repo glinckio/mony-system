@@ -1374,6 +1374,8 @@ model LogIa {
 
   @@index([usuarioId, criadoEm])
   @@index([mensagemId])
+  // Custo do dia (rotina monitorar, a cada 5 minutos, T-142) e do período no painel.
+  @@index([criadoEm])
   @@map("logs_ia")
 }
 
