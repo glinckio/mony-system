@@ -149,7 +149,8 @@ describe.runIf(ativo)('integração: assinaturas no painel (T-141b)', () => {
   });
 
   it('conversão do teste: conta os testes que acabaram na janela e os que assinaram', async () => {
-    // Uma janela em 2001, que nenhum outro teste usa.
+    // Uma janela em 2001, que nenhum outro teste usa. Os testes vencidos já estão no gratuito, como a
+    // rotina diária deixa (RN-126): um teste vencido em 2001 seria encerrado pelo teste da rotina.
     const inicioJanela = new Date(Date.UTC(2001, 0, 1) + randomInt(1_000_000) * 60_000);
     const fimJanela = new Date(inicioJanela.getTime() + 60_000);
     const [convertida, naoConvertida, foraDaJanela] = [
@@ -163,11 +164,11 @@ describe.runIf(ativo)('integração: assinaturas no painel (T-141b)', () => {
     });
     await prisma.assinatura.update({
       where: { usuarioId: naoConvertida.id },
-      data: { testeFim: fimJanela },
+      data: { testeFim: fimJanela, plano: 'gratuito' },
     });
     await prisma.assinatura.update({
       where: { usuarioId: foraDaJanela.id },
-      data: { testeFim: new Date(fimJanela.getTime() + 1) },
+      data: { testeFim: new Date(fimJanela.getTime() + 1), plano: 'gratuito' },
     });
 
     await expect(
