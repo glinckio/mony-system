@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Cupons } from '@/components/cupons';
 import { PlanoGratuito } from '@/components/plano-gratuito';
 
 export const Route = createFileRoute('/_painel/planos')({ component: Planos });
@@ -32,8 +33,8 @@ const FORMATO_DATA = new Intl.DateTimeFormat('pt-BR', {
 });
 
 /**
- * Planos e preços (T-104b e T-104c, doc 13): o valor do mensal e do anual, os limites do gratuito,
- * a duração do teste e o histórico de preços com data e autor.
+ * Planos e preços (T-104b a T-104d, doc 13): o valor do mensal e do anual, os limites do gratuito,
+ * a duração do teste, os cupons e o histórico de preços com data e autor.
  * O valor novo vale para quem assinar depois; quem já assina continua no preço antigo (RN-129).
  */
 function Planos() {
@@ -54,6 +55,7 @@ function Planos() {
             ))}
           </div>
           <PlanoGratuito />
+          <Cupons />
           <Historico historico={precos.data.historico} />
         </>
       ) : precos.isError ? (

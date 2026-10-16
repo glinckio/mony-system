@@ -92,6 +92,33 @@ export const textosPtBr = {
     erroSalvar: 'Não foi possível salvar. Tente de novo.',
     erroCarregar: 'Não foi possível carregar os limites. Recarregue a página.',
   },
+  cupons: {
+    titulo: 'Cupons',
+    descricao:
+      'A pessoa digita o código em "Adicionar código promocional" na página de pagamento da Stripe e ganha o desconto na primeira cobrança.',
+    codigo: 'Código',
+    percentual: 'Desconto (%)',
+    validade: 'Válido até (opcional)',
+    ajuda:
+      'Código com 3 a 20 letras ou números. Sem data, vale até ser desativado. Desativar tira o código do pagamento; quem já usou fica com o desconto.',
+    criar: 'Criar cupom',
+    criado: 'Cupom {{codigo}} criado.',
+    invalido: 'Confira o código (3 a 20 letras ou números) e o desconto (de 1% a 100%).',
+    erroSalvar: 'Não foi possível salvar. Tente de novo.',
+    erroCarregar: 'Não foi possível carregar os cupons. Recarregue a página.',
+    carregando: 'Carregando os cupons…',
+    nenhum: 'Nenhum cupom ainda.',
+    desconto: 'Desconto',
+    validoAte: 'Válido até',
+    semPrazo: 'Sem prazo',
+    criadoPor: 'Criado por',
+    situacao: 'Situação',
+    situacoes: { ativo: 'Ativo', vencido: 'Vencido', desativado: 'Desativado' },
+    desativar: 'Desativar',
+    desativarCodigo: 'Desativar {{codigo}}',
+    confirmar: 'Confirmar',
+    cancelar: 'Cancelar',
+  },
   inicio: {
     titulo: 'Início',
     api: {
