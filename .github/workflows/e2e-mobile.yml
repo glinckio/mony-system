@@ -125,6 +125,11 @@ jobs:
           # Release não aceita HTTP sem TLS; a API local não tem certificado.
           sed -i 's/<application /<application android:usesCleartextTraffic="true" /' \
             android/app/src/main/AndroidManifest.xml
+          # O build de release dos módulos do Expo estoura o Metaspace padrão (512 MB) no runner.
+          sed -i '/^org.gradle.jvmargs=/d' android/gradle.properties
+          echo 'org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=2g' >> android/gradle.properties
+          echo 'kotlin.daemon.jvmargs=-Xmx3g' >> android/gradle.properties
+          grep jvmargs android/gradle.properties
           cd android
           ./gradlew --console=plain app:assembleRelease -PreactNativeArchitectures=x86_64
 
