@@ -123,12 +123,13 @@ describe.runIf(ativo)('integração: recorrências', () => {
     expect(recorrencia).toMatchObject({ ativa: true, proximaGeracao: somarDias(hoje, 42) });
 
     // A rotina não duplica, e anda quando a janela anda. (O banco é compartilhado com os outros
-    // testes, então a conferência é pelas ocorrências desta recorrência.)
-    await servico.gerarPendentes(new Date());
+    // testes: a rotina roda só para este usuário, e a conferência é pelas ocorrências desta
+    // recorrência.)
+    await servico.gerarPendentes(new Date(), usuario.usuarioId);
     expect(await ocorrenciasNoBanco(recorrencia.id)).toHaveLength(6);
     const daquiAUmaSemana = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    await servico.gerarPendentes(daquiAUmaSemana);
-    await servico.gerarPendentes(daquiAUmaSemana);
+    await servico.gerarPendentes(daquiAUmaSemana, usuario.usuarioId);
+    await servico.gerarPendentes(daquiAUmaSemana, usuario.usuarioId);
     const noBanco = await ocorrenciasNoBanco(recorrencia.id);
     expect(noBanco).toHaveLength(7);
     expect(new Set(noBanco.map(({ data }) => data.toISOString())).size).toBe(7);
@@ -235,7 +236,10 @@ describe.runIf(ativo)('integração: recorrências', () => {
       Resposta['recorrencia']
     >();
     expect(depois).toMatchObject({ ativa: false, dataFim: somarDias(terceira?.data ?? hoje, -1) });
-    await servico.gerarPendentes(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+    await servico.gerarPendentes(
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      usuario.usuarioId,
+    );
     expect(await ocorrenciasNoBanco(recorrencia.id)).toHaveLength(2);
   });
 

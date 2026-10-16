@@ -63,9 +63,10 @@ export class RecorrenciasRepository {
   }
 
   /** Ativas cuja próxima geração cai até `ate`, em lotes por id (rotina diária). */
-  pendentesDeGeracao(ate: Date, depoisDe: string | null, limite: number) {
+  pendentesDeGeracao(ate: Date, depoisDe: string | null, limite: number, usuarioId?: string) {
     return this.prisma.cliente.recorrencia.findMany({
       where: {
+        ...(usuarioId === undefined ? {} : { usuarioId }),
         ativa: true,
         proximaGeracao: { lte: ate },
         ...(depoisDe === null ? {} : { id: { gt: depoisDe } }),
