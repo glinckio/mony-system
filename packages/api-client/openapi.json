@@ -5773,6 +5773,60 @@
         ]
       }
     },
+    "/v1/novidades": {
+      "get": {
+        "operationId": "listarNovidades",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "As novidades no ar, da mais nova para a mais antiga, e quantas não foram lidas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NovidadesDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "novidades"
+        ]
+      }
+    },
+    "/v1/novidades/{id}/lida": {
+      "post": {
+        "operationId": "marcarLidaNovidades",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "404 se a novidade não está no ar."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "novidades"
+        ]
+      }
+    },
     "/v1/planos": {
       "get": {
         "operationId": "planosPlanos",
@@ -18660,6 +18714,11 @@
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
+          },
+          "novidadesNaoLidas": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -18669,7 +18728,61 @@
           "cartoes",
           "orcamentos",
           "onboarding",
-          "notificacoesNaoLidas"
+          "notificacoesNaoLidas",
+          "novidadesNaoLidas"
+        ]
+      },
+      "NovidadesDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "titulo": {
+                  "type": "string"
+                },
+                "descricao": {
+                  "type": "string"
+                },
+                "videoUrl": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "publicadaEm": {
+                  "type": "string"
+                },
+                "lida": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "titulo",
+                "descricao",
+                "videoUrl",
+                "publicadaEm",
+                "lida"
+              ]
+            }
+          },
+          "naoLidas": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "itens",
+          "naoLidas"
         ]
       },
       "PlanosAVendaDto": {

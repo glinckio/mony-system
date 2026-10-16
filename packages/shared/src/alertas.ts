@@ -132,6 +132,8 @@ export const LINKS_INTERNOS = {
   /** O chat da Mony (resumos, T-083). */
   mony: (): string => 'mony://mony',
   notificacoes: (): string => 'mony://notificacoes',
+  /** A aba Novidades da central (T-150). */
+  novidades: (): string => 'mony://notificacoes?aba=novidades',
   cartao: (cartaoId: string): string => `mony://cartoes/${cartaoId}`,
   fatura: (cartaoId: string, faturaId: string): string =>
     `mony://cartoes/${cartaoId}/faturas/${faturaId}`,
