@@ -5,28 +5,54 @@ import type { Job } from 'bullmq';
 import { AvisosDeConexao } from '../../core/filas/avisos-conexao';
 import { FILAS } from '../../core/filas/filas';
 import {
+  type DadosJobExcluirConta,
+  ExclusaoContaService,
+  JOB_EXCLUIR_CONTA,
+} from './exclusao-conta.service';
+import {
   type DadosJobExportarDados,
   ExportacaoDadosService,
   TENTATIVAS_EXPORTACAO_DADOS,
 } from './exportacao-dados.service';
 
-/** Consumidor da fila `privacidade` (doc 05): gera as exportações dos dados (RN-160). Só no worker. */
+type JobPrivacidade = Job<DadosJobExportarDados> | Job<DadosJobExcluirConta>;
+
+const ehExclusao = (job: JobPrivacidade): job is Job<DadosJobExcluirConta> =>
+  job.name === JOB_EXCLUIR_CONTA;
+
+/**
+ * Consumidor da fila `privacidade` (doc 05): gera as exportações dos dados (RN-160) e faz as
+ * exclusões definitivas de conta (RN-161). Só no worker.
+ */
 @Processor(FILAS.privacidade)
 export class ProcessadorPrivacidade extends WorkerHost {
   private readonly log = new Logger(ProcessadorPrivacidade.name);
   private readonly avisos = new AvisosDeConexao(this.log);
 
-  constructor(private readonly exportacoes: ExportacaoDadosService) {
+  constructor(
+    private readonly exportacoes: ExportacaoDadosService,
+    private readonly exclusoes: ExclusaoContaService,
+  ) {
     super();
   }
 
-  async process(job: Job<DadosJobExportarDados>): Promise<void> {
-    await this.exportacoes.gerar(job.data.exportacaoId);
+  async process(job: JobPrivacidade): Promise<void> {
+    if (ehExclusao(job)) await this.exclusoes.excluir(job.data.usuarioId);
+    else await this.exportacoes.gerar(job.data.exportacaoId);
   }
 
-  /** Na última tentativa, a exportação fica com `erro`; o log leva só o id. */
+  /**
+   * Na última tentativa, a exportação fica com `erro`; a exclusão volta na próxima rodada da
+   * rotina `excluir-contas`. O log leva só o id.
+   */
   @OnWorkerEvent('failed')
-  async aoFalhar(job: Job<DadosJobExportarDados> | undefined, erro: Error): Promise<void> {
+  async aoFalhar(job: JobPrivacidade | undefined, erro: Error): Promise<void> {
+    if (job && ehExclusao(job)) {
+      this.log.error(
+        `Exclusão da conta ${job.data.usuarioId} falhou na tentativa ${String(job.attemptsMade)}: ${erro.message}`,
+      );
+      return;
+    }
     this.log.error(
       `Exportação de dados ${job?.data.exportacaoId ?? '?'} falhou na tentativa ${String(job?.attemptsMade ?? 0)}: ${erro.message}`,
     );

@@ -31,6 +31,27 @@ export const textosMais = {
     sairAjuda: 'Sai deste aparelho. Seus dados continuam na conta.',
     exportar: 'Exportar meus dados',
     exportarAjuda: 'Tudo o que o app guarda sobre você, em arquivo.',
+    excluir: 'Excluir conta',
+    excluirAjuda: 'Apaga sua conta e seus dados em 7 dias.',
+    exclusaoAgendada: 'Exclusão agendada para {{data}}',
+    exclusaoAgendadaAjuda: 'Toque para desistir.',
+  },
+  excluirConta: {
+    titulo: 'Excluir conta',
+    explicacao:
+      'Em 7 dias, apagamos seus lançamentos, cartões, metas, listas, conversas com a Mony, fotos e áudios, e sua assinatura é cancelada. Até lá, você pode entrar de novo e desistir.',
+    antes: 'Quer guardar uma cópia? Use Exportar meus dados antes.',
+    senha: 'Sua senha',
+    codigo: 'Código de 6 dígitos',
+    codigoEnviado: 'Enviamos o código para o seu e-mail.',
+    enviarCodigo: 'Enviar código por e-mail',
+    confirmar: 'Excluir minha conta',
+    pedida:
+      'Pronto. Sua conta será excluída em {{data}}. Saímos da conta em todos os aparelhos; para desistir até lá, é só entrar de novo.',
+    entendi: 'Entendi',
+    agendada:
+      'Sua conta será excluída em {{data}}. Se desistir, tudo continua como estava, inclusive a assinatura.',
+    desistir: 'Desistir da exclusão',
   },
   exportarDados: {
     titulo: 'Exportar meus dados',

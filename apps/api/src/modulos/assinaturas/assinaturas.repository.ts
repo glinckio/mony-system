@@ -26,6 +26,8 @@ export interface AssinaturaDoCliente {
   status: StatusAssinatura;
   stripeSubscriptionId: string | null;
   fuso: string;
+  /** A conta foi excluída (RN-161): a linha fica, mas não recebe mais avisos. */
+  contaExcluida: boolean;
 }
 
 /** Um evento de `webhook_eventos`. */
@@ -116,12 +118,22 @@ export class AssinaturasRepository {
         plano: true,
         status: true,
         stripeSubscriptionId: true,
-        usuario: { select: { fusoHorario: true } },
+        usuario: { select: { fusoHorario: true, status: true } },
       },
     });
     if (!linha) return null;
     const { usuario, ...resto } = linha;
-    return { ...resto, fuso: usuario.fusoHorario };
+    return { ...resto, fuso: usuario.fusoHorario, contaExcluida: usuario.status === 'excluido' };
+  }
+
+  async marcarCancelamentoAgendado(
+    usuarioId: string,
+    cancelamentoAgendado: boolean,
+  ): Promise<void> {
+    await this.prisma.cliente.assinatura.update({
+      where: { usuarioId },
+      data: { cancelamentoAgendado },
+    });
   }
 
   async atualizar(

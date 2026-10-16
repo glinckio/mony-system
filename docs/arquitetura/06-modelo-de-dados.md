@@ -43,7 +43,7 @@ erDiagram
 
 | Tabela | Campos principais | Relações |
 |---|---|---|
-| `usuarios` | nome, email (único, minúsculo), telefone, senha_hash, foto_url, papel (`usuario`,`admin`), status (`ativo`,`bloqueado`,`excluido`), onboarding_concluido, ultimo_acesso | raiz |
+| `usuarios` | nome, email (único, minúsculo), telefone, senha_hash, foto_url, papel (`usuario`,`admin`), status (`ativo`,`bloqueado`,`excluido`), onboarding_concluido, ultimo_acesso, exclusao_agendada_para e exclusao_cancelou_assinatura (RN-161, T-140b) | raiz |
 | `logins_sociais` | provedor (`google`,`apple`), id_externo | usuarios. Único (provedor, id_externo) |
 | `dispositivos` | plataforma, token_push, identificador_aparelho, modelo, ultimo_uso | usuarios |
 | `sessoes` | refresh_token_hash, dispositivo_id, expira_em, revogada_em | usuarios, dispositivos |
@@ -137,6 +137,7 @@ erDiagram
 | `recorrencias` | `tipo`, `descricao`, `valor`, `forma_pagamento`, `conta_id`, `cartao_id`, `data_inicio`, `ativa` | Modelo da ocorrência que a rotina materializa (RN-043) (T-007) |
 | `dispositivos` | `ativo` | Token de push inválido desativa o dispositivo (doc 09) (T-007) |
 | `codigos_recuperacao` | `tentativas` | No máximo 5 tentativas por código (RN-003) (T-007) |
+| `codigos_recuperacao` | `finalidade` (`recuperacao`, `exclusao_conta`) | O código que confirma a exclusão da conta (RN-161) não troca a senha, e o contrário (T-140b) |
 | `listas_compras` | `finalizada_em` | Finalizar a lista gera a despesa (RN-072) (T-007) |
 | `faturas`, `parcelas`, `anexos`, `nfce_itens`, `metas_aportes`, `itens_lista`, `mensagens` | `usuario_id` | Regra "toda tabela de dados do usuário tem `usuario_id`" também nas tabelas filhas (T-007) |
 

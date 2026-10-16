@@ -24,8 +24,10 @@ import type {
 import type {
   AtualizacaoOnboardingDto,
   AtualizacaoPerfilDto,
+  ExclusaoContaDto,
   ExportacaoDadosDto,
   OnboardingDto,
+  PedidoExclusaoContaDto,
   PerfilDto,
   RegistroDispositivoDto,
   UltimaExportacaoDadosDto,
@@ -729,3 +731,368 @@ export function useUltimaExportacaoLgpd<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getExclusaoAgendadaLgpdUrl = () => {
+  return `/v1/me/exclusao`;
+};
+
+export const exclusaoAgendadaLgpd = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<ExclusaoContaDto> => {
+  return requisicao<ExclusaoContaDto>(getExclusaoAgendadaLgpdUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getExclusaoAgendadaLgpdQueryKey = () => {
+  return [`/v1/me/exclusao`] as const;
+};
+
+export const getExclusaoAgendadaLgpdQueryOptions = <
+  TData = Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>, TError, TData>>;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExclusaoAgendadaLgpdQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>> = ({ signal }) =>
+    exclusaoAgendadaLgpd({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ExclusaoAgendadaLgpdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>
+>;
+export type ExclusaoAgendadaLgpdQueryError = unknown;
+
+export function useExclusaoAgendadaLgpd<
+  TData = Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>,
+          TError,
+          Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useExclusaoAgendadaLgpd<
+  TData = Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>,
+          TError,
+          Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useExclusaoAgendadaLgpd<
+  TData = Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useExclusaoAgendadaLgpd<
+  TData = Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof exclusaoAgendadaLgpd>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getExclusaoAgendadaLgpdQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getPedirExclusaoLgpdUrl = () => {
+  return `/v1/me/exclusao`;
+};
+
+export const pedirExclusaoLgpd = async (
+  pedidoExclusaoContaDto: PedidoExclusaoContaDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<ExclusaoContaDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<ExclusaoContaDto>(getPedirExclusaoLgpdUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(pedidoExclusaoContaDto),
+  });
+};
+
+export const getPedirExclusaoLgpdMutationKey = () => ['pedirExclusaoLgpd'] as const;
+
+export const getPedirExclusaoLgpdMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof pedirExclusaoLgpd>>,
+    TError,
+    PedirExclusaoLgpdMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof pedirExclusaoLgpd>>,
+  TError,
+  PedirExclusaoLgpdMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPedirExclusaoLgpdMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof pedirExclusaoLgpd>>,
+    PedirExclusaoLgpdMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return pedirExclusaoLgpd(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PedirExclusaoLgpdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof pedirExclusaoLgpd>>
+>;
+export type PedirExclusaoLgpdMutationBody = PedidoExclusaoContaDto;
+export type PedirExclusaoLgpdMutationError = unknown;
+export type PedirExclusaoLgpdMutationVariables = { data: PedidoExclusaoContaDto };
+
+export const usePedirExclusaoLgpd = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof pedirExclusaoLgpd>>,
+      TError,
+      PedirExclusaoLgpdMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof pedirExclusaoLgpd>>,
+  TError,
+  PedirExclusaoLgpdMutationVariables,
+  TContext
+> => {
+  return useMutation(getPedirExclusaoLgpdMutationOptions(options), queryClient);
+};
+export const getDesistirDaExclusaoLgpdUrl = () => {
+  return `/v1/me/exclusao`;
+};
+
+export const desistirDaExclusaoLgpd = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<ExclusaoContaDto> => {
+  return requisicao<ExclusaoContaDto>(getDesistirDaExclusaoLgpdUrl(), {
+    ...options,
+    method: 'DELETE',
+  });
+};
+
+export const getDesistirDaExclusaoLgpdMutationKey = () => ['desistirDaExclusaoLgpd'] as const;
+
+export const getDesistirDaExclusaoLgpdMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof desistirDaExclusaoLgpd>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof desistirDaExclusaoLgpd>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = getDesistirDaExclusaoLgpdMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof desistirDaExclusaoLgpd>>,
+    void
+  > = () => {
+    return desistirDaExclusaoLgpd(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DesistirDaExclusaoLgpdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof desistirDaExclusaoLgpd>>
+>;
+
+export type DesistirDaExclusaoLgpdMutationError = unknown;
+
+export const useDesistirDaExclusaoLgpd = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof desistirDaExclusaoLgpd>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof desistirDaExclusaoLgpd>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getDesistirDaExclusaoLgpdMutationOptions(options), queryClient);
+};
+export const getPedirCodigoExclusaoLgpdUrl = () => {
+  return `/v1/me/exclusao/codigo`;
+};
+
+export const pedirCodigoExclusaoLgpd = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<void> => {
+  return requisicao<void>(getPedirCodigoExclusaoLgpdUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getPedirCodigoExclusaoLgpdMutationKey = () => ['pedirCodigoExclusaoLgpd'] as const;
+
+export const getPedirCodigoExclusaoLgpdMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof pedirCodigoExclusaoLgpd>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof pedirCodigoExclusaoLgpd>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = getPedirCodigoExclusaoLgpdMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof pedirCodigoExclusaoLgpd>>,
+    void
+  > = () => {
+    return pedirCodigoExclusaoLgpd(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PedirCodigoExclusaoLgpdMutationResult = NonNullable<
+  Awaited<ReturnType<typeof pedirCodigoExclusaoLgpd>>
+>;
+
+export type PedirCodigoExclusaoLgpdMutationError = unknown;
+
+export const usePedirCodigoExclusaoLgpd = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof pedirCodigoExclusaoLgpd>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof pedirCodigoExclusaoLgpd>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getPedirCodigoExclusaoLgpdMutationOptions(options), queryClient);
+};

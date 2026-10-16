@@ -1,34 +1,46 @@
 import { Injectable } from '@nestjs/common';
 
+import type { FinalidadeCodigo } from '@mony/shared/enums';
+
 import { PrismaService } from '../../core/prisma/prisma.service';
 
 export interface NovoCodigo {
   usuarioId: string;
+  /** Padrão: recuperação de senha. O de exclusão da conta (RN-161) não troca a senha. */
+  finalidade?: FinalidadeCodigo;
   codigoHash: string;
   expiraEm: Date;
   ip: string;
 }
 
-/** Acesso ao banco da recuperação de senha (`codigos_recuperacao`), sempre por usuário. */
+/**
+ * Acesso ao banco dos códigos por e-mail (`codigos_recuperacao`), sempre por usuário e finalidade:
+ * recuperar a senha (RN-003) ou confirmar a exclusão da conta (RN-161, T-140b).
+ */
 @Injectable()
 export class RecuperacaoSenhaRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** RN-003: grava o código novo e faz os anteriores ainda válidos vencerem agora. */
+  /** RN-003: grava o código novo e faz os anteriores da mesma finalidade vencerem agora. */
   criarCodigo(novo: NovoCodigo, agora: Date): Promise<{ id: string }> {
     return this.prisma.cliente.$transaction(async (tx) => {
       await tx.codigoRecuperacao.updateMany({
-        where: { usuarioId: novo.usuarioId, usado: false, expiraEm: { gt: agora } },
+        where: {
+          usuarioId: novo.usuarioId,
+          finalidade: novo.finalidade ?? 'recuperacao',
+          usado: false,
+          expiraEm: { gt: agora },
+        },
         data: { expiraEm: agora },
       });
       return tx.codigoRecuperacao.create({ data: novo, select: { id: true } });
     });
   }
 
-  /** O último código pedido pelo usuário: só ele pode valer. */
-  ultimoCodigo(usuarioId: string) {
+  /** O último código pedido pelo usuário para a finalidade: só ele pode valer. */
+  ultimoCodigo(usuarioId: string, finalidade: FinalidadeCodigo = 'recuperacao') {
     return this.prisma.cliente.codigoRecuperacao.findFirst({
-      where: { usuarioId },
+      where: { usuarioId, finalidade },
       orderBy: [{ criadoEm: 'desc' }, { id: 'desc' }],
       select: { id: true, codigoHash: true, expiraEm: true, usado: true, tentativas: true },
     });
@@ -54,7 +66,7 @@ export class RecuperacaoSenhaRepository {
   ): Promise<boolean> {
     return this.prisma.cliente.$transaction(async (tx) => {
       const { count } = await tx.codigoRecuperacao.updateMany({
-        where: { id: codigoId, usuarioId, usado: false },
+        where: { id: codigoId, usuarioId, finalidade: 'recuperacao', usado: false },
         data: { usado: true },
       });
       if (count === 0) return false;
@@ -65,5 +77,14 @@ export class RecuperacaoSenhaRepository {
       });
       return true;
     });
+  }
+
+  /** Gasta o código; `false` se outro pedido já o usou. */
+  async gastarCodigo(codigoId: string, usuarioId: string): Promise<boolean> {
+    const { count } = await this.prisma.cliente.codigoRecuperacao.updateMany({
+      where: { id: codigoId, usuarioId, usado: false },
+      data: { usado: true },
+    });
+    return count > 0;
   }
 }

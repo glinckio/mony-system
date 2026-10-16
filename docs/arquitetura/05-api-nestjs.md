@@ -104,7 +104,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Grupo | Rotas |
 |---|---|
 | Autenticação | `POST /auth/cadastro` · `POST /auth/login` · `POST /auth/social` · `POST /auth/social/vincular` **(proposta)** · `POST /auth/renovar` · `POST /auth/sair` · `POST /auth/sair-todos` **(proposta)** · `POST /auth/senha/codigo` · `POST /auth/senha/conferir` **(proposta)** · `POST /auth/senha/redefinir` |
-| Usuário | `GET /me` · `PATCH /me` · `POST /me/dispositivos` · `GET /me/onboarding` · `PATCH /me/onboarding` **(proposta)** · `POST /me/exportar` e `GET /me/exportar` (T-140a) · `DELETE /me` |
+| Usuário | `GET /me` · `PATCH /me` · `POST /me/dispositivos` · `GET /me/onboarding` · `PATCH /me/onboarding` **(proposta)** · `POST /me/exportar` e `GET /me/exportar` (T-140a) · `GET /me/exclusao` · `POST /me/exclusao/codigo` · `POST /me/exclusao` com `{ senha }` ou `{ codigo }` · `DELETE /me/exclusao` (desistir; T-140b) |
 | App | `GET /config-app` **(proposta)**: versão mínima, flags, sugestões do chat |
 | Planos e assinatura | `GET /planos` · `GET /assinatura` · `GET /assinatura/uso` · `POST /assinatura/checkout` · `POST /assinatura/portal` · `POST /webhooks/stripe` |
 | Categorias | `GET /categorias` · `POST /categorias` · `PATCH /categorias/:id` · `DELETE /categorias/:id?mover_para=` |
@@ -577,7 +577,7 @@ Implementado na T-102 (RN-128, RN-131), em `modulos/assinaturas`; a Stripe está
 | `open-finance` | Sincronizações por webhook e periódicas |
 | `webhooks` | Processamento de eventos Stripe e Open Finance |
 | `relatorios` | Exportação PDF/XLSX dos relatórios (RN-151) |
-| `privacidade` | Exportar meus dados (`exportar-dados`, RN-160, T-140a; 3 tentativas). A exclusão da conta (T-140b) entra aqui |
+| `privacidade` | Exportar meus dados (`exportar-dados`, RN-160, T-140a; 3 tentativas). Exclusão definitiva da conta (`excluir-conta`, RN-161, T-140b; 5 tentativas, e a rotina `excluir-contas` põe de novo na hora seguinte) |
 | `lembretes` | Disparo por minuto e ligações |
 | `agenda` | Sincronização Google/Microsoft |
 | `rotinas` | Rotinas diárias, semanais e mensais (ver [09](09-notificacoes-e-rotinas.md#rotinas-agendadas)) |

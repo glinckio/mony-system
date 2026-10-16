@@ -53,6 +53,7 @@ const PARES: [keyof typeof doBanco, readonly string[]][] = [
   ['DocumentoAceite', compartilhados.DOCUMENTOS_ACEITE],
   ['FinalidadeConsentimento', compartilhados.FINALIDADES_CONSENTIMENTO],
   ['TipoControleTeste', compartilhados.TIPOS_CONTROLE_TESTE],
+  ['FinalidadeCodigo', compartilhados.FINALIDADES_CODIGO],
   ['FormatoExportacao', compartilhados.FORMATOS_EXPORTACAO],
   ['StatusExportacao', compartilhados.STATUS_EXPORTACAO],
 ];

@@ -39,10 +39,13 @@ const EXPORTACAO = {
   concluidaEm: null,
 };
 const URL_DADOS = 'https://arquivos.teste/exportacoes/dados/x.zip';
+/** 23/10 às 12:00 em São Paulo. */
+const EXCLUSAO_EM = '2026-10-23T15:00:00.000Z';
 
-function api() {
+function api(opcoes: { temSenha?: boolean; agendadaPara?: string | null } = {}) {
   const pedidos: Pedido[] = [];
-  let perfil = PERFIL;
+  let perfil = { ...PERFIL, temSenha: opcoes.temSenha ?? true };
+  let agendadaPara = opcoes.agendadaPara ?? null;
   let consultasExportacao = 0;
   let exportacao: Record<string, unknown> | null = null;
   globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
@@ -77,6 +80,14 @@ function api() {
         };
       }
       return Promise.resolve(new Response(JSON.stringify({ exportacao }), { status: 200 }));
+    }
+    if (pedido.rota === '/v1/me/exclusao/codigo') {
+      return Promise.resolve(new Response(null, { status: 204 }));
+    }
+    if (pedido.rota === '/v1/me/exclusao') {
+      if (pedido.metodo === 'POST') agendadaPara = EXCLUSAO_EM;
+      if (pedido.metodo === 'DELETE') agendadaPara = null;
+      return Promise.resolve(new Response(JSON.stringify({ agendadaPara }), { status: 200 }));
     }
     if (pedido.rota === '/v1/me') {
       return Promise.resolve(new Response(JSON.stringify(perfil), { status: 200 }));
@@ -200,6 +211,79 @@ describe('aba Mais e Perfil (T-057)', () => {
       ).toHaveLength(1);
       fireEvent.press(await screen.findByRole('button', { name: 'Baixar meus dados' }, ESPERA));
       expect(abrir).toHaveBeenCalledWith(URL_DADOS);
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'RN-161 excluir a conta com a senha: mostra a data e sai da conta',
+    async () => {
+      const pedidos = api();
+      renderRouter(ROTAS, { initialUrl: '/mais/perfil' });
+      fireEvent.press(await screen.findByRole('button', { name: 'Excluir conta' }, ESPERA));
+      fireEvent.changeText(await screen.findByLabelText('Sua senha', {}, ESPERA), 'segredo123');
+      fireEvent.press(screen.getByRole('button', { name: 'Excluir minha conta' }));
+
+      expect(
+        await screen.findByText(/Sua conta será excluída em 23\/out/, {}, ESPERA),
+      ).toBeOnTheScreen();
+      expect(
+        pedidos.filter(({ metodo, rota }) => metodo === 'POST' && rota === '/v1/me/exclusao'),
+      ).toEqual([{ metodo: 'POST', rota: '/v1/me/exclusao', corpo: { senha: 'segredo123' } }]);
+      fireEvent.press(screen.getByRole('button', { name: 'Entendi' }));
+      await waitFor(() => {
+        expect(useSessao.getState().usuario).toBeNull();
+      }, ESPERA);
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'RN-161 sem senha, confirma com o código que vai por e-mail',
+    async () => {
+      const pedidos = api({ temSenha: false });
+      renderRouter(ROTAS, { initialUrl: '/mais/perfil' });
+      fireEvent.press(await screen.findByRole('button', { name: 'Excluir conta' }, ESPERA));
+      fireEvent.press(
+        await screen.findByRole('button', { name: 'Enviar código por e-mail' }, ESPERA),
+      );
+      fireEvent.changeText(
+        await screen.findByLabelText('Código de 6 dígitos', {}, ESPERA),
+        '004217',
+      );
+      fireEvent.press(screen.getByRole('button', { name: 'Excluir minha conta' }));
+
+      expect(
+        await screen.findByText(/Sua conta será excluída em 23\/out/, {}, ESPERA),
+      ).toBeOnTheScreen();
+      expect(pedidos.map(({ metodo, rota }) => `${metodo} ${rota}`)).toContain(
+        'POST /v1/me/exclusao/codigo',
+      );
+      expect(
+        pedidos.find(({ metodo, rota }) => metodo === 'POST' && rota === '/v1/me/exclusao')?.corpo,
+      ).toEqual({
+        codigo: '004217',
+      });
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'RN-161 com a exclusão agendada, desiste e tudo fica como estava',
+    async () => {
+      const pedidos = api({ agendadaPara: EXCLUSAO_EM });
+      renderRouter(ROTAS, { initialUrl: '/mais/perfil' });
+      fireEvent.press(
+        await screen.findByRole('button', { name: 'Exclusão agendada para 23/out' }, ESPERA),
+      );
+      fireEvent.press(await screen.findByRole('button', { name: 'Desistir da exclusão' }, ESPERA));
+
+      expect(
+        await screen.findByRole('button', { name: 'Excluir conta' }, ESPERA),
+      ).toBeOnTheScreen();
+      expect(
+        pedidos.filter(({ metodo, rota }) => metodo === 'DELETE' && rota === '/v1/me/exclusao'),
+      ).toHaveLength(1);
     },
     TEMPO_LIMITE_MS,
   );

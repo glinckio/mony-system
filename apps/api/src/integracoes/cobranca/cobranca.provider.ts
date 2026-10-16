@@ -109,6 +109,18 @@ export abstract class CobrancaProvider {
   /** O código para de valer no pagamento; quem já tem o desconto fica com ele. */
   abstract desativarCupom(cupomId: string): Promise<void>;
 
+  /**
+   * Agenda (ou desfaz) o cancelamento no fim do período pago: o pedido de exclusão da conta e a
+   * desistência dele (RN-161, T-140b). Assinatura que o provedor não conhece: não faz nada.
+   */
+  abstract agendarCancelamento(assinaturaId: string, agendar: boolean): Promise<void>;
+
+  /**
+   * Cancela agora, sem cobrar mais nada: a exclusão definitiva da conta (RN-161). Assinatura já
+   * cancelada ou que o provedor não conhece: não faz nada.
+   */
+  abstract cancelarAssinatura(assinaturaId: string): Promise<void>;
+
   /** Confere a assinatura do corpo bruto e traduz o evento. Lança `ErroAssinaturaWebhook`. */
   abstract lerEvento(corpo: Buffer, assinatura: string | undefined): EventoCobranca;
 }
