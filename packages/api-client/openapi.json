@@ -1776,7 +1776,8 @@
                 "lembretes",
                 "agenda",
                 "rotinas",
-                "mony-avaliacao"
+                "mony-avaliacao",
+                "privacidade"
               ]
             }
           },
@@ -1835,7 +1836,8 @@
                 "lembretes",
                 "agenda",
                 "rotinas",
-                "mony-avaliacao"
+                "mony-avaliacao",
+                "privacidade"
               ]
             }
           }
@@ -1883,7 +1885,8 @@
                 "lembretes",
                 "agenda",
                 "rotinas",
-                "mony-avaliacao"
+                "mony-avaliacao",
+                "privacidade"
               ]
             }
           },
@@ -8855,7 +8858,8 @@
                     "lembretes",
                     "agenda",
                     "rotinas",
-                    "mony-avaliacao"
+                    "mony-avaliacao",
+                    "privacidade"
                   ]
                 },
                 "aguardando": {
@@ -8915,7 +8919,8 @@
               "lembretes",
               "agenda",
               "rotinas",
-              "mony-avaliacao"
+              "mony-avaliacao",
+              "privacidade"
             ]
           },
           "total": {
