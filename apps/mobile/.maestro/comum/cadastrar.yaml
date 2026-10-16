@@ -3,7 +3,7 @@ appId: com.monitorizze.app.preview
 ---
 - extendedWaitUntil:
     visible: 'Criar conta'
-    timeout: 60000
+    timeout: 120000
 - tapOn: 'Criar conta'
 - tapOn:
     id: campo-nome

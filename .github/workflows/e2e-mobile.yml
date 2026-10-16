@@ -152,12 +152,11 @@ jobs:
           api-level: 34
           target: google_apis
           arch: x86_64
-          profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           script: |
             adb install -r apps/mobile/android/app/build/outputs/apk/release/app-release.apk
-            maestro test -e API_URL=http://localhost:3000 apps/mobile/.maestro --format junit --output "$RUNNER_TEMP/maestro.xml" --debug-output "$RUNNER_TEMP/maestro"
+            maestro test -e API_URL=http://localhost:3000 apps/mobile/.maestro --format junit --output "$RUNNER_TEMP/maestro.xml" --debug-output "$RUNNER_TEMP/maestro" || (adb logcat -d > "$RUNNER_TEMP/logcat.txt"; grep -E "ReactNativeJS|AndroidRuntime" "$RUNNER_TEMP/logcat.txt" | tail -80; exit 1)
 
       - name: Guardar o log da API, as capturas e o relatório
         if: always()
@@ -168,4 +167,6 @@ jobs:
             ${{ runner.temp }}/api.log
             ${{ runner.temp }}/maestro.xml
             ${{ runner.temp }}/maestro/
+            ${{ runner.temp }}/logcat.txt
+            ~/.maestro/tests/
           if-no-files-found: ignore
