@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { esquemaPrecosIaAdmin, type PrecoModeloIa } from '@mony/shared/admin';
+import { esquemaPrecosIaAdmin, type LimitesMony, type PrecoModeloIa } from '@mony/shared/admin';
 
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { CONFIGURACAO_LIMITES_MONY } from '../mony/limites.service';
 import type { Prisma } from '../../generated/prisma/client';
 
 /** `configuracoes.chave` da tabela de preços dos modelos (T-141e). */
@@ -225,6 +226,35 @@ export class AdminMonyRepository {
           ip: dados.ip,
           antes: { precos: dados.antes as unknown as Prisma.InputJsonArray },
           depois: { precos: valor },
+        },
+      }),
+    ]);
+  }
+
+  /** Troca os limites diários (T-151) e grava a `auditoria` (antes e depois) na mesma transação. */
+  async salvarLimites(dados: {
+    limites: LimitesMony;
+    antes: LimitesMony;
+    adminId: string;
+    ip: string;
+  }): Promise<void> {
+    const valor = { ...dados.limites };
+    await this.prisma.cliente.$transaction([
+      this.prisma.cliente.configuracao.upsert({
+        where: { chave: CONFIGURACAO_LIMITES_MONY },
+        create: { chave: CONFIGURACAO_LIMITES_MONY, valor, alteradoPorId: dados.adminId },
+        update: { valor, alteradoPorId: dados.adminId },
+        select: { chave: true },
+      }),
+      this.prisma.cliente.registroAuditoria.create({
+        data: {
+          usuarioId: dados.adminId,
+          acao: 'mony.limites_alterados',
+          entidade: 'configuracao',
+          entidadeId: CONFIGURACAO_LIMITES_MONY,
+          ip: dados.ip,
+          antes: { ...dados.antes },
+          depois: valor,
         },
       }),
     ]);

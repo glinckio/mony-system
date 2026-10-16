@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ClockFixo } from '../src/core/clock/clock';
 import type { Configuracao } from '../src/core/config/configuracao';
+import type { LimitesMonyService } from '../src/modulos/mony/limites.service';
 import type { AdminMonyRepository } from '../src/modulos/admin/admin-mony.repository';
 import { AdminMonyService } from '../src/modulos/admin/admin-mony.service';
 import {
@@ -147,6 +148,7 @@ describe('AdminMonyService', () => {
     const servico = new AdminMonyService(
       repositorio as unknown as AdminMonyRepository,
       config as unknown as ConfigMonyService,
+      {} as LimitesMonyService,
       { provedorIa: provedor, modeloIa: 'claude' } as unknown as Configuracao,
       new ClockFixo(agora),
       fila as unknown as Queue<DadosJobAvaliacao>,

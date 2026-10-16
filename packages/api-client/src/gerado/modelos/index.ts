@@ -184,6 +184,7 @@ export * from './lembreteDtoCanaisItem';
 export * from './lembreteDtoDono';
 export * from './lembreteDtoStatus';
 export * from './lerAdminMetricasParams';
+export * from './limitesMonyDto';
 export * from './linkCobrancaDto';
 export * from './listaCartoesDto';
 export * from './listaCartoesDtoItensItem';

@@ -17,11 +17,13 @@ import {
   esquemaConsultaCustoMonyAdmin,
   esquemaConsultaLogsMonyAdmin,
   esquemaCustoMonyAdmin,
+  esquemaLimitesMony,
   esquemaLogsMonyAdmin,
   esquemaNovaVersaoMony,
   esquemaPrecosIaAdmin,
   esquemaVersaoMonyAdmin,
   esquemaVersoesMonyAdmin,
+  type LimitesMony,
   type LogsMonyAdmin,
   type PrecosIaAdmin,
   type VersaoMonyAdmin,
@@ -42,6 +44,7 @@ class LogsMonyAdminDto extends criarDto(esquemaLogsMonyAdmin) {}
 class ConsultaCustoMonyAdminDto extends criarDto(esquemaConsultaCustoMonyAdmin) {}
 class CustoMonyAdminDto extends criarDto(esquemaCustoMonyAdmin) {}
 class PrecosIaAdminDto extends criarDto(esquemaPrecosIaAdmin) {}
+class LimitesMonyDto extends criarDto(esquemaLimitesMony) {}
 
 /** A seção Mony do painel (T-141e, doc 13). Só faz HTTP; a regra está no Service. */
 @ApiTags('admin')
@@ -141,5 +144,24 @@ export class AdminMonyController {
     @Ip() ip: string,
   ): Promise<PrecosIaAdmin> {
     return this.mony.salvarPrecos(admin.id, dados, ip);
+  }
+
+  @Get('limites')
+  @ApiOkResponse({
+    type: LimitesMonyDto,
+    description: 'Mensagens e leituras por usuário por dia, em todos os planos.',
+  })
+  limites(): Promise<LimitesMony> {
+    return this.mony.limites();
+  }
+
+  @Put('limites')
+  @ApiOkResponse({ type: LimitesMonyDto, description: 'Vale em até 30 s em todos os processos.' })
+  salvarLimites(
+    @UsuarioAtual() admin: UsuarioAutenticado,
+    @Body() dados: LimitesMonyDto,
+    @Ip() ip: string,
+  ): Promise<LimitesMony> {
+    return this.mony.salvarLimites(admin.id, dados, ip);
   }
 }

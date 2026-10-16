@@ -3,17 +3,22 @@ import {
   avaliarAdminMony,
   criarAdminMony,
   ErroApi,
+  getLimitesAdminMonyQueryKey,
   getPrecosAdminMonyQueryKey,
   getVersaoAdminMonyQueryKey,
   getVersoesAdminMonyQueryKey,
   logsAdminMony,
+  salvarLimitesAdminMony,
   salvarPrecosAdminMony,
   useCustoAdminMony,
+  useLimitesAdminMony,
   usePrecosAdminMony,
   useVersaoAdminMony,
   useVersoesAdminMony,
 } from '@mony/api-client';
 import {
+  LIMITE_MONY_MAXIMO,
+  type LimitesMony,
   type LogsMonyAdmin,
   PROMPT_MONY_MAXIMO,
   type PrecoModeloIa,
@@ -83,6 +88,7 @@ function Mony() {
       <h1 className="text-2xl font-semibold">{t('secoes.mony')}</h1>
       <Versoes />
       <Custo />
+      <Limites />
       <Logs />
     </div>
   );
@@ -662,6 +668,95 @@ function FormularioPrecos({
         </Button>
         <Button type="submit" disabled={salvando}>
           {t('mony.salvarPrecos')}
+        </Button>
+      </div>
+      <TextoAviso aviso={aviso} />
+    </form>
+  );
+}
+
+/** T-151: mensagens e leituras por usuário por dia, em todos os planos. */
+function Limites() {
+  const { t } = useTranslation();
+  const consulta = useLimitesAdminMony();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <h2>{t('mony.limites')}</h2>
+        </CardTitle>
+        <CardDescription>{t('mony.descricaoLimites')}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {consulta.data ? (
+          <FormularioLimites salvos={consulta.data} />
+        ) : (
+          <p className={consulta.isError ? 'text-destructive' : 'text-muted-foreground'}>
+            {consulta.isError ? t('mony.erroCarregar') : t('mony.carregando')}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+const CAMPOS_LIMITES = ['mensagensPorDia', 'leiturasPorDia'] as const;
+
+function FormularioLimites({ salvos }: { salvos: LimitesMony }) {
+  const { t } = useTranslation();
+  const clienteConsultas = useQueryClient();
+  const [valores, definirValores] = useState({
+    mensagensPorDia: String(salvos.mensagensPorDia),
+    leiturasPorDia: String(salvos.leiturasPorDia),
+  });
+  const [aviso, definirAviso] = useState<Aviso>(null);
+  const [salvando, definirSalvando] = useState(false);
+
+  const aoSalvar = async (evento: SyntheticEvent) => {
+    evento.preventDefault();
+    const lidos = CAMPOS_LIMITES.map((campo) => valores[campo].trim());
+    const [mensagensPorDia, leiturasPorDia] = lidos.map(Number) as [number, number];
+    const valido = (texto: string) =>
+      /^\d+$/.test(texto) && Number(texto) >= 1 && Number(texto) <= LIMITE_MONY_MAXIMO;
+    if (!lidos.every(valido)) {
+      definirAviso({
+        tipo: 'erro',
+        texto: t('mony.limiteInvalido', { maximo: LIMITE_MONY_MAXIMO }),
+      });
+      return;
+    }
+    definirSalvando(true);
+    try {
+      await salvarLimitesAdminMony({ mensagensPorDia, leiturasPorDia });
+      await clienteConsultas.invalidateQueries({ queryKey: getLimitesAdminMonyQueryKey() });
+      definirAviso({ tipo: 'ok', texto: t('mony.limitesSalvos') });
+    } catch (falha) {
+      definirAviso({ tipo: 'erro', texto: mensagemDoErro(falha, t('mony.erroSalvar')) });
+    } finally {
+      definirSalvando(false);
+    }
+  };
+
+  return (
+    <form className="flex flex-col gap-3" onSubmit={(evento) => void aoSalvar(evento)}>
+      <div className="flex flex-wrap items-end gap-4">
+        {CAMPOS_LIMITES.map((campo) => (
+          <div key={campo} className="flex flex-col gap-1">
+            <Label htmlFor={`limite-${campo}`}>{t(`mony.${campo}`)}</Label>
+            <Input
+              id={`limite-${campo}`}
+              inputMode="numeric"
+              className="w-40"
+              value={valores[campo]}
+              onChange={(evento) => {
+                definirAviso(null);
+                definirValores({ ...valores, [campo]: evento.target.value });
+              }}
+            />
+          </div>
+        ))}
+        <Button type="submit" disabled={salvando}>
+          {t('mony.salvarLimites')}
         </Button>
       </div>
       <TextoAviso aviso={aviso} />
