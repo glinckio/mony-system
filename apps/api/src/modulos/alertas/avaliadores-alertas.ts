@@ -27,6 +27,7 @@ import { Clock } from '../../core/clock/clock';
 import type { Contexto } from '../../core/contexto/contexto';
 import { AoEvento } from '../../core/eventos/ao-evento.decorator';
 import type { EventoDominio } from '../../core/eventos/evento-dominio';
+import { ParametrosService } from '../../core/parametros/parametros';
 import { Rotina } from '../../core/rotinas/rotinas';
 import {
   CartoesService,
@@ -90,6 +91,7 @@ export class AvaliadoresAlertas {
     private readonly relatorios: RelatoriosService,
     private readonly teste: TesteGratis,
     private readonly clock: Clock,
+    private readonly parametros: ParametrosService,
   ) {}
 
   /**
@@ -335,7 +337,10 @@ export class AvaliadoresAlertas {
     ];
   }
 
-  /** RN-106: despesa recente de 3× a média da categoria nos 90 dias antes dela. */
+  /**
+   * RN-106: despesa recente de 3× a média da categoria nos 90 dias antes dela; o múltiplo, o mínimo
+   * de lançamentos e o valor mínimo vêm do painel (T-141g).
+   */
   private async foraDoPadrao(
     transacao: {
       id: string;
@@ -348,7 +353,10 @@ export class AvaliadoresAlertas {
     },
     hoje: DataCalendario,
   ): Promise<AlertaCandidato[]> {
-    const parametros = PARAMETROS_FORA_DO_PADRAO;
+    const parametros = {
+      ...PARAMETROS_FORA_DO_PADRAO,
+      ...(await this.parametros.obter()).alertas.foraDoPadrao,
+    };
     const idade = diasEntre(transacao.data, hoje);
     if (idade < 0 || idade > parametros.diasParaAvaliar) return [];
     if (transacao.valorCentavos < parametros.valorMinimoCentavos) return [];

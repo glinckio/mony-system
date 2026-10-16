@@ -1669,6 +1669,255 @@
         ]
       }
     },
+    "/v1/admin/filas": {
+      "get": {
+        "operationId": "listarAdminFilas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Quantos jobs há em cada estado, por fila.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FilasAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/filas/{fila}/falhos": {
+      "get": {
+        "operationId": "falhosAdminFilas",
+        "parameters": [
+          {
+            "name": "fila",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "eventos-dominio",
+                "notificacoes",
+                "emails",
+                "mony-midia",
+                "open-finance",
+                "webhooks",
+                "relatorios",
+                "lembretes",
+                "agenda",
+                "rotinas",
+                "mony-avaliacao"
+              ]
+            }
+          },
+          {
+            "name": "pagina",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Os jobs que esgotaram as tentativas, do mais recente ao mais antigo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FalhosAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/filas/{fila}/falhos/reprocessar": {
+      "post": {
+        "operationId": "reprocessarTodosAdminFilas",
+        "parameters": [
+          {
+            "name": "fila",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "eventos-dominio",
+                "notificacoes",
+                "emails",
+                "mony-midia",
+                "open-finance",
+                "webhooks",
+                "relatorios",
+                "lembretes",
+                "agenda",
+                "rotinas",
+                "mony-avaliacao"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Todos os falhos da fila voltam para ela. Grava `auditoria`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReprocessadosAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/filas/{fila}/falhos/{id}/reprocessar": {
+      "post": {
+        "operationId": "reprocessarAdminFilas",
+        "parameters": [
+          {
+            "name": "fila",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "eventos-dominio",
+                "notificacoes",
+                "emails",
+                "mony-midia",
+                "open-finance",
+                "webhooks",
+                "relatorios",
+                "lembretes",
+                "agenda",
+                "rotinas",
+                "mony-avaliacao"
+              ]
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O job volta para a fila; 404 se ele não está falho. Grava `auditoria`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReprocessadosAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/configuracoes": {
+      "get": {
+        "operationId": "lerAdminConfiguracoes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Os parâmetros em uso (os padrões enquanto ninguém salvou).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracoesAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      },
+      "put": {
+        "operationId": "salvarAdminConfiguracoes",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParametrosDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Troca todos os parâmetros. Valem na API e no worker em até 30 s. Grava `auditoria`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracoesAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/v1/mony/acoes": {
       "post": {
         "operationId": "agirMony",
@@ -8390,6 +8639,366 @@
         },
         "required": [
           "atualizadasEm"
+        ]
+      },
+      "FilasAdminDto": {
+        "type": "object",
+        "properties": {
+          "filas": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "nome": {
+                  "type": "string",
+                  "enum": [
+                    "eventos-dominio",
+                    "notificacoes",
+                    "emails",
+                    "mony-midia",
+                    "open-finance",
+                    "webhooks",
+                    "relatorios",
+                    "lembretes",
+                    "agenda",
+                    "rotinas",
+                    "mony-avaliacao"
+                  ]
+                },
+                "aguardando": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "ativos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "atrasados": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "falhos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "concluidos": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "nome",
+                "aguardando",
+                "ativos",
+                "atrasados",
+                "falhos",
+                "concluidos"
+              ]
+            }
+          }
+        },
+        "required": [
+          "filas"
+        ]
+      },
+      "FalhosAdminDto": {
+        "type": "object",
+        "properties": {
+          "fila": {
+            "type": "string",
+            "enum": [
+              "eventos-dominio",
+              "notificacoes",
+              "emails",
+              "mony-midia",
+              "open-finance",
+              "webhooks",
+              "relatorios",
+              "lembretes",
+              "agenda",
+              "rotinas",
+              "mony-avaliacao"
+            ]
+          },
+          "total": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "nome": {
+                  "type": "string"
+                },
+                "motivo": {
+                  "type": "string"
+                },
+                "tentativas": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "criadoEm": {
+                  "type": "string"
+                },
+                "falhouEm": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "nome",
+                "motivo",
+                "tentativas",
+                "criadoEm",
+                "falhouEm"
+              ]
+            }
+          }
+        },
+        "required": [
+          "fila",
+          "total",
+          "jobs"
+        ]
+      },
+      "ReprocessadosAdminDto": {
+        "type": "object",
+        "properties": {
+          "reprocessados": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "reprocessados"
+        ]
+      },
+      "ConfiguracoesAdminDto": {
+        "type": "object",
+        "properties": {
+          "parametros": {
+            "type": "object",
+            "properties": {
+              "alertas": {
+                "type": "object",
+                "properties": {
+                  "cotaConsultoriaDiaria": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20
+                  },
+                  "intervaloAppCompraHoras": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 168
+                  },
+                  "foraDoPadrao": {
+                    "type": "object",
+                    "properties": {
+                      "multiplo": {
+                        "type": "integer",
+                        "minimum": 2,
+                        "maximum": 20
+                      },
+                      "minimoDeLancamentos": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100
+                      },
+                      "valorMinimoCentavos": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 100000000
+                      }
+                    },
+                    "required": [
+                      "multiplo",
+                      "minimoDeLancamentos",
+                      "valorMinimoCentavos"
+                    ]
+                  }
+                },
+                "required": [
+                  "cotaConsultoriaDiaria",
+                  "intervaloAppCompraHoras",
+                  "foraDoPadrao"
+                ]
+              },
+              "ligacoes": {
+                "type": "object",
+                "properties": {
+                  "limiteMensal": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  }
+                },
+                "required": [
+                  "limiteMensal"
+                ]
+              },
+              "versaoMinima": {
+                "type": "object",
+                "properties": {
+                  "ios": {
+                    "type": "string",
+                    "pattern": "^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}$"
+                  },
+                  "android": {
+                    "type": "string",
+                    "pattern": "^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}$"
+                  }
+                },
+                "required": [
+                  "ios",
+                  "android"
+                ]
+              }
+            },
+            "required": [
+              "alertas",
+              "ligacoes",
+              "versaoMinima"
+            ]
+          },
+          "alteradoEm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "alteradoPor": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "nome": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "nome"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "parametros",
+          "alteradoEm",
+          "alteradoPor"
+        ]
+      },
+      "ParametrosDto": {
+        "type": "object",
+        "properties": {
+          "alertas": {
+            "type": "object",
+            "properties": {
+              "cotaConsultoriaDiaria": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              },
+              "intervaloAppCompraHoras": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 168
+              },
+              "foraDoPadrao": {
+                "type": "object",
+                "properties": {
+                  "multiplo": {
+                    "type": "integer",
+                    "minimum": 2,
+                    "maximum": 20
+                  },
+                  "minimoDeLancamentos": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  },
+                  "valorMinimoCentavos": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100000000
+                  }
+                },
+                "required": [
+                  "multiplo",
+                  "minimoDeLancamentos",
+                  "valorMinimoCentavos"
+                ]
+              }
+            },
+            "required": [
+              "cotaConsultoriaDiaria",
+              "intervaloAppCompraHoras",
+              "foraDoPadrao"
+            ]
+          },
+          "ligacoes": {
+            "type": "object",
+            "properties": {
+              "limiteMensal": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              }
+            },
+            "required": [
+              "limiteMensal"
+            ]
+          },
+          "versaoMinima": {
+            "type": "object",
+            "properties": {
+              "ios": {
+                "type": "string",
+                "pattern": "^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}$"
+              },
+              "android": {
+                "type": "string",
+                "pattern": "^\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}$"
+              }
+            },
+            "required": [
+              "ios",
+              "android"
+            ]
+          }
+        },
+        "required": [
+          "alertas",
+          "ligacoes",
+          "versaoMinima"
         ]
       },
       "PedidoAcaoMonyDto": {

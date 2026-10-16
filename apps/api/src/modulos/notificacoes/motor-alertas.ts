@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { dataNoFuso, horaNoFuso } from '@mony/shared/datas';
 import type { TipoAlerta } from '@mony/shared/enums';
 import {
-  COTA_CONSULTORIA_DIARIA,
   MAXIMO_SEM_AGRUPAR,
   noSilencio,
   REGEX_LINK_INTERNO,
@@ -10,6 +9,7 @@ import {
   TIPOS_CONSULTORIA,
 } from '@mony/shared/notificacoes';
 
+import { ParametrosService } from '../../core/parametros/parametros';
 import { Rotina } from '../../core/rotinas/rotinas';
 import { ChatDosAlertas } from './chat-dos-alertas';
 import { EnvioNotificacoes, type NotificacaoParaEnvio } from './envio-notificacoes';
@@ -72,10 +72,13 @@ export class MotorAlertas {
     private readonly repositorio: NotificacoesRepository,
     private readonly envio: EnvioNotificacoes,
     private readonly chat: ChatDosAlertas,
+    private readonly parametros: ParametrosService,
   ) {}
 
   async emitir(candidatos: readonly AlertaCandidato[], agora: Date): Promise<ResultadoEmissao> {
     const resultado: ResultadoEmissao = { enviadas: [], adiadas: [], descartadas: [] };
+    if (candidatos.length === 0) return resultado;
+    const cota = (await this.parametros.obter()).alertas.cotaConsultoriaDiaria;
     const porUsuario = new Map<string, AlertaCandidato[]>();
     for (const candidato of candidatos) {
       porUsuario.set(candidato.usuarioId, [
@@ -102,7 +105,7 @@ export class MotorAlertas {
           continue;
         }
         const consultoria = TIPOS_CONSULTORIA.includes(candidato.tipo);
-        if (consultoria && consultoriaHoje >= COTA_CONSULTORIA_DIARIA) {
+        if (consultoria && consultoriaHoje >= cota) {
           descartar('cota_consultoria');
           continue;
         }
