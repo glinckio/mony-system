@@ -129,6 +129,8 @@ export const esquemaAmbiente = z
     ALERTAS_TECNICOS_EMAILS: listaPorVirgula.pipe(z.array(z.email()).max(10)),
     /** Namespace das métricas que o worker escreve no log para o CloudWatch (T-142d). */
     METRICAS_NAMESPACE: z.string().min(1).default('Mony/local'),
+    /** Limite geral de requisições por IP por minuto (T-144a, doc 11); 0 desliga. */
+    LIMITE_REQUISICOES_IP_MINUTO: z.coerce.number().int().min(0).max(1_000_000).default(1200),
   })
   .superRefine((variaveis, contexto) => {
     if (variaveis.NODE_ENV === 'production' && variaveis.JWT_CHAVE_PRIVADA === undefined) {

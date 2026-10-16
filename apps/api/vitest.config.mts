@@ -17,6 +17,8 @@ export default defineConfig({
       // Os testes conferem a cobrança falsa; um `.env` local com a Stripe de teste não pode fazer
       // os testes criarem cupons ou clientes na conta de verdade.
       COBRANCA_PROVEDOR: 'fake',
+      // A suíte faz milhares de requisições do mesmo IP; o limite geral tem teste próprio.
+      LIMITE_REQUISICOES_IP_MINUTO: '0',
     },
   },
 });

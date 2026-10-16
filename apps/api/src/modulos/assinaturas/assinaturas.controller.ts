@@ -26,6 +26,7 @@ import type { FastifyRequest } from 'fastify';
 
 import { Publico } from '../../core/auth/publico.decorator';
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
+import { SemLimiteGeral } from '../../core/limites/limite-geral';
 import { criarDto } from '../../core/openapi/dto';
 import { LiberadaParaVersaoAntiga } from '../../core/versao-app/versao-app';
 import { AssinaturasService, linkDoRetorno } from './assinaturas.service';
@@ -109,7 +110,8 @@ export class AssinaturasController {
   }
 }
 
-/** Webhooks dos provedores (doc 05, "Webhooks"). */
+/** Webhooks dos provedores (doc 05, "Webhooks"); fora do limite geral por IP (T-144a). */
+@SemLimiteGeral()
 @Controller('webhooks')
 export class WebhooksController {
   constructor(private readonly assinaturas: AssinaturasService) {}

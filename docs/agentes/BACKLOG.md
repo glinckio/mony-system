@@ -340,8 +340,12 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-103, T-069 · docs: 14
   - [x] **T-143a** Fluxos do Maestro (cadastro → onboarding → primeiro lançamento na Mony; cartão → compra parcelada → pagar fatura; limite do gratuito → Ver planos) e o workflow que os roda num emulador Android com a API local (fakes), manual e quando os fluxos mudam (PR #113)
   - [ ] **T-143b** 👤 Rodar os mesmos fluxos no build de preview contra a API de staging antes de cada release (depende da T-013 aplicada e do EAS)
-- [ ] **T-144** Hardening de segurança (checklist de 11) e teste de carga
-  - dep: T-140 · docs: 11
+- [ ] **T-144** Hardening de segurança (checklist de 11) e teste de carga, dividida em:
+  - dep: T-140 (só a T-140d espera a T-120; as partes abaixo não dependem dela) · docs: 11
+  - [x] **T-144a** Proteção da API: limite geral de requisições por IP (Redis), cabeçalhos de segurança (nosniff, frame, referrer, CSP, HSTS em produção), redação de dados sensíveis nos logs, `pnpm audit` no CI e Dependabot; fastify 5.12.2 (PR #117)
+  - [ ] **T-144b** Tipo real do arquivo no upload (magic bytes) e tamanho máximo por tipo (20 MB PDF, 10 MB imagem, 10 min de áudio), conferidos depois do envio ao S3
+  - [ ] **T-144c** 👤 Teste de carga contra staging (depende da T-013 aplicada)
+  - [ ] **T-144d** Resolver as vulnerabilidades altas que o `pnpm audit` ainda aponta (CLI do Prisma e Expo/React Native, sem correção publicada em 2026-10-16) e tornar o nível `high` bloqueante no CI
 - [ ] **T-145** 👤 Terraform e pipeline de produção
   - dep: T-142 · docs: 12
 - [ ] **T-146** 👤 Publicação: fichas das lojas, declarações de permissão, TestFlight e teste interno, envio para revisão

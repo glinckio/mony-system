@@ -4,12 +4,27 @@ import type { IncomingMessage } from 'node:http';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Logger } from 'nestjs-pino';
 
-import { configurarOpenApi } from './core/openapi/openapi';
+import { CAMINHO_DOCUMENTACAO, configurarOpenApi } from './core/openapi/openapi';
 import { REDIS } from './core/redis/redis.module';
 import { AdaptadorTempoReal } from './core/tempo-real/adaptador-tempo-real';
 
 export const PREFIXO_GLOBAL = 'v1';
 export const CABECALHO_ID_REQUISICAO = 'x-request-id';
+
+/**
+ * Cabeçalhos de segurança de toda resposta (doc 11, T-144a). A API só devolve JSON e redireções:
+ * nada dela abre em página nem em moldura. A CSP fica fora da documentação (`/v1/docs`, só fora de
+ * produção), que precisa dos scripts do Swagger UI.
+ */
+export const CABECALHOS_SEGURANCA = {
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'DENY',
+  'referrer-policy': 'no-referrer',
+  'cross-origin-resource-policy': 'same-origin',
+} as const;
+export const CSP_DA_API = "default-src 'none'; frame-ancestors 'none'";
+/** HSTS de um ano, só em produção (atrás do ALB com TLS). */
+export const HSTS = 'max-age=31536000; includeSubDomains';
 
 /**
  * A requisição do Node com o padrão da rota que atendeu (ex.: `/v1/transacoes/:id`), para o log de
@@ -31,18 +46,25 @@ class AdaptadorFastifyComCorpoBruto extends FastifyAdapter {
 /**
  * Adaptador Fastify da API. Cada requisição recebe um id: o `x-request-id` que veio (ex.: do ALB)
  * ou um UUID novo. O id volta no cabeçalho da resposta e aparece como `reqId` nos logs, junto da
- * `rota` (o padrão, sem os ids).
+ * `rota` (o padrão, sem os ids). Toda resposta leva os cabeçalhos de segurança.
  */
 export function criarAdaptadorFastify(): FastifyAdapter {
+  const producao = process.env.NODE_ENV === 'production';
   const adaptador = new AdaptadorFastifyComCorpoBruto({
     requestIdHeader: CABECALHO_ID_REQUISICAO,
     genReqId: () => randomUUID(),
-    // Em produção a API só recebe tráfego pelo ALB: o IP do cliente vem no X-Forwarded-For, usado
-    // no limite de tentativas por IP (RN-008). Fora dela, o cabeçalho seria falsificável.
-    trustProxy: process.env.NODE_ENV === 'production',
+    // Em produção a API só recebe tráfego pelo ALB: o IP do cliente é o último que o ALB pôs no
+    // X-Forwarded-For, usado nos limites por IP (RN-008, T-144a). Confia só nesse salto: os
+    // endereços à esquerda vêm do cliente e seriam falsificáveis. Fora dela, nenhum.
+    trustProxy: (_endereco: string, salto: number) => producao && salto < 1,
   });
   adaptador.getInstance().addHook('onRequest', (requisicao, resposta, pronto) => {
     void resposta.header(CABECALHO_ID_REQUISICAO, requisicao.id);
+    void resposta.headers(CABECALHOS_SEGURANCA);
+    if (!requisicao.url.startsWith(`/${CAMINHO_DOCUMENTACAO}`)) {
+      void resposta.header('content-security-policy', CSP_DA_API);
+    }
+    if (producao) void resposta.header('strict-transport-security', HSTS);
     (requisicao.raw as RequisicaoComRota).rota = requisicao.routeOptions.url;
     pronto();
   });

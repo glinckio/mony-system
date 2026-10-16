@@ -37,6 +37,7 @@ describe('variáveis de ambiente', () => {
       APPLE_CLIENT_IDS: [],
       ALERTAS_TECNICOS_EMAILS: [],
       METRICAS_NAMESPACE: 'Mony/local',
+      LIMITE_REQUISICOES_IP_MINUTO: 1200,
       ...banco,
     });
     expect(validarAmbiente({ ...banco, ...jwt, PORT: '8080', NODE_ENV: 'production' }).PORT).toBe(

@@ -3,6 +3,7 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
 
 import { Publico } from '../auth/publico.decorator';
+import { SemLimiteGeral } from '../limites/limite-geral';
 import { criarDto } from '../openapi/dto';
 import { LiberadaParaVersaoAntiga } from '../versao-app/versao-app';
 
@@ -14,6 +15,7 @@ class SaudeDto extends criarDto(esquemaSaude) {}
 @ApiTags('saude')
 @Publico()
 @LiberadaParaVersaoAntiga()
+@SemLimiteGeral()
 @Controller('health')
 export class SaudeController {
   @Get()
