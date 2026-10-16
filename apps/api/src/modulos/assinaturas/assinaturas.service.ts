@@ -147,6 +147,44 @@ export class AssinaturasService {
     );
   }
 
+  /**
+   * RN-161 (T-140b): o pedido de exclusão da conta agenda o cancelamento da assinatura paga no fim
+   * do período, para não cobrar a renovação durante os 7 dias. Devolve `true` se foi o pedido que
+   * agendou (sem assinatura, já cancelada ou com o cancelamento já agendado pela pessoa: `false`).
+   */
+  async agendarCancelamentoDaExclusao(usuarioId: string): Promise<boolean> {
+    const assinatura = await this.repositorio.doUsuario(usuarioId);
+    if (
+      assinatura?.stripeSubscriptionId == null ||
+      assinatura.status === 'cancelada' ||
+      assinatura.cancelamentoAgendado
+    ) {
+      return false;
+    }
+    await this.naCobranca(() =>
+      this.cobranca.agendarCancelamento(assinatura.stripeSubscriptionId ?? '', true),
+    );
+    await this.repositorio.marcarCancelamentoAgendado(usuarioId, true);
+    return true;
+  }
+
+  /** RN-161: quem desistiu da exclusão volta a ter a renovação que tinha. */
+  async desfazerCancelamentoDaExclusao(usuarioId: string): Promise<void> {
+    const assinatura = await this.repositorio.doUsuario(usuarioId);
+    if (assinatura?.stripeSubscriptionId == null || assinatura.status === 'cancelada') return;
+    await this.naCobranca(() =>
+      this.cobranca.agendarCancelamento(assinatura.stripeSubscriptionId ?? '', false),
+    );
+    await this.repositorio.marcarCancelamentoAgendado(usuarioId, false);
+  }
+
+  /** RN-161: na exclusão definitiva, a assinatura acaba na hora e não cobra mais nada. */
+  async cancelarParaExclusao(usuarioId: string): Promise<void> {
+    const assinatura = await this.repositorio.doUsuario(usuarioId);
+    if (assinatura?.stripeSubscriptionId == null) return;
+    await this.cobranca.cancelarAssinatura(assinatura.stripeSubscriptionId);
+  }
+
   /** O worker processa um evento da fila `webhooks`. Repetir é seguro. */
   async processarEvento(webhookEventoId: string): Promise<void> {
     const registrado = await this.repositorio.evento(webhookEventoId);
@@ -177,6 +215,8 @@ export class AssinaturasService {
       this.log.warn(`Evento ${evento.id}: nenhuma assinatura com o cliente ${externa.clienteId}`);
       return;
     }
+    // A conta foi excluída (RN-161): o cancelamento que ela mesma pediu não vira aviso.
+    if (gravada.contaExcluida) return;
     const agora = this.clock.agora();
     const preco = externa.precoId ? await this.repositorio.precoDaStripe(externa.precoId) : null;
     const mudanca = mudancaDaAssinatura(gravada, externa, preco, agora);

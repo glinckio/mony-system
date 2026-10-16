@@ -65,6 +65,8 @@ export const CATALOGO_ERROS = {
     mensagem: 'Complete o cadastro para continuar.',
   },
   CODIGO_INVALIDO: { status: 400, mensagem: 'Código inválido.' },
+  /** Senha errada numa confirmação com a sessão aberta (RN-161): 400, para não parecer sessão vencida. */
+  SENHA_INCORRETA: { status: 400, mensagem: 'Senha incorreta.' },
   CODIGO_EXPIRADO: { status: 400, mensagem: 'Este código expirou. Peça um novo.' },
   TERMOS_PENDENTES: {
     status: 403,

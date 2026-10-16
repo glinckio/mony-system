@@ -11,6 +11,21 @@ import { criarPrecoVigente } from './configuracao-stripe';
 import { criarCupomStripe, desativarCupomStripe } from './cupons-stripe';
 import { assinaturaDaStripe, eventoDaStripe } from './traducao-stripe';
 
+/** A Stripe não conhece a assinatura (`resource_missing`): para quem chama, não há o que fazer. */
+async function semAssinaturaNaoFazNada(chamada: Promise<unknown>): Promise<void> {
+  try {
+    await chamada;
+  } catch (erro) {
+    if (
+      erro instanceof Stripe.errors.StripeInvalidRequestError &&
+      erro.code === 'resource_missing'
+    ) {
+      return;
+    }
+    throw erro;
+  }
+}
+
 /** Tempo máximo de cada chamada à Stripe; o app espera a resposta do checkout. */
 const TEMPO_LIMITE_MS = 10_000;
 
@@ -94,6 +109,18 @@ export class CobrancaStripe extends CobrancaProvider {
 
   desativarCupom(cupomId: string): Promise<void> {
     return desativarCupomStripe(this.stripe, cupomId);
+  }
+
+  async agendarCancelamento(assinaturaId: string, agendar: boolean): Promise<void> {
+    await semAssinaturaNaoFazNada(
+      this.stripe.subscriptions.update(assinaturaId, { cancel_at_period_end: agendar }),
+    );
+  }
+
+  async cancelarAssinatura(assinaturaId: string): Promise<void> {
+    const assinatura = await this.buscarAssinatura(assinaturaId);
+    if (assinatura === null || assinatura.situacao === 'encerrada') return;
+    await semAssinaturaNaoFazNada(this.stripe.subscriptions.cancel(assinaturaId));
   }
 
   async buscarAssinatura(id: string): Promise<AssinaturaExterna | null> {

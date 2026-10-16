@@ -94,6 +94,28 @@ export class CobrancaFake extends CobrancaProvider {
     });
   }
 
+  agendarCancelamento(assinaturaId: string, agendar: boolean): Promise<void> {
+    return this.responder(() => {
+      const assinatura = this.assinaturas.get(assinaturaId);
+      if (assinatura)
+        this.assinaturas.set(assinaturaId, { ...assinatura, cancelamentoAgendado: agendar });
+    });
+  }
+
+  cancelarAssinatura(assinaturaId: string): Promise<void> {
+    return this.responder(() => {
+      const assinatura = this.assinaturas.get(assinaturaId);
+      if (assinatura && assinatura.situacao !== 'encerrada') {
+        this.assinaturas.set(assinaturaId, {
+          ...assinatura,
+          situacao: 'encerrada',
+          cancelamentoAgendado: false,
+          canceladaEm: new Date(),
+        });
+      }
+    });
+  }
+
   buscarAssinatura(id: string): Promise<AssinaturaExterna | null> {
     return this.responder(() => this.assinaturas.get(id) ?? null);
   }

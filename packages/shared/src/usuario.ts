@@ -128,3 +128,33 @@ export const esquemaUltimaExportacaoDados = z.object({
 
 export type ExportacaoDados = z.infer<typeof esquemaExportacaoDados>;
 export type UltimaExportacaoDados = z.infer<typeof esquemaUltimaExportacaoDados>;
+
+/**
+ * RN-161: dias entre o pedido de exclusão da conta e a exclusão definitiva, para a pessoa poder
+ * desistir **(decisão técnica; confirmar com cliente)**.
+ */
+export const PRAZO_EXCLUSAO_CONTA_DIAS = 7;
+
+/**
+ * RN-161: confirma a exclusão com a senha ou com o código de 6 dígitos que vai por e-mail (quem só
+ * entra pelo Google ou pela Apple não tem senha). Exatamente um dos dois.
+ */
+export const esquemaPedidoExclusaoConta = z
+  .object({
+    senha: z.string().min(1).max(200).optional(),
+    codigo: z
+      .string()
+      .regex(/^\d{6}$/, 'Código de 6 dígitos')
+      .optional(),
+  })
+  .refine((pedido) => (pedido.senha === undefined) !== (pedido.codigo === undefined), {
+    message: 'Informe a senha ou o código',
+  });
+
+/** A exclusão agendada da conta; `agendadaPara` nulo quando não há pedido. */
+export const esquemaExclusaoConta = z.object({
+  agendadaPara: z.iso.datetime().nullable(),
+});
+
+export type DadosPedidoExclusaoConta = z.infer<typeof esquemaPedidoExclusaoConta>;
+export type ExclusaoConta = z.infer<typeof esquemaExclusaoConta>;
