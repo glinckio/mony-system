@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 
 import { CifraSegredos } from '../../core/auth/cifra-segredos';
+import { FilasModule } from '../../core/filas/filas.module';
 import { CobrancaModule } from '../../integracoes/cobranca/cobranca.module';
+import { MonyModule } from '../mony/mony.module';
 import { AdminAssinaturasController } from './admin-assinaturas.controller';
 import { AdminAssinaturasRepository } from './admin-assinaturas.repository';
 import { AdminAssinaturasService } from './admin-assinaturas.service';
@@ -14,6 +16,9 @@ import { AdminAutenticacaoService } from './admin-autenticacao.service';
 import { AdminCuponsController } from './admin-cupons.controller';
 import { AdminCuponsRepository } from './admin-cupons.repository';
 import { AdminCuponsService } from './admin-cupons.service';
+import { AdminMonyController } from './admin-mony.controller';
+import { AdminMonyRepository } from './admin-mony.repository';
+import { AdminMonyService } from './admin-mony.service';
 import { AdminNovidadesController } from './admin-novidades.controller';
 import { AdminNovidadesRepository } from './admin-novidades.repository';
 import { AdminNovidadesService } from './admin-novidades.service';
@@ -26,10 +31,10 @@ import { AdminUsuariosService } from './admin-usuarios.service';
 
 /**
  * O painel admin (`/v1/admin/*`, docs/arquitetura/13): login (T-104a), planos (T-104b e T-104c),
- * cupons (T-104d), usuários (T-141a), assinaturas (T-141b), auditoria (T-141c) e novidades (T-141d).
+ * cupons (T-104d), usuários (T-141a), assinaturas (T-141b), auditoria (T-141c), novidades (T-141d) e Mony (T-141e).
  */
 @Module({
-  imports: [CobrancaModule],
+  imports: [CobrancaModule, FilasModule, MonyModule],
   controllers: [
     AdminAutenticacaoController,
     AdminPlanosController,
@@ -38,6 +43,7 @@ import { AdminUsuariosService } from './admin-usuarios.service';
     AdminAssinaturasController,
     AdminAuditoriaController,
     AdminNovidadesController,
+    AdminMonyController,
   ],
   providers: [
     AdminAutenticacaoService,
@@ -55,6 +61,8 @@ import { AdminUsuariosService } from './admin-usuarios.service';
     AdminAuditoriaRepository,
     AdminNovidadesService,
     AdminNovidadesRepository,
+    AdminMonyService,
+    AdminMonyRepository,
   ],
 })
 export class AdminModule {}

@@ -266,6 +266,7 @@ describe('filas e eventos de domínio', () => {
       'lembretes',
       'agenda',
       'rotinas',
+      'mony-avaliacao',
     ]);
   });
 

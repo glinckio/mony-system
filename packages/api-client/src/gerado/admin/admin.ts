@@ -29,12 +29,17 @@ import type {
   Codigo2faDto,
   CupomAdminDto,
   CuponsAdminDto,
+  CustoAdminMonyParams,
+  CustoMonyAdminDto,
   DesafioAdminDto,
   EstenderTesteDto,
   FiltrosAuditoriaAdminDto,
   ListarAdminAssinaturasParams,
   LoginAdminDto,
+  LogsAdminMonyParams,
+  LogsMonyAdminDto,
   NovaNovidadeDto,
+  NovaVersaoMonyDto,
   NovidadeAdminDto,
   NovidadesAdminDto,
   Novo2faDto,
@@ -42,12 +47,15 @@ import type {
   NovoPrecoDto,
   PlanoGratuitoAdminDto,
   PrecosAdminDto,
+  PrecosIaAdminDto,
   PublicarNovidadeDto,
   RegistrosAdminAuditoriaParams,
   ResumoAssinaturasAdminDto,
   SessaoAdminDto,
   UsuarioAdminDto,
   UsuariosAdminDto,
+  VersaoMonyAdminDto,
+  VersoesMonyAdminDto,
 } from '../modelos';
 
 import { requisicao } from '../../requisicao';
@@ -2780,4 +2788,933 @@ export const useDesativarAdminNovidades = <TError = unknown, TContext = unknown>
   TContext
 > => {
   return useMutation(getDesativarAdminNovidadesMutationOptions(options), queryClient);
+};
+export const getVersoesAdminMonyUrl = () => {
+  return `/v1/admin/mony/versoes`;
+};
+
+export const versoesAdminMony = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<VersoesMonyAdminDto> => {
+  return requisicao<VersoesMonyAdminDto>(getVersoesAdminMonyUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getVersoesAdminMonyQueryKey = () => {
+  return [`/v1/admin/mony/versoes`] as const;
+};
+
+export const getVersoesAdminMonyQueryOptions = <
+  TData = Awaited<ReturnType<typeof versoesAdminMony>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof versoesAdminMony>>, TError, TData>>;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getVersoesAdminMonyQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof versoesAdminMony>>> = ({ signal }) =>
+    versoesAdminMony({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof versoesAdminMony>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type VersoesAdminMonyQueryResult = NonNullable<Awaited<ReturnType<typeof versoesAdminMony>>>;
+export type VersoesAdminMonyQueryError = unknown;
+
+export function useVersoesAdminMony<
+  TData = Awaited<ReturnType<typeof versoesAdminMony>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof versoesAdminMony>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof versoesAdminMony>>,
+          TError,
+          Awaited<ReturnType<typeof versoesAdminMony>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useVersoesAdminMony<
+  TData = Awaited<ReturnType<typeof versoesAdminMony>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof versoesAdminMony>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof versoesAdminMony>>,
+          TError,
+          Awaited<ReturnType<typeof versoesAdminMony>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useVersoesAdminMony<
+  TData = Awaited<ReturnType<typeof versoesAdminMony>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof versoesAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useVersoesAdminMony<
+  TData = Awaited<ReturnType<typeof versoesAdminMony>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof versoesAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getVersoesAdminMonyQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCriarAdminMonyUrl = () => {
+  return `/v1/admin/mony/versoes`;
+};
+
+export const criarAdminMony = async (
+  novaVersaoMonyDto: NovaVersaoMonyDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<VersaoMonyAdminDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<VersaoMonyAdminDto>(getCriarAdminMonyUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(novaVersaoMonyDto),
+  });
+};
+
+export const getCriarAdminMonyMutationKey = () => ['criarAdminMony'] as const;
+
+export const getCriarAdminMonyMutationOptions = <TError = unknown, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof criarAdminMony>>,
+    TError,
+    CriarAdminMonyMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof criarAdminMony>>,
+  TError,
+  CriarAdminMonyMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCriarAdminMonyMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof criarAdminMony>>,
+    CriarAdminMonyMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return criarAdminMony(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CriarAdminMonyMutationResult = NonNullable<Awaited<ReturnType<typeof criarAdminMony>>>;
+export type CriarAdminMonyMutationBody = NovaVersaoMonyDto;
+export type CriarAdminMonyMutationError = unknown;
+export type CriarAdminMonyMutationVariables = { data: NovaVersaoMonyDto };
+
+export const useCriarAdminMony = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof criarAdminMony>>,
+      TError,
+      CriarAdminMonyMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof criarAdminMony>>,
+  TError,
+  CriarAdminMonyMutationVariables,
+  TContext
+> => {
+  return useMutation(getCriarAdminMonyMutationOptions(options), queryClient);
+};
+export const getVersaoAdminMonyUrl = (versao: number) => {
+  return `/v1/admin/mony/versoes/${versao}`;
+};
+
+export const versaoAdminMony = async (
+  versao: number,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<VersaoMonyAdminDto> => {
+  return requisicao<VersaoMonyAdminDto>(getVersaoAdminMonyUrl(versao), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getVersaoAdminMonyQueryKey = (versao: number) => {
+  return [`/v1/admin/mony/versoes/${versao}`] as const;
+};
+
+export const getVersaoAdminMonyQueryOptions = <
+  TData = Awaited<ReturnType<typeof versaoAdminMony>>,
+  TError = unknown,
+>(
+  versao: number,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof versaoAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getVersaoAdminMonyQueryKey(versao);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof versaoAdminMony>>> = ({ signal }) =>
+    versaoAdminMony(versao, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: versao !== null && versao !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof versaoAdminMony>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type VersaoAdminMonyQueryResult = NonNullable<Awaited<ReturnType<typeof versaoAdminMony>>>;
+export type VersaoAdminMonyQueryError = unknown;
+
+export function useVersaoAdminMony<
+  TData = Awaited<ReturnType<typeof versaoAdminMony>>,
+  TError = unknown,
+>(
+  versao: number,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof versaoAdminMony>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof versaoAdminMony>>,
+          TError,
+          Awaited<ReturnType<typeof versaoAdminMony>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useVersaoAdminMony<
+  TData = Awaited<ReturnType<typeof versaoAdminMony>>,
+  TError = unknown,
+>(
+  versao: number,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof versaoAdminMony>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof versaoAdminMony>>,
+          TError,
+          Awaited<ReturnType<typeof versaoAdminMony>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useVersaoAdminMony<
+  TData = Awaited<ReturnType<typeof versaoAdminMony>>,
+  TError = unknown,
+>(
+  versao: number,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof versaoAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useVersaoAdminMony<
+  TData = Awaited<ReturnType<typeof versaoAdminMony>>,
+  TError = unknown,
+>(
+  versao: number,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof versaoAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getVersaoAdminMonyQueryOptions(versao, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getAvaliarAdminMonyUrl = (versao: number) => {
+  return `/v1/admin/mony/versoes/${versao}/avaliar`;
+};
+
+export const avaliarAdminMony = async (
+  versao: number,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<VersaoMonyAdminDto> => {
+  return requisicao<VersaoMonyAdminDto>(getAvaliarAdminMonyUrl(versao), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getAvaliarAdminMonyMutationKey = () => ['avaliarAdminMony'] as const;
+
+export const getAvaliarAdminMonyMutationOptions = <TError = unknown, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof avaliarAdminMony>>,
+    TError,
+    AvaliarAdminMonyMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof avaliarAdminMony>>,
+  TError,
+  AvaliarAdminMonyMutationVariables,
+  TContext
+> => {
+  const mutationKey = getAvaliarAdminMonyMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof avaliarAdminMony>>,
+    AvaliarAdminMonyMutationVariables
+  > = (props) => {
+    const { versao } = props ?? {};
+
+    return avaliarAdminMony(versao, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AvaliarAdminMonyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof avaliarAdminMony>>
+>;
+
+export type AvaliarAdminMonyMutationError = unknown;
+export type AvaliarAdminMonyMutationVariables = { versao: number };
+
+export const useAvaliarAdminMony = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof avaliarAdminMony>>,
+      TError,
+      AvaliarAdminMonyMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof avaliarAdminMony>>,
+  TError,
+  AvaliarAdminMonyMutationVariables,
+  TContext
+> => {
+  return useMutation(getAvaliarAdminMonyMutationOptions(options), queryClient);
+};
+export const getAtivarAdminMonyUrl = (versao: number) => {
+  return `/v1/admin/mony/versoes/${versao}/ativar`;
+};
+
+export const ativarAdminMony = async (
+  versao: number,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<VersaoMonyAdminDto> => {
+  return requisicao<VersaoMonyAdminDto>(getAtivarAdminMonyUrl(versao), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getAtivarAdminMonyMutationKey = () => ['ativarAdminMony'] as const;
+
+export const getAtivarAdminMonyMutationOptions = <TError = unknown, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof ativarAdminMony>>,
+    TError,
+    AtivarAdminMonyMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof ativarAdminMony>>,
+  TError,
+  AtivarAdminMonyMutationVariables,
+  TContext
+> => {
+  const mutationKey = getAtivarAdminMonyMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof ativarAdminMony>>,
+    AtivarAdminMonyMutationVariables
+  > = (props) => {
+    const { versao } = props ?? {};
+
+    return ativarAdminMony(versao, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AtivarAdminMonyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof ativarAdminMony>>
+>;
+
+export type AtivarAdminMonyMutationError = unknown;
+export type AtivarAdminMonyMutationVariables = { versao: number };
+
+export const useAtivarAdminMony = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof ativarAdminMony>>,
+      TError,
+      AtivarAdminMonyMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof ativarAdminMony>>,
+  TError,
+  AtivarAdminMonyMutationVariables,
+  TContext
+> => {
+  return useMutation(getAtivarAdminMonyMutationOptions(options), queryClient);
+};
+export const getLogsAdminMonyUrl = (params?: LogsAdminMonyParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/admin/mony/logs?${stringifiedParams}`
+    : `/v1/admin/mony/logs`;
+};
+
+export const logsAdminMony = async (
+  params?: LogsAdminMonyParams,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<LogsMonyAdminDto> => {
+  return requisicao<LogsMonyAdminDto>(getLogsAdminMonyUrl(params), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getLogsAdminMonyQueryKey = (params?: LogsAdminMonyParams) => {
+  return [`/v1/admin/mony/logs`, ...(params ? [params] : [])] as const;
+};
+
+export const getLogsAdminMonyQueryOptions = <
+  TData = Awaited<ReturnType<typeof logsAdminMony>>,
+  TError = unknown,
+>(
+  params?: LogsAdminMonyParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof logsAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getLogsAdminMonyQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof logsAdminMony>>> = ({ signal }) =>
+    logsAdminMony(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof logsAdminMony>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type LogsAdminMonyQueryResult = NonNullable<Awaited<ReturnType<typeof logsAdminMony>>>;
+export type LogsAdminMonyQueryError = unknown;
+
+export function useLogsAdminMony<
+  TData = Awaited<ReturnType<typeof logsAdminMony>>,
+  TError = unknown,
+>(
+  params: undefined | LogsAdminMonyParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof logsAdminMony>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof logsAdminMony>>,
+          TError,
+          Awaited<ReturnType<typeof logsAdminMony>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useLogsAdminMony<
+  TData = Awaited<ReturnType<typeof logsAdminMony>>,
+  TError = unknown,
+>(
+  params?: LogsAdminMonyParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof logsAdminMony>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof logsAdminMony>>,
+          TError,
+          Awaited<ReturnType<typeof logsAdminMony>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useLogsAdminMony<
+  TData = Awaited<ReturnType<typeof logsAdminMony>>,
+  TError = unknown,
+>(
+  params?: LogsAdminMonyParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof logsAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useLogsAdminMony<
+  TData = Awaited<ReturnType<typeof logsAdminMony>>,
+  TError = unknown,
+>(
+  params?: LogsAdminMonyParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof logsAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getLogsAdminMonyQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCustoAdminMonyUrl = (params: CustoAdminMonyParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/admin/mony/custo?${stringifiedParams}`
+    : `/v1/admin/mony/custo`;
+};
+
+export const custoAdminMony = async (
+  params: CustoAdminMonyParams,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<CustoMonyAdminDto> => {
+  return requisicao<CustoMonyAdminDto>(getCustoAdminMonyUrl(params), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getCustoAdminMonyQueryKey = (params?: CustoAdminMonyParams) => {
+  return [`/v1/admin/mony/custo`, ...(params ? [params] : [])] as const;
+};
+
+export const getCustoAdminMonyQueryOptions = <
+  TData = Awaited<ReturnType<typeof custoAdminMony>>,
+  TError = unknown,
+>(
+  params: CustoAdminMonyParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof custoAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getCustoAdminMonyQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof custoAdminMony>>> = ({ signal }) =>
+    custoAdminMony(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof custoAdminMony>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type CustoAdminMonyQueryResult = NonNullable<Awaited<ReturnType<typeof custoAdminMony>>>;
+export type CustoAdminMonyQueryError = unknown;
+
+export function useCustoAdminMony<
+  TData = Awaited<ReturnType<typeof custoAdminMony>>,
+  TError = unknown,
+>(
+  params: CustoAdminMonyParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof custoAdminMony>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof custoAdminMony>>,
+          TError,
+          Awaited<ReturnType<typeof custoAdminMony>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useCustoAdminMony<
+  TData = Awaited<ReturnType<typeof custoAdminMony>>,
+  TError = unknown,
+>(
+  params: CustoAdminMonyParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof custoAdminMony>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof custoAdminMony>>,
+          TError,
+          Awaited<ReturnType<typeof custoAdminMony>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useCustoAdminMony<
+  TData = Awaited<ReturnType<typeof custoAdminMony>>,
+  TError = unknown,
+>(
+  params: CustoAdminMonyParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof custoAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useCustoAdminMony<
+  TData = Awaited<ReturnType<typeof custoAdminMony>>,
+  TError = unknown,
+>(
+  params: CustoAdminMonyParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof custoAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getCustoAdminMonyQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getPrecosAdminMonyUrl = () => {
+  return `/v1/admin/mony/precos`;
+};
+
+export const precosAdminMony = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<PrecosIaAdminDto> => {
+  return requisicao<PrecosIaAdminDto>(getPrecosAdminMonyUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getPrecosAdminMonyQueryKey = () => {
+  return [`/v1/admin/mony/precos`] as const;
+};
+
+export const getPrecosAdminMonyQueryOptions = <
+  TData = Awaited<ReturnType<typeof precosAdminMony>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof precosAdminMony>>, TError, TData>>;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getPrecosAdminMonyQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof precosAdminMony>>> = ({ signal }) =>
+    precosAdminMony({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof precosAdminMony>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type PrecosAdminMonyQueryResult = NonNullable<Awaited<ReturnType<typeof precosAdminMony>>>;
+export type PrecosAdminMonyQueryError = unknown;
+
+export function usePrecosAdminMony<
+  TData = Awaited<ReturnType<typeof precosAdminMony>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof precosAdminMony>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof precosAdminMony>>,
+          TError,
+          Awaited<ReturnType<typeof precosAdminMony>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function usePrecosAdminMony<
+  TData = Awaited<ReturnType<typeof precosAdminMony>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof precosAdminMony>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof precosAdminMony>>,
+          TError,
+          Awaited<ReturnType<typeof precosAdminMony>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function usePrecosAdminMony<
+  TData = Awaited<ReturnType<typeof precosAdminMony>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof precosAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function usePrecosAdminMony<
+  TData = Awaited<ReturnType<typeof precosAdminMony>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof precosAdminMony>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getPrecosAdminMonyQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSalvarPrecosAdminMonyUrl = () => {
+  return `/v1/admin/mony/precos`;
+};
+
+export const salvarPrecosAdminMony = async (
+  precosIaAdminDto: PrecosIaAdminDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<PrecosIaAdminDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<PrecosIaAdminDto>(getSalvarPrecosAdminMonyUrl(), {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(precosIaAdminDto),
+  });
+};
+
+export const getSalvarPrecosAdminMonyMutationKey = () => ['salvarPrecosAdminMony'] as const;
+
+export const getSalvarPrecosAdminMonyMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof salvarPrecosAdminMony>>,
+    TError,
+    SalvarPrecosAdminMonyMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof salvarPrecosAdminMony>>,
+  TError,
+  SalvarPrecosAdminMonyMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSalvarPrecosAdminMonyMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof salvarPrecosAdminMony>>,
+    SalvarPrecosAdminMonyMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return salvarPrecosAdminMony(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SalvarPrecosAdminMonyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof salvarPrecosAdminMony>>
+>;
+export type SalvarPrecosAdminMonyMutationBody = PrecosIaAdminDto;
+export type SalvarPrecosAdminMonyMutationError = unknown;
+export type SalvarPrecosAdminMonyMutationVariables = { data: PrecosIaAdminDto };
+
+export const useSalvarPrecosAdminMony = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof salvarPrecosAdminMony>>,
+      TError,
+      SalvarPrecosAdminMonyMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof salvarPrecosAdminMony>>,
+  TError,
+  SalvarPrecosAdminMonyMutationVariables,
+  TContext
+> => {
+  return useMutation(getSalvarPrecosAdminMonyMutationOptions(options), queryClient);
 };

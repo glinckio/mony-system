@@ -1508,17 +1508,21 @@ model Cupom {
 
 /// Prompt versionado da Mony, editável sem nova versão do app (doc 08).
 model MonyConfig {
-  id            String   @id @default(uuid(7)) @db.Uuid
-  versao        Int      @unique
-  promptSistema String   @map("prompt_sistema")
-  ferramentas   Json
-  modelo        String
-  ativo         Boolean  @default(false)
+  id                String    @id @default(uuid(7)) @db.Uuid
+  versao            Int       @unique
+  promptSistema     String    @map("prompt_sistema")
+  ferramentas       Json
+  modelo            String
+  ativo             Boolean   @default(false)
   /// Resultado das frases de teste com esta versão (T-068): só ativa com 95% ou mais.
-  avaliacao     Json?
-  criadoPorId   String?  @map("criado_por") @db.Uuid
-  criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm  DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  avaliacao         Json?
+  /// Quando o painel pediu a avaliação desta versão (T-141e); roda no worker, num processo à parte.
+  avaliacaoPedidaEm DateTime? @map("avaliacao_pedida_em") @db.Timestamptz(6)
+  /// Por que a última avaliação pedida não terminou (o resultado de `avaliacao` fica o anterior).
+  avaliacaoFalha    String?   @map("avaliacao_falha")
+  criadoPorId       String?   @map("criado_por") @db.Uuid
+  criadoEm          DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm      DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   criadoPor Usuario? @relation(fields: [criadoPorId], references: [id], onDelete: SetNull)
 

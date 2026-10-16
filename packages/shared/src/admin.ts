@@ -435,6 +435,146 @@ export const esquemaNovidadeAdmin = z.object({
 
 export const esquemaNovidadesAdmin = z.array(esquemaNovidadeAdmin);
 
+/** Tamanho máximo do prompt do sistema de uma versão da Mony (T-141e). */
+export const PROMPT_MONY_MAXIMO = 50_000;
+
+/**
+ * A avaliação de uma versão (T-141e, doc 08): `nunca` (não rodou), `em_andamento` (pedida, rodando
+ * no worker), `falhou` (não terminou; vale o resultado anterior, se houver) e `concluida`.
+ */
+export const SITUACOES_AVALIACAO_MONY = ['nunca', 'em_andamento', 'falhou', 'concluida'] as const;
+
+/** `POST /admin/mony/versoes`: a versão nova, inativa. Sem modelo, o do ambiente. */
+export const esquemaNovaVersaoMony = z.object({
+  promptSistema: z.string().trim().min(1).max(PROMPT_MONY_MAXIMO),
+  /** A descrição de cada ferramenta que muda; as outras ficam com a do código. */
+  descricoes: z.record(z.string(), z.string().trim().min(1).max(2000)),
+  modelo: z.string().trim().min(1).max(100).nullable(),
+});
+
+export const esquemaResultadoAvaliacaoMony = z.object({
+  total: z.number().int(),
+  aprovados: z.number().int(),
+  percentual: z.number().int(),
+  modelo: z.string(),
+  em: z.string(),
+});
+
+export const esquemaVersaoMonyResumoAdmin = z.object({
+  versao: z.number().int(),
+  ativa: z.boolean(),
+  modelo: z.string(),
+  criadoEm: z.string(),
+  criadoPor: z.object({ id: z.uuid(), nome: z.string() }).nullable(),
+  situacaoAvaliacao: z.enum(SITUACOES_AVALIACAO_MONY),
+  avaliacao: esquemaResultadoAvaliacaoMony.nullable(),
+  /** Pode ativar: a avaliação chegou ao mínimo e a versão não é a ativa. */
+  podeAtivar: z.boolean(),
+});
+
+/** `GET /admin/mony/versoes`: da mais nova à mais antiga. */
+export const esquemaVersoesMonyAdmin = z.object({
+  itens: z.array(esquemaVersaoMonyResumoAdmin),
+  /** `null`: nenhuma ativa, vale o prompt do código. */
+  versaoAtiva: z.number().int().nullable(),
+  minimoAvaliacao: z.number().int(),
+  /** Com o modelo falso (ambientes de teste), a avaliação não vale e o painel não a pede. */
+  avaliacaoDisponivel: z.boolean(),
+});
+
+/** `GET /admin/mony/versoes/:versao`; a versão 0 é o prompt do código (o ponto de partida). */
+export const esquemaVersaoMonyAdmin = esquemaVersaoMonyResumoAdmin.extend({
+  promptSistema: z.string(),
+  descricoes: z.record(z.string(), z.string()),
+  avaliacaoFalha: z.string().nullable(),
+  casos: z.array(z.object({ id: z.string(), passou: z.boolean(), motivos: z.array(z.string()) })),
+});
+
+/** `GET /admin/mony/logs`: as chamadas ao modelo que deram erro, da mais nova à mais antiga. */
+export const esquemaConsultaLogsMonyAdmin = z
+  .object({
+    de: dataDoFiltro.optional(),
+    ate: dataDoFiltro.optional(),
+    cursor: z.uuid().optional(),
+    limite: z.coerce.number().int().min(1).max(LIMITE_PAGINA_USUARIOS_ADMIN).default(50),
+  })
+  .refine((consulta) => !consulta.de || !consulta.ate || consulta.de <= consulta.ate, {
+    message: 'O início do período não pode ser depois do fim.',
+    path: ['de'],
+  });
+
+export const esquemaLogMonyAdmin = z.object({
+  id: z.uuid(),
+  usuario: z.object({ id: z.uuid(), nome: z.string(), email: z.string() }),
+  modelo: z.string(),
+  ferramenta: z.string().nullable(),
+  duracaoMs: z.number().int(),
+  erro: z.string(),
+  /** A mensagem do usuário que levou à chamada, cortada; `null` sem mensagem ligada. */
+  mensagem: z.string().nullable(),
+  criadoEm: z.string(),
+});
+
+export const esquemaLogsMonyAdmin = z.object({
+  itens: z.array(esquemaLogMonyAdmin),
+  proximoCursor: z.string().nullable(),
+});
+
+/** O preço de um modelo, em centavos de dólar por milhão de tokens (a moeda do provedor). */
+export const esquemaPrecoModeloIa = z.object({
+  modelo: z.string().trim().min(1).max(100),
+  entradaCentavosPorMilhao: z.number().int().min(0).max(1_000_000),
+  saidaCentavosPorMilhao: z.number().int().min(0).max(1_000_000),
+});
+
+/** `PUT /admin/mony/precos` e `GET /admin/mony/precos`: a tabela inteira, um modelo por linha. */
+export const esquemaPrecosIaAdmin = z.object({
+  precos: z
+    .array(esquemaPrecoModeloIa)
+    .max(50)
+    .refine((precos) => new Set(precos.map(({ modelo }) => modelo)).size === precos.length, {
+      message: 'Cada modelo aparece uma vez.',
+    }),
+});
+
+/** Um ano, contando o dia de início. */
+export const DIAS_CUSTO_MONY_MAXIMO = 366;
+
+/** `GET /admin/mony/custo`: o período (dias de São Paulo, os dois inclusos; até 1 ano). */
+export const esquemaConsultaCustoMonyAdmin = z
+  .object({ de: dataDoFiltro, ate: dataDoFiltro })
+  .refine((consulta) => consulta.de <= consulta.ate, {
+    message: 'O início do período não pode ser depois do fim.',
+    path: ['de'],
+  })
+  .refine(
+    (consulta) =>
+      Date.parse(`${consulta.ate}T00:00:00Z`) - Date.parse(`${consulta.de}T00:00:00Z`) <
+      DIAS_CUSTO_MONY_MAXIMO * 86_400_000,
+    { message: 'O período vai até 1 ano.', path: ['ate'] },
+  );
+
+export const esquemaCustoModeloMony = z.object({
+  modelo: z.string(),
+  chamadas: z.number().int(),
+  tokensEntrada: z.number().int(),
+  tokensSaida: z.number().int(),
+  /** Em centavos de dólar; `null`: o modelo não está na tabela de preços. */
+  custoCentavos: z.number().int().nullable(),
+});
+
+export const esquemaCustoMonyAdmin = z.object({
+  de: z.string(),
+  ate: z.string(),
+  modelos: z.array(esquemaCustoModeloMony),
+  /** Só dos modelos com preço. */
+  totalCentavos: z.number().int(),
+  chamadas: z.number().int(),
+  chamadasComErro: z.number().int(),
+  /** Os modelos usados no período que não estão na tabela: o total fica sem eles. */
+  modelosSemPreco: z.array(z.string()),
+});
+
 export type DadosLoginAdmin = z.infer<typeof esquemaLoginAdmin>;
 export type DesafioAdmin = z.infer<typeof esquemaDesafioAdmin>;
 export type Novo2fa = z.infer<typeof esquemaNovo2fa>;
@@ -468,3 +608,17 @@ export type SituacaoNovidade = (typeof SITUACOES_NOVIDADE)[number];
 export type NovaNovidade = z.infer<typeof esquemaNovaNovidade>;
 export type DadosPublicarNovidade = z.infer<typeof esquemaPublicarNovidade>;
 export type NovidadeAdmin = z.infer<typeof esquemaNovidadeAdmin>;
+export type SituacaoAvaliacaoMony = (typeof SITUACOES_AVALIACAO_MONY)[number];
+export type NovaVersaoMony = z.infer<typeof esquemaNovaVersaoMony>;
+export type ResultadoAvaliacaoMony = z.infer<typeof esquemaResultadoAvaliacaoMony>;
+export type VersaoMonyResumoAdmin = z.infer<typeof esquemaVersaoMonyResumoAdmin>;
+export type VersoesMonyAdmin = z.infer<typeof esquemaVersoesMonyAdmin>;
+export type VersaoMonyAdmin = z.infer<typeof esquemaVersaoMonyAdmin>;
+export type ConsultaLogsMonyAdmin = z.infer<typeof esquemaConsultaLogsMonyAdmin>;
+export type LogMonyAdmin = z.infer<typeof esquemaLogMonyAdmin>;
+export type LogsMonyAdmin = z.infer<typeof esquemaLogsMonyAdmin>;
+export type PrecoModeloIa = z.infer<typeof esquemaPrecoModeloIa>;
+export type PrecosIaAdmin = z.infer<typeof esquemaPrecosIaAdmin>;
+export type ConsultaCustoMonyAdmin = z.infer<typeof esquemaConsultaCustoMonyAdmin>;
+export type CustoModeloMony = z.infer<typeof esquemaCustoModeloMony>;
+export type CustoMonyAdmin = z.infer<typeof esquemaCustoMonyAdmin>;
