@@ -492,6 +492,9 @@ export const textosPtBr = {
     monitoramento: 'Alertas técnicos',
     explicacaoMonitoramento:
       'O worker confere a cada 5 minutos e manda e-mail para os endereços de ALERTAS_TECNICOS_EMAILS, sem repetir o mesmo alerta.',
+    retencao: 'Retenção de arquivos',
+    explicacaoRetencao:
+      'Todo dia às 03:30, o worker apaga as fotos, os documentos e os áudios enviados há mais tempo que isso. Os lançamentos ficam; só o arquivo sai (RN-162).',
     campos: {
       cotaConsultoriaDiaria: 'Alertas de consultoria por dia',
       intervaloAppCompraHoras: 'Intervalo do alerta de app de compra (horas)',
@@ -503,6 +506,7 @@ export const textosPtBr = {
       versaoAndroid: 'Versão mínima no Android',
       custoIaDiario: 'Custo de IA por dia (US$)',
       filaParadaMinutos: 'Fila parada depois de (minutos)',
+      diasArquivos: 'Apagar arquivos depois de (dias)',
     },
     ajuda: {
       cotaConsultoriaDiaria: 'Dicas, gasto fora do padrão e projeção dividem a cota (RN-103).',
@@ -514,6 +518,8 @@ export const textosPtBr = {
       custoIaDiario:
         'Pela tabela de preços da seção Mony, no dia de São Paulo. 0 desliga o alerta.',
       filaParadaMinutos: 'Um job esperando há mais que isso em qualquer fila, de 5 a 1440.',
+      diasArquivos:
+        'De 30 a 3650. Diminuir apaga na próxima limpeza o que já passou do prazo novo.',
     },
     invalido:
       'Confira os campos: números inteiros dentro dos limites, valores com centavos e versões no formato 1.2.3.',

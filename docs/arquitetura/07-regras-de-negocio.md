@@ -192,4 +192,4 @@ Legenda: **(PDF)** está na especificação · **(decisão técnica)** definido 
 
 - **RN-160 (PDF)** Exportar meus dados: arquivo (JSON + XLSX) com todos os dados do usuário, gerado no worker, link por e-mail e no app.
 - **RN-161 (PDF)** Excluir conta: confirmação com senha ou código; revoga conexões de Open Finance e agendas, cancela a assinatura na Stripe, apaga arquivos e anonimiza ou apaga os dados. Prazo de arrependimento de 7 dias antes da exclusão definitiva **(decisão técnica; confirmar com cliente)**. Implementada na T-140b; o que é apagado e o que fica, anonimizado, está no doc 11.
-- **RN-162 (PDF)** Fotos de documentos e áudios têm prazo de retenção (sugestão 90 dias **(confirmar com cliente)**); o lançamento fica, o arquivo é apagado.
+- **RN-162 (PDF)** Fotos de documentos e áudios têm prazo de retenção (sugestão 90 dias **(confirmar com cliente)**); o lançamento fica, o arquivo é apagado. Implementada na T-140c: vale para todo anexo (foto, PDF, comprovante e áudio), pela data de envio, com o prazo no painel.

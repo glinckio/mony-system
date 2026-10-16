@@ -1,7 +1,11 @@
-/** Exclusão da conta (T-140b, RN-161): as tabelas apagadas e mantidas, a rotina e os e-mails. */
+/**
+ * Exclusão da conta (T-140b, RN-161): as tabelas apagadas e mantidas, a rotina e os e-mails; e a
+ * retenção dos arquivos (T-140c, RN-162).
+ */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { esquemaRetencao, RETENCAO_ARQUIVOS_DIAS_PADRAO } from '@mony/shared/admin';
 import { esquemaPedidoExclusaoConta } from '@mony/shared/usuario';
 import { describe, expect, it } from 'vitest';
 
@@ -16,6 +20,7 @@ import {
   TABELAS_MANTIDAS_NA_EXCLUSAO,
 } from '../src/modulos/lgpd/exclusao-conta.repository';
 import { ExclusaoContaService } from '../src/modulos/lgpd/exclusao-conta.service';
+import { RetencaoArquivosService } from '../src/modulos/lgpd/retencao-arquivos.service';
 
 /** As tabelas do schema com `usuarioId` (ou a própria `usuarios`), pelo `@@map`. */
 function tabelasDoUsuario(): string[] {
@@ -84,5 +89,21 @@ describe('exclusão da conta (RN-161)', () => {
     expect(agendada.para).toEqual({ email: 'ana@exemplo.test', nome: 'Ana <b>Souza</b>' });
 
     expect(emailContaExcluida(para).modelo).toBe('conta-excluida');
+  });
+});
+
+describe('retenção de fotos e áudios (RN-162)', () => {
+  it('RN-162 a limpeza dos arquivos roda todo dia às 03:30', () => {
+    const metodo = Reflect.get(RetencaoArquivosService.prototype, 'limpar') as object;
+    expect(Reflect.getMetadata(ROTINA, metodo)).toEqual({
+      nome: 'limpar-arquivos',
+      padrao: '30 3 * * *',
+    });
+  });
+
+  it('RN-162 o prazo padrão é 90 dias, de 30 a 3650 no painel', () => {
+    expect(RETENCAO_ARQUIVOS_DIAS_PADRAO).toBe(90);
+    expect(esquemaRetencao.safeParse({ diasArquivos: 29 }).success).toBe(false);
+    expect(esquemaRetencao.safeParse({ diasArquivos: 180 }).success).toBe(true);
   });
 });

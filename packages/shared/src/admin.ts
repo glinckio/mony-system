@@ -775,6 +775,14 @@ export const MONITORAMENTO_PADRAO = {
   filaParadaMinutos: 15,
 } as const;
 
+/**
+ * RN-162: dias até a limpeza diária apagar fotos, documentos e áudios enviados (o lançamento fica)
+ * **(sugestão do doc; confirmar com cliente)**.
+ */
+export const RETENCAO_ARQUIVOS_DIAS_PADRAO = 90;
+
+export const esquemaRetencao = z.object({ diasArquivos: inteiro(30, 3650) });
+
 export const esquemaMonitoramento = z.object({
   custoIaDiarioCentavos: inteiro(0, 100_000_000),
   filaParadaMinutos: inteiro(5, 1440),
@@ -807,6 +815,8 @@ export const esquemaParametros = z.object({
   }),
   /** Alertas técnicos (T-142a). Nos parâmetros salvos antes dela, a API completa com os padrões. */
   monitoramento: esquemaMonitoramento,
+  /** Retenção dos arquivos (RN-162, T-140c). Nos parâmetros salvos antes dela, vale o padrão. */
+  retencao: esquemaRetencao,
 });
 
 /** `GET /admin/configuracoes`: os valores em uso e quem salvou por último. */

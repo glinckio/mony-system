@@ -312,7 +312,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Dividida em T-140a a T-140d; só a T-140d depende da T-120 (os aceites de termos já existem desde a T-030, RN-007).
   - [x] **T-140a** Exportar meus dados: pedido no Perfil (Privacidade), job no worker com JSON e XLSX de todas as tabelas do usuário, links assinados de 24 h no app e por e-mail · RN-160 (PR #114)
   - [x] **T-140b** Excluir conta: confirmação com senha ou código, 7 dias de arrependimento, depois cancela a Stripe, revoga conexões, apaga arquivos e apaga ou anonimiza os dados (mantém a `controle_teste`) · RN-161 (PR #115)
-  - [ ] **T-140c** Retenção de fotos e áudios: limpeza diária apaga o arquivo depois do prazo (padrão 90 dias, no painel) e o lançamento fica · RN-162
+  - [x] **T-140c** Retenção de fotos e áudios: limpeza diária apaga o arquivo depois do prazo (padrão 90 dias, no painel) e o lançamento fica · RN-162 (PR #116)
   - [ ] **T-140d** Consentimentos separados e revogáveis (tabela `consentimentos`) para Open Finance, agenda, apps de compra e ligações; revogar desliga o recurso (dep: T-120)
 - [x] **T-141** Admin completo: usuários, assinaturas, métricas, novidades, Mony (prompt e custos), auditoria, filas. Dividida em T-141a a T-141g, uma seção do painel por vez.
   - dep: T-104b, T-104c, T-104d, T-068 · docs: 13
