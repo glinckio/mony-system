@@ -124,7 +124,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Mony | `POST /mony/mensagens` (SSE) · `POST /mony/acoes` · `GET /mony/conversa` · `POST /mony/nfce` (prontas: T-020, T-060 e T-066a; SSE fora do OpenAPI, contrato em `@mony/shared/mony`) |
 | Arquivos | `POST /arquivos` (retorna URL assinada de upload) · `GET /arquivos/:id` (retorna URL assinada de leitura) |
 | Novidades | `GET /novidades` · `POST /novidades/:id/lida` |
-| Admin | `GET /admin/usuarios` · `PATCH /admin/usuarios/:id` · `GET /admin/assinaturas` · `GET /admin/metricas` · CRUD `/admin/novidades` · `GET/PUT /admin/mony/config` · `GET /admin/logs-ia` · `GET/POST /admin/planos/precos` (T-104b) · `GET/PUT /admin/planos/gratuito` (limites e duração do teste, T-104c) · `GET/POST /admin/cupons` · `POST /admin/cupons/:id/desativar` (T-104d) · `GET /admin/auditoria` **(proposta)** |
+| Admin | `GET /admin/usuarios` · `GET /admin/usuarios/:id` · `POST /admin/usuarios/:id/bloquear`, `/reativar` e `/estender-teste` (T-141a) · `GET /admin/assinaturas` · `GET /admin/metricas` · CRUD `/admin/novidades` · `GET/PUT /admin/mony/config` · `GET /admin/logs-ia` · `GET/POST /admin/planos/precos` (T-104b) · `GET/PUT /admin/planos/gratuito` (limites e duração do teste, T-104c) · `GET/POST /admin/cupons` · `POST /admin/cupons/:id/desativar` (T-104d) · `GET /admin/auditoria` **(proposta)** |
 | Tempo real | WebSocket `/v1/ws` (Socket.IO), salas `lista:<id>` para listas compartilhadas (pronto: T-124b) |
 
 ## Autenticação

@@ -309,7 +309,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Excluir conta mantém os resumos da `controle_teste` (RN-125, T-101): sem eles, excluir e cadastrar de novo daria outro teste grátis.
 - [ ] **T-141** Admin completo: usuários, assinaturas, métricas, novidades, Mony (prompt e custos), auditoria, filas. Dividida em T-141a a T-141g, uma seção do painel por vez.
   - dep: T-104b, T-104c, T-104d, T-068 · docs: 13
-- [ ] **T-141a** Admin: usuários (busca, dados da conta, aparelhos e conexões, bloquear e reativar, estender teste grátis, auditoria das visualizações)
+- [x] **T-141a** Admin: usuários (busca, dados da conta, aparelhos e conexões, bloquear e reativar, estender teste grátis, auditoria das visualizações) (PR #98)
   - dep: T-104a · docs: 13
 - [ ] **T-141b** Admin: assinaturas (em teste, gratuitos, ativas, canceladas, inadimplentes; conversão do teste; MRR)
   - dep: T-104a, T-102 · docs: 13
