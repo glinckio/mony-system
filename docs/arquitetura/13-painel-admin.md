@@ -93,6 +93,14 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 - Auditoria: `mony.versao_criada`, `mony.avaliacao_pedida`, `mony.versao_ativada` (antes e depois), `mony.precos_alterados` (antes e depois) e `mony.logs_vistos` a cada página aberta, porque mostra o texto dos usuários.
 - Os limites de uso por usuário por dia (para todos os planos) e o alerta de custo diário ainda não existem: são a T-151 e a T-142.
 
+## Métricas (T-141f)
+
+- Período em dias de São Paulo, os dois inclusos, até 1 ano; abre nos últimos 30 dias (`GET /admin/metricas?de=&ate=`).
+- **Usuários ativos:** pessoas diferentes que abriram o app no período, e quantas por dia. "Abrir o app" é login, cadastro ou renovação da sessão (o app renova a cada 15 minutos de uso), gravado uma vez por pessoa e dia em `acessos_diarios`. Quem entrou antes da tabela existir conta no dia do `ultimo_acesso`.
+- **Lançamentos por origem** (manual, Mony, foto ou documento, Open Finance), pela data de criação: cada gesto conta uma vez. A compra parcelada é um lançamento, e as ocorrências geradas pela recorrência não entram. Os excluídos depois continuam contando.
+- **Alertas por tipo:** criados (as notificações), enviados (com push) e lidos, pela data de criação.
+- Os números vêm de três *materialized views* (`metricas_ativos_dia`, `metricas_lancamentos_dia`, `metricas_alertas_dia`) que a rotina `atualizar-metricas` recalcula de hora em hora, no minuto 50 (`REFRESH … CONCURRENTLY`, sem travar a leitura). Só as pessoas diferentes no período saem da tabela `acessos_diarios`. A tela diz de quando são os números, e **Atualizar agora** (`POST /admin/metricas/atualizar`, grava `metricas.atualizadas` na auditoria) recalcula na hora.
+
 ## Telas (do PDF)
 
 | Seção | Funções |

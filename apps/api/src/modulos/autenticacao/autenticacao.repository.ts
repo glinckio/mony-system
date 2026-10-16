@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { DadosDispositivo } from '@mony/shared/autenticacao';
+import { dataNoFuso } from '@mony/shared/datas';
 import type { DocumentoAceite, ProvedorLoginSocial } from '@mony/shared/enums';
 
 import { aplicarPadroesDoUsuario } from '../../core/dados-iniciais/padroes';
@@ -8,6 +9,17 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { Prisma } from '../../generated/prisma/client';
 import type { ControleDoTeste } from '../planos/dominio/teste';
 import { CONFIGURACAO_DURACAO_TESTE } from './dominio/sessoes';
+
+/**
+ * Marca o dia (São Paulo) em que a pessoa abriu o app, para os usuários ativos do painel (T-141f).
+ * Uma linha por pessoa e dia: as outras renovações do mesmo dia não gravam nada.
+ */
+async function registrarAcesso(tx: ClienteSessao, usuarioId: string, agora: Date): Promise<void> {
+  await tx.acessoDiario.createMany({
+    data: [{ usuarioId, dia: new Date(`${dataNoFuso(agora)}T00:00:00Z`) }],
+    skipDuplicates: true,
+  });
+}
 
 /** Dados do usuário que a sessão devolve ao app. */
 const CAMPOS_USUARIO = {
@@ -45,7 +57,7 @@ export interface NovaConta {
 export type ResultadoVinculo = 'vinculado' | 'ja-vinculado' | 'de-outra-conta';
 
 /** O que a abertura de sessão usa do cliente ou de uma transação do Prisma. */
-type ClienteSessao = Pick<ClientePrisma, 'dispositivo' | 'sessao'>;
+type ClienteSessao = Pick<ClientePrisma, 'dispositivo' | 'sessao' | 'acessoDiario'>;
 
 /**
  * Acesso ao banco da autenticação. As buscas de sessão são pelo resumo do token de renovação, que
@@ -232,6 +244,7 @@ export class AutenticacaoRepository {
       },
       select: { id: true },
     });
+    await registrarAcesso(tx, usuarioId, agora);
     return { sessaoId, dispositivoId };
   }
 
@@ -283,6 +296,7 @@ export class AutenticacaoRepository {
         where: { id: anterior.usuarioId },
         data: { ultimoAcesso: agora },
       });
+      await registrarAcesso(tx, anterior.usuarioId, agora);
       return { sessaoId };
     });
   }

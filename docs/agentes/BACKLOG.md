@@ -319,7 +319,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-104a · docs: 13 · vídeo por URL ou upload no S3 **(confirmar com cliente)**
 - [x] **T-141e** Admin: Mony (prompt do sistema versionado com avaliação antes de ativar, logs de conversas com erro, custo por período) (PR #103)
   - dep: T-104a, T-068 · docs: 08, 13
-- [ ] **T-141f** Admin: métricas (usuários ativos, lançamentos por origem, alertas enviados) por materialized views
+- [x] **T-141f** Admin: métricas (usuários ativos, lançamentos por origem, alertas enviados) por materialized views (PR #104)
   - dep: T-104a · docs: 13
 - [ ] **T-141g** Admin: filas (Bull Board: jobs falhos, reprocessar) e configurações (parâmetros de alertas, limite de ligações, versão mínima do app)
   - dep: T-104a · docs: 13

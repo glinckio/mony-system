@@ -15,6 +15,7 @@ import { MotorAlertas } from '../src/modulos/notificacoes/motor-alertas';
 import { OrcamentosService } from '../src/modulos/orcamentos/orcamentos.service';
 import { ParcelamentosService } from '../src/modulos/parcelamentos/parcelamentos.service';
 import { TesteGratis } from '../src/modulos/planos/teste.service';
+import { AtualizacaoMetricas } from '../src/modulos/metricas/atualizacao-metricas';
 import { PushNovidades } from '../src/modulos/novidades/push-novidades';
 import { RecorrenciasService } from '../src/modulos/recorrencias/recorrencias.service';
 
@@ -116,6 +117,14 @@ describe('rotinas agendadas (doc 09)', () => {
     expect(Reflect.getMetadata(ROTINA, metodo)).toEqual({
       nome: 'enviar-push-novidades',
       padrao: '* * * * *',
+    });
+  });
+
+  it('as métricas do painel se atualizam de hora em hora, no minuto 50 (T-141f)', () => {
+    const metodo = Reflect.get(AtualizacaoMetricas.prototype, 'atualizar') as object;
+    expect(Reflect.getMetadata(ROTINA, metodo)).toEqual({
+      nome: 'atualizar-metricas',
+      padrao: '50 * * * *',
     });
   });
 
