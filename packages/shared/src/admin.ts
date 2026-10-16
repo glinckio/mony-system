@@ -5,6 +5,7 @@
 import { z } from 'zod';
 
 import { SENHA_MAXIMO } from './autenticacao.js';
+import { REGEX_VERSAO_APP } from './config-app.js';
 import { ehDataCalendario } from './datas.js';
 import {
   ORIGENS_TRANSACAO,
@@ -683,3 +684,107 @@ export type CustoModeloMony = z.infer<typeof esquemaCustoModeloMony>;
 export type CustoMonyAdmin = z.infer<typeof esquemaCustoMonyAdmin>;
 export type ConsultaMetricasAdmin = z.infer<typeof esquemaConsultaMetricasAdmin>;
 export type MetricasAdmin = z.infer<typeof esquemaMetricasAdmin>;
+
+/** As filas do BullMQ (doc 05) que a seção Filas do painel mostra (T-141g). */
+export const FILAS_ADMIN = [
+  'eventos-dominio',
+  'notificacoes',
+  'emails',
+  'mony-midia',
+  'open-finance',
+  'webhooks',
+  'relatorios',
+  'lembretes',
+  'agenda',
+  'rotinas',
+  'mony-avaliacao',
+] as const;
+
+/** Quantos jobs falhos cada página da seção Filas traz. */
+export const TAMANHO_PAGINA_FALHOS = 20;
+
+/** `GET /admin/filas`: quantos jobs há em cada estado, por fila. */
+export const esquemaFilasAdmin = z.object({
+  filas: z.array(
+    z.object({
+      nome: z.enum(FILAS_ADMIN),
+      aguardando: z.number().int(),
+      ativos: z.number().int(),
+      atrasados: z.number().int(),
+      falhos: z.number().int(),
+      concluidos: z.number().int(),
+    }),
+  ),
+});
+
+export const esquemaFilaAdmin = z.object({ fila: z.enum(FILAS_ADMIN) });
+
+/** `GET /admin/filas/:fila/falhos?pagina=` (a primeira é 1). */
+export const esquemaConsultaFalhosAdmin = z.object({
+  pagina: z.coerce.number().int().min(1).max(1000).default(1),
+});
+
+/** Os jobs falhos de uma fila, do que falhou por último ao mais antigo; sem os dados do job. */
+export const esquemaFalhosAdmin = z.object({
+  fila: z.enum(FILAS_ADMIN),
+  total: z.number().int(),
+  jobs: z.array(
+    z.object({
+      id: z.string(),
+      nome: z.string(),
+      /** A mensagem do erro, até 500 caracteres. */
+      motivo: z.string(),
+      tentativas: z.number().int(),
+      criadoEm: z.string(),
+      falhouEm: z.string().nullable(),
+    }),
+  ),
+});
+
+/** `POST /admin/filas/:fila/falhos/reprocessar` e `.../falhos/:id/reprocessar`. */
+export const esquemaReprocessadosAdmin = z.object({ reprocessados: z.number().int() });
+
+const inteiro = (minimo: number, maximo: number) => z.number().int().min(minimo).max(maximo);
+
+/**
+ * Os parâmetros que o painel edita (T-141g, doc 13), na `configuracoes` (chave `parametros`).
+ * A API e o worker leem a cada uso, com o padrão do código (e do ambiente, na versão mínima)
+ * enquanto ninguém salvou.
+ */
+export const esquemaParametros = z.object({
+  alertas: z.object({
+    /** RN-103: alertas de consultoria por dia. */
+    cotaConsultoriaDiaria: inteiro(1, 20),
+    /** RN-104: intervalo mínimo entre dois alertas do mesmo app de compra (T-121). */
+    intervaloAppCompraHoras: inteiro(1, 168),
+    /** RN-106: gasto fora do padrão. */
+    foraDoPadrao: z.object({
+      multiplo: inteiro(2, 20),
+      minimoDeLancamentos: inteiro(1, 100),
+      valorMinimoCentavos: inteiro(0, 100_000_000),
+    }),
+  }),
+  /** RN-078: lembretes por ligação por usuário por mês (T-122). */
+  ligacoes: z.object({ limiteMensal: inteiro(0, 100) }),
+  /** Abaixo dela, o app pede atualização (doc 04). */
+  versaoMinima: z.object({
+    ios: z.string().regex(REGEX_VERSAO_APP, 'Use o formato 1.2.3.'),
+    android: z.string().regex(REGEX_VERSAO_APP, 'Use o formato 1.2.3.'),
+  }),
+});
+
+/** `GET /admin/configuracoes`: os valores em uso e quem salvou por último. */
+export const esquemaConfiguracoesAdmin = z.object({
+  parametros: esquemaParametros,
+  /** `null`: ninguém salvou; valem os padrões. */
+  alteradoEm: z.string().nullable(),
+  alteradoPor: z.object({ id: z.string(), nome: z.string() }).nullable(),
+});
+
+export type NomeFilaAdmin = (typeof FILAS_ADMIN)[number];
+export type FilasAdmin = z.infer<typeof esquemaFilasAdmin>;
+export type ConsultaFalhosAdmin = z.infer<typeof esquemaConsultaFalhosAdmin>;
+export type FalhosAdmin = z.infer<typeof esquemaFalhosAdmin>;
+export type ReprocessadosAdmin = z.infer<typeof esquemaReprocessadosAdmin>;
+export type Parametros = z.infer<typeof esquemaParametros>;
+export type ConfiguracoesAdmin = z.infer<typeof esquemaConfiguracoesAdmin>;

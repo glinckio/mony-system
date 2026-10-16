@@ -1,3 +1,5 @@
+import type { NomeFilaAdmin } from '@mony/shared/admin';
+
 import type { Secao } from '@/secoes';
 
 /** Todos os textos do painel em pt-BR. */
@@ -5,7 +7,6 @@ export const textosPtBr = {
   comum: {
     produto: 'Monitorizze Admin',
     menu: 'Seções do painel',
-    emConstrucao: 'Em construção.',
     naoEncontrada: 'Página não encontrada',
     voltarAoInicio: 'Voltar ao início',
   },
@@ -420,6 +421,88 @@ export const textosPtBr = {
     semDados: 'Nada no período.',
     dia: 'Dia',
     ativos: 'Ativos',
+  },
+  filas: {
+    titulo: 'Jobs por fila',
+    explicacao:
+      'Cada job tenta até 5 vezes, com espera crescente. Os que esgotam as tentativas ficam em Falhos até alguém reprocessar.',
+    carregando: 'Carregando…',
+    erroCarregar: 'Não deu para ler as filas. Tente de novo.',
+    fila: 'Fila',
+    aguardando: 'Aguardando',
+    ativos: 'Rodando',
+    atrasados: 'Agendados',
+    falhos: 'Falhos',
+    concluidos: 'Concluídos',
+    verFalhos: 'Ver falhos',
+    verFalhosDe: 'Ver falhos de {{fila}}',
+    falhosDe: 'Falhos: {{fila}}',
+    explicacaoFalhos:
+      'Do que falhou por último ao mais antigo. Reprocessar põe o job de volta na fila, com as tentativas zeradas; fica na auditoria.',
+    semFalhos: 'Nenhum job falho nesta fila.',
+    job: 'Job',
+    motivo: 'Motivo',
+    tentativas: 'Tentativas',
+    falhouEm: 'Falhou em',
+    reprocessar: 'Reprocessar',
+    reprocessarJob: 'Reprocessar o job {{id}}',
+    reprocessarTodos: 'Reprocessar todos',
+    confirmarTodos_one: 'Pôr {{count}} job falho de volta na fila {{fila}}?',
+    confirmarTodos_other: 'Pôr os {{count}} jobs falhos de volta na fila {{fila}}?',
+    reprocessados_one: '{{count}} job voltou para a fila.',
+    reprocessados_other: '{{count}} jobs voltaram para a fila.',
+    erroReprocessar: 'Não deu para reprocessar. Tente de novo.',
+    anterior: 'Anterior',
+    proxima: 'Próxima',
+    pagina: 'Página {{pagina}} de {{paginas}}',
+    nomes: {
+      'eventos-dominio': 'Eventos',
+      notificacoes: 'Notificações',
+      emails: 'E-mails',
+      'mony-midia': 'Áudio e fotos da Mony',
+      'open-finance': 'Open Finance',
+      webhooks: 'Webhooks',
+      relatorios: 'Relatórios',
+      lembretes: 'Lembretes',
+      agenda: 'Agenda',
+      rotinas: 'Rotinas',
+      'mony-avaliacao': 'Avaliação da Mony',
+    } satisfies Record<NomeFilaAdmin, string>,
+  },
+  configuracoes: {
+    carregando: 'Carregando…',
+    erroCarregar: 'Não deu para ler as configurações. Tente de novo.',
+    padroes: 'Ninguém mudou ainda: valem os padrões.',
+    alteradas: 'Alteradas em {{quando}} por {{quem}}.',
+    alertas: 'Alertas',
+    explicacaoAlertas: 'Valem para todos os usuários em até 30 segundos depois de salvar.',
+    foraDoPadrao: 'Gasto fora do padrão',
+    explicacaoForaDoPadrao:
+      'O alerta sai quando a despesa é de pelo menos o múltiplo da média da categoria nos 90 dias antes dela, com o mínimo de lançamentos na média e o valor mínimo.',
+    ligacoesEApp: 'Ligações e app',
+    campos: {
+      cotaConsultoriaDiaria: 'Alertas de consultoria por dia',
+      intervaloAppCompraHoras: 'Intervalo do alerta de app de compra (horas)',
+      multiplo: 'Múltiplo da média',
+      minimoDeLancamentos: 'Mínimo de lançamentos',
+      valorMinimo: 'Valor mínimo (R$)',
+      limiteLigacoes: 'Ligações por mês',
+      versaoIos: 'Versão mínima no iOS',
+      versaoAndroid: 'Versão mínima no Android',
+    },
+    ajuda: {
+      cotaConsultoriaDiaria: 'Dicas, gasto fora do padrão e projeção dividem a cota (RN-103).',
+      intervaloAppCompraHoras:
+        'Um alerta por app nesse intervalo (RN-104). Vale quando a detecção de apps de compra chegar.',
+      limiteLigacoes:
+        'Por usuário do plano pago (RN-078). Vale quando o lembrete por ligação chegar.',
+      versao: 'Formato 1.2.3. Abaixo dela, o app pede para atualizar.',
+    },
+    invalido:
+      'Confira os campos: números inteiros dentro dos limites, valor em reais e versões no formato 1.2.3.',
+    salvar: 'Salvar',
+    salvas: 'Configurações salvas.',
+    erroSalvar: 'Não deu para salvar. Tente de novo.',
   },
   inicio: {
     titulo: 'Início',

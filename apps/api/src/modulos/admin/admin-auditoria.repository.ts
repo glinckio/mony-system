@@ -41,10 +41,17 @@ export class AdminAuditoriaRepository {
     adminId: string;
     acao: string;
     entidade: string;
+    entidadeId?: string;
     ip: string;
   }): Promise<void> {
     await this.prisma.cliente.registroAuditoria.create({
-      data: { usuarioId: dados.adminId, acao: dados.acao, entidade: dados.entidade, ip: dados.ip },
+      data: {
+        usuarioId: dados.adminId,
+        acao: dados.acao,
+        entidade: dados.entidade,
+        entidadeId: dados.entidadeId ?? null,
+        ip: dados.ip,
+      },
       select: { id: true },
     });
   }

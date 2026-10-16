@@ -7,6 +7,7 @@ import {
   ArmazenamentoMemoria,
 } from '../src/core/arquivos/armazenamento-arquivos';
 import { Clock } from '../src/core/clock/clock';
+import { Configuracao } from '../src/core/config/configuracao';
 import { ProcessadorEventos } from '../src/core/eventos/processador-eventos';
 import { FILAS } from '../src/core/filas/filas';
 import {
@@ -14,6 +15,7 @@ import {
   ArmazenamentoIdempotenciaMemoria,
 } from '../src/core/idempotencia/armazenamento';
 import { LimiteTentativas, LimiteTentativasMemoria } from '../src/core/limites/limite-tentativas';
+import { ParametrosService, parametrosPadrao } from '../src/core/parametros/parametros';
 import { ProcessadorRotinas } from '../src/core/rotinas/rotinas';
 import { ProcessadorEmails } from '../src/integracoes/email/processador-emails';
 import { ProcessadorWebhooks } from '../src/modulos/assinaturas/processador-webhooks';
@@ -35,9 +37,18 @@ export function criarFilaFalsa() {
 
 export type FilaFalsa = ReturnType<typeof criarFilaFalsa>;
 
+/** Os parâmetros do painel sem banco: sempre os padrões. */
+export function parametrosFalsos(config: Configuracao) {
+  return {
+    obter: () => Promise.resolve(parametrosPadrao(config)),
+    padrao: () => parametrosPadrao(config),
+    esquecer: () => undefined,
+  };
+}
+
 /**
  * Troca filas BullMQ, consumidores (eventos, e-mails, notificações, relatórios, mídia da Mony e webhooks), arquivos (S3), armazenamento de idempotência e contadores de
- * tentativas por versões em memória, para os testes unitários não dependerem de Redis. As filas
+ * tentativas por versões em memória, e os parâmetros do painel pelos padrões, para os testes unitários não dependerem de Redis. As filas
  * falsas ficam em `filas`.
  */
 export function semServicosExternos(
@@ -66,7 +77,9 @@ export function semServicosExternos(
     .overrideProvider(ArmazenamentoArquivos)
     .useValue(new ArmazenamentoMemoria())
     .overrideProvider(LimiteTentativas)
-    .useFactory({ factory: (clock: Clock) => new LimiteTentativasMemoria(clock), inject: [Clock] });
+    .useFactory({ factory: (clock: Clock) => new LimiteTentativasMemoria(clock), inject: [Clock] })
+    .overrideProvider(ParametrosService)
+    .useFactory({ factory: parametrosFalsos, inject: [Configuracao] });
   for (const nome of Object.values(FILAS)) {
     const fila = criarFilaFalsa();
     filas.set(nome, fila);

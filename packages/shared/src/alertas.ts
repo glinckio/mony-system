@@ -13,9 +13,17 @@ import {
 /**
  * RN-106 (decisão técnica): gasto fora do padrão é um valor de pelo menos 3× a média da categoria
  * nos últimos 90 dias, com pelo menos 5 lançamentos na média e no mínimo R$ 50. Os parâmetros vão
- * para o admin; até lá, ficam aqui.
+ * são estes por padrão; o múltiplo, o mínimo de lançamentos e o valor mínimo o painel edita (T-141g).
  */
-export const PARAMETROS_FORA_DO_PADRAO = {
+export interface ParametrosForaDoPadrao {
+  multiplo: number;
+  diasDaMedia: number;
+  minimoDeLancamentos: number;
+  valorMinimoCentavos: number;
+  diasParaAvaliar: number;
+}
+
+export const PARAMETROS_FORA_DO_PADRAO: Readonly<ParametrosForaDoPadrao> = {
   multiplo: 3,
   diasDaMedia: 90,
   minimoDeLancamentos: 5,
@@ -25,9 +33,7 @@ export const PARAMETROS_FORA_DO_PADRAO = {
    * agora não é novidade para o usuário).
    */
   diasParaAvaliar: 7,
-} as const;
-
-export type ParametrosForaDoPadrao = typeof PARAMETROS_FORA_DO_PADRAO;
+};
 
 /** Os lançamentos da categoria que fazem a média (sem o que está sendo avaliado). */
 export interface HistoricoDaCategoria {

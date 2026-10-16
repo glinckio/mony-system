@@ -7,8 +7,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../src/app.module';
 import { configurarApp, criarAdaptadorFastify } from '../src/configurar-app';
-import type { Configuracao } from '../src/core/config/configuracao';
 import { ErroDominio } from '../src/core/erros/erro-dominio';
+import type { ParametrosService } from '../src/core/parametros/parametros';
 import { GuardaVersaoApp, LiberadaParaVersaoAntiga } from '../src/core/versao-app/versao-app';
 import {
   chaveDica,
@@ -61,7 +61,9 @@ describe('onboarding (RN-024)', () => {
 });
 
 describe('versão mínima do app (doc 04)', () => {
-  const config = { versoesMinimasApp: { ios: '1.2.0', android: '1.3.0' } } as Configuracao;
+  const parametros = {
+    obter: () => Promise.resolve({ versaoMinima: { ios: '1.2.0', android: '1.3.0' } }),
+  } as unknown as ParametrosService;
 
   class Rotas {
     comum(): void {}
@@ -77,15 +79,12 @@ describe('versão mínima do app (doc 04)', () => {
     } as unknown as ExecutionContext;
   }
 
-  const guarda = new GuardaVersaoApp(new Reflector(), config);
+  const guarda = new GuardaVersaoApp(new Reflector(), parametros);
 
-  it('app abaixo da mínima recebe 426 com a versão mínima da plataforma', () => {
-    let erro: unknown;
-    try {
-      guarda.canActivate(contexto('comum', { 'x-app-version': '1.2.9', 'x-platform': 'android' }));
-    } catch (e) {
-      erro = e;
-    }
+  it('app abaixo da mínima recebe 426 com a versão mínima da plataforma', async () => {
+    const erro: unknown = await guarda
+      .canActivate(contexto('comum', { 'x-app-version': '1.2.9', 'x-platform': 'android' }))
+      .catch((e: unknown) => e);
     expect(erro).toBeInstanceOf(ErroDominio);
     expect(erro).toMatchObject({
       codigo: 'VERSAO_APP_DESATUALIZADA',
@@ -94,13 +93,17 @@ describe('versão mínima do app (doc 04)', () => {
     });
   });
 
-  it('versão em dia, sem cabeçalhos ou rota liberada passam', () => {
+  it('versão em dia, sem cabeçalhos ou rota liberada passam', async () => {
     expect(
-      guarda.canActivate(contexto('comum', { 'x-app-version': '1.2.0', 'x-platform': 'ios' })),
+      await guarda.canActivate(
+        contexto('comum', { 'x-app-version': '1.2.0', 'x-platform': 'ios' }),
+      ),
     ).toBe(true);
-    expect(guarda.canActivate(contexto('comum', {}))).toBe(true);
+    expect(await guarda.canActivate(contexto('comum', {}))).toBe(true);
     expect(
-      guarda.canActivate(contexto('liberada', { 'x-app-version': '0.1.0', 'x-platform': 'ios' })),
+      await guarda.canActivate(
+        contexto('liberada', { 'x-app-version': '0.1.0', 'x-platform': 'ios' }),
+      ),
     ).toBe(true);
   });
 });

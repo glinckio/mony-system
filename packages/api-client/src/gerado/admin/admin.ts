@@ -28,12 +28,16 @@ import type {
   AuditoriaAdminDto,
   BuscarAdminUsuariosParams,
   Codigo2faDto,
+  ConfiguracoesAdminDto,
   CupomAdminDto,
   CuponsAdminDto,
   CustoAdminMonyParams,
   CustoMonyAdminDto,
   DesafioAdminDto,
   EstenderTesteDto,
+  FalhosAdminDto,
+  FalhosAdminFilasParams,
+  FilasAdminDto,
   FiltrosAuditoriaAdminDto,
   LerAdminMetricasParams,
   ListarAdminAssinaturasParams,
@@ -48,11 +52,13 @@ import type {
   Novo2faDto,
   NovoCupomDto,
   NovoPrecoDto,
+  ParametrosDto,
   PlanoGratuitoAdminDto,
   PrecosAdminDto,
   PrecosIaAdminDto,
   PublicarNovidadeDto,
   RegistrosAdminAuditoriaParams,
+  ReprocessadosAdminDto,
   ResumoAssinaturasAdminDto,
   SessaoAdminDto,
   UsuarioAdminDto,
@@ -3921,4 +3927,793 @@ export const useAtualizarAdminMetricas = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   return useMutation(getAtualizarAdminMetricasMutationOptions(options), queryClient);
+};
+export const getListarAdminFilasUrl = () => {
+  return `/v1/admin/filas`;
+};
+
+export const listarAdminFilas = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<FilasAdminDto> => {
+  return requisicao<FilasAdminDto>(getListarAdminFilasUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getListarAdminFilasQueryKey = () => {
+  return [`/v1/admin/filas`] as const;
+};
+
+export const getListarAdminFilasQueryOptions = <
+  TData = Awaited<ReturnType<typeof listarAdminFilas>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAdminFilas>>, TError, TData>>;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListarAdminFilasQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listarAdminFilas>>> = ({ signal }) =>
+    listarAdminFilas({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listarAdminFilas>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListarAdminFilasQueryResult = NonNullable<Awaited<ReturnType<typeof listarAdminFilas>>>;
+export type ListarAdminFilasQueryError = unknown;
+
+export function useListarAdminFilas<
+  TData = Awaited<ReturnType<typeof listarAdminFilas>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAdminFilas>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarAdminFilas>>,
+          TError,
+          Awaited<ReturnType<typeof listarAdminFilas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListarAdminFilas<
+  TData = Awaited<ReturnType<typeof listarAdminFilas>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAdminFilas>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarAdminFilas>>,
+          TError,
+          Awaited<ReturnType<typeof listarAdminFilas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListarAdminFilas<
+  TData = Awaited<ReturnType<typeof listarAdminFilas>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAdminFilas>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListarAdminFilas<
+  TData = Awaited<ReturnType<typeof listarAdminFilas>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAdminFilas>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListarAdminFilasQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getFalhosAdminFilasUrl = (
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao',
+  params?: FalhosAdminFilasParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/admin/filas/${fila}/falhos?${stringifiedParams}`
+    : `/v1/admin/filas/${fila}/falhos`;
+};
+
+export const falhosAdminFilas = async (
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao',
+  params?: FalhosAdminFilasParams,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<FalhosAdminDto> => {
+  return requisicao<FalhosAdminDto>(getFalhosAdminFilasUrl(fila, params), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getFalhosAdminFilasQueryKey = (
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao',
+  params?: FalhosAdminFilasParams,
+) => {
+  return [`/v1/admin/filas/${fila}/falhos`, ...(params ? [params] : [])] as const;
+};
+
+export const getFalhosAdminFilasQueryOptions = <
+  TData = Awaited<ReturnType<typeof falhosAdminFilas>>,
+  TError = unknown,
+>(
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao',
+  params?: FalhosAdminFilasParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof falhosAdminFilas>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getFalhosAdminFilasQueryKey(fila, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof falhosAdminFilas>>> = ({ signal }) =>
+    falhosAdminFilas(fila, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: fila !== null && fila !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof falhosAdminFilas>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type FalhosAdminFilasQueryResult = NonNullable<Awaited<ReturnType<typeof falhosAdminFilas>>>;
+export type FalhosAdminFilasQueryError = unknown;
+
+export function useFalhosAdminFilas<
+  TData = Awaited<ReturnType<typeof falhosAdminFilas>>,
+  TError = unknown,
+>(
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao',
+  params: undefined | FalhosAdminFilasParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof falhosAdminFilas>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof falhosAdminFilas>>,
+          TError,
+          Awaited<ReturnType<typeof falhosAdminFilas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFalhosAdminFilas<
+  TData = Awaited<ReturnType<typeof falhosAdminFilas>>,
+  TError = unknown,
+>(
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao',
+  params?: FalhosAdminFilasParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof falhosAdminFilas>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof falhosAdminFilas>>,
+          TError,
+          Awaited<ReturnType<typeof falhosAdminFilas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useFalhosAdminFilas<
+  TData = Awaited<ReturnType<typeof falhosAdminFilas>>,
+  TError = unknown,
+>(
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao',
+  params?: FalhosAdminFilasParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof falhosAdminFilas>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useFalhosAdminFilas<
+  TData = Awaited<ReturnType<typeof falhosAdminFilas>>,
+  TError = unknown,
+>(
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao',
+  params?: FalhosAdminFilasParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof falhosAdminFilas>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getFalhosAdminFilasQueryOptions(fila, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getReprocessarTodosAdminFilasUrl = (
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao',
+) => {
+  return `/v1/admin/filas/${fila}/falhos/reprocessar`;
+};
+
+export const reprocessarTodosAdminFilas = async (
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao',
+  options?: Parameters<typeof requisicao>[1],
+): Promise<ReprocessadosAdminDto> => {
+  return requisicao<ReprocessadosAdminDto>(getReprocessarTodosAdminFilasUrl(fila), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getReprocessarTodosAdminFilasMutationKey = () =>
+  ['reprocessarTodosAdminFilas'] as const;
+
+export const getReprocessarTodosAdminFilasMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reprocessarTodosAdminFilas>>,
+    TError,
+    ReprocessarTodosAdminFilasMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reprocessarTodosAdminFilas>>,
+  TError,
+  ReprocessarTodosAdminFilasMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReprocessarTodosAdminFilasMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reprocessarTodosAdminFilas>>,
+    ReprocessarTodosAdminFilasMutationVariables
+  > = (props) => {
+    const { fila } = props ?? {};
+
+    return reprocessarTodosAdminFilas(fila, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReprocessarTodosAdminFilasMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reprocessarTodosAdminFilas>>
+>;
+
+export type ReprocessarTodosAdminFilasMutationError = unknown;
+export type ReprocessarTodosAdminFilasMutationVariables = {
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao';
+};
+
+export const useReprocessarTodosAdminFilas = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof reprocessarTodosAdminFilas>>,
+      TError,
+      ReprocessarTodosAdminFilasMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof reprocessarTodosAdminFilas>>,
+  TError,
+  ReprocessarTodosAdminFilasMutationVariables,
+  TContext
+> => {
+  return useMutation(getReprocessarTodosAdminFilasMutationOptions(options), queryClient);
+};
+export const getReprocessarAdminFilasUrl = (
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao',
+  id: string,
+) => {
+  return `/v1/admin/filas/${fila}/falhos/${id}/reprocessar`;
+};
+
+export const reprocessarAdminFilas = async (
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao',
+  id: string,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<ReprocessadosAdminDto> => {
+  return requisicao<ReprocessadosAdminDto>(getReprocessarAdminFilasUrl(fila, id), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getReprocessarAdminFilasMutationKey = () => ['reprocessarAdminFilas'] as const;
+
+export const getReprocessarAdminFilasMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reprocessarAdminFilas>>,
+    TError,
+    ReprocessarAdminFilasMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reprocessarAdminFilas>>,
+  TError,
+  ReprocessarAdminFilasMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReprocessarAdminFilasMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reprocessarAdminFilas>>,
+    ReprocessarAdminFilasMutationVariables
+  > = (props) => {
+    const { fila, id } = props ?? {};
+
+    return reprocessarAdminFilas(fila, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReprocessarAdminFilasMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reprocessarAdminFilas>>
+>;
+
+export type ReprocessarAdminFilasMutationError = unknown;
+export type ReprocessarAdminFilasMutationVariables = {
+  fila:
+    | 'eventos-dominio'
+    | 'notificacoes'
+    | 'emails'
+    | 'mony-midia'
+    | 'open-finance'
+    | 'webhooks'
+    | 'relatorios'
+    | 'lembretes'
+    | 'agenda'
+    | 'rotinas'
+    | 'mony-avaliacao';
+  id: string;
+};
+
+export const useReprocessarAdminFilas = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof reprocessarAdminFilas>>,
+      TError,
+      ReprocessarAdminFilasMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof reprocessarAdminFilas>>,
+  TError,
+  ReprocessarAdminFilasMutationVariables,
+  TContext
+> => {
+  return useMutation(getReprocessarAdminFilasMutationOptions(options), queryClient);
+};
+export const getLerAdminConfiguracoesUrl = () => {
+  return `/v1/admin/configuracoes`;
+};
+
+export const lerAdminConfiguracoes = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<ConfiguracoesAdminDto> => {
+  return requisicao<ConfiguracoesAdminDto>(getLerAdminConfiguracoesUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getLerAdminConfiguracoesQueryKey = () => {
+  return [`/v1/admin/configuracoes`] as const;
+};
+
+export const getLerAdminConfiguracoesQueryOptions = <
+  TData = Awaited<ReturnType<typeof lerAdminConfiguracoes>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<Awaited<ReturnType<typeof lerAdminConfiguracoes>>, TError, TData>
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getLerAdminConfiguracoesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof lerAdminConfiguracoes>>> = ({ signal }) =>
+    lerAdminConfiguracoes({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof lerAdminConfiguracoes>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type LerAdminConfiguracoesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof lerAdminConfiguracoes>>
+>;
+export type LerAdminConfiguracoesQueryError = unknown;
+
+export function useLerAdminConfiguracoes<
+  TData = Awaited<ReturnType<typeof lerAdminConfiguracoes>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof lerAdminConfiguracoes>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof lerAdminConfiguracoes>>,
+          TError,
+          Awaited<ReturnType<typeof lerAdminConfiguracoes>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useLerAdminConfiguracoes<
+  TData = Awaited<ReturnType<typeof lerAdminConfiguracoes>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof lerAdminConfiguracoes>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof lerAdminConfiguracoes>>,
+          TError,
+          Awaited<ReturnType<typeof lerAdminConfiguracoes>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useLerAdminConfiguracoes<
+  TData = Awaited<ReturnType<typeof lerAdminConfiguracoes>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof lerAdminConfiguracoes>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useLerAdminConfiguracoes<
+  TData = Awaited<ReturnType<typeof lerAdminConfiguracoes>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof lerAdminConfiguracoes>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getLerAdminConfiguracoesQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSalvarAdminConfiguracoesUrl = () => {
+  return `/v1/admin/configuracoes`;
+};
+
+export const salvarAdminConfiguracoes = async (
+  parametrosDto: ParametrosDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<ConfiguracoesAdminDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<ConfiguracoesAdminDto>(getSalvarAdminConfiguracoesUrl(), {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(parametrosDto),
+  });
+};
+
+export const getSalvarAdminConfiguracoesMutationKey = () => ['salvarAdminConfiguracoes'] as const;
+
+export const getSalvarAdminConfiguracoesMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof salvarAdminConfiguracoes>>,
+    TError,
+    SalvarAdminConfiguracoesMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof salvarAdminConfiguracoes>>,
+  TError,
+  SalvarAdminConfiguracoesMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSalvarAdminConfiguracoesMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof salvarAdminConfiguracoes>>,
+    SalvarAdminConfiguracoesMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return salvarAdminConfiguracoes(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SalvarAdminConfiguracoesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof salvarAdminConfiguracoes>>
+>;
+export type SalvarAdminConfiguracoesMutationBody = ParametrosDto;
+export type SalvarAdminConfiguracoesMutationError = unknown;
+export type SalvarAdminConfiguracoesMutationVariables = { data: ParametrosDto };
+
+export const useSalvarAdminConfiguracoes = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof salvarAdminConfiguracoes>>,
+      TError,
+      SalvarAdminConfiguracoesMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof salvarAdminConfiguracoes>>,
+  TError,
+  SalvarAdminConfiguracoesMutationVariables,
+  TContext
+> => {
+  return useMutation(getSalvarAdminConfiguracoesMutationOptions(options), queryClient);
 };

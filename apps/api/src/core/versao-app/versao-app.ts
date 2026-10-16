@@ -13,8 +13,8 @@ import {
 } from '@mony/shared/config-app';
 import type { FastifyRequest } from 'fastify';
 
-import { Configuracao } from '../config/configuracao';
 import { ErroDominio } from '../erros/erro-dominio';
+import { ParametrosService } from '../parametros/parametros';
 
 export const LIBERADA_PARA_VERSAO_ANTIGA = 'mony:liberada-para-versao-antiga';
 
@@ -32,16 +32,17 @@ function cabecalho(valor: string | string[] | undefined): string | undefined {
 /**
  * Guarda global (doc 04): app com `X-App-Version` abaixo da mínima da plataforma (`X-Platform`)
  * recebe 426 `VERSAO_APP_DESATUALIZADA`, com a versão mínima em `detalhes`. Sem os cabeçalhos
- * (painel admin, ferramentas) não há bloqueio.
+ * (painel admin, ferramentas) não há bloqueio. A mínima é a do painel (T-141g), com a do ambiente
+ * de padrão.
  */
 @Injectable()
 export class GuardaVersaoApp implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly config: Configuracao,
+    private readonly parametros: ParametrosService,
   ) {}
 
-  canActivate(execucao: ExecutionContext): boolean {
+  async canActivate(execucao: ExecutionContext): Promise<boolean> {
     const liberada = this.reflector.getAllAndOverride<boolean | undefined>(
       LIBERADA_PARA_VERSAO_ANTIGA,
       [execucao.getHandler(), execucao.getClass()],
@@ -51,7 +52,9 @@ export class GuardaVersaoApp implements CanActivate {
     const { headers } = execucao.switchToHttp().getRequest<FastifyRequest>();
     const versao = cabecalho(headers[CABECALHO_VERSAO_APP]);
     const plataforma = cabecalho(headers[CABECALHO_PLATAFORMA]);
-    const minimas = this.config.versoesMinimasApp;
+    // Sem os dois cabeçalhos não há o que comparar, e nem se lê a mínima (editável no painel).
+    if (versao === undefined || plataforma === undefined) return true;
+    const minimas = (await this.parametros.obter()).versaoMinima;
     if (versaoAbaixoDaMinima(versao, plataforma, minimas)) {
       throw new ErroDominio('VERSAO_APP_DESATUALIZADA', {
         detalhes: { plataforma, versaoMinima: minimas[plataforma as keyof typeof minimas] },

@@ -58,7 +58,7 @@ Cada avaliador é uma classe com `tipo`, `avaliar(contexto) → AlertaCandidato[
 | `assinatura` | Pagamento recusado, renovação, cancelamento; teste no 2º dia, no último e no fim (T-101, não urgentes) | `assinatura:<evento_id>`; `assinatura:teste:<segundo-dia, ultimo-dia ou fim>` | sim (os do teste, não) | sim |
 | `novidade` | Publicação no admin (push opcional) | `novidade:<id>` | não | não |
 
-Regras de envio: RN-100 a RN-108 em [07](07-regras-de-negocio.md#alertas-e-notificações). Tipos de consultoria (`gasto_fora_padrao`, `projecao_mes`, dicas) contam para o limite diário de 3. `assinatura` não pode ser desligado.
+Regras de envio: RN-100 a RN-108 em [07](07-regras-de-negocio.md#alertas-e-notificações). Tipos de consultoria (`gasto_fora_padrao`, `projecao_mes`, dicas) contam para o limite diário (3 por padrão; o painel muda, seção Configurações, T-141g). Os parâmetros do `gasto_fora_padrao` (múltiplo, mínimo de lançamentos e valor mínimo) também vêm do painel. `assinatura` não pode ser desligado.
 
 ## Envio de push
 

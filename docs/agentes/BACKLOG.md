@@ -276,9 +276,11 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-025, T-102 · RN-121, RN-140 a RN-144
 - [ ] **T-121** 👤 Detecção de apps de compra (iOS e Android) com endpoint e alerta
   - dep: T-021, T-022, T-081 · RN-104, RN-121
+  - O intervalo por app (RN-104) vem do painel: `ParametrosService.obter()` → `alertas.intervaloAppCompraHoras` (T-141g).
   - Android sobre o módulo `mony-app-usage` da T-022; a abertura vai para o servidor com o token de evento recomendado em `docs/agentes/poc/T-022.md` ("Limitações da PoC"). A tela de teste da PoC sai quando a do produto existir.
 - [ ] **T-122** 👤 Lembrete por ligação (`VozProvider`), telefone verificado, limite mensal
   - dep: T-084a, T-102 · RN-078
+  - O limite mensal vem do painel: `ParametrosService.obter()` → `ligacoes.limiteMensal` (T-141g).
 - [x] **T-123a** Listas de compras na API: listas, itens, preço por NFC-e, orçamento e "Finalizar" com a despesa (PR #82)
   - dep: T-066a, T-066c · RN-070 a RN-073, RN-120 · docs: 05 (Listas de compras)
 - [x] **T-123b** Telas das listas de compras no app (desenho, página 6) (PR #83)
@@ -307,7 +309,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-120, T-102 · docs: 11 · RN-160 a RN-162
   - No app, "Exportar meus dados" e "Excluir conta" entram na seção Privacidade do Perfil (T-057).
   - Excluir conta mantém os resumos da `controle_teste` (RN-125, T-101): sem eles, excluir e cadastrar de novo daria outro teste grátis.
-- [ ] **T-141** Admin completo: usuários, assinaturas, métricas, novidades, Mony (prompt e custos), auditoria, filas. Dividida em T-141a a T-141g, uma seção do painel por vez.
+- [x] **T-141** Admin completo: usuários, assinaturas, métricas, novidades, Mony (prompt e custos), auditoria, filas. Dividida em T-141a a T-141g, uma seção do painel por vez.
   - dep: T-104b, T-104c, T-104d, T-068 · docs: 13
 - [x] **T-141a** Admin: usuários (busca, dados da conta, aparelhos e conexões, bloquear e reativar, estender teste grátis, auditoria das visualizações) (PR #98)
   - dep: T-104a · docs: 13
@@ -321,7 +323,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-104a, T-068 · docs: 08, 13
 - [x] **T-141f** Admin: métricas (usuários ativos, lançamentos por origem, alertas enviados) por materialized views (PR #104)
   - dep: T-104a · docs: 13
-- [ ] **T-141g** Admin: filas (Bull Board: jobs falhos, reprocessar) e configurações (parâmetros de alertas, limite de ligações, versão mínima do app)
+- [x] **T-141g** Admin: filas (jobs falhos, reprocessar; tela própria no lugar do Bull Board) e configurações (parâmetros de alertas, limite de ligações, versão mínima do app) (PR #105)
   - dep: T-104a · docs: 13
 - [ ] **T-142** Monitoramento e alertas (Sentry, métricas, alarmes de fila, webhook, custo de IA, backup)
   - dep: T-013 · docs: 12
