@@ -307,8 +307,22 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-120, T-102 · docs: 11 · RN-160 a RN-162
   - No app, "Exportar meus dados" e "Excluir conta" entram na seção Privacidade do Perfil (T-057).
   - Excluir conta mantém os resumos da `controle_teste` (RN-125, T-101): sem eles, excluir e cadastrar de novo daria outro teste grátis.
-- [ ] **T-141** Admin completo: usuários, assinaturas, métricas, novidades, Mony (prompt e custos), auditoria, filas
+- [ ] **T-141** Admin completo: usuários, assinaturas, métricas, novidades, Mony (prompt e custos), auditoria, filas. Dividida em T-141a a T-141g, uma seção do painel por vez.
   - dep: T-104b, T-104c, T-104d, T-068 · docs: 13
+- [ ] **T-141a** Admin: usuários (busca, dados da conta, aparelhos e conexões, bloquear e reativar, estender teste grátis, auditoria das visualizações)
+  - dep: T-104a · docs: 13
+- [ ] **T-141b** Admin: assinaturas (em teste, gratuitos, ativas, canceladas, inadimplentes; conversão do teste; MRR)
+  - dep: T-104a, T-102 · docs: 13
+- [ ] **T-141c** Admin: auditoria (registro das ações dos administradores, com filtros)
+  - dep: T-104a · docs: 13
+- [ ] **T-141d** Admin: novidades (criar, editar, agendar e desativar comunicados com título, texto, vídeo e validade; push opcional)
+  - dep: T-104a · docs: 13 · vídeo por URL ou upload no S3 **(confirmar com cliente)**
+- [ ] **T-141e** Admin: Mony (prompt do sistema versionado com avaliação antes de ativar, logs de conversas com erro, custo por período)
+  - dep: T-104a, T-068 · docs: 08, 13
+- [ ] **T-141f** Admin: métricas (usuários ativos, lançamentos por origem, alertas enviados) por materialized views
+  - dep: T-104a · docs: 13
+- [ ] **T-141g** Admin: filas (Bull Board: jobs falhos, reprocessar) e configurações (parâmetros de alertas, limite de ligações, versão mínima do app)
+  - dep: T-104a · docs: 13
 - [ ] **T-142** Monitoramento e alertas (Sentry, métricas, alarmes de fila, webhook, custo de IA, backup)
   - dep: T-013 · docs: 12
 - [ ] **T-143** Testes E2E com Maestro dos fluxos principais

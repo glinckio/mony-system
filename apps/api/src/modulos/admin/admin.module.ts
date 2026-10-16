@@ -11,11 +11,22 @@ import { AdminCuponsService } from './admin-cupons.service';
 import { AdminPlanosController } from './admin-planos.controller';
 import { AdminPlanosRepository } from './admin-planos.repository';
 import { AdminPlanosService } from './admin-planos.service';
+import { AdminUsuariosController } from './admin-usuarios.controller';
+import { AdminUsuariosRepository } from './admin-usuarios.repository';
+import { AdminUsuariosService } from './admin-usuarios.service';
 
-/** O painel admin (`/v1/admin/*`, docs/arquitetura/13): login (T-104a), planos (T-104b e T-104c) e cupons (T-104d). */
+/**
+ * O painel admin (`/v1/admin/*`, docs/arquitetura/13): login (T-104a), planos (T-104b e T-104c),
+ * cupons (T-104d) e usuários (T-141a).
+ */
 @Module({
   imports: [CobrancaModule],
-  controllers: [AdminAutenticacaoController, AdminPlanosController, AdminCuponsController],
+  controllers: [
+    AdminAutenticacaoController,
+    AdminPlanosController,
+    AdminCuponsController,
+    AdminUsuariosController,
+  ],
   providers: [
     AdminAutenticacaoService,
     AdminAutenticacaoRepository,
@@ -24,6 +35,8 @@ import { AdminPlanosService } from './admin-planos.service';
     AdminPlanosRepository,
     AdminCuponsService,
     AdminCuponsRepository,
+    AdminUsuariosService,
+    AdminUsuariosRepository,
   ],
 })
 export class AdminModule {}
