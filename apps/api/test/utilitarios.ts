@@ -17,6 +17,7 @@ import { LimiteTentativas, LimiteTentativasMemoria } from '../src/core/limites/l
 import { ProcessadorRotinas } from '../src/core/rotinas/rotinas';
 import { ProcessadorEmails } from '../src/integracoes/email/processador-emails';
 import { ProcessadorWebhooks } from '../src/modulos/assinaturas/processador-webhooks';
+import { ProcessadorAvaliacaoMony } from '../src/modulos/mony/avaliacao/pedidos-avaliacao';
 import { ProcessadorMonyMidia } from '../src/modulos/mony/processador-mony-midia';
 import { ProcessadorNotificacoes } from '../src/modulos/notificacoes/processador-notificacoes';
 import { ProcessadorRelatorios } from '../src/modulos/relatorios/processador-relatorios';
@@ -59,6 +60,8 @@ export function semServicosExternos(
     .overrideProvider(ProcessadorMonyMidia)
     .useValue({})
     .overrideProvider(ProcessadorWebhooks)
+    .useValue({})
+    .overrideProvider(ProcessadorAvaliacaoMony)
     .useValue({})
     .overrideProvider(ArmazenamentoArquivos)
     .useValue(new ArmazenamentoMemoria())
