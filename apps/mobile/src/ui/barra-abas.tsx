@@ -58,6 +58,7 @@ export function BarraAbas({ state, descriptors, navigation }: PropsBarraAbas) {
             <Pressable
               key={rota.key}
               accessibilityRole="tab"
+              testID={`aba-${rota.name}`}
               accessibilityLabel={titulo}
               accessibilityState={{ selected: ativa }}
               onPress={() => {

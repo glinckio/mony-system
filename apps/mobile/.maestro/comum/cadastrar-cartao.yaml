@@ -1,0 +1,33 @@
+# Preenche e salva o formulário do cartão na aba Cartões. Entrada: INICIO (o botão que abre o
+# formulário) e NOME.
+appId: com.monitorizze.app.preview
+---
+- tapOn: ${INICIO}
+- tapOn:
+    id: campo-nome
+- inputText: ${NOME}
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: campo-limiteCentavos
+- tapOn:
+    id: campo-limiteCentavos
+- inputText: '500000'
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: campo-diaFechamento
+- tapOn:
+    id: campo-diaFechamento
+- inputText: '10'
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: campo-diaVencimento
+- tapOn:
+    id: campo-diaVencimento
+- inputText: '20'
+- hideKeyboard
+- scrollUntilVisible:
+    element: Salvar
+- tapOn: Salvar

@@ -1,0 +1,49 @@
+# Fluxo 2 do doc 14: cartão → compra parcelada → pagar fatura (RN-030, RN-051, RN-036).
+appId: com.monitorizze.app.preview
+name: Cartão, compra parcelada e pagamento da fatura
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: allow
+- runScript: scripts/email-unico.js
+- runFlow:
+    file: comum/cadastrar.yaml
+    env:
+      EMAIL: ${output.email}
+- tapOn:
+    id: aba-cartoes
+- runFlow:
+    file: comum/cadastrar-cartao.yaml
+    env:
+      INICIO: Cadastrar cartão
+      NOME: Nubank
+- extendedWaitUntil:
+    visible: Limite usado
+    timeout: 15000
+# Compra parcelada só pelo chat (doc 04): 3x de R$ 200,00 (RN-051).
+- runFlow:
+    file: comum/enviar-para-mony.yaml
+    env:
+      MENSAGEM: comprei 600 em Compras no Nubank em 3x
+- extendedWaitUntil:
+    visible: '.*Anotei R\$.600,00 em Compras, no Nubank em 3x de R\$.200,00.*'
+    timeout: 30000
+# A primeira parcela entra na fatura atual; pagar o que falta zera o saldo dela (RN-036).
+- tapOn:
+    id: aba-cartoes
+- scrollUntilVisible:
+    element: Marcar fatura como paga
+- tapOn: Marcar fatura como paga
+- extendedWaitUntil:
+    visible:
+      id: folha-pagar-fatura
+    timeout: 10000
+- tapOn: 'Pagar R\$.200,00'
+# A fatura ainda não fechou: a etiqueta continua "Aberta" (statusDaFatura) e o botão some porque
+# não falta pagar nada.
+- extendedWaitUntil:
+    notVisible: Marcar fatura como paga
+    timeout: 10000
+- scrollUntilVisible:
+    element: Ver fatura

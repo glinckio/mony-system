@@ -1,0 +1,38 @@
+# Cadastro pelo app (RN-001, RN-007) e onboarding pulado até as abas. Entrada: EMAIL.
+appId: com.monitorizze.app.preview
+---
+- extendedWaitUntil:
+    visible: 'Criar conta'
+    timeout: 120000
+- tapOn: 'Criar conta'
+- tapOn:
+    id: campo-nome
+- inputText: Teste E2E
+- tapOn:
+    id: campo-email
+- inputText: ${EMAIL}
+- tapOn:
+    id: campo-telefone
+- inputText: '11987654321'
+- tapOn:
+    id: campo-senha
+- inputText: senha-e2e-123
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      id: cadastro-criar
+- tapOn:
+    id: cadastro-aceite
+- tapOn:
+    id: cadastro-criar
+# Onboarding: as duas telas de boas-vindas e as permissões.
+- extendedWaitUntil:
+    visible: 'Registre gastos só conversando'
+    timeout: 30000
+- tapOn: Pular
+- assertVisible: 'Deixe a Mony te avisar na hora certa'
+- tapOn: Configurar depois
+- extendedWaitUntil:
+    visible:
+      id: aba-mony
+    timeout: 30000

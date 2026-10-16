@@ -1,5 +1,12 @@
-import { agirMony, ErroApi, lerNfceMony, type PedidoAcaoMonyDto } from '@mony/api-client';
+import {
+  agirMony,
+  ErroApi,
+  getConversaMonyQueryKey,
+  lerNfceMony,
+  type PedidoAcaoMonyDto,
+} from '@mony/api-client';
 import type { EventoMony, OpcaoBotao } from '@mony/shared/mony';
+import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -27,8 +34,21 @@ import { chaveDoToque, enviarMensagemMony } from '@/lib/mony/conversa';
  * `historico`: as mensagens da API, da mais nova para a mais antiga. Devolve tudo na mesma ordem,
  * com as desta abertura na frente.
  */
+/**
+ * O que a Mony respondeu pode ter criado, mudado ou desfeito lançamentos, cartões, faturas e metas:
+ * as outras telas buscam de novo. O histórico da conversa fica, porque a tela já tem as mensagens
+ * desta abertura (T-143a).
+ */
+export function atualizarOutrasTelas(consultas: QueryClient) {
+  const [conversa] = getConversaMonyQueryKey();
+  return consultas.invalidateQueries({
+    predicate: (consulta) => consulta.queryKey[0] !== conversa,
+  });
+}
+
 export function useChatMony(historico: readonly Mensagem[]) {
   const { t } = useTranslation();
+  const consultas = useQueryClient();
   const [novas, definirNovas] = useState<Mensagem[]>([]);
   // As mensagens do histórico mudam só quando um botão delas é tocado.
   const [mudadas, definirMudadas] = useState<Readonly<Record<string, Mensagem>>>({});
@@ -110,6 +130,7 @@ export function useChatMony(historico: readonly Mensagem[]) {
       falhou(resposta.id, erro);
     } finally {
       definirOcupada(false);
+      void atualizarOutrasTelas(consultas);
     }
   }
 

@@ -1,0 +1,26 @@
+# Fluxo 1 do doc 14: cadastro → onboarding → primeiro lançamento na Mony.
+appId: com.monitorizze.app.preview
+name: Cadastro, onboarding e primeiro lançamento
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: allow
+- runScript: scripts/email-unico.js
+- runFlow:
+    file: comum/cadastrar.yaml
+    env:
+      EMAIL: ${output.email}
+- runFlow:
+    file: comum/enviar-para-mony.yaml
+    env:
+      MENSAGEM: gastei 45 no mercado no pix
+# A IA de teste da API (IA_PROVEDOR=fake) entende frases simples pelas regras.
+- extendedWaitUntil:
+    visible: '.*Anotei R\$.45,00 em Mercado, no Pix.*'
+    timeout: 30000
+- tapOn:
+    id: aba-transacoes
+- extendedWaitUntil:
+    visible: '.*Mercado.*'
+    timeout: 15000

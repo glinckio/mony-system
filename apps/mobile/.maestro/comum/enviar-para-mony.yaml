@@ -1,0 +1,14 @@
+# Manda uma mensagem de texto para a Mony. Entrada: MENSAGEM.
+appId: com.monitorizze.app.preview
+---
+- tapOn:
+    id: aba-mony
+# A dica da primeira conversa aparece uma vez por conta.
+- tapOn:
+    text: Entendi
+    optional: true
+- tapOn:
+    id: mony-campo
+- inputText: ${MENSAGEM}
+# O campo envia pela tecla do teclado (returnKeyType send), como o botão Enviar.
+- pressKey: Enter

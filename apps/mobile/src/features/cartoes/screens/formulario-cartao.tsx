@@ -308,6 +308,7 @@ export function FormularioCartao({ original }: PropsFormularioCartao) {
                 aoMudar={field.onChange}
                 editavel={!doBanco}
                 erro={errors.limiteCentavos ? t('cartoes.formulario.validacao.limite') : null}
+                testID="campo-limiteCentavos"
               />
             )}
           />
@@ -333,6 +334,7 @@ export function FormularioCartao({ original }: PropsFormularioCartao) {
                         maxLength={2}
                         editable={!doBanco}
                         erro={erroDia(campo)}
+                        testID={`campo-${campo}`}
                       />
                     )}
                   />

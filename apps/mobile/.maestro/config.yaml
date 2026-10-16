@@ -1,0 +1,10 @@
+# Testes de ponta a ponta do app (T-143a, doc 14). Rodam em ordem; cada fluxo começa com o app
+# limpo e cria a própria conta. Como rodar: README.md desta pasta.
+flows:
+  - '*.yaml'
+executionOrder:
+  continueOnFailure: true
+  flowsOrder:
+    - 01-cadastro-onboarding-lancamento
+    - 02-cartao-parcelada-fatura
+    - 03-limite-gratuito
