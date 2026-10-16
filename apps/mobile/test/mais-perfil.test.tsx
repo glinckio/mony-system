@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { Linking } from 'react-native';
 
 import { useSessao } from '@/stores/sessao';
 
@@ -29,9 +30,21 @@ interface Pedido {
   corpo: Record<string, unknown>;
 }
 
+const EXPORTACAO = {
+  id: '0199a000-0000-7000-8000-0000000000e1',
+  status: 'processando',
+  url: null,
+  expiraEm: null,
+  criadoEm: '2026-10-16T12:00:00.000Z',
+  concluidaEm: null,
+};
+const URL_DADOS = 'https://arquivos.teste/exportacoes/dados/x.zip';
+
 function api() {
   const pedidos: Pedido[] = [];
   let perfil = PERFIL;
+  let consultasExportacao = 0;
+  let exportacao: Record<string, unknown> | null = null;
   globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
     const endereco = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
     const pedido = {
@@ -46,6 +59,24 @@ function api() {
     if (pedido.rota === '/v1/me' && pedido.metodo === 'PATCH') {
       perfil = { ...perfil, ...pedido.corpo };
       return Promise.resolve(new Response(JSON.stringify(perfil), { status: 200 }));
+    }
+    if (pedido.rota === '/v1/me/exportar' && pedido.metodo === 'POST') {
+      exportacao = EXPORTACAO;
+      return Promise.resolve(new Response(JSON.stringify(exportacao), { status: 202 }));
+    }
+    if (pedido.rota === '/v1/me/exportar') {
+      // Depois do pedido, a segunda consulta já encontra o arquivo pronto.
+      if (exportacao !== null) consultasExportacao += 1;
+      if (consultasExportacao >= 1 && exportacao !== null) {
+        exportacao = {
+          ...EXPORTACAO,
+          status: 'pronta',
+          url: URL_DADOS,
+          expiraEm: '2026-10-17T12:00:00.000Z',
+          concluidaEm: '2026-10-16T12:00:05.000Z',
+        };
+      }
+      return Promise.resolve(new Response(JSON.stringify({ exportacao }), { status: 200 }));
     }
     if (pedido.rota === '/v1/me') {
       return Promise.resolve(new Response(JSON.stringify(perfil), { status: 200 }));
@@ -144,6 +175,31 @@ describe('aba Mais e Perfil (T-057)', () => {
       expect(
         screen.queryByRole('header', { name: 'Deixe a Mony te avisar na hora certa' }),
       ).toBeNull();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'RN-160 exportar meus dados: pede, espera o worker e abre o link do arquivo',
+    async () => {
+      const pedidos = api();
+      const abrir = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+      renderRouter(ROTAS, { initialUrl: '/mais/perfil' });
+      fireEvent.press(await screen.findByRole('button', { name: 'Exportar meus dados' }, ESPERA));
+      fireEvent.press(await screen.findByRole('button', { name: 'Pedir meus dados' }, ESPERA));
+
+      expect(
+        await screen.findByText(
+          'Juntando seus dados… Pode fechar: avisamos por e-mail quando ficar pronto.',
+          {},
+          ESPERA,
+        ),
+      ).toBeOnTheScreen();
+      expect(
+        pedidos.filter(({ metodo, rota }) => metodo === 'POST' && rota === '/v1/me/exportar'),
+      ).toHaveLength(1);
+      fireEvent.press(await screen.findByRole('button', { name: 'Baixar meus dados' }, ESPERA));
+      expect(abrir).toHaveBeenCalledWith(URL_DADOS);
     },
     TEMPO_LIMITE_MS,
   );
