@@ -543,7 +543,7 @@ Implementado na T-102 (RN-128, RN-131), em `modulos/assinaturas`; a Stripe está
 
 - **`GET /planos`:** os preços vigentes (`planos_precos.vigente`), um por plano, em centavos. Sem preço configurado, a lista vem vazia.
 - **`GET /assinatura`:** `plano` (o que vale agora, como em `/assinatura/uso`), `status` da assinatura paga (`ativa` ou `inadimplente`; `null` fora do pago), `valorCentavos`, `proximaCobranca`, `cancelamentoAgendado`, `testeFim` e `gerenciavel` (já tem cliente na Stripe, então o portal abre).
-- **`POST /assinatura/checkout` `{ plano: 'mensal' | 'anual' }`:** devolve `{ url }` da página da Stripe. Erros: `ASSINATURA_JA_ATIVA` (409) para quem já paga, que troca pelo portal; `SERVICO_INDISPONIVEL` (503) sem preço vigente ou com a Stripe fora.
+- **`POST /assinatura/checkout` `{ plano: 'mensal' | 'anual', forma?: 'cartao' | 'pix' }`:** devolve `{ url }` da página da Stripe. Sem `forma`, o cartão (assinatura). `pix` só no anual (400 no mensal): um pagamento único de 12 meses (T-105, doc 10); quem já está no anual pago com Pix pode pagar mais 12 meses antes do fim. Erros: `ASSINATURA_JA_ATIVA` (409) para quem já paga, que troca pelo portal; `SERVICO_INDISPONIVEL` (503) sem preço vigente ou com a Stripe fora. `GET /assinatura` traz `pagoAte` no anual pago com Pix (com `proximaCobranca` nulo).
 - **`POST /assinatura/portal`:** `{ url }` do portal; `ASSINATURA_SEM_CLIENTE` (409) para quem nunca passou pelo checkout.
 - **`GET /assinatura/retorno?resultado=…`** (pública): 302 para `mony://planos?checkout=sucesso|cancelado|portal`.
 - **`POST /webhooks/stripe`** (pública): ver "Webhooks". O processamento, no worker, muda `assinaturas` na hora (RN-128) e manda os avisos do tipo `assinatura`.

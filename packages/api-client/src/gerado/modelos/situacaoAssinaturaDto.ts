@@ -16,4 +16,5 @@ export interface SituacaoAssinaturaDto {
   cancelamentoAgendado: boolean;
   testeFim: string | null;
   gerenciavel: boolean;
+  pagoAte: string | null;
 }

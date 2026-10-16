@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 
-import { usePortal } from '@/features/planos/hooks/use-cobranca';
+import { useAssinar, usePortal } from '@/features/planos/hooks/use-cobranca';
 import { usePlano } from '@/features/planos/hooks/use-plano';
 import { useDataCurta } from '@/lib/datas-texto';
 import { useFusoDoUsuario } from '@/lib/fuso';
@@ -44,16 +44,19 @@ function ItemLimite({ limite }: { limite: LimiteUso }) {
 
 /**
  * O plano pago (T-103): o valor, a próxima cobrança ou o fim, o aviso de cobrança recusada
- * (RN-131) e o [Gerenciar assinatura], que abre o portal da Stripe.
+ * (RN-131) e o [Gerenciar assinatura], que abre o portal da Stripe. O anual pago com Pix (T-105)
+ * mostra até quando vale e o [Pagar mais 12 meses com Pix], sem portal (não há assinatura).
  */
 function AssinaturaPaga({ situacao }: { situacao: SituacaoAssinaturaPaga }) {
   const { t } = useTranslation();
   const fuso = useFusoDoUsuario();
   const dataCurta = useDataCurta();
   const portal = usePortal();
+  const pix = useAssinar();
   const data = situacao.proximaCobranca
     ? dataCurta(dataNoFuso(new Date(situacao.proximaCobranca), fuso))
     : null;
+  const pagoAte = situacao.pagoAte ? dataCurta(dataNoFuso(new Date(situacao.pagoAte), fuso)) : null;
   return (
     <View className="gap-3">
       {situacao.valorCentavos !== null ? (
@@ -70,12 +73,43 @@ function AssinaturaPaga({ situacao }: { situacao: SituacaoAssinaturaPaga }) {
             : t('planos.proximaCobranca', { data })}
         </Texto>
       ) : null}
+      {pagoAte ? (
+        <View className="gap-3">
+          <Texto variante="corpo-sm" cor="suave">
+            {t('planos.pagoComPix', { data: pagoAte })}
+          </Texto>
+          <View className="gap-1.5">
+            <Botao
+              titulo={t('planos.renovarPix')}
+              variante="secundaria"
+              larguraTotal
+              carregando={pix.etapa === 'abrindo' || pix.etapa === 'confirmando'}
+              aoPressionar={() => {
+                pix.assinar('anual', 'pix');
+              }}
+            />
+            <Texto variante="legenda" cor="suave" className="text-center">
+              {t('planos.renovarPixAjuda')}
+            </Texto>
+          </View>
+          {pix.etapa === 'demorando' ? (
+            <Texto variante="corpo-sm" accessibilityLiveRegion="polite">
+              {t('planos.venda.demorando')}
+            </Texto>
+          ) : null}
+          {pix.erro ? (
+            <Texto variante="corpo-sm" cor="perigo" accessibilityLiveRegion="polite">
+              {t('planos.venda.erroCheckout')}
+            </Texto>
+          ) : null}
+        </View>
+      ) : null}
       {situacao.status === 'inadimplente' ? (
         <Texto variante="corpo-sm" cor="atencao" accessibilityLiveRegion="polite">
           {t('planos.inadimplente')}
         </Texto>
       ) : null}
-      {situacao.gerenciavel ? (
+      {situacao.gerenciavel && pagoAte === null ? (
         <View className="gap-1.5">
           <Botao
             titulo={t('planos.gerenciar')}

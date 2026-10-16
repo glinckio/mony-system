@@ -225,12 +225,28 @@ function ConteudoPlanos({ precos, uso }: { precos: PlanosAVenda; uso: UsoPlano }
               carregando={etapa === 'abrindo'}
               desabilitado={valor(escolhido) === null}
               aoPressionar={() => {
-                assinar(escolhido);
+                assinar(escolhido, 'cartao');
               }}
             />
+            {escolhido === 'anual' && anual !== null ? (
+              <Botao
+                titulo={t('planos.venda.pagarPix')}
+                variante="secundaria"
+                larguraTotal
+                desabilitado={etapa === 'abrindo'}
+                aoPressionar={() => {
+                  assinar('anual', 'pix');
+                }}
+              />
+            ) : null}
             <Texto variante="legenda" cor="suave" className="text-center">
               {t('planos.venda.rodape')}
             </Texto>
+            {escolhido === 'anual' ? (
+              <Texto variante="legenda" cor="suave" className="text-center">
+                {t('planos.venda.rodapePix')}
+              </Texto>
+            ) : null}
             <Botao
               titulo={t('planos.venda.continuarGratuito')}
               variante="fantasma"
@@ -246,7 +262,7 @@ function ConteudoPlanos({ precos, uso }: { precos: PlanosAVenda; uso: UsoPlano }
 /**
  * Planos (`/planos`, T-103), como no design do cliente: anual (escolhido) e mensal com os preços de
  * `GET /planos`, o que os pagos liberam e o [Assinar], que abre o Stripe Checkout no navegador do
- * app. É onde o [Ver planos] leva (Mony, limites, relatórios, avisos do teste). Quem já assina vai
+ * app. No anual, também o [Pagar 12 meses com Pix], um pagamento único (T-105). É onde o [Ver planos] leva (Mony, limites, relatórios, avisos do teste). Quem já assina vai
  * para "Seu plano", onde gerencia a assinatura.
  */
 export default function TelaPlanos() {

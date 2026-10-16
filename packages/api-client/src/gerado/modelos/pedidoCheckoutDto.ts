@@ -5,8 +5,10 @@
  * API do app Monitorizze e da assistente Mony.
  * OpenAPI spec version: 1
  */
+import type { PedidoCheckoutDtoForma } from './pedidoCheckoutDtoForma';
 import type { PedidoCheckoutDtoPlano } from './pedidoCheckoutDtoPlano';
 
 export interface PedidoCheckoutDto {
   plano: PedidoCheckoutDtoPlano;
+  forma?: PedidoCheckoutDtoForma;
 }
