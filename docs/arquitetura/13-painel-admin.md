@@ -80,7 +80,7 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 - **Editar** (`PUT`) vale para qualquer uma que não foi desativada. **Desativar** tira do app e não tem volta.
 - **Push opcional** (`enviar_push`): a rotina `enviar-push-novidades` roda a cada minuto. A novidade publicada que já entrou no ar, ainda vale e não teve o push enviado vai para todas as contas ativas pelo motor de alertas (tipo `novidade`, chave `novidade:<id>`, não urgente, abre a central), e grava `push_enviado_em`. A preferência da pessoa e o horário de silêncio valem como em qualquer alerta. O push sai em até um minuto depois de publicar.
 - Auditoria: `novidade.criada`, `novidade.editada` (antes e depois), `novidade.publicada` e `novidade.desativada`.
-- A tela das novidades no app (`GET /novidades`, aba na central, lidas) é a T-150.
+- No app, a novidade no ar aparece na aba Novidades da central (T-150, doc 04): as publicadas antes de a conta existir chegam lidas, e o push abre direto nessa aba.
 
 ## Mony (T-141e)
 
