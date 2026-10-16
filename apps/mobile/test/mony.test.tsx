@@ -428,6 +428,37 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
     TEMPO_LIMITE_MS,
   );
 
+  it(
+    'depois da resposta, as outras telas buscam de novo e a conversa não (T-143a)',
+    async () => {
+      fetchStreaming.mockResolvedValue(
+        respostaSse([
+          { tipo: 'texto.delta', texto: 'Pronto! Anotei R$ 45,00 em Mercado, no Pix.' },
+          { tipo: 'fim', mensagemId: '0199a000-0000-7000-8000-000000000009' },
+        ]),
+      );
+      renderizar();
+      const cliente = consultas;
+      if (!cliente) throw new Error('sem QueryClient');
+      cliente.setQueryData(['/v1/cartoes'], { itens: [] });
+      await waitFor(() => {
+        expect(cliente.getQueryState(['/v1/mony/conversa', 'paginas'])?.status).toBe('success');
+      }, ESPERA);
+
+      fireEvent.changeText(screen.getByLabelText('Mensagem para a Mony'), 'gastei 45 no mercado');
+      fireEvent.press(screen.getByRole('button', { name: 'Enviar' }));
+
+      expect(
+        await screen.findByText('Pronto! Anotei R$ 45,00 em Mercado, no Pix.', {}, ESPERA),
+      ).toBeOnTheScreen();
+      await waitFor(() => {
+        expect(cliente.getQueryState(['/v1/cartoes'])?.isInvalidated).toBe(true);
+      }, ESPERA);
+      expect(cliente.getQueryState(['/v1/mony/conversa', 'paginas'])?.isInvalidated).toBe(false);
+    },
+    TEMPO_LIMITE_MS,
+  );
+
   describe('mensagem de voz (T-064)', () => {
     const AUDIO = '0199a000-0000-7000-8000-0000000000b1';
 
