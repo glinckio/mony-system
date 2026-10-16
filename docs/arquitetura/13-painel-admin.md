@@ -51,6 +51,14 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 - `GET /admin/cupons` lista do mais novo ao mais antigo. `POST /admin/cupons` reserva o código em `cupons` (inativo), cria o cupom e o código promocional na Stripe e só então o ativa, gravando `cupom.criado` em `auditoria`; se a Stripe falhar, a reserva é desfeita. Código repetido responde 409; validade antes de hoje, 400. `POST /admin/cupons/:id/desativar` apaga o cupom na Stripe e grava `cupom.desativado`; repetir não faz nada.
 - O desconto vale na primeira cobrança (doc 10). Sem a Stripe no ambiente, responde 503.
 
+## Usuários (T-141a)
+
+- A lista busca por parte do nome, do e-mail ou do telefone (sem diferenciar maiúsculas), das contas mais novas às mais antigas, 20 por vez com [Carregar mais] (`GET /admin/usuarios?busca=&cursor=&limite=`). Mostra nome, e-mail, plano que vale agora, situação e data da conta.
+- A conta (`GET /admin/usuarios/:id`) mostra situação, plano, telefone, criação, último acesso, fuso, fim do teste ou a cobrança do plano pago, sessões ativas, logins sociais, aparelhos (com o push ligado ou não) e conexões Open Finance.
+- **Bloquear** (`POST …/bloquear`, com confirmação) põe a conta em `bloqueado`, revoga todas as sessões e grava `usuario.bloqueado`. O login responde `CONTA_BLOQUEADA` e a renovação é recusada (a sessão foi revogada); o token de acesso que já saiu vence em até 15 minutos. Nada é apagado. Admin não é bloqueado pelo painel (409): o `admin:promover --rebaixar` tira o papel antes. **Reativar** volta para `ativo` (`usuario.reativado`).
+- **Estender teste** (`POST …/estender-teste`, de 1 a 30 dias) soma os dias ao fim do teste que ainda vale, ou a agora se já acabou (a pessoa volta ao teste), e grava `usuario.teste_estendido` com o antes e o depois. Plano pago responde 409.
+- **Auditoria das visualizações:** abrir a conta grava `usuario.visualizado`; a busca com texto grava `usuarios.buscados` (o texto e quantos vieram), só na primeira página. O painel não relê a conta sozinho, para não gravar visualizações que ninguém fez.
+
 ## Telas (do PDF)
 
 | Seção | Funções |

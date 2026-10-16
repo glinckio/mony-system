@@ -6,7 +6,17 @@ import { z } from 'zod';
 
 import { SENHA_MAXIMO } from './autenticacao.js';
 import { ehDataCalendario } from './datas.js';
-import { PLANOS_PAGOS, type RecursoPlano } from './enums.js';
+import {
+  PAPEIS_USUARIO,
+  PLANOS,
+  PLANOS_PAGOS,
+  PLATAFORMAS_DISPOSITIVO,
+  PROVEDORES_LOGIN_SOCIAL,
+  type RecursoPlano,
+  STATUS_ASSINATURA,
+  STATUS_CONEXAO_OPEN_FINANCE,
+  STATUS_USUARIO,
+} from './enums.js';
 
 /** `POST /admin/auth/entrar`. */
 export const esquemaLoginAdmin = z.object({
@@ -172,6 +182,81 @@ export const esquemaCupomAdmin = z.object({
 /** `GET /admin/cupons`: do mais novo ao mais antigo. */
 export const esquemaCuponsAdmin = z.array(esquemaCupomAdmin);
 
+/** Quantas pessoas a busca do painel devolve de uma vez, no máximo. */
+export const LIMITE_PAGINA_USUARIOS_ADMIN = 100;
+
+/**
+ * `GET /admin/usuarios` (T-141a): busca por nome, e-mail ou telefone (parte do texto, sem
+ * diferenciar maiúsculas), das contas mais novas às mais antigas, com paginação por cursor.
+ */
+export const esquemaConsultaUsuariosAdmin = z.object({
+  busca: z.string().trim().max(100).optional(),
+  cursor: z.uuid().optional(),
+  limite: z.coerce.number().int().min(1).max(LIMITE_PAGINA_USUARIOS_ADMIN).default(20),
+});
+
+export const esquemaUsuarioResumoAdmin = z.object({
+  id: z.uuid(),
+  nome: z.string(),
+  email: z.string(),
+  telefone: z.string().nullable(),
+  status: z.enum(STATUS_USUARIO),
+  papel: z.enum(PAPEIS_USUARIO),
+  /** O plano que vale agora (o teste vencido já conta como gratuito). */
+  plano: z.enum(PLANOS),
+  criadoEm: z.string(),
+  ultimoAcesso: z.string().nullable(),
+});
+
+export const esquemaUsuariosAdmin = z.object({
+  itens: z.array(esquemaUsuarioResumoAdmin),
+  proximoCursor: z.string().nullable(),
+});
+
+/** `GET /admin/usuarios/:id`: a conta, o plano, os aparelhos, as sessões e as conexões. */
+export const esquemaUsuarioAdmin = esquemaUsuarioResumoAdmin.extend({
+  fusoHorario: z.string(),
+  assinatura: z
+    .object({
+      status: z.enum(STATUS_ASSINATURA),
+      testeFim: z.string().nullable(),
+      valorCentavos: z.number().int().nullable(),
+      proximaCobranca: z.string().nullable(),
+      cancelamentoAgendado: z.boolean(),
+      clienteStripe: z.boolean(),
+    })
+    .nullable(),
+  aparelhos: z.array(
+    z.object({
+      id: z.uuid(),
+      plataforma: z.enum(PLATAFORMAS_DISPOSITIVO),
+      modelo: z.string().nullable(),
+      ultimoUso: z.string().nullable(),
+      ativo: z.boolean(),
+    }),
+  ),
+  sessoesAtivas: z.number().int(),
+  loginsSociais: z.array(z.enum(PROVEDORES_LOGIN_SOCIAL)),
+  conexoes: z.array(
+    z.object({
+      id: z.uuid(),
+      instituicao: z.string(),
+      status: z.enum(STATUS_CONEXAO_OPEN_FINANCE),
+      criadoEm: z.string(),
+    }),
+  ),
+});
+
+export const DIAS_EXTENSAO_TESTE_MAXIMO = 30;
+
+/**
+ * `POST /admin/usuarios/:id/estender-teste`: soma dias ao teste grátis (a partir do fim atual, ou
+ * de agora se já acabou). Só para quem não tem plano pago.
+ */
+export const esquemaEstenderTeste = z.object({
+  dias: z.number().int().min(1).max(DIAS_EXTENSAO_TESTE_MAXIMO),
+});
+
 export type DadosLoginAdmin = z.infer<typeof esquemaLoginAdmin>;
 export type DesafioAdmin = z.infer<typeof esquemaDesafioAdmin>;
 export type Novo2fa = z.infer<typeof esquemaNovo2fa>;
@@ -187,3 +272,8 @@ export type PlanoGratuitoAdmin = z.infer<typeof esquemaPlanoGratuitoAdmin>;
 export type NovoCupom = z.infer<typeof esquemaNovoCupom>;
 export type SituacaoCupom = (typeof SITUACOES_CUPOM)[number];
 export type CupomAdmin = z.infer<typeof esquemaCupomAdmin>;
+export type ConsultaUsuariosAdmin = z.infer<typeof esquemaConsultaUsuariosAdmin>;
+export type UsuarioResumoAdmin = z.infer<typeof esquemaUsuarioResumoAdmin>;
+export type UsuariosAdmin = z.infer<typeof esquemaUsuariosAdmin>;
+export type UsuarioAdmin = z.infer<typeof esquemaUsuarioAdmin>;
+export type DadosEstenderTeste = z.infer<typeof esquemaEstenderTeste>;

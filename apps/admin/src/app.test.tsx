@@ -82,7 +82,22 @@ describe('painel admin', () => {
   });
 
   it('clicar numa seção abre a página dela e marca o item do menu', async () => {
-    vi.stubGlobal('fetch', respostaDaApi(200, { status: 'ok' }));
+    // A página de usuários busca a lista; o resto (a saúde da API no início) responde `ok`.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((entrada) => {
+        const url =
+          typeof entrada === 'string'
+            ? entrada
+            : entrada instanceof URL
+              ? entrada.href
+              : entrada.url;
+        const corpo = url.includes('/v1/admin/usuarios')
+          ? { itens: [], proximoCursor: null }
+          : { status: 'ok' };
+        return Promise.resolve(new Response(JSON.stringify(corpo), { status: 200 }));
+      }),
+    );
     const { roteador } = abrir('/');
     const menu = await screen.findByRole('navigation', { name: 'Seções do painel' });
     await userEvent.click(within(menu).getByRole('link', { name: 'Usuários' }));
