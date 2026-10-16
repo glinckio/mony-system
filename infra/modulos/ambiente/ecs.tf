@@ -98,6 +98,7 @@ locals {
     { name = "REDIS_URL", value = "rediss://${aws_elasticache_replication_group.principal.primary_endpoint_address}:6379" },
     { name = "S3_BUCKET", value = aws_s3_bucket.arquivos.bucket },
     { name = "AWS_REGION", value = local.regiao },
+    { name = "ALERTAS_TECNICOS_EMAILS", value = join(",", var.emails_alertas) },
   ]
 
   segredos_container = [

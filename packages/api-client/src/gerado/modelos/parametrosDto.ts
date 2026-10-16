@@ -7,10 +7,12 @@
  */
 import type { ParametrosDtoAlertas } from './parametrosDtoAlertas';
 import type { ParametrosDtoLigacoes } from './parametrosDtoLigacoes';
+import type { ParametrosDtoMonitoramento } from './parametrosDtoMonitoramento';
 import type { ParametrosDtoVersaoMinima } from './parametrosDtoVersaoMinima';
 
 export interface ParametrosDto {
   alertas: ParametrosDtoAlertas;
   ligacoes: ParametrosDtoLigacoes;
   versaoMinima: ParametrosDtoVersaoMinima;
+  monitoramento: ParametrosDtoMonitoramento;
 }

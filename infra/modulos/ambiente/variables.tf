@@ -153,6 +153,12 @@ variable "retencao_logs_dias" {
   default     = 30
 }
 
+variable "emails_alertas" {
+  description = "Quem recebe os alertas técnicos (fila parada, falha em webhook, custo de IA; T-142a). Vazio: só o log alerta_tecnico."
+  type        = list(string)
+  default     = []
+}
+
 # Arquivos (S3)
 
 variable "dias_exportacoes" {

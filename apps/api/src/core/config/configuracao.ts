@@ -151,6 +151,11 @@ export class Configuracao {
     return this.config.get('APPLE_CLIENT_IDS', { infer: true });
   }
 
+  /** Quem recebe os alertas técnicos (T-142a); vazio, só o log. */
+  get emailsAlertasTecnicos(): string[] {
+    return this.config.get('ALERTAS_TECNICOS_EMAILS', { infer: true });
+  }
+
   /** Remetente dos e-mails; obrigatório quando `provedorEmail` é `brevo`. */
   get remetenteEmail(): string | undefined {
     return this.config.get('EMAIL_REMETENTE', { infer: true });

@@ -87,6 +87,18 @@ Migrações: sempre compatíveis com a versão anterior (expandir → migrar →
 - Taxa de erro 5xx acima de 1% por 5 minutos.
 - Backup diário não encontrado.
 
+**Pelo worker (T-142a).** A rotina `monitorar` (módulo `monitoramento`, a cada 5 minutos) cuida de três destes alertas:
+
+| Alerta | Quando | Repete |
+|---|---|---|
+| Fila parada | O job mais antigo da lista `wait` de qualquer fila espera há mais que o limite do painel (15 min por padrão). Pega worker fora do ar e fila crescendo sem consumo | De hora em hora, enquanto continuar |
+| Falha em webhook | As filas `webhooks` (Stripe) e `open-finance` (agregador) têm jobs que esgotaram as tentativas | Só quando o número de falhas cresce; zerou, a próxima falha avisa |
+| Custo de IA | O custo do dia (São Paulo) pela tabela de preços do painel (T-141e) chega ao limite do painel (US$ 50,00 por padrão; 0 desliga). Modelo sem preço fica fora da conta e é citado no alerta | Uma vez por dia |
+
+- Cada alerta vai para o log como erro com `evento: "alerta_tecnico"` (com `tipo` e `chave`) e por e-mail para `ALERTAS_TECNICOS_EMAILS` (variável `emails_alertas` do Terraform), direto no provedor de e-mail, sem a fila `emails`: se ela for a parada, o aviso ainda sai. Sem destinatário, só o log. Se nenhum e-mail sair, a próxima volta tenta de novo.
+- O que já foi avisado fica no Redis (chaves `monitoramento:*`).
+- Cada volta escreve `evento: "monitoramento_executado"` no log. A T-142b transforma esse batimento e o `alerta_tecnico` em alarmes do CloudWatch (rotina parada, alerta sem e-mail), junto dos alarmes que só a AWS vê: API fora do ar, 5xx e backup.
+
 ## Ambiente local
 
 ```

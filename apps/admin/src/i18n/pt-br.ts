@@ -488,6 +488,9 @@ export const textosPtBr = {
     explicacaoForaDoPadrao:
       'O alerta sai quando a despesa é de pelo menos o múltiplo da média da categoria nos 90 dias antes dela, com o mínimo de lançamentos na média e o valor mínimo.',
     ligacoesEApp: 'Ligações e app',
+    monitoramento: 'Alertas técnicos',
+    explicacaoMonitoramento:
+      'O worker confere a cada 5 minutos e manda e-mail para os endereços de ALERTAS_TECNICOS_EMAILS, sem repetir o mesmo alerta.',
     campos: {
       cotaConsultoriaDiaria: 'Alertas de consultoria por dia',
       intervaloAppCompraHoras: 'Intervalo do alerta de app de compra (horas)',
@@ -497,6 +500,8 @@ export const textosPtBr = {
       limiteLigacoes: 'Ligações por mês',
       versaoIos: 'Versão mínima no iOS',
       versaoAndroid: 'Versão mínima no Android',
+      custoIaDiario: 'Custo de IA por dia (US$)',
+      filaParadaMinutos: 'Fila parada depois de (minutos)',
     },
     ajuda: {
       cotaConsultoriaDiaria: 'Dicas, gasto fora do padrão e projeção dividem a cota (RN-103).',
@@ -505,9 +510,12 @@ export const textosPtBr = {
       limiteLigacoes:
         'Por usuário do plano pago (RN-078). Vale quando o lembrete por ligação chegar.',
       versao: 'Formato 1.2.3. Abaixo dela, o app pede para atualizar.',
+      custoIaDiario:
+        'Pela tabela de preços da seção Mony, no dia de São Paulo. 0 desliga o alerta.',
+      filaParadaMinutos: 'Um job esperando há mais que isso em qualquer fila, de 5 a 1440.',
     },
     invalido:
-      'Confira os campos: números inteiros dentro dos limites, valor em reais e versões no formato 1.2.3.',
+      'Confira os campos: números inteiros dentro dos limites, valores com centavos e versões no formato 1.2.3.',
     salvar: 'Salvar',
     salvas: 'Configurações salvas.',
     erroSalvar: 'Não deu para salvar. Tente de novo.',

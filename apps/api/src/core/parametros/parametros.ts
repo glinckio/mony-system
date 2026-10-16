@@ -1,5 +1,5 @@
 import { Global, Injectable, Logger, Module } from '@nestjs/common';
-import { esquemaParametros, type Parametros } from '@mony/shared/admin';
+import { esquemaParametros, MONITORAMENTO_PADRAO, type Parametros } from '@mony/shared/admin';
 import { PARAMETROS_FORA_DO_PADRAO } from '@mony/shared/alertas';
 import { COTA_CONSULTORIA_DIARIA } from '@mony/shared/notificacoes';
 
@@ -32,7 +32,17 @@ export function parametrosPadrao(config: Configuracao): Parametros {
     },
     ligacoes: { limiteMensal: LIMITE_LIGACOES_MENSAL },
     versaoMinima: { ...config.versoesMinimasApp },
+    monitoramento: { ...MONITORAMENTO_PADRAO },
   };
+}
+
+/**
+ * Os grupos que faltam numa linha salva antes de eles existirem (ex.: `monitoramento`, T-142a)
+ * entram com o padrão; os que estão lá ficam como estão.
+ */
+export function completarComPadroes(valor: unknown, padrao: Parametros): unknown {
+  if (typeof valor !== 'object' || valor === null || Array.isArray(valor)) return valor;
+  return { ...padrao, ...valor };
 }
 
 /**
@@ -75,7 +85,7 @@ export class ParametrosService {
         select: { valor: true },
       });
       if (!linha) return this.padrao();
-      const lidos = esquemaParametros.safeParse(linha.valor);
+      const lidos = esquemaParametros.safeParse(completarComPadroes(linha.valor, this.padrao()));
       if (lidos.success) return lidos.data;
       this.log.error('configuracoes.parametros não segue o esquema; valem os padrões');
     } catch (erro) {

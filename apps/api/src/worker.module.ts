@@ -23,6 +23,7 @@ import { RascunhosModule } from './modulos/mony/rascunhos.module';
 import { PushModule } from './integracoes/push/push.module';
 import { NotificacoesModule } from './modulos/notificacoes/notificacoes.module';
 import { MetricasModule } from './modulos/metricas/metricas.module';
+import { MonitoramentoModule } from './modulos/monitoramento/monitoramento.module';
 import { NovidadesModule } from './modulos/novidades/novidades.module';
 import { ProcessadorNotificacoes } from './modulos/notificacoes/processador-notificacoes';
 import { OrcamentosModule } from './modulos/orcamentos/orcamentos.module';
@@ -65,6 +66,7 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     LembretesModule,
     NovidadesModule,
     MetricasModule,
+    MonitoramentoModule,
   ],
   providers: [
     ProcessadorEventos,
