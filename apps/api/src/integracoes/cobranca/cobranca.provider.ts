@@ -93,6 +93,22 @@ export abstract class CobrancaProvider {
    */
   abstract criarPreco(pedido: { plano: PlanoPago; valorCentavos: number }): Promise<string>;
 
+  /**
+   * Um cupom de desconto na primeira cobrança, com o código que a pessoa digita na página de
+   * pagamento (RN-130, T-104d). `expiraEm`: a partir de quando o código não vale mais. `id` é o do
+   * cupom no Mony, para repetir a chamada sem criar dois. Devolve o id do cupom no provedor.
+   * Código já usado no provedor: `ErroDominio('CONFLITO')`.
+   */
+  abstract criarCupom(pedido: {
+    id: string;
+    codigo: string;
+    percentual: number;
+    expiraEm: Date | null;
+  }): Promise<string>;
+
+  /** O código para de valer no pagamento; quem já tem o desconto fica com ele. */
+  abstract desativarCupom(cupomId: string): Promise<void>;
+
   /** Confere a assinatura do corpo bruto e traduz o evento. Lança `ErroAssinaturaWebhook`. */
   abstract lerEvento(corpo: Buffer, assinatura: string | undefined): EventoCobranca;
 }

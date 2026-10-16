@@ -78,7 +78,12 @@ function api(post: () => Promise<Response>, put?: (corpo: unknown) => Promise<Re
         enviados.push(recebido);
         return put ? put(recebido) : Promise.reject(new Error('sem PUT'));
       }
-      const dados = urlDe(entrada).includes('/v1/admin/planos/gratuito') ? GRATUITO : TABELA;
+      const url = urlDe(entrada);
+      const dados = url.includes('/v1/admin/cupons')
+        ? []
+        : url.includes('/v1/admin/planos/gratuito')
+          ? GRATUITO
+          : TABELA;
       return Promise.resolve(new Response(JSON.stringify(dados), { status: 200 }));
     }),
   );

@@ -73,6 +73,7 @@ sequenceDiagram
   - cobrança recusada (`invoice.payment_failed`), com a data da próxima tentativa;
   - renovação (`invoice.upcoming`), só para assinatura ativa sem cancelamento;
   - fim da assinatura.
+- **Cupons (RN-130, T-104d):** cada cupom do painel é um cupom da Stripe (`percent_off`, `duration: once`: o desconto vale na primeira cobrança; no anual, no primeiro ano) e um código promocional com o código do painel. O checkout já tem `allow_promotion_codes`, então a pessoa digita o código em "Adicionar código promocional". A validade vai como `redeem_by` e `expires_at` (o fim do último dia, em São Paulo). Desativar apaga o cupom na Stripe: o código para de valer e quem já usou fica com o desconto. As chamadas usam chave de idempotência com o id do cupom no Mony. **Ainda não testado na conta de teste** (só com a cobrança falsa).
 - **Configurar a conta:** `pnpm --filter api build && pnpm --filter api cobranca:configurar --mensal <centavos> --anual <centavos> [--webhook <url>]`, com `STRIPE_CHAVE_SECRETA` e `DATABASE_URL` no ambiente. O script (`src/configurar-stripe.ts`):
   - Cria ou reaproveita o produto "Monitorizze" e os preços em BRL (`lookup_key` `mony_mensal` e `mony_anual`). Um valor novo cria outro preço (RN-129).
   - Grava os preços em `planos_precos`.

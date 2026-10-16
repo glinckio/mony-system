@@ -45,6 +45,12 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 - `GET /admin/planos/gratuito` devolve tudo; `PUT /admin/planos/gratuito` grava tudo de uma vez em `limites_plano` e `configuracoes` (chave `teste.duracao_dias`) e registra `plano.gratuito_alterado` em `auditoria` com o antes e o depois. Se nada mudou, não grava nem audita.
 - Os limites valem na hora para quem está no gratuito. A duração vale para quem se cadastrar depois; quem já está no teste mantém a data de fim, e os avisos de RN-124 seguem essa data.
 
+## Cupons (T-104d)
+
+- O cartão "Cupons" cria um cupom com código (3 a 20 letras ou números, gravado em maiúsculas), desconto de 1% a 100% e, se quiser, o último dia em que vale. A lista mostra código, desconto, validade, autor e situação (ativo, vencido ou desativado), com [Desativar] e confirmação.
+- `GET /admin/cupons` lista do mais novo ao mais antigo. `POST /admin/cupons` reserva o código em `cupons` (inativo), cria o cupom e o código promocional na Stripe e só então o ativa, gravando `cupom.criado` em `auditoria`; se a Stripe falhar, a reserva é desfeita. Código repetido responde 409; validade antes de hoje, 400. `POST /admin/cupons/:id/desativar` apaga o cupom na Stripe e grava `cupom.desativado`; repetir não faz nada.
+- O desconto vale na primeira cobrança (doc 10). Sem a Stripe no ambiente, responde 503.
+
 ## Telas (do PDF)
 
 | Seção | Funções |

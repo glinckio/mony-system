@@ -172,7 +172,7 @@ Legenda: **(PDF)** está na especificação · **(decisão técnica)** definido 
 - **RN-127 (PDF)** Nenhum dado é apagado ao ir para o gratuito; histórico continua visível. Itens acima do limite (ex.: 3 cartões) continuam visíveis e editáveis, mas não dá para criar novos **(decisão técnica; confirmar com cliente)**.
 - **RN-128 (PDF)** Assinatura paga libera tudo na hora (status atualizado pelo webhook; o app consulta `GET /assinatura` após o checkout).
 - **RN-129 (PDF)** Novo preço no admin cria novo `Price` na Stripe e o marca como vigente. Assinaturas existentes ficam no preço antigo. Histórico com data e autor.
-- **RN-130 (PDF)** Cupons criados pelo admin (espelhados na Stripe) e aplicados no pagamento.
+- **RN-130 (PDF)** Cupons criados pelo admin (espelhados na Stripe) e aplicados no pagamento. O desconto é percentual e vale na primeira cobrança **(decisão técnica, T-104d)**.
 - **RN-131 (PDF)** Inadimplência: pagamento recusado gera alerta de assinatura. Após o fim das tentativas da Stripe, o usuário volta para o gratuito **(decisão técnica: período de carência segue a configuração de retentativas da Stripe)**.
 
 ## Open Finance

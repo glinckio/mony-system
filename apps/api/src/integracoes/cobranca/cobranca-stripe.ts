@@ -8,6 +8,7 @@ import {
   type EventoCobranca,
 } from './cobranca.provider';
 import { criarPrecoVigente } from './configuracao-stripe';
+import { criarCupomStripe, desativarCupomStripe } from './cupons-stripe';
 import { assinaturaDaStripe, eventoDaStripe } from './traducao-stripe';
 
 /** Tempo máximo de cada chamada à Stripe; o app espera a resposta do checkout. */
@@ -80,6 +81,19 @@ export class CobrancaStripe extends CobrancaProvider {
 
   criarPreco(pedido: { plano: PlanoPago; valorCentavos: number }): Promise<string> {
     return criarPrecoVigente(this.stripe, pedido.plano, pedido.valorCentavos);
+  }
+
+  criarCupom(pedido: {
+    id: string;
+    codigo: string;
+    percentual: number;
+    expiraEm: Date | null;
+  }): Promise<string> {
+    return criarCupomStripe(this.stripe, pedido);
+  }
+
+  desativarCupom(cupomId: string): Promise<void> {
+    return desativarCupomStripe(this.stripe, cupomId);
   }
 
   async buscarAssinatura(id: string): Promise<AssinaturaExterna | null> {
