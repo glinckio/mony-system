@@ -28,11 +28,18 @@ type Campo =
   | 'versaoIos'
   | 'versaoAndroid'
   | 'custoIaDiario'
-  | 'filaParadaMinutos';
+  | 'filaParadaMinutos'
+  | 'diasArquivos';
 /** O formulário guarda texto. */
 type Campos = Record<Campo, string>;
 
-function camposDe({ alertas, ligacoes, versaoMinima, monitoramento }: Parametros): Campos {
+function camposDe({
+  alertas,
+  ligacoes,
+  versaoMinima,
+  monitoramento,
+  retencao,
+}: Parametros): Campos {
   return {
     cotaConsultoriaDiaria: String(alertas.cotaConsultoriaDiaria),
     intervaloAppCompraHoras: String(alertas.intervaloAppCompraHoras),
@@ -44,6 +51,7 @@ function camposDe({ alertas, ligacoes, versaoMinima, monitoramento }: Parametros
     versaoAndroid: versaoMinima.android,
     custoIaDiario: formatarCentavos(monitoramento.custoIaDiarioCentavos, { simbolo: false }),
     filaParadaMinutos: String(monitoramento.filaParadaMinutos),
+    diasArquivos: String(retencao.diasArquivos),
   };
 }
 
@@ -67,13 +75,15 @@ function parametrosDe(campos: Campos): Parametros | null {
       custoIaDiarioCentavos: textoParaCentavos(campos.custoIaDiario) ?? NaN,
       filaParadaMinutos: inteiro(campos.filaParadaMinutos),
     },
+    retencao: { diasArquivos: inteiro(campos.diasArquivos) },
   });
   return lidos.success ? lidos.data : null;
 }
 
 /**
  * Configurações (T-141g, doc 13): parâmetros dos alertas (RN-103, RN-104, RN-106), limite mensal
- * de ligações (RN-078), versão mínima do app e limites dos alertas técnicos (T-142a). Valem na
+ * de ligações (RN-078), versão mínima do app, limites dos alertas técnicos (T-142a) e prazo de
+ * retenção de fotos, documentos e áudios (RN-162, T-140c). Valem na
  * API e no worker em até 30 s.
  */
 function Configuracoes() {
@@ -194,6 +204,17 @@ function Formulario({ configuracoes }: { configuracoes: ConfiguracoesAdmin }) {
         <CardContent className="flex flex-wrap gap-6">
           {campo('custoIaDiario', t('configuracoes.ajuda.custoIaDiario'))}
           {campo('filaParadaMinutos', t('configuracoes.ajuda.filaParadaMinutos'))}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <h2>{t('configuracoes.retencao')}</h2>
+          </CardTitle>
+          <CardDescription>{t('configuracoes.explicacaoRetencao')}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-6">
+          {campo('diasArquivos', t('configuracoes.ajuda.diasArquivos'))}
         </CardContent>
       </Card>
       <div className="flex items-center gap-4">

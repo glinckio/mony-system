@@ -1,5 +1,10 @@
 import { Global, Injectable, Logger, Module } from '@nestjs/common';
-import { esquemaParametros, MONITORAMENTO_PADRAO, type Parametros } from '@mony/shared/admin';
+import {
+  esquemaParametros,
+  MONITORAMENTO_PADRAO,
+  type Parametros,
+  RETENCAO_ARQUIVOS_DIAS_PADRAO,
+} from '@mony/shared/admin';
 import { PARAMETROS_FORA_DO_PADRAO } from '@mony/shared/alertas';
 import { COTA_CONSULTORIA_DIARIA } from '@mony/shared/notificacoes';
 
@@ -33,6 +38,7 @@ export function parametrosPadrao(config: Configuracao): Parametros {
     ligacoes: { limiteMensal: LIMITE_LIGACOES_MENSAL },
     versaoMinima: { ...config.versoesMinimasApp },
     monitoramento: { ...MONITORAMENTO_PADRAO },
+    retencao: { diasArquivos: RETENCAO_ARQUIVOS_DIAS_PADRAO },
   };
 }
 

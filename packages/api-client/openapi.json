@@ -9189,13 +9189,27 @@
                   "custoIaDiarioCentavos",
                   "filaParadaMinutos"
                 ]
+              },
+              "retencao": {
+                "type": "object",
+                "properties": {
+                  "diasArquivos": {
+                    "type": "integer",
+                    "minimum": 30,
+                    "maximum": 3650
+                  }
+                },
+                "required": [
+                  "diasArquivos"
+                ]
               }
             },
             "required": [
               "alertas",
               "ligacoes",
               "versaoMinima",
-              "monitoramento"
+              "monitoramento",
+              "retencao"
             ]
           },
           "alteradoEm": {
@@ -9333,13 +9347,27 @@
               "custoIaDiarioCentavos",
               "filaParadaMinutos"
             ]
+          },
+          "retencao": {
+            "type": "object",
+            "properties": {
+              "diasArquivos": {
+                "type": "integer",
+                "minimum": 30,
+                "maximum": 3650
+              }
+            },
+            "required": [
+              "diasArquivos"
+            ]
           }
         },
         "required": [
           "alertas",
           "ligacoes",
           "versaoMinima",
-          "monitoramento"
+          "monitoramento",
+          "retencao"
         ]
       },
       "PedidoAcaoMonyDto": {

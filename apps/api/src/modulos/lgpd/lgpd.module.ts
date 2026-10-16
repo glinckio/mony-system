@@ -9,10 +9,13 @@ import { ExclusaoContaService } from './exclusao-conta.service';
 import { ExportacaoDadosRepository } from './exportacao-dados.repository';
 import { ExportacaoDadosService } from './exportacao-dados.service';
 import { LgpdController } from './lgpd.controller';
+import { RetencaoArquivosRepository } from './retencao-arquivos.repository';
+import { RetencaoArquivosService } from './retencao-arquivos.service';
 
 /**
- * LGPD (doc 11): exportar os dados (RN-160) e excluir a conta (RN-161). O worker registra o
- * `ProcessadorPrivacidade`, que gera os arquivos e faz as exclusões com os Services daqui.
+ * LGPD (doc 11): exportar os dados (RN-160), excluir a conta (RN-161) e a retenção dos arquivos
+ * (RN-162, rotina `limpar-arquivos`). O worker registra o `ProcessadorPrivacidade`, que gera os
+ * arquivos e faz as exclusões com os Services daqui.
  */
 @Module({
   imports: [FilasModule, EmailModule, AssinaturasModule],
@@ -23,6 +26,8 @@ import { LgpdController } from './lgpd.controller';
     ExclusaoContaService,
     ExclusaoContaRepository,
     RecuperacaoSenhaRepository,
+    RetencaoArquivosService,
+    RetencaoArquivosRepository,
   ],
   exports: [ExportacaoDadosService, ExclusaoContaService],
 })

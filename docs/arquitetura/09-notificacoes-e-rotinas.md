@@ -106,6 +106,7 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 | Sincronização de agendas externas | A cada 15 min | Google e Microsoft (prefira webhooks/delta quando disponíveis) |
 | Liberação do silêncio (`liberar-silencio`) | A cada 15 min | Envia alertas adiados cujo silêncio terminou; mais de 3 para o mesmo usuário saem num envio agrupado. Implementada na T-080 |
 | Limpeza | Diária 03:00 | Rascunhos, códigos, sessões expiradas; arquivos fora do prazo de retenção (RN-162). Os rascunhos da Mony já saem na `limpar-rascunhos` (T-061, RN-088) |
+| Retenção de arquivos (`limpar-arquivos`) | Diária 03:30 | Apaga do S3 as fotos, documentos e áudios enviados há mais dias que o prazo do painel (padrão 90, RN-162) e tira a linha de `anexos`; o lançamento fica. Implementada na T-140c |
 | Backup check | Diária | Confere que o snapshot do banco existe (alerta se não) |
 
 ## Central de notificações

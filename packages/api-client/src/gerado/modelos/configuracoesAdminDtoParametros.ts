@@ -8,6 +8,7 @@
 import type { ConfiguracoesAdminDtoParametrosAlertas } from './configuracoesAdminDtoParametrosAlertas';
 import type { ConfiguracoesAdminDtoParametrosLigacoes } from './configuracoesAdminDtoParametrosLigacoes';
 import type { ConfiguracoesAdminDtoParametrosMonitoramento } from './configuracoesAdminDtoParametrosMonitoramento';
+import type { ConfiguracoesAdminDtoParametrosRetencao } from './configuracoesAdminDtoParametrosRetencao';
 import type { ConfiguracoesAdminDtoParametrosVersaoMinima } from './configuracoesAdminDtoParametrosVersaoMinima';
 
 export type ConfiguracoesAdminDtoParametros = {
@@ -15,4 +16,5 @@ export type ConfiguracoesAdminDtoParametros = {
   ligacoes: ConfiguracoesAdminDtoParametrosLigacoes;
   versaoMinima: ConfiguracoesAdminDtoParametrosVersaoMinima;
   monitoramento: ConfiguracoesAdminDtoParametrosMonitoramento;
+  retencao: ConfiguracoesAdminDtoParametrosRetencao;
 };

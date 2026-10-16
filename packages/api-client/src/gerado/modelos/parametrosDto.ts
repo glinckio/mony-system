@@ -8,6 +8,7 @@
 import type { ParametrosDtoAlertas } from './parametrosDtoAlertas';
 import type { ParametrosDtoLigacoes } from './parametrosDtoLigacoes';
 import type { ParametrosDtoMonitoramento } from './parametrosDtoMonitoramento';
+import type { ParametrosDtoRetencao } from './parametrosDtoRetencao';
 import type { ParametrosDtoVersaoMinima } from './parametrosDtoVersaoMinima';
 
 export interface ParametrosDto {
@@ -15,4 +16,5 @@ export interface ParametrosDto {
   ligacoes: ParametrosDtoLigacoes;
   versaoMinima: ParametrosDtoVersaoMinima;
   monitoramento: ParametrosDtoMonitoramento;
+  retencao: ParametrosDtoRetencao;
 }

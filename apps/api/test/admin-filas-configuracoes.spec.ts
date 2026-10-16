@@ -140,6 +140,7 @@ describe('parâmetros do painel (T-141g)', () => {
     ligacoes: { limiteMensal: 4 },
     versaoMinima: { ios: '2.0.0', android: '2.1.0' },
     monitoramento: { custoIaDiarioCentavos: 10_000, filaParadaMinutos: 30 },
+    retencao: { diasArquivos: 180 },
   };
 
   function servico(ler: () => Promise<unknown>) {
@@ -160,6 +161,7 @@ describe('parâmetros do painel (T-141g)', () => {
       ligacoes: { limiteMensal: 10 },
       versaoMinima: { ios: '1.0.0', android: '1.1.0' },
       monitoramento: { custoIaDiarioCentavos: 5_000, filaParadaMinutos: 15 },
+      retencao: { diasArquivos: 90 },
     });
     expect(findUnique).toHaveBeenCalledWith(
       expect.objectContaining({ where: { chave: CONFIGURACAO_PARAMETROS } }),
@@ -183,10 +185,12 @@ describe('parâmetros do painel (T-141g)', () => {
   it('T-142a linha salva antes do monitoramento: os grupos que faltam entram com o padrão', async () => {
     const antigos: Partial<Parametros> = { ...salvos };
     delete antigos.monitoramento;
+    delete antigos.retencao;
     const { parametros } = servico(() => Promise.resolve({ valor: antigos }));
     expect(await parametros.obter()).toEqual({
       ...antigos,
       monitoramento: { custoIaDiarioCentavos: 5_000, filaParadaMinutos: 15 },
+      retencao: { diasArquivos: 90 },
     });
   });
 
