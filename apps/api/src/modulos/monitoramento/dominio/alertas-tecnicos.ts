@@ -89,3 +89,39 @@ export function alertaDoCustoIa(
       `${dolares(limiteCentavos)} do painel.${semPreco} Veja o custo por modelo na seção Mony.`,
   };
 }
+
+/** Unidades do CloudWatch usadas aqui. */
+export type UnidadeMetrica = 'Count' | 'None';
+
+/**
+ * Linha de log no Embedded Metric Format (T-142d, doc 12): o CloudWatch Logs tira dela as
+ * métricas, sem chamar a API do CloudWatch. As dimensões e os valores ficam no nível de cima da
+ * linha, ao lado do `_aws`. Fora da AWS é só um log.
+ */
+export function linhaDeMetricas(dados: {
+  namespace: string;
+  instante: Date;
+  dimensoes: Record<string, string>;
+  metricas: Record<string, { valor: number; unidade: UnidadeMetrica }>;
+}): Record<string, unknown> {
+  const valores = Object.fromEntries(
+    Object.entries(dados.metricas).map(([nome, { valor }]) => [nome, valor]),
+  );
+  return {
+    _aws: {
+      Timestamp: dados.instante.getTime(),
+      CloudWatchMetrics: [
+        {
+          Namespace: dados.namespace,
+          Dimensions: [Object.keys(dados.dimensoes)],
+          Metrics: Object.entries(dados.metricas).map(([nome, { unidade }]) => ({
+            Name: nome,
+            Unit: unidade,
+          })),
+        },
+      ],
+    },
+    ...dados.dimensoes,
+    ...valores,
+  };
+}

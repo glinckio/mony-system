@@ -156,6 +156,11 @@ export class Configuracao {
     return this.config.get('ALERTAS_TECNICOS_EMAILS', { infer: true });
   }
 
+  /** Namespace das métricas no CloudWatch (T-142d), ex.: `Mony/staging`. */
+  get namespaceMetricas(): string {
+    return this.config.get('METRICAS_NAMESPACE', { infer: true });
+  }
+
   /** Remetente dos e-mails; obrigatório quando `provedorEmail` é `brevo`. */
   get remetenteEmail(): string | undefined {
     return this.config.get('EMAIL_REMETENTE', { infer: true });

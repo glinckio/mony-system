@@ -74,9 +74,15 @@ Migrações: sempre compatíveis com a versão anterior (expandir → migrar →
 |---|---|
 | Erros do app e do servidor | Sentry (projetos `mobile`, `api`, `worker`, `admin`) com releases e source maps |
 | Logs centralizados | CloudWatch Logs (JSON do pino) com `requestId`, `usuarioId` (hash) e rota |
-| Métricas | Tempo de resposta e falhas por rota, tamanho e falhas de filas (BullMQ → CloudWatch/Prometheus), custo de IA por dia |
+| Métricas | Tempo de resposta e falhas por rota, tamanho e falhas de filas (BullMQ → CloudWatch), custo de IA por dia. Ver "Métricas (T-142d)" abaixo |
 | Painel de filas | Bull Board protegido no admin |
 | Analítica de produto | PostHog: cadastros, conclusão do onboarding, uso da Mony, retenção, conversão |
+
+### Métricas (T-142d)
+
+- **Por rota:** o log de cada requisição da API (pino-http) leva `rota`, o padrão da rota (ex.: `/v1/transacoes/:id`), além de `responseTime` e `res.statusCode`. Tempo de resposta e falhas por rota saem do CloudWatch Logs Insights, nas consultas salvas `mony-<ambiente>/tempo-de-resposta-por-rota` e `mony-<ambiente>/falhas-por-rota`. Uma métrica por rota custaria uns US$ 0,30 por métrica por mês, vezes as rotas; a consulta só cobra quando roda.
+- **Filas e custo de IA:** a rotina `monitorar` escreve no log do worker, no Embedded Metric Format, as métricas `Aguardando` e `Falhos` por `Fila` e `CustoIaHojeCentavosDolar` (o custo acumulado do dia em São Paulo: o máximo do dia é o custo do dia), no namespace `Mony/<ambiente>` (`METRICAS_NAMESPACE`). O CloudWatch Logs cria as métricas a partir do log, sem chamada à API.
+- **Painel:** o painel `mony-<ambiente>` do CloudWatch (output `painel`) junta tempo de resposta e 5xx do ALB, as filas, o custo de IA por dia e as duas consultas por rota.
 
 ### Alertas para o responsável técnico
 

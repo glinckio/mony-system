@@ -60,3 +60,8 @@ output "topico_alertas" {
   description = "Tópico SNS dos alarmes (T-142b). Outros assinantes (Slack, SMS) entram por ele."
   value       = aws_sns_topic.alertas.arn
 }
+
+output "painel" {
+  description = "Painel do CloudWatch com a API, as filas e o custo de IA (T-142d)."
+  value       = "https://${local.regiao}.console.aws.amazon.com/cloudwatch/home?region=${local.regiao}#dashboards/dashboard/${aws_cloudwatch_dashboard.principal.dashboard_name}"
+}

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { IncomingMessage } from 'node:http';
 
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Logger } from 'nestjs-pino';
@@ -9,6 +10,12 @@ import { AdaptadorTempoReal } from './core/tempo-real/adaptador-tempo-real';
 
 export const PREFIXO_GLOBAL = 'v1';
 export const CABECALHO_ID_REQUISICAO = 'x-request-id';
+
+/**
+ * A requisição do Node com o padrão da rota que atendeu (ex.: `/v1/transacoes/:id`), para o log de
+ * cada requisição agrupar por rota sem os ids (T-142d). Sem rota (404), fica sem.
+ */
+export type RequisicaoComRota = IncomingMessage & { rota?: string };
 
 /**
  * Guarda o corpo bruto do JSON em `request.rawBody`, além do corpo lido: o webhook da Stripe
@@ -23,7 +30,8 @@ class AdaptadorFastifyComCorpoBruto extends FastifyAdapter {
 
 /**
  * Adaptador Fastify da API. Cada requisição recebe um id: o `x-request-id` que veio (ex.: do ALB)
- * ou um UUID novo. O id volta no cabeçalho da resposta e aparece como `reqId` nos logs.
+ * ou um UUID novo. O id volta no cabeçalho da resposta e aparece como `reqId` nos logs, junto da
+ * `rota` (o padrão, sem os ids).
  */
 export function criarAdaptadorFastify(): FastifyAdapter {
   const adaptador = new AdaptadorFastifyComCorpoBruto({
@@ -35,6 +43,7 @@ export function criarAdaptadorFastify(): FastifyAdapter {
   });
   adaptador.getInstance().addHook('onRequest', (requisicao, resposta, pronto) => {
     void resposta.header(CABECALHO_ID_REQUISICAO, requisicao.id);
+    (requisicao.raw as RequisicaoComRota).rota = requisicao.routeOptions.url;
     pronto();
   });
   return adaptador;

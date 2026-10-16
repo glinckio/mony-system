@@ -1,5 +1,6 @@
 /** Alertas técnicos do worker (T-142a, doc 12): quando alertam, para quem e sem repetir. */
 import { getQueueToken } from '@nestjs/bullmq';
+import { Logger } from '@nestjs/common';
 import type { ModuleRef } from '@nestjs/core';
 import { MONITORAMENTO_PADRAO, type Parametros } from '@mony/shared/admin';
 import type { Redis } from 'ioredis';
@@ -15,6 +16,7 @@ import {
   alertaDeFilaParada,
   alertaDoCustoIa,
   dolares,
+  linhaDeMetricas,
 } from '../src/modulos/monitoramento/dominio/alertas-tecnicos';
 import type { MonitoramentoRepository } from '../src/modulos/monitoramento/monitoramento.repository';
 import { MonitoramentoService } from '../src/modulos/monitoramento/monitoramento.service';
@@ -49,6 +51,37 @@ describe('alertas técnicos: decisão (T-142a)', () => {
     expect(alerta?.assunto).toBe('Custo de IA de hoje passou de US$ 50,00');
     expect(alerta?.texto).toContain('já é US$ 50,00');
     expect(alerta?.texto).toContain('modelo-novo');
+  });
+
+  it('T-142d a linha de métricas segue o Embedded Metric Format do CloudWatch', () => {
+    expect(
+      linhaDeMetricas({
+        namespace: 'Mony/staging',
+        instante: new Date('2026-10-16T15:00:00Z'),
+        dimensoes: { Fila: 'emails' },
+        metricas: {
+          Aguardando: { valor: 3, unidade: 'Count' },
+          Falhos: { valor: 0, unidade: 'Count' },
+        },
+      }),
+    ).toEqual({
+      _aws: {
+        Timestamp: Date.parse('2026-10-16T15:00:00Z'),
+        CloudWatchMetrics: [
+          {
+            Namespace: 'Mony/staging',
+            Dimensions: [['Fila']],
+            Metrics: [
+              { Name: 'Aguardando', Unit: 'Count' },
+              { Name: 'Falhos', Unit: 'Count' },
+            ],
+          },
+        ],
+      },
+      Fila: 'emails',
+      Aguardando: 3,
+      Falhos: 0,
+    });
   });
 
   it('dólares com vírgula e milhar', () => {
@@ -111,6 +144,7 @@ function cenario(opcoes: { emails?: string[]; custo?: number } = {}) {
     {
       emailsAlertasTecnicos: opcoes.emails ?? ['tecnico@exemplo.test'],
       urlPublicaApi: 'https://api.staging.exemplo.test',
+      namespaceMetricas: 'Mony/teste',
     } as Configuracao,
     clock,
     redis as unknown as Redis,
@@ -177,7 +211,7 @@ describe('rotina monitorar (T-142a)', () => {
   });
 
   it('T-142a custo de IA de hoje (São Paulo) acima do limite avisa uma vez no dia', async () => {
-    const { servico, clock, custoIa, monitoramento } = cenario({ custo: 7_500 });
+    const { servico, clock, custoIa, monitoramento, redis } = cenario({ custo: 7_500 });
     const [alerta] = await servico.monitorar(clock.agora());
     expect(alerta).toMatchObject({ tipo: 'custo_ia', chave: '2026-10-16' });
     expect(custoIa).toHaveBeenCalledWith(
@@ -186,11 +220,10 @@ describe('rotina monitorar (T-142a)', () => {
     );
     expect(await servico.monitorar(clock.agora())).toEqual([]);
 
-    // Limite 0 desliga: nem consulta o custo.
+    // Limite 0 desliga o alerta (o custo continua indo para a métrica).
     monitoramento.custoIaDiarioCentavos = 0;
-    custoIa.mockClear();
+    redis.dados.clear();
     expect(await servico.monitorar(clock.agora())).toEqual([]);
-    expect(custoIa).not.toHaveBeenCalled();
   });
 
   it('T-142a sem destinatário, só o log; com o e-mail fora, tenta de novo na próxima volta', async () => {
@@ -205,6 +238,35 @@ describe('rotina monitorar (T-142a)', () => {
     expect(await servico.monitorar(clock.agora())).toEqual([]);
     expect(await servico.monitorar(clock.agora())).toHaveLength(1);
     expect(enviar).toHaveBeenCalledTimes(2);
+  });
+
+  it('T-142d cada volta escreve as métricas de cada fila e o custo de IA de hoje', async () => {
+    const { servico, clock, fila } = cenario({ custo: 1_234 });
+    fila('emails').aguardando = 4;
+    fila('webhooks').falhos = 2;
+    const log = vi.spyOn(Logger.prototype, 'log');
+    await servico.monitorar(clock.agora());
+    const metricas = log.mock.calls
+      .map(([linha]) => linha as Record<string, unknown>)
+      .filter((linha) => linha.evento === 'metricas');
+    log.mockRestore();
+    expect(metricas).toHaveLength(Object.values(FILAS).length + 1);
+    expect(metricas).toContainEqual(
+      expect.objectContaining({ Fila: 'emails', Aguardando: 4, Falhos: 0 }),
+    );
+    expect(metricas).toContainEqual(
+      expect.objectContaining({ Fila: 'webhooks', Aguardando: 0, Falhos: 2 }),
+    );
+    expect(metricas).toContainEqual(
+      expect.objectContaining({
+        CustoIaHojeCentavosDolar: 1_234,
+        _aws: expect.objectContaining({
+          CloudWatchMetrics: [
+            expect.objectContaining({ Namespace: 'Mony/teste', Dimensions: [[]] }),
+          ],
+        }) as unknown,
+      }),
+    );
   });
 
   it('T-142a uma verificação com erro não impede as outras', async () => {
