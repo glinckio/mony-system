@@ -12,6 +12,20 @@ export const textosNotificacoes = {
     paguei: 'Paguei',
   },
   titulo: 'Notificações',
+  abas: 'Alertas ou novidades',
+  abaAlertas: 'Alertas',
+  abaNovidades: 'Novidades',
+  /** "Novidades (2)". */
+  abaNovidadesNovas: 'Novidades ({{quantidade}})',
+  novidades: {
+    vazia: 'Nenhuma novidade por enquanto.',
+    erro: 'Não consegui carregar as novidades.',
+    selo: 'Nova',
+    /** Leitor de tela: "Nova: Agora com metas". */
+    nova: 'Nova: {{titulo}}',
+    video: 'Assistir ao vídeo',
+    assistir: 'Assistir ao vídeo: {{titulo}}',
+  },
   todas: 'Todas',
   naoLidas: 'Não lidas',
   filtro: 'Quais notificações',

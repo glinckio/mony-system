@@ -89,7 +89,7 @@ describe('PushNovidades.enviar', () => {
       urgente: false,
       titulo: 'Novo relatório',
       corpo: 'Veja o que mudou.',
-      linkInterno: 'mony://notificacoes',
+      linkInterno: 'mony://notificacoes?aba=novidades',
       vaiParaChat: false,
     });
     expect(marcadas).toEqual(['n1']);

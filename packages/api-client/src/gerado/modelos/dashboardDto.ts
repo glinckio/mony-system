@@ -24,4 +24,9 @@ export interface DashboardDto {
    * @maximum 9007199254740991
    */
   notificacoesNaoLidas: number;
+  /**
+   * @minimum -9007199254740991
+   * @maximum 9007199254740991
+   */
+  novidadesNaoLidas: number;
 }

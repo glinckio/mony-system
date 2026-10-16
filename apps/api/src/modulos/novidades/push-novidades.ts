@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { LINKS_INTERNOS } from '@mony/shared/alertas';
 
 import { Rotina } from '../../core/rotinas/rotinas';
 import { MotorAlertas } from '../notificacoes/motor-alertas';
@@ -51,7 +52,7 @@ export class PushNovidades {
           urgente: false,
           titulo: novidade.titulo,
           corpo: corpoDoPush(novidade.descricao),
-          linkInterno: 'mony://notificacoes',
+          linkInterno: LINKS_INTERNOS.novidades(),
           vaiParaChat: false,
         })),
         agora,

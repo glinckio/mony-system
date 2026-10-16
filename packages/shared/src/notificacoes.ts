@@ -81,6 +81,27 @@ export const esquemaPaginaNotificacoes = z.object({
   naoLidas: z.number().int(),
 });
 
+/** Quantas novidades no ar o app mostra (T-150). */
+export const MAXIMO_NOVIDADES_APP = 50;
+
+/** Uma novidade no ar (T-150, doc 13), na aba Novidades da central. */
+export const esquemaNovidade = z.object({
+  id: z.uuid(),
+  titulo: z.string(),
+  descricao: z.string(),
+  /** Link do YouTube ou do Vimeo. */
+  videoUrl: z.string().nullable(),
+  publicadaEm: z.string(),
+  /** Lida, ou publicada antes de a conta existir. */
+  lida: z.boolean(),
+});
+
+/** `GET /novidades`: as no ar, da mais nova para a mais antiga. */
+export const esquemaNovidades = z.object({
+  itens: z.array(esquemaNovidade),
+  naoLidas: z.number().int(),
+});
+
 export const esquemaConsultaNotificacoes = z.object({
   tipo: z.enum(TIPOS_ALERTA).optional(),
   /** Só as não lidas. */
@@ -128,6 +149,8 @@ export const esquemaAtualizacaoPreferenciasAlerta = z.object({
 });
 
 export type Notificacao = z.infer<typeof esquemaNotificacao>;
+export type Novidade = z.infer<typeof esquemaNovidade>;
+export type Novidades = z.infer<typeof esquemaNovidades>;
 export type PaginaNotificacoes = z.infer<typeof esquemaPaginaNotificacoes>;
 export type ConsultaNotificacoes = z.infer<typeof esquemaConsultaNotificacoes>;
 export type PreferenciasAlerta = z.infer<typeof esquemaPreferenciasAlerta>;

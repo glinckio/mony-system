@@ -1,15 +1,19 @@
 import {
   atualizarPreferenciasAlerta,
   getListarNotificacoesQueryKey,
+  getListarNovidadesQueryKey,
   getObterDashboardQueryKey,
   getObterPreferenciasAlertaQueryKey,
   listarNotificacoes,
+  listarNovidades,
   marcarLidaNotificacoes,
+  marcarLidaNovidades,
   marcarTodasNotificacoes,
   obterPreferenciasAlerta,
 } from '@mony/api-client';
 import type {
   DadosAtualizacaoPreferenciasAlerta,
+  Novidades,
   PaginaNotificacoes,
   PreferenciasAlerta,
 } from '@mony/shared/notificacoes';
@@ -62,6 +66,30 @@ export function useMarcarTodas() {
   return useMutation({
     mutationFn: () => marcarTodasNotificacoes(),
     onSuccess: atualizar,
+  });
+}
+
+/** A aba Novidades (`GET /novidades`, T-150): as no ar, da mais nova para a mais antiga. */
+export function useNovidades() {
+  return useQuery({
+    queryKey: getListarNovidadesQueryKey(),
+    queryFn: ({ signal }) => listarNovidades({ signal }) as Promise<Novidades>,
+  });
+}
+
+/** Marca as novidades como lidas, uma a uma, e depois atualiza a aba e o sino do Início. */
+export function useLerNovidades() {
+  const cliente = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: readonly string[]) => {
+      for (const id of ids) await marcarLidaNovidades(id);
+    },
+    onSettled: async () => {
+      await Promise.all([
+        cliente.invalidateQueries({ queryKey: getListarNovidadesQueryKey() }),
+        cliente.invalidateQueries({ queryKey: getObterDashboardQueryKey() }),
+      ]);
+    },
   });
 }
 

@@ -9,7 +9,13 @@ const ID = '[0-9a-fA-F-]{36}';
  */
 const ROTAS: readonly { padrao: RegExp; rota: (partes: string[], consulta: string) => Href }[] = [
   { padrao: /^inicio$/, rota: () => '/' },
-  { padrao: /^notificacoes$/, rota: () => '/notificacoes' },
+  {
+    padrao: /^notificacoes$/,
+    rota: (_partes, consulta) =>
+      /(?:^|&)aba=novidades(?:&|$)/.test(consulta)
+        ? { pathname: '/notificacoes', params: { aba: 'novidades' } }
+        : '/notificacoes',
+  },
   { padrao: /^mony$/, rota: () => '/mony' },
   { padrao: /^planos$/, rota: () => '/planos' },
   { padrao: new RegExp(`^cartoes/${ID}$`), rota: ([, id]) => `/cartoes/${id ?? ''}` },

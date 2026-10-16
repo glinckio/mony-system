@@ -1,29 +1,74 @@
 import { dataNoFuso, horaNoFuso } from '@mony/shared/datas';
 import type { Notificacao } from '@mony/shared/notificacoes';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import type { Novidade } from '@mony/shared/notificacoes';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
+import { ActivityIndicator, FlatList, Linking, Pressable, View } from 'react-native';
 
 import {
+  useLerNovidades,
   useMarcarLida,
   useMarcarTodas,
   useNotificacoes,
+  useNovidades,
 } from '@/features/notificacoes/hooks/use-notificacoes';
 import { useDataCurta } from '@/lib/datas-texto';
 import { useFusoDoUsuario } from '@/lib/fuso';
 import { rotaDoLink } from '@/lib/links-internos';
-import { Botao, Cabecalho, juntarClasses, Segmentado, Tela, Texto, Vazio } from '@/ui';
+import { Botao, Cabecalho, Icone, juntarClasses, Segmentado, Tela, Texto, Vazio } from '@/ui';
 import { cores } from '@/ui/tokens';
 
 type Filtro = 'todas' | 'naoLidas';
+type Aba = 'alertas' | 'novidades';
 
 /**
- * Central de notificações (doc 09, T-087): da mais nova para a mais antiga, as não lidas com o
- * ponto. Tocar marca como lida e abre a tela do link (RN-105); "Marcar todas como lidas" limpa o
- * ponto do sino do Início.
+ * Central de notificações (doc 09): a aba Alertas (T-087) e a aba Novidades (T-150). O push de uma
+ * novidade abre direto nela (`mony://notificacoes?aba=novidades`).
  */
 export default function TelaNotificacoes() {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const parametros = useLocalSearchParams<{ aba?: string }>();
+  const [aba, definirAba] = useState<Aba>(parametros.aba === 'novidades' ? 'novidades' : 'alertas');
+  const novidades = useNovidades();
+  const novidadesNaoLidas = novidades.data?.naoLidas ?? 0;
+
+  return (
+    <Tela className="px-4 pt-2">
+      <Cabecalho
+        titulo={t('notificacoes.titulo')}
+        aoVoltar={() => {
+          router.back();
+        }}
+      />
+      <View className="pt-2">
+        <Segmentado
+          rotulo={t('notificacoes.abas')}
+          opcoes={[
+            { valor: 'alertas', rotulo: t('notificacoes.abaAlertas') },
+            {
+              valor: 'novidades',
+              rotulo:
+                novidadesNaoLidas > 0
+                  ? t('notificacoes.abaNovidadesNovas', { quantidade: novidadesNaoLidas })
+                  : t('notificacoes.abaNovidades'),
+            },
+          ]}
+          selecionado={aba}
+          aoEscolher={definirAba}
+        />
+      </View>
+      {aba === 'alertas' ? <AbaAlertas /> : <AbaNovidades />}
+    </Tela>
+  );
+}
+
+/**
+ * Os alertas (T-087): da mais nova para a mais antiga, as não lidas com o ponto. Tocar marca como
+ * lida e abre a tela do link (RN-105); "Marcar todas como lidas" limpa o ponto do sino do Início.
+ */
+function AbaAlertas() {
   const { t } = useTranslation();
   const router = useRouter();
   const [filtro, definirFiltro] = useState<Filtro>('todas');
@@ -40,14 +85,8 @@ export default function TelaNotificacoes() {
   }
 
   return (
-    <Tela className="px-4 pt-2">
-      <Cabecalho
-        titulo={t('notificacoes.titulo')}
-        aoVoltar={() => {
-          router.back();
-        }}
-      />
-      <View className="gap-3 pb-3 pt-2">
+    <View className="flex-1">
+      <View className="gap-3 pb-3 pt-3">
         <Segmentado
           rotulo={t('notificacoes.filtro')}
           opcoes={[
@@ -99,7 +138,103 @@ export default function TelaNotificacoes() {
           }
         />
       )}
-    </Tela>
+    </View>
+  );
+}
+
+/**
+ * As novidades no ar (T-150): o que estava sem ler quando a aba abriu ganha o selo "Nova" e já
+ * conta como lida, porque o texto inteiro está no cartão. O vídeo abre no app do YouTube ou do
+ * Vimeo (ou no navegador).
+ */
+function AbaNovidades() {
+  const { t } = useTranslation();
+  const lista = useNovidades();
+  const { mutate: lerNovidades } = useLerNovidades();
+  const [novasAoAbrir, definirNovasAoAbrir] = useState<ReadonlySet<string> | null>(null);
+  const itens = lista.data?.itens;
+  // Na primeira lista que chega, guarda quais eram novas (o selo fica até sair da aba).
+  if (itens !== undefined && novasAoAbrir === null) {
+    definirNovasAoAbrir(new Set(itens.filter(({ lida }) => !lida).map(({ id }) => id)));
+  }
+
+  useEffect(() => {
+    if (novasAoAbrir !== null && novasAoAbrir.size > 0) lerNovidades([...novasAoAbrir]);
+  }, [novasAoAbrir, lerNovidades]);
+
+  if (lista.isPending) return <ActivityIndicator className="pt-3" color={cores.texto} />;
+  if (lista.isError) {
+    return (
+      <View className="items-start gap-2 pt-3">
+        <Texto cor="perigo">{t('notificacoes.novidades.erro')}</Texto>
+        <Botao
+          variante="secundaria"
+          compacto
+          titulo={t('notificacoes.tentarDeNovo')}
+          aoPressionar={() => void lista.refetch()}
+        />
+      </View>
+    );
+  }
+  if (lista.data.itens.length === 0) return <Vazio titulo={t('notificacoes.novidades.vazia')} />;
+  return (
+    <FlatList
+      data={lista.data.itens}
+      keyExtractor={({ id }) => id}
+      contentContainerClassName="gap-2 pb-8 pt-3"
+      renderItem={({ item }) => (
+        <ItemNovidade novidade={item} nova={novasAoAbrir?.has(item.id) ?? !item.lida} />
+      )}
+    />
+  );
+}
+
+function ItemNovidade({ novidade, nova }: { novidade: Novidade; nova: boolean }) {
+  const { t } = useTranslation();
+  const fuso = useFusoDoUsuario();
+  const dataCurta = useDataCurta();
+  const publicada = new Date(novidade.publicadaEm);
+  return (
+    <View
+      testID="novidade"
+      accessibilityLabel={
+        nova ? t('notificacoes.novidades.nova', { titulo: novidade.titulo }) : undefined
+      }
+      className={juntarClasses(
+        'gap-2 rounded-md p-3',
+        nova ? 'bg-superficie-alta' : 'bg-superficie',
+      )}
+    >
+      <View className="flex-row items-center gap-2">
+        {nova ? (
+          <View className="rounded-total bg-atencao px-2">
+            <Texto variante="legenda" className="font-forte">
+              {t('notificacoes.novidades.selo')}
+            </Texto>
+          </View>
+        ) : null}
+        <Texto variante="legenda" cor="fraco">
+          {dataCurta(dataNoFuso(publicada, fuso))}
+        </Texto>
+      </View>
+      <Texto className="font-forte">{novidade.titulo}</Texto>
+      <Texto variante="corpo-sm" cor="suave">
+        {novidade.descricao}
+      </Texto>
+      {novidade.videoUrl !== null ? (
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={t('notificacoes.novidades.assistir', { titulo: novidade.titulo })}
+          onPress={() => {
+            if (novidade.videoUrl !== null) void Linking.openURL(novidade.videoUrl);
+          }}
+          className="min-h-toque flex-row items-center gap-2 self-start active:opacity-70"
+        >
+          <Icone nome="circle-play" tamanho={22} cor={cores.texto} />
+          <Texto>{t('notificacoes.novidades.video')}</Texto>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 

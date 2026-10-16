@@ -313,6 +313,8 @@ export * from './novidadesAdminDto';
 export * from './novidadesAdminDtoItem';
 export * from './novidadesAdminDtoItemAutor';
 export * from './novidadesAdminDtoItemSituacao';
+export * from './novidadesDto';
+export * from './novidadesDtoItensItem';
 export * from './novo2faDto';
 export * from './novoAporteDto';
 export * from './novoArquivoDto';

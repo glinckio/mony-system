@@ -56,7 +56,7 @@ Cada avaliador é uma classe com `tipo`, `avaliar(contexto) → AlertaCandidato[
 | `resumo_periodo` | Segunda e dia 1 | `resumo:<semana ou mes>` | não | sim |
 | `open_finance` | Consentimento perto de vencer ou erro | `of:<conexao>:<motivo>:<data>` | não | sim |
 | `assinatura` | Pagamento recusado, renovação, cancelamento; teste no 2º dia, no último e no fim (T-101, não urgentes) | `assinatura:<evento_id>`; `assinatura:teste:<segundo-dia, ultimo-dia ou fim>` | sim (os do teste, não) | sim |
-| `novidade` | Publicação no admin (push opcional) | `novidade:<id>` | não | não |
+| `novidade` | Publicação no admin (push opcional; abre a aba Novidades) | `novidade:<id>` | não | não |
 
 Regras de envio: RN-100 a RN-108 em [07](07-regras-de-negocio.md#alertas-e-notificações). Tipos de consultoria (`gasto_fora_padrao`, `projecao_mes`, dicas) contam para o limite diário (3 por padrão; o painel muda, seção Configurações, T-141g). Os parâmetros do `gasto_fora_padrao` (múltiplo, mínimo de lançamentos e valor mínimo) também vêm do painel. `assinatura` não pode ser desligado.
 
@@ -108,6 +108,6 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 
 ## Central de notificações
 
-`GET /notificacoes` com filtro por tipo, paginação por cursor. `POST /notificacoes/:id/lida`. Contador de não lidas no `GET /dashboard`. Novidades vêm de `GET /novidades` e aparecem na mesma central em aba própria.
+`GET /notificacoes` com filtro por tipo, paginação por cursor. `POST /notificacoes/:id/lida`. Contador de não lidas no `GET /dashboard` (`notificacoesNaoLidas`; o das novidades em `novidadesNaoLidas`, e o sino soma os dois). Novidades vêm de `GET /novidades` (as no ar: publicadas, que já entraram e ainda valem, até 50, com `lida` de cada uma e `naoLidas`) e aparecem na mesma central em aba própria (T-150); `POST /novidades/:id/lida` responde 204, ou 404 se a novidade não está no ar. As publicadas antes de a conta existir chegam lidas e não contam.
 
 No app (T-087): a central abre pelo sino do Início, com "Todas | Não lidas", marcar como lida ao tocar (e abrir a tela do link) e "Marcar todas como lidas"; as preferências e o silêncio ficam em Perfil → Alertas da Mony ([04](04-app-mobile.md)).

@@ -13,6 +13,7 @@ export * from './listas/listas';
 export * from './metas/metas';
 export * from './mony/mony';
 export * from './notificacoes/notificacoes';
+export * from './novidades/novidades';
 export * from './orcamentos/orcamentos';
 export * from './parcelamentos/parcelamentos';
 export * from './recorrencias/recorrencias';

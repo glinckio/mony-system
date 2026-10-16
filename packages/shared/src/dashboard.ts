@@ -115,6 +115,8 @@ export const esquemaDashboard = z.object({
   onboarding: esquemaOnboarding,
   /** Contador da central de notificações (doc 09). */
   notificacoesNaoLidas: z.number().int(),
+  /** As novidades no ar ainda não lidas (T-150); o sino soma as duas. */
+  novidadesNaoLidas: z.number().int(),
 });
 
 export type ConsultaDashboard = z.infer<typeof esquemaConsultaDashboard>;

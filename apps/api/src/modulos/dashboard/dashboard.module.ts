@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { CartoesModule } from '../cartoes/cartoes.module';
 import { NotificacoesModule } from '../notificacoes/notificacoes.module';
+import { NovidadesModule } from '../novidades/novidades.module';
 import { OrcamentosModule } from '../orcamentos/orcamentos.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { DashboardController } from './dashboard.controller';
@@ -9,7 +10,7 @@ import { DashboardRepository } from './dashboard.repository';
 import { DashboardService } from './dashboard.service';
 
 @Module({
-  imports: [CartoesModule, OrcamentosModule, UsuariosModule, NotificacoesModule],
+  imports: [CartoesModule, OrcamentosModule, UsuariosModule, NotificacoesModule, NovidadesModule],
   controllers: [DashboardController],
   providers: [DashboardService, DashboardRepository],
 })
