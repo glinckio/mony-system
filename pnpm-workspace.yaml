@@ -6,11 +6,11 @@ packages:
 # `@mony/api-client` precisa enxergar o mesmo React e o mesmo TanStack Query que o app (senão o
 # Metro empacota duas cópias e o `QueryClientProvider` do app não vale para os hooks gerados).
 catalog:
-  '@tanstack/react-query': 5.104.1
-  '@types/react': 19.2.18
-  react: 19.2.3
-  react-dom: 19.2.3
-  react-test-renderer: 19.2.3
+  '@tanstack/react-query': 5.104.2
+  '@types/react': 19.3.0
+  react: 19.3.0
+  react-dom: 19.3.0
+  react-test-renderer: 19.3.0
 # Pacotes que trazem `react-dom` como dependência opcional (ex.: Prisma Studio, react-i18next) usam
 # a mesma versão do React do catálogo.
 overrides:
