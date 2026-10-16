@@ -85,4 +85,8 @@ module "ambiente" {
   worker_cpu        = 256
   worker_memoria    = 512
   worker_quantidade = 1
+
+  # Quem recebe os alarmes (SNS) e os alertas técnicos do worker (T-142). Cada endereço confirma a
+  # assinatura do SNS no primeiro e-mail. Ex.: ["tecnico@exemplo.com.br"].
+  emails_alertas = []
 }

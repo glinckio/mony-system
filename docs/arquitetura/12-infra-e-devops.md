@@ -97,7 +97,19 @@ Migrações: sempre compatíveis com a versão anterior (expandir → migrar →
 
 - Cada alerta vai para o log como erro com `evento: "alerta_tecnico"` (com `tipo` e `chave`) e por e-mail para `ALERTAS_TECNICOS_EMAILS` (variável `emails_alertas` do Terraform), direto no provedor de e-mail, sem a fila `emails`: se ela for a parada, o aviso ainda sai. Sem destinatário, só o log. Se nenhum e-mail sair, a próxima volta tenta de novo.
 - O que já foi avisado fica no Redis (chaves `monitoramento:*`).
-- Cada volta escreve `evento: "monitoramento_executado"` no log. A T-142b transforma esse batimento e o `alerta_tecnico` em alarmes do CloudWatch (rotina parada, alerta sem e-mail), junto dos alarmes que só a AWS vê: API fora do ar, 5xx e backup.
+- Cada volta escreve `evento: "monitoramento_executado"` no log; um alerta cujo e-mail não saiu escreve `evento: "alerta_tecnico_sem_email"`.
+
+**Pela AWS (T-142b).** `infra/modulos/ambiente/alarmes.tf`, todos no tópico SNS `mony-<ambiente>-alertas`, com e-mail para `emails_alertas` (a mesma lista vai para o worker):
+
+| Alarme | Métrica | Dispara |
+|---|---|---|
+| API fora do ar | `HealthyHostCount` do grupo de destino do ALB | Nenhuma tarefa saudável por 2 minutos (sem dado também conta) |
+| 5xx | `HTTPCode_Target_5XX_Count` + `HTTPCode_ELB_5XX_Count` sobre `RequestCount` | Acima de 1% em 5 minutos, com pelo menos 20 requisições no período |
+| Monitoramento parado | Filtro `monitoramento_executado` no log do worker | Nenhuma volta em 15 minutos: worker, fila `rotinas` ou Redis parados |
+| Alerta técnico sem e-mail | Filtro `alerta_tecnico_sem_email` no log do worker | Qualquer um em 5 minutos |
+| Backup não encontrado | Regra do EventBridge para `RDS-EVENT-0002` (backup automático concluído) → grupo de logs → filtro | Nenhum backup concluído em 24 horas |
+
+- O uptime externo (alguém de fora chamando `/v1/health`) fica para quando houver domínio: o alarme do ALB não pega o DNS ou o próprio ALB fora.
 
 ## Ambiente local
 

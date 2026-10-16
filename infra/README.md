@@ -110,6 +110,7 @@ curl "$(terraform -chdir=infra/ambientes/staging output -raw endereco_api)/v1/he
 ## Dia a dia
 
 - **Logs:** CloudWatch, grupos `/mony/staging/api` e `/mony/staging/worker` (30 dias).
+- **Alarmes** (T-142, doc 12): API fora do ar, 5xx acima de 1% em 5 minutos, rotina `monitorar` do worker parada, alerta técnico sem e-mail e backup diário do banco não encontrado. Avisam no tópico SNS `mony-staging-alertas` (output `topico_alertas`), que manda e-mail para `emails_alertas` em `ambientes/staging/main.tf`. Cada endereço recebe primeiro um e-mail da AWS para confirmar a assinatura; sem confirmar, não recebe nada. A mesma lista vai para o worker (`ALERTAS_TECNICOS_EMAILS`), que manda os alertas dele (fila parada, falha em webhook, custo de IA) pelo provedor de e-mail. Com o ambiente recém-criado, o alarme de backup fica em alarme até o primeiro backup automático (janela das 06:00 UTC).
 - **Chaves da aplicação** (JWT, Stripe, provedor de IA): no segredo `mony/staging/app`, em JSON (passo 4). A tarefa que passar a usar uma chave inclui a leitura dela no `infra/modulos/ambiente/ecs.tf`. Depois de mudar o segredo, um novo deploy (`gh workflow run deploy-staging.yml`) faz as tarefas lerem o valor novo.
 - **HTTPS:** até existir o domínio, o ALB atende só HTTP e o admin fica no endereço do CloudFront (`https://<id>.cloudfront.net`). Veja "Domínio e HTTPS" abaixo.
 - **Custos:** os itens fixos são o NAT gateway, o ALB, o RDS, o ElastiCache e as tarefas do Fargate, mesmo sem uso. Estime na [calculadora da AWS](https://calculator.aws/) antes de aplicar.

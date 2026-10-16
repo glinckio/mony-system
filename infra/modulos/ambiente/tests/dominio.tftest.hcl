@@ -27,6 +27,12 @@ mock_provider "aws" {
   mock_resource "aws_cloudfront_function" {
     defaults = { arn = "arn:aws:cloudfront::123456789012:function/simulado" }
   }
+  mock_resource "aws_sns_topic" {
+    defaults = { arn = "arn:aws:sns:sa-east-1:123456789012:simulado" }
+  }
+  mock_resource "aws_cloudwatch_log_group" {
+    defaults = { arn = "arn:aws:logs:sa-east-1:123456789012:log-group:simulado" }
+  }
   mock_resource "aws_lb" {
     defaults = { arn = "arn:aws:elasticloadbalancing:sa-east-1:123456789012:loadbalancer/app/simulado/0123456789abcdef" }
   }
@@ -137,6 +143,52 @@ run "com_dominio" {
     condition     = length(aws_route53_record.admin) == 2 && aws_route53_record.api[0].name == "api.staging.exemplo.com.br"
     error_message = "Registros A da API e A e AAAA do admin."
   }
+}
+
+run "alarmes" {
+  command = apply
+
+  variables {
+    emails_alertas = ["tecnico@exemplo.com.br", "socio@exemplo.com.br"]
+  }
+
+  assert {
+    condition     = length(aws_sns_topic_subscription.alertas_email) == 2
+    error_message = "Uma assinatura do SNS por e-mail."
+  }
+
+  assert {
+    condition = alltrue([
+      for alarme in [
+        aws_cloudwatch_metric_alarm.api_fora_do_ar,
+        aws_cloudwatch_metric_alarm.api_5xx,
+        aws_cloudwatch_metric_alarm.monitoramento_parado,
+        aws_cloudwatch_metric_alarm.alerta_sem_email,
+        aws_cloudwatch_metric_alarm.backup_nao_encontrado,
+      ] : contains(alarme.alarm_actions, aws_sns_topic.alertas.arn)
+    ])
+    error_message = "Todos os alarmes avisam no tópico."
+  }
+
+  assert {
+    condition     = jsondecode(aws_cloudwatch_event_rule.backup_concluido.event_pattern).detail.SourceIdentifier == ["mony-staging"]
+    error_message = "A regra de backup olha o banco do ambiente."
+  }
+
+  assert {
+    condition     = one([for variavel in jsondecode(aws_ecs_task_definition.worker.container_definitions)[0].environment : variavel.value if variavel.name == "ALERTAS_TECNICOS_EMAILS"]) == "tecnico@exemplo.com.br,socio@exemplo.com.br"
+    error_message = "O worker recebe os mesmos e-mails para os alertas dele."
+  }
+}
+
+run "email_invalido" {
+  command = plan
+
+  variables {
+    emails_alertas = ["tecnico"]
+  }
+
+  expect_failures = [var.emails_alertas]
 }
 
 run "dominio_invalido" {
