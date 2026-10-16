@@ -80,7 +80,7 @@ export class AssinaturasController {
     @ContextoAtual() contexto: Contexto,
     @Body() dados: PedidoCheckoutDto,
   ): Promise<LinkCobranca> {
-    return this.assinaturas.checkout(contexto, dados.plano);
+    return this.assinaturas.checkout(contexto, dados.plano, dados.forma);
   }
 
   @Post('portal')

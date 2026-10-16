@@ -12,15 +12,21 @@ const amanha = new Date('2026-10-17T12:00:00Z');
 
 describe('situacaoDaAssinatura', () => {
   it('teste valendo é teste', () => {
-    expect(situacaoDaAssinatura({ plano: 'teste', status: 'ativa', testeFim: amanha }, agora)).toBe(
-      'teste',
-    );
+    expect(
+      situacaoDaAssinatura(
+        { plano: 'teste', status: 'ativa', testeFim: amanha, pagoAte: null },
+        agora,
+      ),
+    ).toBe('teste');
   });
 
   it('RN-126 teste vencido já é gratuito, mesmo antes da rotina diária', () => {
-    expect(situacaoDaAssinatura({ plano: 'teste', status: 'ativa', testeFim: ontem }, agora)).toBe(
-      'gratuito',
-    );
+    expect(
+      situacaoDaAssinatura(
+        { plano: 'teste', status: 'ativa', testeFim: ontem, pagoAte: null },
+        agora,
+      ),
+    ).toBe('gratuito');
   });
 
   it('sem assinatura é gratuito', () => {
@@ -28,20 +34,32 @@ describe('situacaoDaAssinatura', () => {
   });
 
   it('plano pago em dia é ativa; com cobrança recusada é inadimplente (RN-131)', () => {
-    expect(situacaoDaAssinatura({ plano: 'anual', status: 'ativa', testeFim: null }, agora)).toBe(
-      'ativa',
-    );
     expect(
-      situacaoDaAssinatura({ plano: 'mensal', status: 'inadimplente', testeFim: null }, agora),
+      situacaoDaAssinatura(
+        { plano: 'anual', status: 'ativa', testeFim: null, pagoAte: null },
+        agora,
+      ),
+    ).toBe('ativa');
+    expect(
+      situacaoDaAssinatura(
+        { plano: 'mensal', status: 'inadimplente', testeFim: null, pagoAte: null },
+        agora,
+      ),
     ).toBe('inadimplente');
   });
 
   it('RN-131 assinatura encerrada é cancelada, e o teste estendido pelo admin vale primeiro', () => {
     expect(
-      situacaoDaAssinatura({ plano: 'gratuito', status: 'cancelada', testeFim: null }, agora),
+      situacaoDaAssinatura(
+        { plano: 'gratuito', status: 'cancelada', testeFim: null, pagoAte: null },
+        agora,
+      ),
     ).toBe('cancelada');
     expect(
-      situacaoDaAssinatura({ plano: 'teste', status: 'cancelada', testeFim: amanha }, agora),
+      situacaoDaAssinatura(
+        { plano: 'teste', status: 'cancelada', testeFim: amanha, pagoAte: null },
+        agora,
+      ),
     ).toBe('teste');
   });
 });

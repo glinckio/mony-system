@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AssinaturasModule } from '../assinaturas/assinaturas.module';
 import { CartoesModule } from '../cartoes/cartoes.module';
 import { NotificacoesModule } from '../notificacoes/notificacoes.module';
 import { OrcamentosModule } from '../orcamentos/orcamentos.module';
@@ -13,7 +14,14 @@ import { AvaliadoresAlertas } from './avaliadores-alertas';
  * da fila `eventos-dominio` e à rotina `alertas-diarios`; a API não tem rota aqui.
  */
 @Module({
-  imports: [NotificacoesModule, CartoesModule, OrcamentosModule, PlanosModule, RelatoriosModule],
+  imports: [
+    NotificacoesModule,
+    AssinaturasModule,
+    CartoesModule,
+    OrcamentosModule,
+    PlanosModule,
+    RelatoriosModule,
+  ],
   providers: [AlertasRepository, AvaliadoresAlertas],
   exports: [AvaliadoresAlertas],
 })

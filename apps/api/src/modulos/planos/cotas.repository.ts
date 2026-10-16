@@ -55,9 +55,11 @@ export class CotasRepository {
         plano: Plano | null;
         status: StatusAssinatura | null;
         teste_fim: Date | null;
+        pago_ate: Date | null;
       }[]
     >`
-      SELECT u.fuso_horario AS fuso, a.plano::text AS plano, a.status::text AS status, a.teste_fim
+      SELECT u.fuso_horario AS fuso, a.plano::text AS plano, a.status::text AS status, a.teste_fim,
+        a.pago_ate
       FROM usuarios u
       LEFT JOIN assinaturas a ON a.usuario_id = u.id
       WHERE u.id = ${usuarioId}::uuid`;
@@ -67,7 +69,12 @@ export class CotasRepository {
       assinatura:
         linha.plano === null || linha.status === null
           ? null
-          : { plano: linha.plano, status: linha.status, testeFim: linha.teste_fim },
+          : {
+              plano: linha.plano,
+              status: linha.status,
+              testeFim: linha.teste_fim,
+              pagoAte: linha.pago_ate,
+            },
     };
   }
 

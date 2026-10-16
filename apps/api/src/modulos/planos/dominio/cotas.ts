@@ -15,6 +15,8 @@ export interface SituacaoAssinatura {
   plano: Plano;
   status: StatusAssinatura;
   testeFim: Date | null;
+  /** T-105: fim do anual pago com Pix; `null` na assinatura no cartão. */
+  pagoAte: Date | null;
 }
 
 /** Os limites de um recurso (`limites_plano`, editáveis no admin). `null`: sem limite. */
@@ -37,8 +39,8 @@ export type RecursoDeQuantidade = Extract<
 
 /**
  * O plano que vale agora. O teste que já acabou é o gratuito, mesmo antes de a rotina diária o
- * encerrar (RN-126); a assinatura cancelada também. A inadimplente continua paga enquanto a Stripe
- * tenta cobrar (RN-131). Sem assinatura, o gratuito.
+ * encerrar (RN-126); a assinatura cancelada e o anual pago com Pix que venceu também (T-105). A
+ * inadimplente continua paga enquanto a Stripe tenta cobrar (RN-131). Sem assinatura, o gratuito.
  */
 export function planoEfetivo(assinatura: SituacaoAssinatura | null, agora: Date): Plano {
   if (!assinatura) return 'gratuito';
@@ -48,6 +50,10 @@ export function planoEfetivo(assinatura: SituacaoAssinatura | null, agora: Date)
       : 'teste';
   }
   if (assinatura.status === 'cancelada') return 'gratuito';
+  // T-105: o anual pago com Pix acaba sozinho, mesmo antes de a rotina diária o encerrar.
+  if (assinatura.pagoAte !== null && assinatura.pagoAte.getTime() <= agora.getTime()) {
+    return 'gratuito';
+  }
   return assinatura.plano;
 }
 

@@ -581,6 +581,10 @@ model Assinatura {
   proximaCobranca      DateTime?        @map("proxima_cobranca") @db.Timestamptz(6)
   cancelamentoAgendado Boolean          @default(false) @map("cancelamento_agendado")
   canceladaEm          DateTime?        @map("cancelada_em") @db.Timestamptz(6)
+  /// T-105: o anual pago com Pix (pagamento único) vale até aqui, sem renovação automática.
+  pagoAte              DateTime?        @map("pago_ate") @db.Timestamptz(6)
+  /// O último checkout de pagamento único aplicado (`cs_…`): o mesmo pagamento não soma duas vezes.
+  pagamentoUnicoId     String?          @unique @map("pagamento_unico_id")
   criadoEm             DateTime         @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm         DateTime         @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 

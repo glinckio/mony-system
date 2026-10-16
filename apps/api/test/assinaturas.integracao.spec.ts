@@ -292,6 +292,7 @@ describe.runIf(ativo)('integração: assinaturas pela Stripe', () => {
       cancelamentoAgendado: false,
       testeFim: null,
       gerenciavel: true,
+      pagoAte: null,
     });
     expect((await chamar(usuario, 'GET', '/assinatura/uso')).json()).toMatchObject({
       plano: 'mensal',
@@ -493,6 +494,161 @@ describe.runIf(ativo)('integração: assinaturas pela Stripe', () => {
           stripePriceId: novo.stripePriceId,
         },
       },
+    ]);
+  });
+
+  /** O checkout de pagamento único no formato da Stripe (T-105). */
+  async function pixPago(
+    clienteId: string,
+    sessaoId: string,
+    tipo = 'checkout.session.async_payment_succeeded',
+    pago = true,
+  ) {
+    const anual = await prisma.planoPreco.findUniqueOrThrow({
+      where: { stripePriceId: precos.anual },
+    });
+    const id = `evt_${randomUUID()}`;
+    const resposta = await webhook(
+      tipo,
+      {
+        id: sessaoId,
+        object: 'checkout.session',
+        mode: 'payment',
+        payment_status: pago ? 'paid' : 'unpaid',
+        customer: clienteId,
+        amount_total: 19900,
+        metadata: { tipo: 'anual_pix', planoPrecoId: anual.id },
+      },
+      { id },
+    );
+    expect(resposta.statusCode).toBe(200);
+    return { id, planoPrecoId: anual.id };
+  }
+
+  it('T-105 o Pix vale só no anual e abre um pagamento único', async () => {
+    const usuario = await usuarioNovo();
+    const mensal = await chamar(usuario, 'POST', '/assinatura/checkout', {
+      plano: 'mensal',
+      forma: 'pix',
+    });
+    expect(mensal.statusCode).toBe(400);
+    const anual = await chamar(usuario, 'POST', '/assinatura/checkout', {
+      plano: 'anual',
+      forma: 'pix',
+    });
+    expect(anual.statusCode).toBe(200);
+    const { stripeCustomerId } = await prisma.assinatura.findUniqueOrThrow({
+      where: { usuarioId: usuario.usuarioId },
+    });
+    expect(cobranca.pagamentosPix.filter((p) => p.usuarioId === usuario.usuarioId)).toEqual([
+      { clienteId: stripeCustomerId, usuarioId: usuario.usuarioId, valorCentavos: 19900 },
+    ]);
+  });
+
+  it('T-105 o Pix pago libera 12 meses na hora; o mesmo pagamento não soma, e pagar antes do fim soma ao fim', async () => {
+    const usuario = await usuarioNovo();
+    expect(
+      (await chamar(usuario, 'POST', '/assinatura/checkout', { plano: 'anual', forma: 'pix' }))
+        .statusCode,
+    ).toBe(200);
+    const { stripeCustomerId } = await prisma.assinatura.findUniqueOrThrow({
+      where: { usuarioId: usuario.usuarioId },
+    });
+    const clienteId = stripeCustomerId ?? '';
+
+    // Pix ainda não pago: o checkout concluído não muda nada e nem é gravado.
+    const naoPago = await pixPago(
+      clienteId,
+      `cs_${randomUUID()}`,
+      'checkout.session.completed',
+      false,
+    );
+    expect(await prisma.webhookEvento.count({ where: { idExterno: naoPago.id } })).toBe(0);
+
+    const sessao = `cs_${randomUUID()}`;
+    const pago = await pixPago(clienteId, sessao);
+    expect((await processar(pago.id)).processadoEm).not.toBeNull();
+    const esperado = {
+      plano: 'anual',
+      status: 'ativa',
+      valorCentavos: 19900,
+      proximaCobranca: null,
+      cancelamentoAgendado: false,
+      testeFim: null,
+      gerenciavel: true,
+      pagoAte: '2027-10-15T15:00:00.000Z',
+    };
+    expect((await chamar(usuario, 'GET', '/assinatura')).json()).toEqual(esperado);
+    expect(
+      await prisma.assinatura.findUniqueOrThrow({ where: { usuarioId: usuario.usuarioId } }),
+    ).toMatchObject({ planoPrecoId: pago.planoPrecoId, pagamentoUnicoId: sessao });
+
+    // O mesmo checkout chegando de novo (outro evento) não soma mais 12 meses.
+    await processar((await pixPago(clienteId, sessao, 'checkout.session.completed')).id);
+    expect((await chamar(usuario, 'GET', '/assinatura')).json()).toEqual(esperado);
+
+    // No cartão, não: já paga. Com Pix, sim, antes do fim, e soma ao fim.
+    relogio.definir('2027-10-10T15:00:00Z');
+    const cartao = await chamar(usuario, 'POST', '/assinatura/checkout', { plano: 'anual' });
+    expect(cartao.json()).toMatchObject({ erro: { codigo: 'ASSINATURA_JA_ATIVA' } });
+    expect(
+      (await chamar(usuario, 'POST', '/assinatura/checkout', { plano: 'anual', forma: 'pix' }))
+        .statusCode,
+    ).toBe(200);
+    await processar((await pixPago(clienteId, `cs_${randomUUID()}`)).id);
+    expect((await chamar(usuario, 'GET', '/assinatura')).json()).toMatchObject({
+      plano: 'anual',
+      pagoAte: '2028-10-15T15:00:00.000Z',
+    });
+  });
+
+  it('T-105 avisa 7 dias antes do fim do anual com Pix, e no fim volta ao gratuito', async () => {
+    const usuario = await usuarioNovo();
+    const servico = app.get(AssinaturasService);
+    const pagoAte = new Date('2026-10-20T15:00:00Z');
+    await prisma.assinatura.update({
+      where: { usuarioId: usuario.usuarioId },
+      data: { plano: 'anual', status: 'ativa', testeInicio: null, testeFim: null, pagoAte },
+    });
+    expect(
+      await servico.avisosDoPix(
+        usuario.usuarioId,
+        new Date('2026-10-12T12:00:00Z'),
+        'America/Sao_Paulo',
+      ),
+    ).toEqual([]);
+    expect(
+      await servico.avisosDoPix(usuario.usuarioId, new Date(AGORA), 'America/Sao_Paulo'),
+    ).toEqual([
+      expect.objectContaining({
+        chaveUnica: `assinatura:pix:fim_proximo:${pagoAte.toISOString()}`,
+        titulo: 'Seu plano anual termina em 20/10',
+        urgente: false,
+        vaiParaChat: true,
+      }),
+    ]);
+
+    // Venceu: já é o gratuito antes da rotina; a rotina grava, e o aviso do fim sai.
+    relogio.definir('2026-10-21T04:20:00Z');
+    expect((await chamar(usuario, 'GET', '/assinatura')).json()).toMatchObject({
+      plano: 'gratuito',
+      status: null,
+    });
+    await servico.encerrarPixVencidos(new Date('2026-10-21T04:20:00Z'));
+    expect(
+      await prisma.assinatura.findUniqueOrThrow({ where: { usuarioId: usuario.usuarioId } }),
+    ).toMatchObject({ plano: 'gratuito', status: 'cancelada', pagoAte });
+    expect(
+      await servico.avisosDoPix(
+        usuario.usuarioId,
+        new Date('2026-10-21T12:00:00Z'),
+        'America/Sao_Paulo',
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        chaveUnica: `assinatura:pix:encerrado:${pagoAte.toISOString()}`,
+        titulo: 'Seu plano anual terminou',
+      }),
     ]);
   });
 });

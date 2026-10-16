@@ -49,6 +49,26 @@ function assinaturaDaFatura(fatura: Stripe.Invoice): string | null {
   return detalhes ? idDe(detalhes.subscription) : null;
 }
 
+/** `metadata.tipo` do checkout do anual pago com Pix (T-105). */
+export const TIPO_PAGAMENTO_PIX_ANUAL = 'anual_pix';
+
+/**
+ * O checkout de pagamento único já pago (o Pix confirma depois: chega em
+ * `checkout.session.async_payment_succeeded`). `null`: ainda não pago ou não é o do anual.
+ */
+function pagamentoUnico(id: string, sessao: Stripe.Checkout.Session): EventoCobranca | null {
+  if (sessao.payment_status !== 'paid' || sessao.customer === null) return null;
+  if (sessao.metadata?.tipo !== TIPO_PAGAMENTO_PIX_ANUAL) return null;
+  return {
+    id,
+    tipo: 'pagamento_unico',
+    sessaoId: sessao.id,
+    clienteId: idDe(sessao.customer),
+    valorCentavos: sessao.amount_total ?? 0,
+    planoPrecoId: sessao.metadata.planoPrecoId ?? null,
+  };
+}
+
 const TIPOS_DA_ASSINATURA = new Set([
   'customer.subscription.created',
   'customer.subscription.updated',
@@ -68,9 +88,14 @@ export function eventoDaStripe(evento: Stripe.Event): EventoCobranca {
     const assinatura = evento.data.object as Stripe.Subscription;
     return { id, tipo: 'assinatura', assinaturaId: assinatura.id };
   }
-  if (tipo === 'checkout.session.completed') {
+  if (
+    tipo === 'checkout.session.completed' ||
+    tipo === 'checkout.session.async_payment_succeeded'
+  ) {
     const sessao = evento.data.object;
-    if (sessao.mode !== 'subscription' || sessao.subscription === null) return ignorado;
+    if (sessao.mode === 'payment') return pagamentoUnico(id, sessao) ?? ignorado;
+    if (tipo !== 'checkout.session.completed' || sessao.mode !== 'subscription') return ignorado;
+    if (sessao.subscription === null) return ignorado;
     return { id, tipo: 'assinatura', assinaturaId: idDe(sessao.subscription) };
   }
   if (tipo === 'invoice.paid' || tipo === 'invoice.payment_failed' || tipo === 'invoice.upcoming') {
