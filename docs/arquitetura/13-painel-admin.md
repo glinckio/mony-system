@@ -101,6 +101,29 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 - **Alertas por tipo:** criados (as notificações), enviados (com push) e lidos, pela data de criação.
 - Os números vêm de três *materialized views* (`metricas_ativos_dia`, `metricas_lancamentos_dia`, `metricas_alertas_dia`) que a rotina `atualizar-metricas` recalcula de hora em hora, no minuto 50 (`REFRESH … CONCURRENTLY`, sem travar a leitura). Só as pessoas diferentes no período saem da tabela `acessos_diarios`. A tela diz de quando são os números, e **Atualizar agora** (`POST /admin/metricas/atualizar`, grava `metricas.atualizadas` na auditoria) recalcula na hora.
 
+## Filas (T-141g)
+
+- **Decisão técnica:** no lugar do Bull Board, uma seção do próprio painel. O Bull Board é uma página servida pela API e aberta direto no navegador, sem o token do painel no cabeçalho; teria de ganhar outro login, sem 2FA e sem auditoria.
+- `GET /admin/filas`: cada fila do doc 05 com os jobs aguardando (com os priorizados), rodando, agendados, falhos e concluídos (o BullMQ guarda os últimos 1.000 concluídos e 5.000 falhos).
+- `GET /admin/filas/:fila/falhos?pagina=` (20 por página): os que esgotaram as 5 tentativas, do que falhou por último ao mais antigo, com o nome, o id, o motivo (até 500 caracteres), as tentativas e quando falhou. Os dados do job não aparecem, porque podem ter dados pessoais.
+- **Reprocessar** um job (`POST …/falhos/:id/reprocessar`; 404 se ele não está mais falho) ou todos da fila (`POST …/falhos/reprocessar`, com confirmação): o job volta para a fila com as tentativas zeradas. Grava `filas.job_reprocessado` (`entidade_id` `<fila>/<id>`) e `filas.falhos_reprocessados` na auditoria.
+
+## Configurações (T-141g)
+
+- `GET` e `PUT /admin/configuracoes`: um formulário só, salvo inteiro em `configuracoes.parametros` (o antes e o depois vão para a auditoria em `configuracoes.alteradas`). Sem linha, valem os padrões do código e, na versão mínima, os do ambiente (`APP_VERSAO_MINIMA_IOS` e `_ANDROID`).
+- Os campos e os limites que a API aceita:
+
+| Campo | Padrão | Limites | Quem usa |
+|---|---|---|---|
+| Alertas de consultoria por dia (RN-103) | 3 | 1 a 20 | Motor de alertas (doc 09) |
+| Intervalo do alerta de app de compra, em horas (RN-104) | 24 | 1 a 168 | Detecção de apps (T-121), quando existir |
+| Gasto fora do padrão (RN-106): múltiplo da média, mínimo de lançamentos, valor mínimo | 3×, 5, R$ 50,00 | 2 a 20, 1 a 100, até R$ 1.000.000,00 | Avaliador `gasto_fora_padrao` |
+| Ligações por mês por usuário (RN-078) | 10 | 0 a 100 | Lembrete por ligação (T-122), quando existir |
+| Versão mínima do app, iOS e Android | a do ambiente | formato 1.2.3 | Guarda de versão e `GET /config-app` (doc 05) |
+
+- A API e o worker leem pelo `ParametrosService` (`core/parametros`), que guarda o que leu por 30 s em cada processo: uma mudança vale em todos em até meio minuto (no processo da API que salvou, na hora). Com o banco fora ou a linha estragada, valem os padrões e a requisição segue.
+- O dia da média (90) e a janela de avaliação do fora do padrão (7 dias) continuam no código.
+
 ## Telas (do PDF)
 
 | Seção | Funções |
@@ -112,7 +135,7 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 | Mony | Editar prompt do sistema (versionado, com avaliação antes de ativar), limites de uso, logs de conversas com erro, custo por período |
 | Métricas | Usuários ativos, lançamentos por origem (manual, Mony, foto, Open Finance), alertas enviados |
 | Auditoria | Registro de ações dos administradores |
-| Filas **(proposta)** | Bull Board: jobs falhos, reprocessar |
+| Filas **(proposta)** | Jobs por fila, jobs falhos, reprocessar (tela própria no lugar do Bull Board, T-141g) |
 | Configurações **(proposta)** | Parâmetros de alertas (RN-103, RN-104, RN-106), limite de ligações, versão mínima do app |
 
 ## Detalhes de implementação
