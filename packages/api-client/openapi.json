@@ -1083,6 +1083,191 @@
         ]
       }
     },
+    "/v1/admin/novidades": {
+      "get": {
+        "operationId": "listarAdminNovidades",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Da mais nova à mais antiga.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NovidadesAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "operationId": "criarAdminNovidades",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovaNovidadeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cria um rascunho.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NovidadeAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/novidades/{id}": {
+      "put": {
+        "operationId": "editarAdminNovidades",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovaNovidadeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Edita. A desativada dá 409.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NovidadeAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/novidades/{id}/publicar": {
+      "post": {
+        "operationId": "publicarAdminNovidades",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicarNovidadeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Publica agora ou agenda (`publicarEm`). A que já foi ao ar dá 409.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NovidadeAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/novidades/{id}/desativar": {
+      "post": {
+        "operationId": "desativarAdminNovidades",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tira do app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NovidadeAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/v1/me": {
       "get": {
         "operationId": "perfilUsuarios",
@@ -6747,6 +6932,277 @@
           "admins",
           "acoes",
           "entidades"
+        ]
+      },
+      "NovidadesAdminDto": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "titulo": {
+              "type": "string"
+            },
+            "descricao": {
+              "type": "string"
+            },
+            "videoUrl": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "validade": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "enviarPush": {
+              "type": "boolean"
+            },
+            "pushEnviadoEm": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "situacao": {
+              "type": "string",
+              "enum": [
+                "rascunho",
+                "agendada",
+                "no_ar",
+                "vencida",
+                "desativada"
+              ]
+            },
+            "publicadaEm": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "autor": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "nome": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "nome"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "criadoEm": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "titulo",
+            "descricao",
+            "videoUrl",
+            "validade",
+            "enviarPush",
+            "pushEnviadoEm",
+            "situacao",
+            "publicadaEm",
+            "autor",
+            "criadoEm"
+          ]
+        }
+      },
+      "NovaNovidadeDto": {
+        "type": "object",
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "descricao": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "videoUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^https:\\/\\/(www\\.)?(youtube\\.com\\/watch\\?v=|youtu\\.be\\/|youtube\\.com\\/shorts\\/|vimeo\\.com\\/)[A-Za-z0-9_\\-?=&/]+$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "validade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "enviarPush": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "titulo",
+          "descricao",
+          "videoUrl",
+          "validade",
+          "enviarPush"
+        ]
+      },
+      "NovidadeAdminDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "videoUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "validade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "enviarPush": {
+            "type": "boolean"
+          },
+          "pushEnviadoEm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "situacao": {
+            "type": "string",
+            "enum": [
+              "rascunho",
+              "agendada",
+              "no_ar",
+              "vencida",
+              "desativada"
+            ]
+          },
+          "publicadaEm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "autor": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "nome": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "nome"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "criadoEm": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "descricao",
+          "videoUrl",
+          "validade",
+          "enviarPush",
+          "pushEnviadoEm",
+          "situacao",
+          "publicadaEm",
+          "autor",
+          "criadoEm"
+        ]
+      },
+      "PublicarNovidadeDto": {
+        "type": "object",
+        "properties": {
+          "publicarEm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "publicarEm"
         ]
       },
       "PerfilDto": {

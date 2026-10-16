@@ -15,6 +15,7 @@ import { MotorAlertas } from '../src/modulos/notificacoes/motor-alertas';
 import { OrcamentosService } from '../src/modulos/orcamentos/orcamentos.service';
 import { ParcelamentosService } from '../src/modulos/parcelamentos/parcelamentos.service';
 import { TesteGratis } from '../src/modulos/planos/teste.service';
+import { PushNovidades } from '../src/modulos/novidades/push-novidades';
 import { RecorrenciasService } from '../src/modulos/recorrencias/recorrencias.service';
 
 const AGORA = new Date('2026-10-10T03:30:00Z');
@@ -107,6 +108,14 @@ describe('rotinas agendadas (doc 09)', () => {
     expect(Reflect.getMetadata(ROTINA, metodo)).toEqual({
       nome: 'encerrar-testes',
       padrao: '15 1 * * *',
+    });
+  });
+
+  it('o push das novidades sai a cada minuto (T-141d)', () => {
+    const metodo = Reflect.get(PushNovidades.prototype, 'enviar') as object;
+    expect(Reflect.getMetadata(ROTINA, metodo)).toEqual({
+      nome: 'enviar-push-novidades',
+      padrao: '* * * * *',
     });
   });
 

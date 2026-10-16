@@ -1365,16 +1365,20 @@ model LogIa {
 // ─── Administração (3) ──────────────────────────────────────────────────────────────────────────
 
 model Novidade {
-  id           String         @id @default(uuid(7)) @db.Uuid
-  autorId      String?        @map("autor_id") @db.Uuid
-  titulo       String
-  descricao    String
-  videoUrl     String?        @map("video_url")
-  publicadaEm  DateTime?      @map("publicada_em") @db.Timestamptz(6)
-  validade     DateTime?      @db.Timestamptz(6)
-  status       StatusNovidade @default(rascunho)
-  criadoEm     DateTime       @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm DateTime       @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  id            String         @id @default(uuid(7)) @db.Uuid
+  autorId       String?        @map("autor_id") @db.Uuid
+  titulo        String
+  descricao     String
+  videoUrl      String?        @map("video_url")
+  publicadaEm   DateTime?      @map("publicada_em") @db.Timestamptz(6)
+  validade      DateTime?      @db.Timestamptz(6)
+  status        StatusNovidade @default(rascunho)
+  /// Manda push a todos quando a novidade entra no ar (T-141d).
+  enviarPush    Boolean        @default(false) @map("enviar_push")
+  /// Quando o push saiu; nulo enquanto não saiu.
+  pushEnviadoEm DateTime?      @map("push_enviado_em") @db.Timestamptz(6)
+  criadoEm      DateTime       @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm  DateTime       @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   autor    Usuario?          @relation(fields: [autorId], references: [id], onDelete: SetNull)
   leituras NovidadeLeitura[]
