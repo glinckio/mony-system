@@ -475,6 +475,7 @@ export const textosPtBr = {
       agenda: 'Agenda',
       rotinas: 'Rotinas',
       'mony-avaliacao': 'Avaliação da Mony',
+      privacidade: 'Privacidade (LGPD)',
     } satisfies Record<NomeFilaAdmin, string>,
   },
   configuracoes: {

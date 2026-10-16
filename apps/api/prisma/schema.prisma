@@ -421,6 +421,7 @@ model Usuario {
   configuracoesAlteradas Configuracao[]
   usoRecursos            UsoRecurso[]
   exportacoesRelatorio   ExportacaoRelatorio[]
+  exportacoesDados       ExportacaoDados[]
   categorias             Categoria[]
   contas                 Conta[]
   cartoes                Cartao[]
@@ -658,6 +659,22 @@ model ExportacaoRelatorio {
 
   @@index([usuarioId, criadoEm])
   @@map("exportacoes_relatorio")
+}
+
+/// Exportação dos dados do usuário (RN-160, T-140a): um ZIP com JSON e XLSX, gerado no worker.
+model ExportacaoDados {
+  id           String           @id @default(uuid(7)) @db.Uuid
+  usuarioId    String           @map("usuario_id") @db.Uuid
+  status       StatusExportacao @default(processando)
+  chaveArquivo String?          @map("chave_arquivo")
+  concluidaEm  DateTime?        @map("concluida_em") @db.Timestamptz(6)
+  criadoEm     DateTime         @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime         @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, criadoEm])
+  @@map("exportacoes_dados")
 }
 
 // ─── Finanças (11) ──────────────────────────────────────────────────────────────────────────────

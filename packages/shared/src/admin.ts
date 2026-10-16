@@ -715,6 +715,7 @@ export const FILAS_ADMIN = [
   'agenda',
   'rotinas',
   'mony-avaliacao',
+  'privacidade',
 ] as const;
 
 /** Quantos jobs falhos cada página da seção Filas traz. */

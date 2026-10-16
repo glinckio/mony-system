@@ -32,7 +32,9 @@ import { PlanosModule } from './modulos/planos/planos.module';
 import { AssinaturasModule } from './modulos/assinaturas/assinaturas.module';
 import { ProcessadorWebhooks } from './modulos/assinaturas/processador-webhooks';
 import { ProcessadorRelatorios } from './modulos/relatorios/processador-relatorios';
+import { ProcessadorPrivacidade } from './modulos/lgpd/processador-privacidade';
 import { RelatoriosModule } from './modulos/relatorios/relatorios.module';
+import { LgpdModule } from './modulos/lgpd/lgpd.module';
 import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
 
 /**
@@ -62,6 +64,7 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     PlanosModule,
     AssinaturasModule,
     RelatoriosModule,
+    LgpdModule,
     ArmazenamentoModule,
     LembretesModule,
     NovidadesModule,
@@ -74,6 +77,7 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     ProcessadorRotinas,
     ProcessadorNotificacoes,
     ProcessadorRelatorios,
+    ProcessadorPrivacidade,
     ProcessadorMonyMidia,
     ProcessadorWebhooks,
     ProcessadorAvaliacaoMony,
