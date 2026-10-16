@@ -20,7 +20,8 @@ import { Route as PainelMetricasRouteImport } from './rotas/_painel/metricas';
 import { Route as PainelMonyRouteImport } from './rotas/_painel/mony';
 import { Route as PainelNovidadesRouteImport } from './rotas/_painel/novidades';
 import { Route as PainelPlanosRouteImport } from './rotas/_painel/planos';
-import { Route as PainelUsuariosRouteImport } from './rotas/_painel/usuarios';
+import { Route as PainelUsuariosIndexRouteImport } from './rotas/_painel/usuarios.index';
+import { Route as PainelUsuariosIdRouteImport } from './rotas/_painel/usuarios.$id';
 
 const PainelRoute = PainelRouteImport.update({
   id: '/_painel',
@@ -76,9 +77,14 @@ const PainelPlanosRoute = PainelPlanosRouteImport.update({
   path: '/planos',
   getParentRoute: () => PainelRoute,
 } as any);
-const PainelUsuariosRoute = PainelUsuariosRouteImport.update({
-  id: '/usuarios',
-  path: '/usuarios',
+const PainelUsuariosIndexRoute = PainelUsuariosIndexRouteImport.update({
+  id: '/usuarios/',
+  path: '/usuarios/',
+  getParentRoute: () => PainelRoute,
+} as any);
+const PainelUsuariosIdRoute = PainelUsuariosIdRouteImport.update({
+  id: '/usuarios/$id',
+  path: '/usuarios/$id',
   getParentRoute: () => PainelRoute,
 } as any);
 
@@ -93,7 +99,8 @@ export interface FileRoutesByFullPath {
   '/mony': typeof PainelMonyRoute;
   '/novidades': typeof PainelNovidadesRoute;
   '/planos': typeof PainelPlanosRoute;
-  '/usuarios': typeof PainelUsuariosRoute;
+  '/usuarios/$id': typeof PainelUsuariosIdRoute;
+  '/usuarios/': typeof PainelUsuariosIndexRoute;
 }
 export interface FileRoutesByTo {
   '/entrar': typeof EntrarRoute;
@@ -105,8 +112,9 @@ export interface FileRoutesByTo {
   '/mony': typeof PainelMonyRoute;
   '/novidades': typeof PainelNovidadesRoute;
   '/planos': typeof PainelPlanosRoute;
-  '/usuarios': typeof PainelUsuariosRoute;
   '/': typeof PainelIndexRoute;
+  '/usuarios/$id': typeof PainelUsuariosIdRoute;
+  '/usuarios': typeof PainelUsuariosIndexRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
@@ -120,8 +128,9 @@ export interface FileRoutesById {
   '/_painel/mony': typeof PainelMonyRoute;
   '/_painel/novidades': typeof PainelNovidadesRoute;
   '/_painel/planos': typeof PainelPlanosRoute;
-  '/_painel/usuarios': typeof PainelUsuariosRoute;
   '/_painel/': typeof PainelIndexRoute;
+  '/_painel/usuarios/$id': typeof PainelUsuariosIdRoute;
+  '/_painel/usuarios/': typeof PainelUsuariosIndexRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
@@ -136,7 +145,8 @@ export interface FileRouteTypes {
     | '/mony'
     | '/novidades'
     | '/planos'
-    | '/usuarios';
+    | '/usuarios/$id'
+    | '/usuarios/';
   fileRoutesByTo: FileRoutesByTo;
   to:
     | '/entrar'
@@ -148,8 +158,9 @@ export interface FileRouteTypes {
     | '/mony'
     | '/novidades'
     | '/planos'
-    | '/usuarios'
-    | '/';
+    | '/'
+    | '/usuarios/$id'
+    | '/usuarios';
   id:
     | '__root__'
     | '/_painel'
@@ -162,8 +173,9 @@ export interface FileRouteTypes {
     | '/_painel/mony'
     | '/_painel/novidades'
     | '/_painel/planos'
-    | '/_painel/usuarios'
-    | '/_painel/';
+    | '/_painel/'
+    | '/_painel/usuarios/$id'
+    | '/_painel/usuarios/';
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
@@ -250,11 +262,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PainelPlanosRouteImport;
       parentRoute: typeof PainelRoute;
     };
-    '/_painel/usuarios': {
-      id: '/_painel/usuarios';
+    '/_painel/usuarios/': {
+      id: '/_painel/usuarios/';
       path: '/usuarios';
-      fullPath: '/usuarios';
-      preLoaderRoute: typeof PainelUsuariosRouteImport;
+      fullPath: '/usuarios/';
+      preLoaderRoute: typeof PainelUsuariosIndexRouteImport;
+      parentRoute: typeof PainelRoute;
+    };
+    '/_painel/usuarios/$id': {
+      id: '/_painel/usuarios/$id';
+      path: '/usuarios/$id';
+      fullPath: '/usuarios/$id';
+      preLoaderRoute: typeof PainelUsuariosIdRouteImport;
       parentRoute: typeof PainelRoute;
     };
   }
@@ -269,8 +288,9 @@ interface PainelRouteChildren {
   PainelMonyRoute: typeof PainelMonyRoute;
   PainelNovidadesRoute: typeof PainelNovidadesRoute;
   PainelPlanosRoute: typeof PainelPlanosRoute;
-  PainelUsuariosRoute: typeof PainelUsuariosRoute;
   PainelIndexRoute: typeof PainelIndexRoute;
+  PainelUsuariosIdRoute: typeof PainelUsuariosIdRoute;
+  PainelUsuariosIndexRoute: typeof PainelUsuariosIndexRoute;
 }
 
 const PainelRouteChildren: PainelRouteChildren = {
@@ -282,8 +302,9 @@ const PainelRouteChildren: PainelRouteChildren = {
   PainelMonyRoute: PainelMonyRoute,
   PainelNovidadesRoute: PainelNovidadesRoute,
   PainelPlanosRoute: PainelPlanosRoute,
-  PainelUsuariosRoute: PainelUsuariosRoute,
   PainelIndexRoute: PainelIndexRoute,
+  PainelUsuariosIdRoute: PainelUsuariosIdRoute,
+  PainelUsuariosIndexRoute: PainelUsuariosIndexRoute,
 };
 
 const PainelRouteWithChildren =

@@ -21,16 +21,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { FORMATO_DATA } from '@/lib/formatos';
 import { Cupons } from '@/components/cupons';
 import { PlanoGratuito } from '@/components/plano-gratuito';
 
 export const Route = createFileRoute('/_painel/planos')({ component: Planos });
-
-const FORMATO_DATA = new Intl.DateTimeFormat('pt-BR', {
-  dateStyle: 'short',
-  timeStyle: 'short',
-  timeZone: 'America/Sao_Paulo',
-});
 
 /**
  * Planos e preços (T-104b a T-104d, doc 13): o valor do mensal e do anual, os limites do gratuito,
