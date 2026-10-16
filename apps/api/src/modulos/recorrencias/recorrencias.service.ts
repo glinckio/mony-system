@@ -347,17 +347,21 @@ export class RecorrenciasService {
   /**
    * Rotina (doc 09): a cada hora, gera as ocorrências que entraram na janela de 35 dias, no fuso
    * de cada usuário. Pode rodar de novo sem duplicar: a recorrência fica travada e o ponteiro
-   * `proxima_geracao` só anda para a frente.
+   * `proxima_geracao` só anda para a frente. `usuarioId` limita a um usuário: os testes de
+   * integração dividem o banco e não podem gerar ocorrências das recorrências dos outros (T-152).
    */
   @Rotina({ nome: 'gerar-recorrencias', padrao: '30 * * * *' })
-  async gerarPendentes(agora: Date): Promise<{ recorrencias: number; ocorrencias: number }> {
+  async gerarPendentes(
+    agora: Date,
+    usuarioId?: string,
+  ): Promise<{ recorrencias: number; ocorrencias: number }> {
     // Folga de um dia para os fusos à frente de UTC; cada recorrência confere no fuso do usuário.
     const ate = paraDataDoBanco(somarDias(data(agora), HORIZONTE_RECORRENCIA_DIAS + 1));
     let depoisDe: string | null = null;
     let recorrencias = 0;
     let ocorrencias = 0;
     for (;;) {
-      const lote = await this.repositorio.pendentesDeGeracao(ate, depoisDe, LOTE_ROTINA);
+      const lote = await this.repositorio.pendentesDeGeracao(ate, depoisDe, LOTE_ROTINA, usuarioId);
       for (const item of lote) {
         const hoje = dataNoFuso(agora, item.usuario.fusoHorario);
         try {

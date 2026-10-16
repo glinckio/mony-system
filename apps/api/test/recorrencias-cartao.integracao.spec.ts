@@ -65,7 +65,7 @@ describe.runIf(ativo)('integração: recorrência no cartão', () => {
     const despesa = await prisma.categoria.findFirstOrThrow({
       where: { usuarioId: sessao.usuario.id, tipo: 'despesa' },
     });
-    return { acesso: sessao.tokens.acesso, despesa: despesa.id };
+    return { usuarioId: sessao.usuario.id, acesso: sessao.tokens.acesso, despesa: despesa.id };
   }
 
   type Usuario = Awaited<ReturnType<typeof usuarioNovo>>;
@@ -144,8 +144,11 @@ describe.runIf(ativo)('integração: recorrência no cartão', () => {
     expect(ocorrencias.every((o) => o.cartaoId === cartaoId && o.faturaId !== null)).toBe(true);
     expect(await totais(usuario, cartaoId)).toEqual({ '2026-11-01': 3_000, '2026-12-01': 3_000 });
 
-    // 20/11: a janela vai até 25/12; 03/12 já é da fatura de janeiro.
-    await app.get(RecorrenciasService).gerarPendentes(new Date('2026-11-20T12:00:00Z'));
+    // 20/11: a janela vai até 25/12; 03/12 já é da fatura de janeiro. Só para este usuário: o
+    // banco é dos outros arquivos de teste também (T-152).
+    await app
+      .get(RecorrenciasService)
+      .gerarPendentes(new Date('2026-11-20T12:00:00Z'), usuario.usuarioId);
     expect(await totais(usuario, cartaoId)).toEqual({
       '2026-11-01': 3_000,
       '2026-12-01': 4_000,
