@@ -24,6 +24,7 @@ import type {
 import type {
   AdminDto,
   AssinaturasAdminDto,
+  AtualizacaoMetricasAdminDto,
   AuditoriaAdminDto,
   BuscarAdminUsuariosParams,
   Codigo2faDto,
@@ -34,10 +35,12 @@ import type {
   DesafioAdminDto,
   EstenderTesteDto,
   FiltrosAuditoriaAdminDto,
+  LerAdminMetricasParams,
   ListarAdminAssinaturasParams,
   LoginAdminDto,
   LogsAdminMonyParams,
   LogsMonyAdminDto,
+  MetricasAdminDto,
   NovaNovidadeDto,
   NovaVersaoMonyDto,
   NovidadeAdminDto,
@@ -3717,4 +3720,205 @@ export const useSalvarPrecosAdminMony = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   return useMutation(getSalvarPrecosAdminMonyMutationOptions(options), queryClient);
+};
+export const getLerAdminMetricasUrl = (params: LerAdminMetricasParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/admin/metricas?${stringifiedParams}`
+    : `/v1/admin/metricas`;
+};
+
+export const lerAdminMetricas = async (
+  params: LerAdminMetricasParams,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<MetricasAdminDto> => {
+  return requisicao<MetricasAdminDto>(getLerAdminMetricasUrl(params), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getLerAdminMetricasQueryKey = (params?: LerAdminMetricasParams) => {
+  return [`/v1/admin/metricas`, ...(params ? [params] : [])] as const;
+};
+
+export const getLerAdminMetricasQueryOptions = <
+  TData = Awaited<ReturnType<typeof lerAdminMetricas>>,
+  TError = unknown,
+>(
+  params: LerAdminMetricasParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof lerAdminMetricas>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getLerAdminMetricasQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof lerAdminMetricas>>> = ({ signal }) =>
+    lerAdminMetricas(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof lerAdminMetricas>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type LerAdminMetricasQueryResult = NonNullable<Awaited<ReturnType<typeof lerAdminMetricas>>>;
+export type LerAdminMetricasQueryError = unknown;
+
+export function useLerAdminMetricas<
+  TData = Awaited<ReturnType<typeof lerAdminMetricas>>,
+  TError = unknown,
+>(
+  params: LerAdminMetricasParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof lerAdminMetricas>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof lerAdminMetricas>>,
+          TError,
+          Awaited<ReturnType<typeof lerAdminMetricas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useLerAdminMetricas<
+  TData = Awaited<ReturnType<typeof lerAdminMetricas>>,
+  TError = unknown,
+>(
+  params: LerAdminMetricasParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof lerAdminMetricas>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof lerAdminMetricas>>,
+          TError,
+          Awaited<ReturnType<typeof lerAdminMetricas>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useLerAdminMetricas<
+  TData = Awaited<ReturnType<typeof lerAdminMetricas>>,
+  TError = unknown,
+>(
+  params: LerAdminMetricasParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof lerAdminMetricas>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useLerAdminMetricas<
+  TData = Awaited<ReturnType<typeof lerAdminMetricas>>,
+  TError = unknown,
+>(
+  params: LerAdminMetricasParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof lerAdminMetricas>>, TError, TData>>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getLerAdminMetricasQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getAtualizarAdminMetricasUrl = () => {
+  return `/v1/admin/metricas/atualizar`;
+};
+
+export const atualizarAdminMetricas = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<AtualizacaoMetricasAdminDto> => {
+  return requisicao<AtualizacaoMetricasAdminDto>(getAtualizarAdminMetricasUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getAtualizarAdminMetricasMutationKey = () => ['atualizarAdminMetricas'] as const;
+
+export const getAtualizarAdminMetricasMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof atualizarAdminMetricas>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof atualizarAdminMetricas>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = getAtualizarAdminMetricasMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof atualizarAdminMetricas>>,
+    void
+  > = () => {
+    return atualizarAdminMetricas(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AtualizarAdminMetricasMutationResult = NonNullable<
+  Awaited<ReturnType<typeof atualizarAdminMetricas>>
+>;
+
+export type AtualizarAdminMetricasMutationError = unknown;
+
+export const useAtualizarAdminMetricas = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof atualizarAdminMetricas>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof atualizarAdminMetricas>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getAtualizarAdminMetricasMutationOptions(options), queryClient);
 };

@@ -1600,6 +1600,75 @@
         ]
       }
     },
+    "/v1/admin/metricas": {
+      "get": {
+        "operationId": "lerAdminMetricas",
+        "parameters": [
+          {
+            "name": "de",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Usuários ativos, lançamentos por origem e alertas no período (dias de São Paulo), pelas views.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricasAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/metricas/atualizar": {
+      "post": {
+        "operationId": "atualizarAdminMetricas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Atualiza as views agora, sem esperar a rotina de hora em hora.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtualizacaoMetricasAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/v1/mony/acoes": {
       "post": {
         "operationId": "agirMony",
@@ -8080,6 +8149,247 @@
         },
         "required": [
           "precos"
+        ]
+      },
+      "MetricasAdminDto": {
+        "type": "object",
+        "properties": {
+          "de": {
+            "type": "string"
+          },
+          "ate": {
+            "type": "string"
+          },
+          "atualizadasEm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ativos": {
+            "type": "object",
+            "properties": {
+              "noPeriodo": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "porDia": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "dia": {
+                      "type": "string"
+                    },
+                    "ativos": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "dia",
+                    "ativos"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "noPeriodo",
+              "porDia"
+            ]
+          },
+          "lancamentos": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "porOrigem": {
+                "type": "object",
+                "properties": {
+                  "manual": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "mony": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "open_finance": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "foto": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "manual",
+                  "mony",
+                  "open_finance",
+                  "foto"
+                ]
+              },
+              "porDia": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "dia": {
+                      "type": "string"
+                    },
+                    "porOrigem": {
+                      "type": "object",
+                      "properties": {
+                        "manual": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "mony": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "open_finance": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "foto": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "manual",
+                        "mony",
+                        "open_finance",
+                        "foto"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "dia",
+                    "porOrigem"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "total",
+              "porOrigem",
+              "porDia"
+            ]
+          },
+          "alertas": {
+            "type": "object",
+            "properties": {
+              "criados": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "enviados": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "lidos": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "porTipo": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "tipo": {
+                      "type": "string",
+                      "enum": [
+                        "limite_cartao",
+                        "fatura_fechada",
+                        "fatura_vencimento",
+                        "fatura_atrasada",
+                        "orcamento",
+                        "gasto_fora_padrao",
+                        "projecao_mes",
+                        "vencimento_pendente",
+                        "app_compra",
+                        "lembrete",
+                        "compromisso",
+                        "resumo_periodo",
+                        "open_finance",
+                        "assinatura",
+                        "novidade"
+                      ]
+                    },
+                    "criados": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "enviados": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "lidos": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "tipo",
+                    "criados",
+                    "enviados",
+                    "lidos"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "criados",
+              "enviados",
+              "lidos",
+              "porTipo"
+            ]
+          }
+        },
+        "required": [
+          "de",
+          "ate",
+          "atualizadasEm",
+          "ativos",
+          "lancamentos",
+          "alertas"
+        ]
+      },
+      "AtualizacaoMetricasAdminDto": {
+        "type": "object",
+        "properties": {
+          "atualizadasEm": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "atualizadasEm"
         ]
       },
       "PedidoAcaoMonyDto": {

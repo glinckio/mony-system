@@ -31,10 +31,23 @@ export interface FiltroAuditoria {
   limite: number;
 }
 
-/** O registro de `auditoria` no painel (T-141c, doc 13). Só leitura. */
+/** O registro de `auditoria` no painel (T-141c, doc 13), e a gravação de ações simples. */
 @Injectable()
 export class AdminAuditoriaRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** Grava uma ação sem antes e depois (ex.: atualizar as métricas, T-141f). */
+  async registrar(dados: {
+    adminId: string;
+    acao: string;
+    entidade: string;
+    ip: string;
+  }): Promise<void> {
+    await this.prisma.cliente.registroAuditoria.create({
+      data: { usuarioId: dados.adminId, acao: dados.acao, entidade: dados.entidade, ip: dados.ip },
+      select: { id: true },
+    });
+  }
 
   /** Da ação mais nova à mais antiga (o id é uuid v7, em ordem de criação). */
   registros(filtro: FiltroAuditoria): Promise<LinhaAuditoria[]> {

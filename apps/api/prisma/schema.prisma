@@ -461,6 +461,7 @@ model Usuario {
   ligacoes               Ligacao[]
   dicasVistas            DicaVista[]
   importacoesDocumento   ImportacaoDocumento[]
+  acessosDiarios         AcessoDiario[]
 
   @@map("usuarios")
 }
@@ -517,6 +518,19 @@ model Sessao {
   @@index([usuarioId])
   @@index([dispositivoId])
   @@map("sessoes")
+}
+
+/// Um dia (São Paulo) em que a pessoa abriu o app: login, cadastro ou renovação da sessão (T-141f).
+/// Base dos usuários ativos do painel.
+model AcessoDiario {
+  usuarioId String   @map("usuario_id") @db.Uuid
+  dia       DateTime @db.Date
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, dia])
+  @@index([dia])
+  @@map("acessos_diarios")
 }
 
 model CodigoRecuperacao {

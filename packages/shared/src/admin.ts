@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { SENHA_MAXIMO } from './autenticacao.js';
 import { ehDataCalendario } from './datas.js';
 import {
+  ORIGENS_TRANSACAO,
+  type OrigemTransacao,
   PAPEIS_USUARIO,
   PLANOS,
   PLANOS_PAGOS,
@@ -16,6 +18,7 @@ import {
   STATUS_ASSINATURA,
   STATUS_CONEXAO_OPEN_FINANCE,
   STATUS_USUARIO,
+  TIPOS_ALERTA,
 } from './enums.js';
 
 /** `POST /admin/auth/entrar`. */
@@ -575,6 +578,62 @@ export const esquemaCustoMonyAdmin = z.object({
   modelosSemPreco: z.array(z.string()),
 });
 
+/** `GET /admin/metricas` (T-141f): o período em dias de São Paulo, os dois inclusos; até 1 ano. */
+export const esquemaConsultaMetricasAdmin = z
+  .object({ de: dataDoFiltro, ate: dataDoFiltro })
+  .refine((consulta) => consulta.de <= consulta.ate, {
+    message: 'O início do período não pode ser depois do fim.',
+    path: ['de'],
+  })
+  .refine(
+    (consulta) =>
+      Date.parse(`${consulta.ate}T00:00:00Z`) - Date.parse(`${consulta.de}T00:00:00Z`) <
+      DIAS_CUSTO_MONY_MAXIMO * 86_400_000,
+    { message: 'O período vai até 1 ano.', path: ['ate'] },
+  );
+
+const contagemPorOrigem = z.object(
+  Object.fromEntries(ORIGENS_TRANSACAO.map((origem) => [origem, z.number().int()])) as Record<
+    OrigemTransacao,
+    z.ZodNumber
+  >,
+);
+
+export const esquemaMetricasAdmin = z.object({
+  de: z.string(),
+  ate: z.string(),
+  /** Quando as views foram atualizadas pela última vez; `null`: ainda não foram. */
+  atualizadasEm: z.string().nullable(),
+  ativos: z.object({
+    /** Pessoas diferentes que abriram o app no período (login, cadastro ou renovação). */
+    noPeriodo: z.number().int(),
+    /** Só os dias com alguém. */
+    porDia: z.array(z.object({ dia: z.string(), ativos: z.number().int() })),
+  }),
+  lancamentos: z.object({
+    total: z.number().int(),
+    porOrigem: contagemPorOrigem,
+    porDia: z.array(z.object({ dia: z.string(), porOrigem: contagemPorOrigem })),
+  }),
+  alertas: z.object({
+    criados: z.number().int(),
+    enviados: z.number().int(),
+    lidos: z.number().int(),
+    /** Só os tipos com algum alerta, do mais criado ao menos. */
+    porTipo: z.array(
+      z.object({
+        tipo: z.enum(TIPOS_ALERTA),
+        criados: z.number().int(),
+        enviados: z.number().int(),
+        lidos: z.number().int(),
+      }),
+    ),
+  }),
+});
+
+/** `POST /admin/metricas/atualizar`. */
+export const esquemaAtualizacaoMetricasAdmin = z.object({ atualizadasEm: z.string() });
+
 export type DadosLoginAdmin = z.infer<typeof esquemaLoginAdmin>;
 export type DesafioAdmin = z.infer<typeof esquemaDesafioAdmin>;
 export type Novo2fa = z.infer<typeof esquemaNovo2fa>;
@@ -622,3 +681,5 @@ export type PrecosIaAdmin = z.infer<typeof esquemaPrecosIaAdmin>;
 export type ConsultaCustoMonyAdmin = z.infer<typeof esquemaConsultaCustoMonyAdmin>;
 export type CustoModeloMony = z.infer<typeof esquemaCustoModeloMony>;
 export type CustoMonyAdmin = z.infer<typeof esquemaCustoMonyAdmin>;
+export type ConsultaMetricasAdmin = z.infer<typeof esquemaConsultaMetricasAdmin>;
+export type MetricasAdmin = z.infer<typeof esquemaMetricasAdmin>;
