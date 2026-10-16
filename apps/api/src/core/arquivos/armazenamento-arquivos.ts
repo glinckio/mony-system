@@ -31,6 +31,8 @@ export abstract class ArmazenamentoArquivos {
   abstract urlDeLeitura(chave: string, segundos: number, nomeArquivo?: string): Promise<string>;
   /** `null` quando o arquivo ainda não foi enviado. */
   abstract consultar(chave: string): Promise<ObjetoArquivo | null>;
+  /** Os primeiros `bytes` do arquivo, para conferir o tipo real (T-144b). */
+  abstract lerInicio(chave: string, bytes: number): Promise<Uint8Array>;
   abstract apagar(chave: string): Promise<void>;
   /** Grava um arquivo gerado no servidor (o worker, nas exportações). */
   abstract gravar(chave: string, corpo: Uint8Array, tipoConteudo: string): Promise<void>;
@@ -81,6 +83,17 @@ export class ArmazenamentoS3 extends ArmazenamentoArquivos {
     }
   }
 
+  async lerInicio(chave: string, bytes: number): Promise<Uint8Array> {
+    const resposta = await this.cliente.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: chave,
+        Range: `bytes=0-${String(bytes - 1)}`,
+      }),
+    );
+    return resposta.Body === undefined ? new Uint8Array() : resposta.Body.transformToByteArray();
+  }
+
   async apagar(chave: string): Promise<void> {
     await this.cliente.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: chave }));
   }
@@ -119,6 +132,10 @@ export class ArmazenamentoDesligado extends ArmazenamentoArquivos {
     return this.erro();
   }
 
+  lerInicio(): Promise<Uint8Array> {
+    return this.erro();
+  }
+
   apagar(): Promise<void> {
     return this.erro();
   }
@@ -128,14 +145,34 @@ export class ArmazenamentoDesligado extends ArmazenamentoArquivos {
   }
 }
 
+const ascii = (texto: string): number[] => [...new TextEncoder().encode(texto)];
+
+/** O começo de um arquivo de verdade de cada extensão, para o armazenamento em memória. */
+export const INICIO_DA_EXTENSAO = {
+  jpg: Uint8Array.from([0xff, 0xd8, 0xff, 0xe0]),
+  png: Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+  webp: Uint8Array.from([...ascii('RIFF'), 0, 0, 0, 0, ...ascii('WEBP')]),
+  heic: Uint8Array.from([0, 0, 0, 0x18, ...ascii('ftypheic')]),
+  pdf: Uint8Array.from(ascii('%PDF-1.7')),
+  m4a: Uint8Array.from([0, 0, 0, 0x1c, ...ascii('ftypM4A ')]),
+  aac: Uint8Array.from([0xff, 0xf1, 0x50, 0x80]),
+  mp3: Uint8Array.from(ascii('ID3')),
+  webm: Uint8Array.from([0x1a, 0x45, 0xdf, 0xa3]),
+} satisfies Record<string, Uint8Array>;
+
 /** Em memória, para os testes: `simularEnvio` faz o papel do app enviando o arquivo. */
 export class ArmazenamentoMemoria extends ArmazenamentoArquivos {
   readonly objetos = new Map<string, ObjetoArquivo>();
   /** O conteúdo do que foi gravado pelo servidor (`gravar`). */
   readonly conteudos = new Map<string, Uint8Array>();
 
-  simularEnvio(chave: string, tamanho: number, tipoConteudo?: string): void {
+  /**
+   * Sem `inicio`, o arquivo começa como um de verdade do tipo da chave (`.jpg`, `.pdf`, `.m4a`…);
+   * com ele, os primeiros bytes são esses (ex.: um executável com nome de foto).
+   */
+  simularEnvio(chave: string, tamanho: number, tipoConteudo?: string, inicio?: Uint8Array): void {
     this.objetos.set(chave, { tamanho, tipoConteudo });
+    if (inicio !== undefined) this.conteudos.set(chave, inicio);
   }
 
   urlDeEnvio(chave: string, tipoConteudo: string, segundos: number): Promise<string> {
@@ -152,6 +189,15 @@ export class ArmazenamentoMemoria extends ArmazenamentoArquivos {
 
   consultar(chave: string): Promise<ObjetoArquivo | null> {
     return Promise.resolve(this.objetos.get(chave) ?? null);
+  }
+
+  lerInicio(chave: string, bytes: number): Promise<Uint8Array> {
+    const conteudo =
+      this.conteudos.get(chave) ??
+      (INICIO_DA_EXTENSAO as Record<string, Uint8Array | undefined>)[
+        chave.slice(chave.lastIndexOf('.') + 1)
+      ];
+    return Promise.resolve((conteudo ?? new Uint8Array()).slice(0, bytes));
   }
 
   apagar(chave: string): Promise<void> {

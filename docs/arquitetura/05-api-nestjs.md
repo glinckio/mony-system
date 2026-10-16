@@ -231,7 +231,7 @@ Implementado na T-037 (RN-040 a RN-047).
   - `orcamento` (`categoriaId`, `percentualUsado`) na despesa de categoria com orçamento no mês da data (T-043).
 - **Anexos:**
   - o app envia o arquivo direto ao S3 com a URL assinada; o `content-type` faz parte da assinatura;
-  - ao ligar o anexo (`anexoIds`), a API confere que o arquivo chegou, que tem até 10 MB e que é do usuário;
+  - ao ligar o anexo (`anexoIds`), a API confere que o arquivo chegou, que é do usuário, que tem até 10 MB (PDF até 20 MB) e que os primeiros bytes são do tipo declarado (T-144b); senão apaga o arquivo e responde 400;
   - um anexo fica em um lançamento só;
   - a chave no S3 é `usuarios/<usuarioId>/anexos/<aleatório>.<extensão>`.
 

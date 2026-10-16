@@ -131,7 +131,7 @@ export const textosTransacoes = {
       ajuda: 'Comprovante, nota ou boleto. O anexo fica no lançamento quando você salva.',
       erros: {
         semPermissao: 'Libere a câmera nas configurações do aparelho para fotografar.',
-        grande: 'O arquivo passa de 10 MB.',
+        grande: 'O arquivo é grande demais: fotos até 10 MB, PDF até 20 MB.',
         tipo: 'Escolha um arquivo PDF.',
         envio: 'Não foi possível enviar o anexo. Tente de novo.',
         abrir: 'Não foi possível abrir o anexo. Tente de novo.',

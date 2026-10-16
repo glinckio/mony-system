@@ -469,4 +469,59 @@ describe.runIf(ativo)('integração: transações', () => {
     const outro = await usuarioNovo();
     expect((await chamar('GET', `/arquivos/${envio.id}`, outro.acesso)).statusCode).toBe(404);
   });
+
+  it('anexo: tipo real pelos primeiros bytes e tamanho máximo pelo tipo (doc 11, T-144b)', async () => {
+    const usuario = await usuarioNovo();
+    const preparar = async (tipoConteudo: string, tamanho: number) => {
+      const preparo = await chamar('POST', '/arquivos', usuario.acesso, {
+        tipo: 'comprovante',
+        tipoConteudo,
+        tamanho,
+      });
+      return preparo;
+    };
+
+    // PDF de até 20 MB; foto só até 10 MB.
+    expect((await preparar('application/pdf', 15 * 1024 * 1024)).statusCode).toBe(201);
+    expect((await preparar('image/jpeg', 15 * 1024 * 1024)).statusCode).toBe(400);
+
+    // Um executável com nome de foto é recusado e apagado do S3.
+    const falso = (await preparar('image/jpeg', 2048)).json<{ id: string }>();
+    const anexo = await prisma.anexo.findUniqueOrThrow({ where: { id: falso.id } });
+    armazenamento.simularEnvio(
+      anexo.arquivoUrl,
+      2048,
+      'image/jpeg',
+      Uint8Array.from([0x4d, 0x5a, 0x90, 0x00]),
+    );
+    const recusado = await chamar(
+      'POST',
+      '/transacoes',
+      usuario.acesso,
+      {
+        tipo: 'despesa',
+        descricao: 'Mercado',
+        valorCentavos: 5000,
+        categoriaId: usuario.despesa,
+        formaPagamento: 'pix',
+        anexoIds: [falso.id],
+      },
+      { 'idempotency-key': randomUUID() },
+    );
+    expect(recusado.statusCode).toBe(400);
+    expect(recusado.json()).toMatchObject({ erro: { detalhes: { anexoId: falso.id } } });
+    expect(await armazenamento.consultar(anexo.arquivoUrl)).toBeNull();
+
+    // Foto declarada como JPEG que é um PNG passa: é imagem do mesmo jeito.
+    const png = (await preparar('image/jpeg', 2048)).json<{ id: string }>();
+    const anexoPng = await prisma.anexo.findUniqueOrThrow({ where: { id: png.id } });
+    armazenamento.simularEnvio(
+      anexoPng.arquivoUrl,
+      2048,
+      'image/jpeg',
+      Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    );
+    const transacao = await despesa(usuario, { anexoIds: [png.id] });
+    expect(transacao.anexos).toEqual([{ id: png.id, tipo: 'comprovante', tamanho: 2048 }]);
+  });
 });
