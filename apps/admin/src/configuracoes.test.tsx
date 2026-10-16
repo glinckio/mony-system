@@ -18,6 +18,7 @@ const PARAMETROS = {
   },
   ligacoes: { limiteMensal: 10 },
   versaoMinima: { ios: '1.0.0', android: '1.0.0' },
+  monitoramento: { custoIaDiarioCentavos: 5_000, filaParadaMinutos: 15 },
 };
 
 const urlDe = (entrada: Parameters<typeof fetch>[0]) =>
@@ -70,7 +71,7 @@ async function trocar(rotulo: string, valor: string) {
   await userEvent.type(campo, valor);
 }
 
-describe('Configurações (T-141g)', () => {
+describe('Configurações (T-141g, T-142a)', () => {
   beforeEach(() => {
     configurarApi('');
     guardarSessaoAdmin({
@@ -95,6 +96,9 @@ describe('Configurações (T-141g)', () => {
     await trocar('Alertas de consultoria por dia', '5');
     await trocar('Valor mínimo (R$)', '80,50');
     await trocar('Versão mínima no Android', '2.3.0');
+    expect(screen.getByLabelText('Custo de IA por dia (US$)')).toHaveValue('50,00');
+    await trocar('Custo de IA por dia (US$)', '120,00');
+    await trocar('Fila parada depois de (minutos)', '30');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
     expect(await screen.findByRole('status')).toHaveTextContent('Configurações salvas.');
@@ -107,6 +111,7 @@ describe('Configurações (T-141g)', () => {
           foraDoPadrao: { ...PARAMETROS.alertas.foraDoPadrao, valorMinimoCentavos: 8_050 },
         },
         versaoMinima: { ios: '1.0.0', android: '2.3.0' },
+        monitoramento: { custoIaDiarioCentavos: 12_000, filaParadaMinutos: 30 },
       },
     ]);
     expect(screen.getByText(/por Ana Admin/)).toBeInTheDocument();
@@ -121,6 +126,10 @@ describe('Configurações (T-141g)', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Confira os campos');
     await trocar('Alertas de consultoria por dia', '3');
     await trocar('Versão mínima no iOS', '1.2');
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Confira os campos');
+    await trocar('Versão mínima no iOS', '1.2.0');
+    await trocar('Fila parada depois de (minutos)', '2');
     await userEvent.click(screen.getByRole('button', { name: 'Salvar' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Confira os campos');
     expect(salvos).toEqual([]);

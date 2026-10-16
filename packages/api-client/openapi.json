@@ -9002,12 +9002,32 @@
                   "ios",
                   "android"
                 ]
+              },
+              "monitoramento": {
+                "type": "object",
+                "properties": {
+                  "custoIaDiarioCentavos": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100000000
+                  },
+                  "filaParadaMinutos": {
+                    "type": "integer",
+                    "minimum": 5,
+                    "maximum": 1440
+                  }
+                },
+                "required": [
+                  "custoIaDiarioCentavos",
+                  "filaParadaMinutos"
+                ]
               }
             },
             "required": [
               "alertas",
               "ligacoes",
-              "versaoMinima"
+              "versaoMinima",
+              "monitoramento"
             ]
           },
           "alteradoEm": {
@@ -9126,12 +9146,32 @@
               "ios",
               "android"
             ]
+          },
+          "monitoramento": {
+            "type": "object",
+            "properties": {
+              "custoIaDiarioCentavos": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100000000
+              },
+              "filaParadaMinutos": {
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 1440
+              }
+            },
+            "required": [
+              "custoIaDiarioCentavos",
+              "filaParadaMinutos"
+            ]
           }
         },
         "required": [
           "alertas",
           "ligacoes",
-          "versaoMinima"
+          "versaoMinima",
+          "monitoramento"
         ]
       },
       "PedidoAcaoMonyDto": {

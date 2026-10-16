@@ -121,7 +121,10 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 | Gasto fora do padrão (RN-106): múltiplo da média, mínimo de lançamentos, valor mínimo | 3×, 5, R$ 50,00 | 2 a 20, 1 a 100, até R$ 1.000.000,00 | Avaliador `gasto_fora_padrao` |
 | Ligações por mês por usuário (RN-078) | 10 | 0 a 100 | Lembrete por ligação (T-122), quando existir |
 | Versão mínima do app, iOS e Android | a do ambiente | formato 1.2.3 | Guarda de versão e `GET /config-app` (doc 05) |
+| Alertas técnicos: custo de IA por dia, em US$ | US$ 50,00 | 0 (desliga) a US$ 1.000.000,00 | Rotina `monitorar` (T-142a, doc 12) |
+| Alertas técnicos: fila parada depois de, em minutos | 15 | 5 a 1440 | Rotina `monitorar` (T-142a, doc 12) |
 
+- Uma linha salva antes de um grupo existir (ex.: `monitoramento`, da T-142a) recebe o padrão desse grupo na leitura; os outros valores salvos continuam valendo.
 - A API e o worker leem pelo `ParametrosService` (`core/parametros`), que guarda o que leu por 30 s em cada processo: uma mudança vale em todos em até meio minuto (no processo da API que salvou, na hora). Com o banco fora ou a linha estragada, valem os padrões e a requisição segue.
 - O dia da média (90) e a janela de avaliação do fora do padrão (7 dias) continuam no código.
 

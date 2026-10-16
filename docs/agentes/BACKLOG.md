@@ -327,7 +327,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-104a · docs: 13
 - [ ] **T-142** Monitoramento e alertas (Sentry, métricas, alarmes de fila, webhook, custo de IA, backup), dividida em:
   - dep: T-013 · docs: 12
-  - [ ] **T-142a** Alertas técnicos pelo worker: rotina a cada 5 minutos que confere fila parada, falhas nas filas de webhook (Stripe e agregador) e custo de IA do dia acima do limite do painel; e-mail para `ALERTAS_TECNICOS_EMAILS` e log `alerta_tecnico`, sem repetir o mesmo alerta
+  - [x] **T-142a** Alertas técnicos pelo worker: rotina a cada 5 minutos que confere fila parada, falhas nas filas de webhook (Stripe e agregador) e custo de IA do dia acima do limite do painel; e-mail para `ALERTAS_TECNICOS_EMAILS` e log `alerta_tecnico`, sem repetir o mesmo alerta (PR #110)
   - [ ] **T-142b** Alarmes da AWS no Terraform (SNS por e-mail): alvos não saudáveis no ALB, 5xx acima de 1% por 5 minutos, log `alerta_tecnico` do worker, rotina de monitoramento sem rodar, backup diário do RDS não encontrado
   - [ ] **T-142c** Sentry na API, no worker e no admin, com releases e source maps (o app já liga o Sentry quando o build tem DSN)
   - [ ] **T-142d** Métricas de rota e de fila no CloudWatch (tempo de resposta e falhas por rota, tamanho e falhas das filas)

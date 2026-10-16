@@ -94,7 +94,7 @@ function cenario(opcoes: { emails?: string[]; custo?: number } = {}) {
   const filas = new Map(Object.values(FILAS).map((nome) => [nome, filaFalsa()]));
   const redis = redisFalso();
   const email = new EmailFake(false);
-  const monitoramento = { ...MONITORAMENTO_PADRAO };
+  const monitoramento: Parametros['monitoramento'] = { ...MONITORAMENTO_PADRAO };
   const custoIa = vi.fn(() =>
     Promise.resolve({ centavos: opcoes.custo ?? 0, modelosSemPreco: [] as string[] }),
   );
