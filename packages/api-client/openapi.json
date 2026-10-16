@@ -657,6 +657,213 @@
         ]
       }
     },
+    "/v1/admin/usuarios": {
+      "get": {
+        "operationId": "buscarAdminUsuarios",
+        "parameters": [
+          {
+            "name": "busca",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Busca por nome, e-mail ou telefone, das contas mais novas às mais antigas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuariosAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/usuarios/{id}": {
+      "get": {
+        "operationId": "usuarioAdminUsuarios",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A conta, o plano, os aparelhos, as sessões e as conexões. Grava na auditoria.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/usuarios/{id}/bloquear": {
+      "post": {
+        "operationId": "bloquearAdminUsuarios",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Impede o login e revoga as sessões; não apaga dados. Admin dá 409.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/usuarios/{id}/reativar": {
+      "post": {
+        "operationId": "reativarAdminUsuarios",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A conta bloqueada volta a entrar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/usuarios/{id}/estender-teste": {
+      "post": {
+        "operationId": "estenderTesteAdminUsuarios",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstenderTesteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Soma dias ao teste grátis (do fim atual, ou de agora se já acabou). Plano pago dá 409.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/v1/me": {
       "get": {
         "operationId": "perfilUsuarios",
@@ -5607,6 +5814,340 @@
           "situacao",
           "criadoEm",
           "criadoPor"
+        ]
+      },
+      "UsuariosAdminDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "nome": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "telefone": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "ativo",
+                    "bloqueado",
+                    "excluido"
+                  ]
+                },
+                "papel": {
+                  "type": "string",
+                  "enum": [
+                    "usuario",
+                    "admin"
+                  ]
+                },
+                "plano": {
+                  "type": "string",
+                  "enum": [
+                    "teste",
+                    "gratuito",
+                    "mensal",
+                    "anual"
+                  ]
+                },
+                "criadoEm": {
+                  "type": "string"
+                },
+                "ultimoAcesso": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "nome",
+                "email",
+                "telefone",
+                "status",
+                "papel",
+                "plano",
+                "criadoEm",
+                "ultimoAcesso"
+              ]
+            }
+          },
+          "proximoCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "itens",
+          "proximoCursor"
+        ]
+      },
+      "UsuarioAdminDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ativo",
+              "bloqueado",
+              "excluido"
+            ]
+          },
+          "papel": {
+            "type": "string",
+            "enum": [
+              "usuario",
+              "admin"
+            ]
+          },
+          "plano": {
+            "type": "string",
+            "enum": [
+              "teste",
+              "gratuito",
+              "mensal",
+              "anual"
+            ]
+          },
+          "criadoEm": {
+            "type": "string"
+          },
+          "ultimoAcesso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fusoHorario": {
+            "type": "string"
+          },
+          "assinatura": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ativa",
+                      "inadimplente",
+                      "cancelada"
+                    ]
+                  },
+                  "testeFim": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "valorCentavos": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "proximaCobranca": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "cancelamentoAgendado": {
+                    "type": "boolean"
+                  },
+                  "clienteStripe": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "status",
+                  "testeFim",
+                  "valorCentavos",
+                  "proximaCobranca",
+                  "cancelamentoAgendado",
+                  "clienteStripe"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "aparelhos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "plataforma": {
+                  "type": "string",
+                  "enum": [
+                    "ios",
+                    "android"
+                  ]
+                },
+                "modelo": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "ultimoUso": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "ativo": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "plataforma",
+                "modelo",
+                "ultimoUso",
+                "ativo"
+              ]
+            }
+          },
+          "sessoesAtivas": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "loginsSociais": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "google",
+                "apple"
+              ]
+            }
+          },
+          "conexoes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "instituicao": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "ativa",
+                    "atualizando",
+                    "erro_login",
+                    "consentimento_expirado",
+                    "desconectada"
+                  ]
+                },
+                "criadoEm": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "instituicao",
+                "status",
+                "criadoEm"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "email",
+          "telefone",
+          "status",
+          "papel",
+          "plano",
+          "criadoEm",
+          "ultimoAcesso",
+          "fusoHorario",
+          "assinatura",
+          "aparelhos",
+          "sessoesAtivas",
+          "loginsSociais",
+          "conexoes"
+        ]
+      },
+      "EstenderTesteDto": {
+        "type": "object",
+        "properties": {
+          "dias": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          }
+        },
+        "required": [
+          "dias"
         ]
       },
       "PerfilDto": {
