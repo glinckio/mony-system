@@ -577,5 +577,6 @@ Implementado na T-102 (RN-128, RN-131), em `modulos/assinaturas`; a Stripe está
 | `lembretes` | Disparo por minuto e ligações |
 | `agenda` | Sincronização Google/Microsoft |
 | `rotinas` | Rotinas diárias, semanais e mensais (ver [09](09-notificacoes-e-rotinas.md#rotinas-agendadas)) |
+| `mony-avaliacao` | Frases de teste de uma versão do prompt pedidas no painel (T-141e): o worker roda o `avaliar-mony` num processo à parte, uma por vez, sem nova tentativa |
 
 Jobs são idempotentes (id de job determinístico, ex.: `fechar-fatura-<faturaId>`, montado com `idDeJob`; o BullMQ recusa id com `:` e id só com dígitos), com retry exponencial e fila de falhas monitorada.

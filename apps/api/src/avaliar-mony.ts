@@ -99,6 +99,10 @@ avaliarMony()
     process.exitCode = codigo;
   })
   .catch((erro: unknown) => {
-    console.error('Falha na avaliação da Mony', erro);
+    console.error(erro);
+    // A última linha é o motivo que o painel mostra quando a avaliação roda pelo worker (T-141e).
+    console.error(
+      `Falha na avaliação da Mony: ${erro instanceof Error ? erro.message : String(erro)}`,
+    );
     process.exitCode = 1;
   });

@@ -82,6 +82,17 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 - Auditoria: `novidade.criada`, `novidade.editada` (antes e depois), `novidade.publicada` e `novidade.desativada`.
 - A tela das novidades no app (`GET /novidades`, aba na central, lidas) é a T-150.
 
+## Mony (T-141e)
+
+- **Versões do prompt:** a lista (`GET /admin/mony/versoes`) mostra cada versão de `mony_config` com o modelo, quem criou, a situação da avaliação (não avaliada, avaliando, falhou, avaliada) e o resultado (percentual e frases). A versão escolhida (`GET /admin/mony/versoes/:versao`; a 0 é o prompt do código) abre com o prompt editável, o modelo e as frases que falharam com os motivos.
+- **Salvar** grava uma versão nova, inativa (`POST /admin/mony/versoes`), com as mesmas descrições de ferramentas da versão de origem. As descrições não se editam no painel por enquanto (o `mony:avaliar --criar` e o banco continuam valendo para isso).
+- **Avaliar** (`POST …/:versao/avaliar`, 202) põe a versão na fila `mony-avaliacao`. O worker roda `avaliar-mony --versao <n> --gravar` num processo à parte (a avaliação fixa a versão e anota as ferramentas no processo inteiro, o que não pode acontecer no processo que atende os usuários), uma avaliação por vez, sem nova tentativa. O processo grava o resultado na versão; se não gravar, a versão fica com o motivo (a última linha da saída) em `avaliacao_falha`. Uma avaliação "rodando" há mais de 45 minutos conta como falha. A lista se relê a cada 10 s enquanto alguma roda. Com o modelo falso (`IA_PROVEDOR=fake`) o painel avisa e a API responde 409: só as frases por regra rodariam, e o resultado não vale.
+- **Ativar** (`POST …/:versao/ativar`) só aparece e só passa com a avaliação em 95% ou mais (`ConfigMonyService.ativar`, doc 08); a anterior sai na mesma transação e as outras instâncias passam a usar a nova em até 1 minuto.
+- **Custo por período** (`GET /admin/mony/custo?de=&ate=`, dias de São Paulo, até 1 ano): chamadas, tokens de entrada e saída e custo por modelo, o total, e quantas chamadas deram erro. O custo vem da **tabela de preços** (`GET` e `PUT /admin/mony/precos`, guardada em `configuracoes.precos_ia`) em centavos de dólar por milhão de tokens, a moeda em que o provedor cobra; arredonda uma vez por modelo. Modelo sem preço fica fora do total, com aviso e um botão para pôr o preço dele. A transcrição de áudio grava tokens 0 e não entra no custo.
+- **Chamadas com erro** (`GET /admin/mony/logs?de=&ate=`, 50 por vez, cursor): quando, quem (link para a conta), a mensagem do usuário que levou à chamada (até 500 caracteres), o erro, a ferramenta, o modelo e a duração.
+- Auditoria: `mony.versao_criada`, `mony.avaliacao_pedida`, `mony.versao_ativada` (antes e depois), `mony.precos_alterados` (antes e depois) e `mony.logs_vistos` a cada página aberta, porque mostra o texto dos usuários.
+- Os limites de uso por usuário por dia (para todos os planos) e o alerta de custo diário ainda não existem: são a T-151 e a T-142.
+
 ## Telas (do PDF)
 
 | Seção | Funções |

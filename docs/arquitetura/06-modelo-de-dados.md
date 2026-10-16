@@ -147,7 +147,7 @@ erDiagram
 | `consentimentos` | finalidade (`open_finance`,`agenda`,`apps_compra`,`ligacao`), concedido_em, revogado_em | LGPD: consentimento separado e revogável |
 | `controle_teste` | tipo (`email`,`google`,`apple`,`aparelho`), valor_hash, usado_em | Um teste por pessoa (RN-125) |
 | `cupons` | codigo, stripe_coupon_id, percentual, validade, ativo, criado_por | CRUD de cupons no admin espelhando a Stripe |
-| `mony_config` | versao, prompt_sistema, ferramentas (`jsonb`), modelo, ativo, criado_por | Prompt versionado e editável sem nova versão do app |
+| `mony_config` | versao, prompt_sistema, ferramentas (`jsonb`), modelo, ativo, avaliacao (`jsonb`), avaliacao_pedida_em, avaliacao_falha (T-141e), criado_por | Prompt versionado e editável sem nova versão do app |
 | `ligacoes` | lembrete_id, status, provedor_id, custo_centavos, iniciada_em | Custo e limite mensal de ligações |
 | `dicas_vistas` | chave, vista_em | Dicas contextuais de primeira visita e checklist de onboarding |
 | `importacoes_documento` | arquivo_id, tipo, status, resultado (`jsonb`: documento, estabelecimento, aviso e os lançamentos lidos, cada um com o estado e o id do que foi gravado) | Leitura de fatura PDF/foto com vários lançamentos aguardando confirmação (T-065) |

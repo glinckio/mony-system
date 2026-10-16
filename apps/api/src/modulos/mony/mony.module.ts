@@ -120,5 +120,7 @@ const FERRAMENTAS = [
       useFactory: (...ferramentas: Ferramenta[]) => ferramentas,
     },
   ],
+  // O painel (T-141e) cria, avalia e ativa versões do prompt.
+  exports: [ConfigMonyService],
 })
 export class MonyModule {}

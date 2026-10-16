@@ -14,6 +14,10 @@ import { AlertasModule } from './modulos/alertas/alertas.module';
 import { CartoesModule } from './modulos/cartoes/cartoes.module';
 import { LembretesModule } from './modulos/lembretes/lembretes.module';
 import { ConsultasNfceModule } from './modulos/mony/consultas-nfce.module';
+import {
+  ExecutorAvaliacao,
+  ProcessadorAvaliacaoMony,
+} from './modulos/mony/avaliacao/pedidos-avaliacao';
 import { ProcessadorMonyMidia } from './modulos/mony/processador-mony-midia';
 import { RascunhosModule } from './modulos/mony/rascunhos.module';
 import { PushModule } from './integracoes/push/push.module';
@@ -31,8 +35,8 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
 
 /**
  * Módulo raiz do worker: consumidores BullMQ e rotinas. Consome as filas `eventos-dominio`,
- * `emails`, `rotinas`, `notificacoes`, `relatorios`, `webhooks` (Stripe, T-102) e `mony-midia` (novas consultas do cupom
- * fiscal, T-066a); as outras ganham consumidores nas tarefas de cada módulo. Os módulos com
+ * `emails`, `rotinas`, `notificacoes`, `relatorios`, `webhooks` (Stripe, T-102), `mony-midia` (novas consultas do cupom
+ * fiscal, T-066a) e `mony-avaliacao` (frases de teste pedidas no painel, T-141e); as outras ganham consumidores nas tarefas de cada módulo. Os módulos com
  * `@Rotina` entram aqui para o agendador achá-las (os lembretes, por minuto, desde a T-084a).
  */
 @Module({
@@ -68,6 +72,8 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     ProcessadorRelatorios,
     ProcessadorMonyMidia,
     ProcessadorWebhooks,
+    ProcessadorAvaliacaoMony,
+    ExecutorAvaliacao,
   ],
 })
 export class WorkerModule {}
