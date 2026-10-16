@@ -55,3 +55,8 @@ output "comandos_github" {
     for nome, valor in local.variaveis_github : "gh variable set ${nome} --body '${valor}'"
   ])
 }
+
+output "topico_alertas" {
+  description = "Tópico SNS dos alarmes (T-142b). Outros assinantes (Slack, SMS) entram por ele."
+  value       = aws_sns_topic.alertas.arn
+}

@@ -169,7 +169,10 @@ export class MonitoramentoService {
     );
     const falhas = resultados.filter((resultado) => resultado.status === 'rejected');
     for (const { reason } of falhas) {
-      this.log.error({ err: reason as unknown }, 'Alerta técnico sem e-mail');
+      this.log.error(
+        { evento: 'alerta_tecnico_sem_email', err: reason as unknown },
+        'Alerta técnico sem e-mail',
+      );
     }
     return falhas.length < destinatarios.length;
   }

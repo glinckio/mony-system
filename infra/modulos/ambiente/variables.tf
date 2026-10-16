@@ -154,9 +154,14 @@ variable "retencao_logs_dias" {
 }
 
 variable "emails_alertas" {
-  description = "Quem recebe os alertas técnicos (fila parada, falha em webhook, custo de IA; T-142a). Vazio: só o log alerta_tecnico."
+  description = "Quem recebe os alertas técnicos: os do worker (fila parada, falha em webhook, custo de IA; T-142a) e os alarmes da AWS pelo SNS (T-142b). Cada endereço confirma a assinatura do SNS no primeiro e-mail."
   type        = list(string)
   default     = []
+
+  validation {
+    condition     = alltrue([for email in var.emails_alertas : can(regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", email))])
+    error_message = "Use endereços de e-mail, ex.: [\"tecnico@exemplo.com.br\"]."
+  }
 }
 
 # Arquivos (S3)
