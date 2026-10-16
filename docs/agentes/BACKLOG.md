@@ -333,7 +333,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - [x] **T-142d** Métricas de rota e de fila no CloudWatch (tempo de resposta e falhas por rota, tamanho e falhas das filas) (PR #112)
 - [ ] **T-143** Testes E2E com Maestro dos fluxos principais, dividida em:
   - dep: T-103, T-069 · docs: 14
-  - [ ] **T-143a** Fluxos do Maestro (cadastro → onboarding → primeiro lançamento na Mony; cartão → compra parcelada → pagar fatura; limite do gratuito → Ver planos) e o workflow que os roda num emulador Android com a API local (fakes), manual e quando os fluxos mudam
+  - [x] **T-143a** Fluxos do Maestro (cadastro → onboarding → primeiro lançamento na Mony; cartão → compra parcelada → pagar fatura; limite do gratuito → Ver planos) e o workflow que os roda num emulador Android com a API local (fakes), manual e quando os fluxos mudam (PR #113)
   - [ ] **T-143b** 👤 Rodar os mesmos fluxos no build de preview contra a API de staging antes de cada release (depende da T-013 aplicada e do EAS)
 - [ ] **T-144** Hardening de segurança (checklist de 11) e teste de carga
   - dep: T-140 · docs: 11
