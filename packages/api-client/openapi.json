@@ -1776,7 +1776,8 @@
                 "lembretes",
                 "agenda",
                 "rotinas",
-                "mony-avaliacao"
+                "mony-avaliacao",
+                "privacidade"
               ]
             }
           },
@@ -1835,7 +1836,8 @@
                 "lembretes",
                 "agenda",
                 "rotinas",
-                "mony-avaliacao"
+                "mony-avaliacao",
+                "privacidade"
               ]
             }
           }
@@ -1883,7 +1885,8 @@
                 "lembretes",
                 "agenda",
                 "rotinas",
-                "mony-avaliacao"
+                "mony-avaliacao",
+                "privacidade"
               ]
             }
           },
@@ -5887,6 +5890,66 @@
         ]
       }
     },
+    "/v1/me/exportar": {
+      "post": {
+        "operationId": "exportarLgpd",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave única da operação (8 a 255 caracteres). Repetir a chave devolve a mesma resposta sem executar de novo.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Exportação em andamento.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportacaoDadosDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "usuario"
+        ]
+      },
+      "get": {
+        "operationId": "ultimaExportacaoLgpd",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "A última exportação; pronta, com a URL assinada do ZIP, válida por 24 horas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UltimaExportacaoDadosDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "usuario"
+        ]
+      }
+    },
     "/v1/planos": {
       "get": {
         "operationId": "planosPlanos",
@@ -8795,7 +8858,8 @@
                     "lembretes",
                     "agenda",
                     "rotinas",
-                    "mony-avaliacao"
+                    "mony-avaliacao",
+                    "privacidade"
                   ]
                 },
                 "aguardando": {
@@ -8855,7 +8919,8 @@
               "lembretes",
               "agenda",
               "rotinas",
-              "mony-avaliacao"
+              "mony-avaliacao",
+              "privacidade"
             ]
           },
           "total": {
@@ -18902,6 +18967,127 @@
         "required": [
           "itens",
           "naoLidas"
+        ]
+      },
+      "ExportacaoDadosDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "processando",
+              "pronta",
+              "erro"
+            ]
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expiraEm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "criadoEm": {
+            "type": "string"
+          },
+          "concluidaEm": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "url",
+          "expiraEm",
+          "criadoEm",
+          "concluidaEm"
+        ]
+      },
+      "UltimaExportacaoDadosDto": {
+        "type": "object",
+        "properties": {
+          "exportacao": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "processando",
+                      "pronta",
+                      "erro"
+                    ]
+                  },
+                  "url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "expiraEm": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "criadoEm": {
+                    "type": "string"
+                  },
+                  "concluidaEm": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "status",
+                  "url",
+                  "expiraEm",
+                  "criadoEm",
+                  "concluidaEm"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "exportacao"
         ]
       },
       "PlanosAVendaDto": {

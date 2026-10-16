@@ -104,7 +104,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Grupo | Rotas |
 |---|---|
 | Autenticação | `POST /auth/cadastro` · `POST /auth/login` · `POST /auth/social` · `POST /auth/social/vincular` **(proposta)** · `POST /auth/renovar` · `POST /auth/sair` · `POST /auth/sair-todos` **(proposta)** · `POST /auth/senha/codigo` · `POST /auth/senha/conferir` **(proposta)** · `POST /auth/senha/redefinir` |
-| Usuário | `GET /me` · `PATCH /me` · `POST /me/dispositivos` · `GET /me/onboarding` · `PATCH /me/onboarding` **(proposta)** · `GET /me/exportar` · `DELETE /me` |
+| Usuário | `GET /me` · `PATCH /me` · `POST /me/dispositivos` · `GET /me/onboarding` · `PATCH /me/onboarding` **(proposta)** · `POST /me/exportar` e `GET /me/exportar` (T-140a) · `DELETE /me` |
 | App | `GET /config-app` **(proposta)**: versão mínima, flags, sugestões do chat |
 | Planos e assinatura | `GET /planos` · `GET /assinatura` · `GET /assinatura/uso` · `POST /assinatura/checkout` · `POST /assinatura/portal` · `POST /webhooks/stripe` |
 | Categorias | `GET /categorias` · `POST /categorias` · `PATCH /categorias/:id` · `DELETE /categorias/:id?mover_para=` |
@@ -165,9 +165,12 @@ Implementado na T-033.
 | `POST /me/dispositivos` | `tokenPush` (ou `null`), `modelo` | 204. Grava no aparelho da sessão |
 | `GET /me/onboarding` | — | `concluido`, `etapas` (pendente, concluída ou dispensada), `checklistVisivel` (RN-024), `dicasVistas` |
 | `PATCH /me/onboarding` | `concluido`, `etapas`, `dicasVistas` | O progresso atualizado |
+| `POST /me/exportar` | — (`Idempotency-Key`) | 202 + a exportação (`processando`). Pedir de novo enquanto gera devolve a mesma (RN-160) |
+| `GET /me/exportar` | — | `{ exportacao }`: a última, ou `null`. Pronta, com a URL assinada de 24 h do ZIP, que baixa como `meus-dados-<data>.zip`; depois do 6º dia, `url` nula (o bucket apaga no 7º) |
 | `GET /config-app` | — (público) | `versaoMinima` por plataforma, `flags` (`loginGoogle`, `loginApple`: provedor configurado), `sugestoesChat` |
 
 - **Token de push:** o mesmo token sai de qualquer outro aparelho registrado, porque é do app instalado e não da pessoa. Também sai quando a sessão termina: `sair`, `sair-todos` e reuso de token de renovação.
+- **Exportar meus dados (RN-160, T-140a):** o pedido grava `exportacoes_dados` e põe o job na fila `privacidade`. O worker (`ProcessadorPrivacidade`) lê as tabelas de `TABELAS_EXPORTADAS` (`modulos/lgpd/dados-do-usuario.ts`), sem hashes, tokens e segredos, e grava um ZIP com `meus-dados.json` (as linhas como estão no banco, dinheiro em centavos) e `meus-dados.xlsx` (uma aba por tabela com linhas) em `exportacoes/dados/<usuario>/<id>.zip`; marca `pronta` e põe na fila `emails` o e-mail com o link de 24 h. Vale para todos os planos. Toda tabela com `usuario_id` está nessa lista ou em `TABELAS_FORA_DA_EXPORTACAO` com o motivo (`codigos_recuperacao`, `auditoria`); um teste confere o schema. Os arquivos dos anexos (fotos, PDFs e áudios) não entram, só as linhas de `anexos`.
 - **Onboarding:** as marcas ficam em `dicas_vistas` (`onboarding:<etapa>:concluida`, `onboarding:<etapa>:dispensada`, `dica:<chave>`). Concluída vale mais que dispensada, e nenhuma etapa volta a pendente. Outros módulos marcam etapas com `UsuariosService.concluirEtapa` (ex.: o primeiro lançamento).
 - **Versão mínima:** uma guarda global compara `X-App-Version` com a mínima da plataforma (`X-Platform`). Abaixo dela responde 426 `VERSAO_APP_DESATUALIZADA`, com `detalhes.versaoMinima`. Sem os cabeçalhos não bloqueia (admin, ferramentas). `GET /config-app` e o health check respondem a qualquer versão (`@LiberadaParaVersaoAntiga()`). As mínimas são as do painel (seção Configurações, T-141g, doc 13), lidas pelo `ParametrosService` com 30 s de validade; sem nada salvo, valem `APP_VERSAO_MINIMA_IOS` e `APP_VERSAO_MINIMA_ANDROID`. Sem os dois cabeçalhos a guarda nem lê a mínima.
 
@@ -573,7 +576,8 @@ Implementado na T-102 (RN-128, RN-131), em `modulos/assinaturas`; a Stripe está
 | `mony-midia` | Novas consultas do cupom fiscal (`nfce-reconsulta`, T-066a: 5 min, 1 h e 6 h depois). A transcrição (T-064) e a leitura de foto e PDF (T-065) rodam na própria requisição |
 | `open-finance` | Sincronizações por webhook e periódicas |
 | `webhooks` | Processamento de eventos Stripe e Open Finance |
-| `relatorios` | Exportação PDF/XLSX e exportação LGPD |
+| `relatorios` | Exportação PDF/XLSX dos relatórios (RN-151) |
+| `privacidade` | Exportar meus dados (`exportar-dados`, RN-160, T-140a; 3 tentativas). A exclusão da conta (T-140b) entra aqui |
 | `lembretes` | Disparo por minuto e ligações |
 | `agenda` | Sincronização Google/Microsoft |
 | `rotinas` | Rotinas diárias, semanais e mensais (ver [09](09-notificacoes-e-rotinas.md#rotinas-agendadas)) |

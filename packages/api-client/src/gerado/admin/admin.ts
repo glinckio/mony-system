@@ -4254,7 +4254,8 @@ export const getFalhosAdminFilasUrl = (
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao',
+    | 'mony-avaliacao'
+    | 'privacidade',
   params?: FalhosAdminFilasParams,
 ) => {
   const normalizedParams = new URLSearchParams();
@@ -4284,7 +4285,8 @@ export const falhosAdminFilas = async (
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao',
+    | 'mony-avaliacao'
+    | 'privacidade',
   params?: FalhosAdminFilasParams,
   options?: Parameters<typeof requisicao>[1],
 ): Promise<FalhosAdminDto> => {
@@ -4306,7 +4308,8 @@ export const getFalhosAdminFilasQueryKey = (
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao',
+    | 'mony-avaliacao'
+    | 'privacidade',
   params?: FalhosAdminFilasParams,
 ) => {
   return [`/v1/admin/filas/${fila}/falhos`, ...(params ? [params] : [])] as const;
@@ -4327,7 +4330,8 @@ export const getFalhosAdminFilasQueryOptions = <
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao',
+    | 'mony-avaliacao'
+    | 'privacidade',
   params?: FalhosAdminFilasParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof falhosAdminFilas>>, TError, TData>>;
@@ -4369,7 +4373,8 @@ export function useFalhosAdminFilas<
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao',
+    | 'mony-avaliacao'
+    | 'privacidade',
   params: undefined | FalhosAdminFilasParams,
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof falhosAdminFilas>>, TError, TData>> &
@@ -4400,7 +4405,8 @@ export function useFalhosAdminFilas<
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao',
+    | 'mony-avaliacao'
+    | 'privacidade',
   params?: FalhosAdminFilasParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof falhosAdminFilas>>, TError, TData>> &
@@ -4431,7 +4437,8 @@ export function useFalhosAdminFilas<
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao',
+    | 'mony-avaliacao'
+    | 'privacidade',
   params?: FalhosAdminFilasParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof falhosAdminFilas>>, TError, TData>>;
@@ -4455,7 +4462,8 @@ export function useFalhosAdminFilas<
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao',
+    | 'mony-avaliacao'
+    | 'privacidade',
   params?: FalhosAdminFilasParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof falhosAdminFilas>>, TError, TData>>;
@@ -4484,7 +4492,8 @@ export const getReprocessarTodosAdminFilasUrl = (
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao',
+    | 'mony-avaliacao'
+    | 'privacidade',
 ) => {
   return `/v1/admin/filas/${fila}/falhos/reprocessar`;
 };
@@ -4501,7 +4510,8 @@ export const reprocessarTodosAdminFilas = async (
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao',
+    | 'mony-avaliacao'
+    | 'privacidade',
   options?: Parameters<typeof requisicao>[1],
 ): Promise<ReprocessadosAdminDto> => {
   return requisicao<ReprocessadosAdminDto>(getReprocessarTodosAdminFilasUrl(fila), {
@@ -4566,7 +4576,8 @@ export type ReprocessarTodosAdminFilasMutationVariables = {
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao';
+    | 'mony-avaliacao'
+    | 'privacidade';
 };
 
 export const useReprocessarTodosAdminFilas = <TError = unknown, TContext = unknown>(
@@ -4600,7 +4611,8 @@ export const getReprocessarAdminFilasUrl = (
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao',
+    | 'mony-avaliacao'
+    | 'privacidade',
   id: string,
 ) => {
   return `/v1/admin/filas/${fila}/falhos/${id}/reprocessar`;
@@ -4618,7 +4630,8 @@ export const reprocessarAdminFilas = async (
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao',
+    | 'mony-avaliacao'
+    | 'privacidade',
   id: string,
   options?: Parameters<typeof requisicao>[1],
 ): Promise<ReprocessadosAdminDto> => {
@@ -4683,7 +4696,8 @@ export type ReprocessarAdminFilasMutationVariables = {
     | 'lembretes'
     | 'agenda'
     | 'rotinas'
-    | 'mony-avaliacao';
+    | 'mony-avaliacao'
+    | 'privacidade';
   id: string;
 };
 

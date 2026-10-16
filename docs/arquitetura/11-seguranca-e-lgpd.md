@@ -45,7 +45,7 @@ Complementos **(decisão técnica)**:
 |---|---|
 | Termos e política aceitos com versão e data | Tabela `aceites_termos`; nova versão pede novo aceite (RN-007) |
 | Consentimento separado e revogável para Open Finance, agenda, apps de compra e ligações | Tabela `consentimentos`; revogar desliga o recurso e apaga dados derivados quando aplicável |
-| Exportar meus dados | Job no worker gera JSON + XLSX com todas as tabelas do usuário; link assinado por 24 h (RN-160) |
+| Exportar meus dados | Job no worker (fila `privacidade`) gera um ZIP com JSON + XLSX de todas as tabelas do usuário, sem hashes, tokens e segredos; link assinado por 24 h no app (Perfil > Privacidade) e por e-mail (RN-160, T-140a). Um teste exige que toda tabela nova com `usuario_id` entre na exportação ou tenha o motivo de ficar fora |
 | Excluir conta | Fluxo de RN-161: revoga Open Finance e agendas, cancela Stripe, apaga arquivos do S3, anonimiza registros que precisam ficar por obrigação legal (ex.: dados fiscais de cobrança) e apaga o resto |
 | Retenção de fotos e áudios | Arquivo apagado após o prazo; lançamento fica (RN-162). Regra de ciclo de vida no S3 + limpeza diária |
 | Provedor de IA sem treino | Cláusula contratual / configuração de retenção zero quando disponível |

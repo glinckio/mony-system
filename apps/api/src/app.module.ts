@@ -32,6 +32,7 @@ import { PlanosModule } from './modulos/planos/planos.module';
 import { AssinaturasModule } from './modulos/assinaturas/assinaturas.module';
 import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
 import { RelatoriosModule } from './modulos/relatorios/relatorios.module';
+import { LgpdModule } from './modulos/lgpd/lgpd.module';
 import { TransacoesModule } from './modulos/transacoes/transacoes.module';
 import { UsuariosModule } from './modulos/usuarios/usuarios.module';
 
@@ -61,6 +62,7 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     MetasModule,
     DashboardModule,
     RelatoriosModule,
+    LgpdModule,
     NotificacoesModule,
     NovidadesModule,
     PlanosModule,

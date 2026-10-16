@@ -22,6 +22,7 @@ import { ProcessadorWebhooks } from '../src/modulos/assinaturas/processador-webh
 import { ProcessadorAvaliacaoMony } from '../src/modulos/mony/avaliacao/pedidos-avaliacao';
 import { ProcessadorMonyMidia } from '../src/modulos/mony/processador-mony-midia';
 import { ProcessadorNotificacoes } from '../src/modulos/notificacoes/processador-notificacoes';
+import { ProcessadorPrivacidade } from '../src/modulos/lgpd/processador-privacidade';
 import { ProcessadorRelatorios } from '../src/modulos/relatorios/processador-relatorios';
 
 export function criarFilaFalsa() {
@@ -73,6 +74,8 @@ export function semServicosExternos(
     .overrideProvider(ProcessadorWebhooks)
     .useValue({})
     .overrideProvider(ProcessadorAvaliacaoMony)
+    .useValue({})
+    .overrideProvider(ProcessadorPrivacidade)
     .useValue({})
     .overrideProvider(ArmazenamentoArquivos)
     .useValue(new ArmazenamentoMemoria())

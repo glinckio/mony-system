@@ -29,6 +29,20 @@ export const textosMais = {
     tutorial: 'Rever tutorial',
     sair: 'Sair da conta',
     sairAjuda: 'Sai deste aparelho. Seus dados continuam na conta.',
+    exportar: 'Exportar meus dados',
+    exportarAjuda: 'Tudo o que o app guarda sobre você, em arquivo.',
+  },
+  exportarDados: {
+    titulo: 'Exportar meus dados',
+    ajuda:
+      'Um arquivo com tudo o que o app guarda sobre você, em JSON e em planilha. Quando ficar pronto, o link aparece aqui e chega no seu e-mail.',
+    pedir: 'Pedir meus dados',
+    gerando: 'Juntando seus dados… Pode fechar: avisamos por e-mail quando ficar pronto.',
+    pronto: 'Pronto! O link vale por 24 horas e também foi para o seu e-mail.',
+    baixar: 'Baixar meus dados',
+    pedirDeNovo: 'Gerar de novo',
+    expirou: 'O link do último arquivo já expirou.',
+    falhou: 'Não consegui gerar o arquivo.',
   },
   dados: {
     titulo: 'Dados pessoais',

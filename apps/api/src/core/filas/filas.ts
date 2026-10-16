@@ -11,6 +11,7 @@ export const FILAS = {
   agenda: 'agenda',
   rotinas: 'rotinas',
   monyAvaliacao: 'mony-avaliacao',
+  privacidade: 'privacidade',
 } as const;
 
 export type NomeFila = (typeof FILAS)[keyof typeof FILAS];

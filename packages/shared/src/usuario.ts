@@ -1,11 +1,12 @@
 /**
- * Contrato das rotas do usuário (`/me`, docs/arquitetura/05): perfil, aparelho e onboarding.
+ * Contrato das rotas do usuário (`/me`, docs/arquitetura/05): perfil, aparelho, onboarding e
+ * exportação dos dados (RN-160).
  */
 import { z } from 'zod';
 
 import { normalizarTelefoneBr } from './autenticacao.js';
 import { ehFusoValido } from './datas.js';
-import { PROVEDORES_LOGIN_SOCIAL } from './enums.js';
+import { PROVEDORES_LOGIN_SOCIAL, STATUS_EXPORTACAO } from './enums.js';
 
 export const esquemaPerfil = z.object({
   id: z.uuid(),
@@ -102,3 +103,28 @@ export type DadosAtualizacaoPerfil = z.infer<typeof esquemaAtualizacaoPerfil>;
 export type DadosRegistroDispositivo = z.infer<typeof esquemaRegistroDispositivo>;
 export type Onboarding = z.infer<typeof esquemaOnboarding>;
 export type DadosAtualizacaoOnboarding = z.infer<typeof esquemaAtualizacaoOnboarding>;
+
+/** RN-160: o link do arquivo com os dados vale por 24 horas. */
+export const VALIDADE_URL_EXPORTACAO_DADOS_SEGUNDOS = 24 * 60 * 60;
+
+/**
+ * Exportação dos dados do usuário (RN-160): um ZIP com JSON e XLSX. Pronta, traz a URL assinada
+ * e quando ela expira; depois do 6º dia (o arquivo some no 7º), `pronta` com `url` nula: pedir de
+ * novo.
+ */
+export const esquemaExportacaoDados = z.object({
+  id: z.uuid(),
+  status: z.enum(STATUS_EXPORTACAO),
+  url: z.string().nullable(),
+  expiraEm: z.string().nullable(),
+  criadoEm: z.string(),
+  concluidaEm: z.string().nullable(),
+});
+
+/** `GET /me/exportar`: a última exportação pedida, ou `null` se nunca pediu. */
+export const esquemaUltimaExportacaoDados = z.object({
+  exportacao: esquemaExportacaoDados.nullable(),
+});
+
+export type ExportacaoDados = z.infer<typeof esquemaExportacaoDados>;
+export type UltimaExportacaoDados = z.infer<typeof esquemaUltimaExportacaoDados>;

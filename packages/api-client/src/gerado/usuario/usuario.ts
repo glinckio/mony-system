@@ -24,9 +24,11 @@ import type {
 import type {
   AtualizacaoOnboardingDto,
   AtualizacaoPerfilDto,
+  ExportacaoDadosDto,
   OnboardingDto,
   PerfilDto,
   RegistroDispositivoDto,
+  UltimaExportacaoDadosDto,
 } from '../modelos';
 
 import { requisicao } from '../../requisicao';
@@ -565,3 +567,165 @@ export const useAtualizarOnboardingUsuarios = <TError = unknown, TContext = unkn
 > => {
   return useMutation(getAtualizarOnboardingUsuariosMutationOptions(options), queryClient);
 };
+export const getExportarLgpdUrl = () => {
+  return `/v1/me/exportar`;
+};
+
+export const exportarLgpd = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<ExportacaoDadosDto> => {
+  return requisicao<ExportacaoDadosDto>(getExportarLgpdUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getExportarLgpdMutationKey = () => ['exportarLgpd'] as const;
+
+export const getExportarLgpdMutationOptions = <TError = unknown, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<Awaited<ReturnType<typeof exportarLgpd>>, TError, void, TContext>;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<Awaited<ReturnType<typeof exportarLgpd>>, TError, void, TContext> => {
+  const mutationKey = getExportarLgpdMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof exportarLgpd>>, void> = () => {
+    return exportarLgpd(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ExportarLgpdMutationResult = NonNullable<Awaited<ReturnType<typeof exportarLgpd>>>;
+
+export type ExportarLgpdMutationError = unknown;
+
+export const useExportarLgpd = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof exportarLgpd>>, TError, void, TContext>;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<Awaited<ReturnType<typeof exportarLgpd>>, TError, void, TContext> => {
+  return useMutation(getExportarLgpdMutationOptions(options), queryClient);
+};
+export const getUltimaExportacaoLgpdUrl = () => {
+  return `/v1/me/exportar`;
+};
+
+export const ultimaExportacaoLgpd = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<UltimaExportacaoDadosDto> => {
+  return requisicao<UltimaExportacaoDadosDto>(getUltimaExportacaoLgpdUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getUltimaExportacaoLgpdQueryKey = () => {
+  return [`/v1/me/exportar`] as const;
+};
+
+export const getUltimaExportacaoLgpdQueryOptions = <
+  TData = Awaited<ReturnType<typeof ultimaExportacaoLgpd>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof ultimaExportacaoLgpd>>, TError, TData>>;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getUltimaExportacaoLgpdQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof ultimaExportacaoLgpd>>> = ({ signal }) =>
+    ultimaExportacaoLgpd({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof ultimaExportacaoLgpd>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type UltimaExportacaoLgpdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof ultimaExportacaoLgpd>>
+>;
+export type UltimaExportacaoLgpdQueryError = unknown;
+
+export function useUltimaExportacaoLgpd<
+  TData = Awaited<ReturnType<typeof ultimaExportacaoLgpd>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof ultimaExportacaoLgpd>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof ultimaExportacaoLgpd>>,
+          TError,
+          Awaited<ReturnType<typeof ultimaExportacaoLgpd>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useUltimaExportacaoLgpd<
+  TData = Awaited<ReturnType<typeof ultimaExportacaoLgpd>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof ultimaExportacaoLgpd>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof ultimaExportacaoLgpd>>,
+          TError,
+          Awaited<ReturnType<typeof ultimaExportacaoLgpd>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useUltimaExportacaoLgpd<
+  TData = Awaited<ReturnType<typeof ultimaExportacaoLgpd>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof ultimaExportacaoLgpd>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useUltimaExportacaoLgpd<
+  TData = Awaited<ReturnType<typeof ultimaExportacaoLgpd>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof ultimaExportacaoLgpd>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getUltimaExportacaoLgpdQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}

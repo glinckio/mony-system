@@ -14,6 +14,9 @@ export default defineConfig({
       // URLs reais vindas do ambiente.
       DATABASE_URL: process.env.DATABASE_URL ?? 'postgresql://mony:mony@localhost:5432/mony_teste',
       REDIS_URL: process.env.REDIS_URL ?? 'redis://localhost:6399',
+      // Os testes conferem a cobrança falsa; um `.env` local com a Stripe de teste não pode fazer
+      // os testes criarem cupons ou clientes na conta de verdade.
+      COBRANCA_PROVEDOR: 'fake',
     },
   },
 });

@@ -14,6 +14,7 @@ import { useSessao } from '@/stores/sessao';
 import { Avatar, Cabecalho, Card, Etiqueta, Icone, Tela, Texto } from '@/ui';
 import { cores } from '@/ui/tokens';
 
+import { FolhaExportarDados } from '../components/folha-exportar-dados';
 import { Linha } from '../components/linha';
 import { usePerfil } from '../hooks/use-perfil';
 
@@ -30,9 +31,8 @@ function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
 
 /**
  * Perfil e configurações (design, página 9): dados pessoais, seu plano (T-100), biometria (RN-005),
- * alertas da Mony (T-087), permissões, rever o tutorial e sair. A compra dos planos (T-103),
- * exportar e excluir conta (T-140) entram com as tarefas deles; o modo escuro não existe (o app é
- * só escuro, T-017).
+ * alertas da Mony (T-087), permissões, rever o tutorial, exportar os dados (RN-160) e sair. Excluir
+ * conta entra com a T-140b; o modo escuro não existe (o app é só escuro, T-017).
  */
 export default function TelaPerfil() {
   const { t } = useTranslation();
@@ -48,6 +48,7 @@ export default function TelaPerfil() {
   const [disponivel, definirDisponivel] = useState(false);
   const [ligada, definirLigada] = useState(false);
   const [saindo, definirSaindo] = useState(false);
+  const [exportando, definirExportando] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -177,6 +178,13 @@ export default function TelaPerfil() {
         <Secao titulo={t('mais.perfilTela.privacidade')}>
           <Linha
             primeira
+            titulo={t('mais.perfilTela.exportar')}
+            ajuda={t('mais.perfilTela.exportarAjuda')}
+            aoPressionar={() => {
+              definirExportando(true);
+            }}
+          />
+          <Linha
             titulo={t('mais.perfilTela.sair')}
             ajuda={t('mais.perfilTela.sairAjuda')}
             aoPressionar={
@@ -192,6 +200,12 @@ export default function TelaPerfil() {
           />
         </Secao>
       </ScrollView>
+      <FolhaExportarDados
+        visivel={exportando}
+        aoFechar={() => {
+          definirExportando(false);
+        }}
+      />
     </Tela>
   );
 }

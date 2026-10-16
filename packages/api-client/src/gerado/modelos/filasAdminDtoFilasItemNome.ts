@@ -21,4 +21,5 @@ export const FilasAdminDtoFilasItemNome = {
   agenda: 'agenda',
   rotinas: 'rotinas',
   'mony-avaliacao': 'mony-avaliacao',
+  privacidade: 'privacidade',
 } as const;

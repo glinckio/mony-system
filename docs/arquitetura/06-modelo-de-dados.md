@@ -53,6 +53,7 @@ erDiagram
 | `planos_precos` | plano (`mensal`,`anual`), valor, stripe_price_id, vigente, vigente_desde, alterado_por | usuarios (admin) |
 | `limites_plano` | recurso, limite_dia, limite_mes | configuração do gratuito |
 | `uso_recursos` | recurso, data, quantidade | usuarios. Único (usuario_id, recurso, data) |
+| `exportacoes_dados` | status (`processando`,`pronta`,`erro`), chave_arquivo, concluida_em | usuarios. "Exportar meus dados" (RN-160, T-140a): o ZIP com JSON e XLSX em `exportacoes/dados/` |
 
 ### Finanças (11)
 
