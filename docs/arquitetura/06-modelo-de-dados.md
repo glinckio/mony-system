@@ -47,6 +47,7 @@ erDiagram
 | `logins_sociais` | provedor (`google`,`apple`), id_externo | usuarios. Único (provedor, id_externo) |
 | `dispositivos` | plataforma, token_push, identificador_aparelho, modelo, ultimo_uso | usuarios |
 | `sessoes` | refresh_token_hash, dispositivo_id, expira_em, revogada_em | usuarios, dispositivos |
+| `acessos_diarios` | usuario_id, dia (São Paulo); chave nos dois | usuarios. Um dia em que a pessoa abriu o app (login, cadastro ou renovação), para os usuários ativos do painel (T-141f). As métricas do painel leem as *materialized views* `metricas_ativos_dia`, `metricas_lancamentos_dia` e `metricas_alertas_dia` |
 | `codigos_recuperacao` | codigo_hash, expira_em, usado, ip | usuarios |
 | `assinaturas` | plano (`teste`,`gratuito`,`mensal`,`anual`), status, teste_inicio, teste_fim, stripe_customer_id, stripe_subscription_id, inicio, proxima_cobranca, cancelamento_agendado, cancelada_em | usuarios, planos_precos |
 | `planos_precos` | plano (`mensal`,`anual`), valor, stripe_price_id, vigente, vigente_desde, alterado_por | usuarios (admin) |

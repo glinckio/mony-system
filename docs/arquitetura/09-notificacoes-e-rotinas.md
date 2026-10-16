@@ -94,6 +94,7 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 | Marcar atrasos (`marcar-atrasos`) | De hora em hora, no minuto 0 | Parcelas pendentes vencidas → `atrasado`; o status guardado dos parcelamentos tocados e dos que estavam atrasados é refeito. Parcela de dívida publica `parcela.atrasada`. Implementada na T-047 |
 | Encerrar testes (`encerrar-testes`) | Diária 01:15 | Testes vencidos → gratuito (RN-126). Os avisos do 2º dia, do último e do fim (RN-124) saem na `alertas-diarios`, às 09:00 de cada pessoa. Implementada na T-101 |
 | Push das novidades (`enviar-push-novidades`) | A cada minuto | A novidade publicada com push que entrou no ar e ainda vale vai a todas as contas ativas pelo motor (tipo `novidade`), em lotes de 500; grava `push_enviado_em`. Implementada na T-141d |
+| Métricas do painel (`atualizar-metricas`) | De hora em hora, no minuto 50 | Recalcula as *materialized views* de usuários ativos, lançamentos por origem e alertas (`REFRESH … CONCURRENTLY`). Implementada na T-141f |
 | Alertas de vencimento e projeção (`alertas-diarios`) | De hora em hora, no minuto 5, para quem está às 09:00 | `fatura_vencimento`, `vencimento_pendente`, `projecao_mes`. Implementada na T-082 |
 | Resumo semanal e mensal | Segunda e dia 1, 09:00 (na `alertas-diarios`) | Mensagem da Mony no chat + push. Implementada na T-083 |
 | Repetir orçamentos | Dia 1, 00:15 | Copia do mês anterior os orçamentos com `repetir_mensal` (RN-060); o mês é o de São Paulo (T-043) |
