@@ -156,6 +156,11 @@ export class Configuracao {
     return this.config.get('ALERTAS_TECNICOS_EMAILS', { infer: true });
   }
 
+  /** Requisições por IP por minuto no limite geral (T-144a); 0 desliga. */
+  get limiteRequisicoesIpMinuto(): number {
+    return this.config.get('LIMITE_REQUISICOES_IP_MINUTO', { infer: true });
+  }
+
   /** Namespace das métricas no CloudWatch (T-142d), ex.: `Mony/staging`. */
   get namespaceMetricas(): string {
     return this.config.get('METRICAS_NAMESPACE', { infer: true });

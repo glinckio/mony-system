@@ -9,6 +9,7 @@ import { IdempotenciaModule } from './core/idempotencia/idempotencia.module';
 import { LimitesModule } from './core/limites/limite-tentativas';
 import { NucleoModule } from './core/nucleo.module';
 import { SaudeController } from './core/saude/saude.controller';
+import { LimiteGeralModule } from './core/limites/limite-geral';
 import { VersaoAppModule } from './core/versao-app/versao-app';
 import { ArmazenamentoModule } from './core/arquivos/armazenamento-arquivos';
 import { AdminModule } from './modulos/admin/admin.module';
@@ -42,6 +43,7 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     NucleoModule,
     EventosModule,
     IdempotenciaModule,
+    LimiteGeralModule,
     VersaoAppModule,
     AuthModule,
     LimitesModule,

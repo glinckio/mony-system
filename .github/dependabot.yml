@@ -1,0 +1,26 @@
+# Atualizações de segurança e de versão (doc 11, T-144a). Os PRs do Dependabot passam pelo mesmo CI;
+# o protocolo do CLAUDE.md não muda (um agente revisa e mergeia como qualquer PR).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      menores:
+        update-types: [minor, patch]
+    ignore:
+      # O SDK do Expo sobe junto, numa tarefa própria (`expo install --check` no CI).
+      - dependency-name: 'expo*'
+      - dependency-name: 'react-native*'
+      - dependency-name: '@expo/*'
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: terraform
+    directory: /infra
+    schedule:
+      interval: monthly

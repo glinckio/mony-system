@@ -12,7 +12,8 @@ O app guarda dados financeiros e acessa contas bancárias. Segurança e LGPD sã
 | Tokens no aparelho | `expo-secure-store` (Keychain com `WHEN_UNLOCKED_THIS_DEVICE_ONLY` / Android Keystore) |
 | Biometria | Só destrava o refresh local (RN-005) |
 | Recuperação de senha | Código de 6 dígitos com gerador criptográfico, guardado com o mesmo Argon2id das senhas (só um milhão de valores; o hash lento atrasa quem ler o banco). 15 minutos, uso único, 5 tentativas erradas por código, e o pedido de outro código invalida o anterior (RN-003). A resposta do pedido é igual exista a conta ou não. A senha nova encerra as sessões de todos os aparelhos. O e-mail passa pela fila, que guarda o código só até o envio |
-| Limite de tentativas | Contadores por e-mail (resumo SHA-256) e por IP no Redis, janela fixa de 15 minutos (`core/limites`, RN-008), separados para login, pedido de código e conferência de código. Login com sucesso zera o contador do e-mail; código certo zera o da conferência; senha redefinida zera o do login. Limite geral por IP (`@nestjs/throttler` ou WAF) fica para o hardening (T-144) |
+| Limite de tentativas | Contadores por e-mail (resumo SHA-256) e por IP no Redis, janela fixa de 15 minutos (`core/limites`, RN-008), separados para login, pedido de código e conferência de código. Login com sucesso zera o contador do e-mail; código certo zera o da conferência; senha redefinida zera o do login. |
+| Limite geral por IP | Guard global `GuardaLimiteGeral` (`core/limites/limite-geral.ts`, T-144a) no mesmo contador do Redis: `LIMITE_REQUISICOES_IP_MINUTO` (padrão 1200) por IP por minuto, alto porque muita gente sai pelo mesmo IP da operadora (CGNAT). Passou do limite, 429 `MUITAS_TENTATIVAS`. Ficam de fora a saúde e os webhooks (`@SemLimiteGeral()`); 0 desliga. O IP é o que o ALB pôs por último no `X-Forwarded-For` (`trustProxy: 1` em produção), porque os da esquerda vêm do cliente; o painel, que passa pelo CloudFront, conta pelo IP do CloudFront. O WAF na frente do ALB soma o limite da borda |
 | Posse do recurso | Repositories sempre filtram `usuario_id`; testes de acesso cruzado por rota |
 | Login social | Validar `id_token` do Google e da Apple no servidor (assinatura, `aud`, `iss`, `nonce`; ver [10](10-integracoes.md#login-social)). Token de uso único. Login social com e-mail de conta existente só vincula depois do login com senha ou código (RN-002). Conta nova exige e-mail confirmado no provedor |
 | Admin | Login separado, 2FA TOTP obrigatório, sessão curta (token de 15 minutos, no máximo 8 horas por login), IP allowlist opcional. Detalhes no doc 13, "Acesso" |
@@ -21,6 +22,7 @@ O app guarda dados financeiros e acessa contas bancárias. Segurança e LGPD sã
 
 | Requisito (PDF) | Implementação |
 |---|---|
+| Cabeçalhos de segurança | Toda resposta da API leva `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Cross-Origin-Resource-Policy: same-origin` e `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'` (menos a página da documentação, `/v1/docs`). HSTS (`max-age=31536000; includeSubDomains`) só em produção (`configurar-app.ts`, T-144a) |
 | Só HTTPS | ALB com TLS 1.2+, HSTS; app com ATS (iOS) e `usesCleartextTraffic=false` (Android) |
 | Criptografia em repouso | RDS e S3 com KMS |
 | Tokens de agenda e Open Finance criptografados na aplicação | Criptografia de envelope: chave de dados por registro, cifrada pela KMS; AES-256-GCM. Serviço `core/cripto` |
@@ -35,8 +37,8 @@ Complementos **(decisão técnica)**:
 - WAF na frente do ALB (regras gerenciadas + limite por IP).
 - Validação de upload: tipo real do arquivo (magic bytes), tamanho máximo (20 MB PDF, 10 MB imagem, 10 min de áudio).
 - Proteção contra SSRF na consulta de NFC-e (lista de domínios Sefaz).
-- Logs sem dados sensíveis: redação automática de `senha`, `token`, `authorization`, números de cartão, CPF.
-- Dependências com Dependabot/Renovate e `pnpm audit` no CI.
+- Logs sem dados sensíveis: o pino troca por `[redigido]` os cabeçalhos `authorization`, `cookie` e `stripe-signature` e os campos `senha`, `senhaNova`, `senhaAtual`, `renovacao`, `refreshToken`, `tokenPush`, `idToken`, `token`, `totpSegredo`, `cpf` e `numeroCartao`, no topo, um nível abaixo e no corpo da requisição (`CAMINHOS_REDIGIDOS` em `core/log/log.module.ts`, T-144a). Campo sensível novo entra nessa lista.
+- Dependências: Dependabot semanal para npm (Expo e React Native ficam de fora, sobem com o SDK), mensal para Actions e Terraform. O job **Dependências** do CI roda `pnpm audit --prod`: vulnerabilidade crítica bloqueia; as altas aparecem no log sem bloquear até a T-144d.
 - App: sem segredos no bundle; detecção de jailbreak/root só como sinal para analítica, não bloqueio **(decisão técnica)**.
 
 ## LGPD
