@@ -218,6 +218,12 @@ describe.runIf(ativo)('integração: motor de alertas e central', () => {
     expect(resultado.descartadas).toEqual([
       { chaveUnica: 'fora_padrao:d', motivo: 'cota_consultoria' },
     ]);
+    // O `criado_em` vem do banco (a hora de verdade): fixa em AGORA, senão o teste muda conforme o
+    // dia em que roda.
+    await prisma.notificacao.updateMany({
+      where: { usuarioId: usuario.usuarioId },
+      data: { criadoEm: AGORA },
+    });
     // No dia seguinte do usuário (16/10 em São Paulo), a cota volta.
     const amanha = await motor.emitir(
       [consultoria('fora_padrao:e')],
