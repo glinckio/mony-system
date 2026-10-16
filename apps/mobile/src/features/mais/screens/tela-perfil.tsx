@@ -14,8 +14,14 @@ import { useSessao } from '@/stores/sessao';
 import { Avatar, Cabecalho, Card, Etiqueta, Icone, Tela, Texto } from '@/ui';
 import { cores } from '@/ui/tokens';
 
+import { dataNoFuso } from '@mony/shared/datas';
+
+import { useDataCurta } from '@/lib/datas-texto';
+
+import { FolhaExcluirConta } from '../components/folha-excluir-conta';
 import { FolhaExportarDados } from '../components/folha-exportar-dados';
 import { Linha } from '../components/linha';
+import { useExclusaoConta } from '../hooks/use-exclusao-conta';
 import { usePerfil } from '../hooks/use-perfil';
 
 function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
@@ -31,8 +37,8 @@ function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
 
 /**
  * Perfil e configurações (design, página 9): dados pessoais, seu plano (T-100), biometria (RN-005),
- * alertas da Mony (T-087), permissões, rever o tutorial, exportar os dados (RN-160) e sair. Excluir
- * conta entra com a T-140b; o modo escuro não existe (o app é só escuro, T-017).
+ * alertas da Mony (T-087), permissões, rever o tutorial, exportar os dados (RN-160), sair e excluir
+ * a conta (RN-161); o modo escuro não existe (o app é só escuro, T-017).
  */
 export default function TelaPerfil() {
   const { t } = useTranslation();
@@ -49,6 +55,10 @@ export default function TelaPerfil() {
   const [ligada, definirLigada] = useState(false);
   const [saindo, definirSaindo] = useState(false);
   const [exportando, definirExportando] = useState(false);
+  const [excluindo, definirExcluindo] = useState(false);
+  const { agendadaPara } = useExclusaoConta();
+  const dataCurta = useDataCurta();
+  const fuso = perfil.data?.fusoHorario ?? 'America/Sao_Paulo';
 
   useEffect(() => {
     void (async () => {
@@ -198,8 +208,33 @@ export default function TelaPerfil() {
                   }
             }
           />
+          <Linha
+            titulo={
+              agendadaPara === null
+                ? t('mais.perfilTela.excluir')
+                : t('mais.perfilTela.exclusaoAgendada', {
+                    data: dataCurta(dataNoFuso(new Date(agendadaPara), fuso)),
+                  })
+            }
+            ajuda={
+              agendadaPara === null
+                ? t('mais.perfilTela.excluirAjuda')
+                : t('mais.perfilTela.exclusaoAgendadaAjuda')
+            }
+            aoPressionar={() => {
+              definirExcluindo(true);
+            }}
+          />
         </Secao>
       </ScrollView>
+      <FolhaExcluirConta
+        visivel={excluindo}
+        temSenha={perfil.data?.temSenha ?? true}
+        fuso={fuso}
+        aoFechar={() => {
+          definirExcluindo(false);
+        }}
+      />
       <FolhaExportarDados
         visivel={exportando}
         aoFechar={() => {
