@@ -377,6 +377,64 @@ export const esquemaFiltrosAuditoriaAdmin = z.object({
   entidades: z.array(z.string()),
 });
 
+export const TITULO_NOVIDADE_MAXIMO = 120;
+export const DESCRICAO_NOVIDADE_MAXIMO = 2000;
+
+/** Vídeo das novidades: link do YouTube ou do Vimeo (doc 13; upload no S3 a confirmar). */
+export const PADRAO_VIDEO_NOVIDADE =
+  /^https:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/|vimeo\.com\/)[A-Za-z0-9_\-?=&/]+$/;
+
+/**
+ * A situação de uma novidade (T-141d): `rascunho` (ninguém vê), `agendada` (publicada para depois),
+ * `no_ar`, `vencida` (passou da validade) e `desativada`.
+ */
+export const SITUACOES_NOVIDADE = [
+  'rascunho',
+  'agendada',
+  'no_ar',
+  'vencida',
+  'desativada',
+] as const;
+
+/** `POST /admin/novidades` e `PUT /admin/novidades/:id`. `validade` é o último dia, em São Paulo. */
+export const esquemaNovaNovidade = z.object({
+  titulo: z.string().trim().min(1).max(TITULO_NOVIDADE_MAXIMO),
+  descricao: z.string().trim().min(1).max(DESCRICAO_NOVIDADE_MAXIMO),
+  videoUrl: z
+    .string()
+    .trim()
+    .regex(PADRAO_VIDEO_NOVIDADE, { message: 'Use um link do YouTube ou do Vimeo.' })
+    .nullable(),
+  validade: z
+    .string()
+    .refine(ehDataCalendario, { message: 'Data de calendário no formato AAAA-MM-DD' })
+    .nullable(),
+  /** Manda push a todos quando a novidade entra no ar. */
+  enviarPush: z.boolean(),
+});
+
+/** `POST /admin/novidades/:id/publicar`. Sem `publicarEm`, entra no ar agora. */
+export const esquemaPublicarNovidade = z.object({
+  publicarEm: z.iso.datetime({ offset: true }).nullable(),
+});
+
+export const esquemaNovidadeAdmin = z.object({
+  id: z.uuid(),
+  titulo: z.string(),
+  descricao: z.string(),
+  videoUrl: z.string().nullable(),
+  /** O último dia, em São Paulo. */
+  validade: z.string().nullable(),
+  enviarPush: z.boolean(),
+  pushEnviadoEm: z.string().nullable(),
+  situacao: z.enum(SITUACOES_NOVIDADE),
+  publicadaEm: z.string().nullable(),
+  autor: z.object({ id: z.uuid(), nome: z.string() }).nullable(),
+  criadoEm: z.string(),
+});
+
+export const esquemaNovidadesAdmin = z.array(esquemaNovidadeAdmin);
+
 export type DadosLoginAdmin = z.infer<typeof esquemaLoginAdmin>;
 export type DesafioAdmin = z.infer<typeof esquemaDesafioAdmin>;
 export type Novo2fa = z.infer<typeof esquemaNovo2fa>;
@@ -406,3 +464,7 @@ export type ConsultaAuditoriaAdmin = z.infer<typeof esquemaConsultaAuditoriaAdmi
 export type RegistroAuditoriaAdmin = z.infer<typeof esquemaRegistroAuditoriaAdmin>;
 export type AuditoriaAdmin = z.infer<typeof esquemaAuditoriaAdmin>;
 export type FiltrosAuditoriaAdmin = z.infer<typeof esquemaFiltrosAuditoriaAdmin>;
+export type SituacaoNovidade = (typeof SITUACOES_NOVIDADE)[number];
+export type NovaNovidade = z.infer<typeof esquemaNovaNovidade>;
+export type DadosPublicarNovidade = z.infer<typeof esquemaPublicarNovidade>;
+export type NovidadeAdmin = z.infer<typeof esquemaNovidadeAdmin>;

@@ -315,7 +315,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-104a, T-102 · docs: 13
 - [x] **T-141c** Admin: auditoria (registro das ações dos administradores, com filtros) (PR #100)
   - dep: T-104a · docs: 13
-- [ ] **T-141d** Admin: novidades (criar, editar, agendar e desativar comunicados com título, texto, vídeo e validade; push opcional)
+- [x] **T-141d** Admin: novidades (criar, editar, agendar e desativar comunicados com título, texto, vídeo e validade; push opcional) (PR #102)
   - dep: T-104a · docs: 13 · vídeo por URL ou upload no S3 **(confirmar com cliente)**
 - [ ] **T-141e** Admin: Mony (prompt do sistema versionado com avaliação antes de ativar, logs de conversas com erro, custo por período)
   - dep: T-104a, T-068 · docs: 08, 13
@@ -342,3 +342,5 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 
 - [x] **T-149** Importação de fatura e extrato pela Mony: reconhecer a parcela ("02/10") como parte de um parcelamento e não duplicar o que já está lançado (mesmo valor, data e cartão), avisando no cartão a confirmar (PR #91)
   - dep: T-065 · RN-083 · docs: 08 (Leitura de mídia)
+- [ ] **T-150** Novidades no app: `GET /novidades` (as que estão no ar e valem) e `POST /novidades/:id/lida`, aba Novidades na central com o vídeo, e o contador de não lidas
+  - dep: T-141d, T-087 · docs: 05, 09, 13 · o push da novidade já chega na central como notificação (T-141d)

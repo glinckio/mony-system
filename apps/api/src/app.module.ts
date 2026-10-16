@@ -25,6 +25,7 @@ import { ListasModule } from './modulos/listas/listas.module';
 import { MetasModule } from './modulos/metas/metas.module';
 import { MonyModule } from './modulos/mony/mony.module';
 import { NotificacoesModule } from './modulos/notificacoes/notificacoes.module';
+import { NovidadesModule } from './modulos/novidades/novidades.module';
 import { OrcamentosModule } from './modulos/orcamentos/orcamentos.module';
 import { ParcelamentosModule } from './modulos/parcelamentos/parcelamentos.module';
 import { PlanosModule } from './modulos/planos/planos.module';
@@ -61,6 +62,7 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     DashboardModule,
     RelatoriosModule,
     NotificacoesModule,
+    NovidadesModule,
     PlanosModule,
     AssinaturasModule,
     CompartilhamentosModule,

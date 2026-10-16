@@ -18,6 +18,7 @@ import { ProcessadorMonyMidia } from './modulos/mony/processador-mony-midia';
 import { RascunhosModule } from './modulos/mony/rascunhos.module';
 import { PushModule } from './integracoes/push/push.module';
 import { NotificacoesModule } from './modulos/notificacoes/notificacoes.module';
+import { NovidadesModule } from './modulos/novidades/novidades.module';
 import { ProcessadorNotificacoes } from './modulos/notificacoes/processador-notificacoes';
 import { OrcamentosModule } from './modulos/orcamentos/orcamentos.module';
 import { ParcelamentosModule } from './modulos/parcelamentos/parcelamentos.module';
@@ -57,6 +58,7 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     RelatoriosModule,
     ArmazenamentoModule,
     LembretesModule,
+    NovidadesModule,
   ],
   providers: [
     ProcessadorEventos,

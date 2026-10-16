@@ -14,6 +14,9 @@ import { AdminAutenticacaoService } from './admin-autenticacao.service';
 import { AdminCuponsController } from './admin-cupons.controller';
 import { AdminCuponsRepository } from './admin-cupons.repository';
 import { AdminCuponsService } from './admin-cupons.service';
+import { AdminNovidadesController } from './admin-novidades.controller';
+import { AdminNovidadesRepository } from './admin-novidades.repository';
+import { AdminNovidadesService } from './admin-novidades.service';
 import { AdminPlanosController } from './admin-planos.controller';
 import { AdminPlanosRepository } from './admin-planos.repository';
 import { AdminPlanosService } from './admin-planos.service';
@@ -23,7 +26,7 @@ import { AdminUsuariosService } from './admin-usuarios.service';
 
 /**
  * O painel admin (`/v1/admin/*`, docs/arquitetura/13): login (T-104a), planos (T-104b e T-104c),
- * cupons (T-104d), usuários (T-141a), assinaturas (T-141b) e auditoria (T-141c).
+ * cupons (T-104d), usuários (T-141a), assinaturas (T-141b), auditoria (T-141c) e novidades (T-141d).
  */
 @Module({
   imports: [CobrancaModule],
@@ -34,6 +37,7 @@ import { AdminUsuariosService } from './admin-usuarios.service';
     AdminUsuariosController,
     AdminAssinaturasController,
     AdminAuditoriaController,
+    AdminNovidadesController,
   ],
   providers: [
     AdminAutenticacaoService,
@@ -49,6 +53,8 @@ import { AdminUsuariosService } from './admin-usuarios.service';
     AdminAssinaturasRepository,
     AdminAuditoriaService,
     AdminAuditoriaRepository,
+    AdminNovidadesService,
+    AdminNovidadesRepository,
   ],
 })
 export class AdminModule {}

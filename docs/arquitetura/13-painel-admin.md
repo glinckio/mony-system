@@ -73,6 +73,15 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 - **Filtros:** admin, ação e entidade (as listas vêm de `GET /admin/auditoria/filtros`, com o que existe no registro), id da entidade e período. O período usa dias de São Paulo, os dois inclusos; início depois do fim responde 400.
 - Consultar a auditoria não gera registro, para a lista não crescer sozinha. Ninguém edita nem apaga registros pelo painel. O admin cuja conta foi apagada aparece como "Conta apagada" (`usuario_id` vira nulo).
 
+## Novidades (T-141d)
+
+- A novidade tem título (até 120 caracteres), texto (até 2.000), vídeo opcional e validade opcional. O vídeo é um link do YouTube ou do Vimeo; o upload no S3 continua a confirmar com o cliente. A validade é o último dia em que vale, em São Paulo. Toda novidade nasce como **rascunho**.
+- **Publicar agora** ou **agendar** (`POST /admin/novidades/:id/publicar`, com `publicarEm` ou nulo). Situações: rascunho, agendada (antes da hora), no ar, vencida (depois da validade) e desativada. A agendada pode mudar de data; a que já foi ao ar, não (desative e crie outra). Agendar no passado ou depois da validade dá 400.
+- **Editar** (`PUT`) vale para qualquer uma que não foi desativada. **Desativar** tira do app e não tem volta.
+- **Push opcional** (`enviar_push`): a rotina `enviar-push-novidades` roda a cada minuto. A novidade publicada que já entrou no ar, ainda vale e não teve o push enviado vai para todas as contas ativas pelo motor de alertas (tipo `novidade`, chave `novidade:<id>`, não urgente, abre a central), e grava `push_enviado_em`. A preferência da pessoa e o horário de silêncio valem como em qualquer alerta. O push sai em até um minuto depois de publicar.
+- Auditoria: `novidade.criada`, `novidade.editada` (antes e depois), `novidade.publicada` e `novidade.desativada`.
+- A tela das novidades no app (`GET /novidades`, aba na central, lidas) é a T-150.
+
 ## Telas (do PDF)
 
 | Seção | Funções |

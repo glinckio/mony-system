@@ -34,11 +34,15 @@ import type {
   FiltrosAuditoriaAdminDto,
   ListarAdminAssinaturasParams,
   LoginAdminDto,
+  NovaNovidadeDto,
+  NovidadeAdminDto,
+  NovidadesAdminDto,
   Novo2faDto,
   NovoCupomDto,
   NovoPrecoDto,
   PlanoGratuitoAdminDto,
   PrecosAdminDto,
+  PublicarNovidadeDto,
   RegistrosAdminAuditoriaParams,
   ResumoAssinaturasAdminDto,
   SessaoAdminDto,
@@ -2282,3 +2286,498 @@ export function useFiltrosAdminAuditoria<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getListarAdminNovidadesUrl = () => {
+  return `/v1/admin/novidades`;
+};
+
+export const listarAdminNovidades = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<NovidadesAdminDto> => {
+  return requisicao<NovidadesAdminDto>(getListarAdminNovidadesUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getListarAdminNovidadesQueryKey = () => {
+  return [`/v1/admin/novidades`] as const;
+};
+
+export const getListarAdminNovidadesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listarAdminNovidades>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listarAdminNovidades>>, TError, TData>>;
+  request?: SecondParameter<typeof requisicao>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListarAdminNovidadesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listarAdminNovidades>>> = ({ signal }) =>
+    listarAdminNovidades({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listarAdminNovidades>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListarAdminNovidadesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listarAdminNovidades>>
+>;
+export type ListarAdminNovidadesQueryError = unknown;
+
+export function useListarAdminNovidades<
+  TData = Awaited<ReturnType<typeof listarAdminNovidades>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listarAdminNovidades>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarAdminNovidades>>,
+          TError,
+          Awaited<ReturnType<typeof listarAdminNovidades>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListarAdminNovidades<
+  TData = Awaited<ReturnType<typeof listarAdminNovidades>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listarAdminNovidades>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarAdminNovidades>>,
+          TError,
+          Awaited<ReturnType<typeof listarAdminNovidades>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListarAdminNovidades<
+  TData = Awaited<ReturnType<typeof listarAdminNovidades>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listarAdminNovidades>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListarAdminNovidades<
+  TData = Awaited<ReturnType<typeof listarAdminNovidades>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listarAdminNovidades>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListarAdminNovidadesQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getCriarAdminNovidadesUrl = () => {
+  return `/v1/admin/novidades`;
+};
+
+export const criarAdminNovidades = async (
+  novaNovidadeDto: NovaNovidadeDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<NovidadeAdminDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<NovidadeAdminDto>(getCriarAdminNovidadesUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(novaNovidadeDto),
+  });
+};
+
+export const getCriarAdminNovidadesMutationKey = () => ['criarAdminNovidades'] as const;
+
+export const getCriarAdminNovidadesMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof criarAdminNovidades>>,
+    TError,
+    CriarAdminNovidadesMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof criarAdminNovidades>>,
+  TError,
+  CriarAdminNovidadesMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCriarAdminNovidadesMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof criarAdminNovidades>>,
+    CriarAdminNovidadesMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return criarAdminNovidades(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CriarAdminNovidadesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof criarAdminNovidades>>
+>;
+export type CriarAdminNovidadesMutationBody = NovaNovidadeDto;
+export type CriarAdminNovidadesMutationError = unknown;
+export type CriarAdminNovidadesMutationVariables = { data: NovaNovidadeDto };
+
+export const useCriarAdminNovidades = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof criarAdminNovidades>>,
+      TError,
+      CriarAdminNovidadesMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof criarAdminNovidades>>,
+  TError,
+  CriarAdminNovidadesMutationVariables,
+  TContext
+> => {
+  return useMutation(getCriarAdminNovidadesMutationOptions(options), queryClient);
+};
+export const getEditarAdminNovidadesUrl = (id: string) => {
+  return `/v1/admin/novidades/${id}`;
+};
+
+export const editarAdminNovidades = async (
+  id: string,
+  novaNovidadeDto: NovaNovidadeDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<NovidadeAdminDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<NovidadeAdminDto>(getEditarAdminNovidadesUrl(id), {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(novaNovidadeDto),
+  });
+};
+
+export const getEditarAdminNovidadesMutationKey = () => ['editarAdminNovidades'] as const;
+
+export const getEditarAdminNovidadesMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof editarAdminNovidades>>,
+    TError,
+    EditarAdminNovidadesMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof editarAdminNovidades>>,
+  TError,
+  EditarAdminNovidadesMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEditarAdminNovidadesMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof editarAdminNovidades>>,
+    EditarAdminNovidadesMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return editarAdminNovidades(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EditarAdminNovidadesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof editarAdminNovidades>>
+>;
+export type EditarAdminNovidadesMutationBody = NovaNovidadeDto;
+export type EditarAdminNovidadesMutationError = unknown;
+export type EditarAdminNovidadesMutationVariables = { id: string; data: NovaNovidadeDto };
+
+export const useEditarAdminNovidades = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof editarAdminNovidades>>,
+      TError,
+      EditarAdminNovidadesMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof editarAdminNovidades>>,
+  TError,
+  EditarAdminNovidadesMutationVariables,
+  TContext
+> => {
+  return useMutation(getEditarAdminNovidadesMutationOptions(options), queryClient);
+};
+export const getPublicarAdminNovidadesUrl = (id: string) => {
+  return `/v1/admin/novidades/${id}/publicar`;
+};
+
+export const publicarAdminNovidades = async (
+  id: string,
+  publicarNovidadeDto: PublicarNovidadeDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<NovidadeAdminDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<NovidadeAdminDto>(getPublicarAdminNovidadesUrl(id), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(publicarNovidadeDto),
+  });
+};
+
+export const getPublicarAdminNovidadesMutationKey = () => ['publicarAdminNovidades'] as const;
+
+export const getPublicarAdminNovidadesMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof publicarAdminNovidades>>,
+    TError,
+    PublicarAdminNovidadesMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof publicarAdminNovidades>>,
+  TError,
+  PublicarAdminNovidadesMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPublicarAdminNovidadesMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof publicarAdminNovidades>>,
+    PublicarAdminNovidadesMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return publicarAdminNovidades(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PublicarAdminNovidadesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof publicarAdminNovidades>>
+>;
+export type PublicarAdminNovidadesMutationBody = PublicarNovidadeDto;
+export type PublicarAdminNovidadesMutationError = unknown;
+export type PublicarAdminNovidadesMutationVariables = { id: string; data: PublicarNovidadeDto };
+
+export const usePublicarAdminNovidades = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof publicarAdminNovidades>>,
+      TError,
+      PublicarAdminNovidadesMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof publicarAdminNovidades>>,
+  TError,
+  PublicarAdminNovidadesMutationVariables,
+  TContext
+> => {
+  return useMutation(getPublicarAdminNovidadesMutationOptions(options), queryClient);
+};
+export const getDesativarAdminNovidadesUrl = (id: string) => {
+  return `/v1/admin/novidades/${id}/desativar`;
+};
+
+export const desativarAdminNovidades = async (
+  id: string,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<NovidadeAdminDto> => {
+  return requisicao<NovidadeAdminDto>(getDesativarAdminNovidadesUrl(id), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getDesativarAdminNovidadesMutationKey = () => ['desativarAdminNovidades'] as const;
+
+export const getDesativarAdminNovidadesMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof desativarAdminNovidades>>,
+    TError,
+    DesativarAdminNovidadesMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof desativarAdminNovidades>>,
+  TError,
+  DesativarAdminNovidadesMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDesativarAdminNovidadesMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof desativarAdminNovidades>>,
+    DesativarAdminNovidadesMutationVariables
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return desativarAdminNovidades(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DesativarAdminNovidadesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof desativarAdminNovidades>>
+>;
+
+export type DesativarAdminNovidadesMutationError = unknown;
+export type DesativarAdminNovidadesMutationVariables = { id: string };
+
+export const useDesativarAdminNovidades = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof desativarAdminNovidades>>,
+      TError,
+      DesativarAdminNovidadesMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof desativarAdminNovidades>>,
+  TError,
+  DesativarAdminNovidadesMutationVariables,
+  TContext
+> => {
+  return useMutation(getDesativarAdminNovidadesMutationOptions(options), queryClient);
+};
