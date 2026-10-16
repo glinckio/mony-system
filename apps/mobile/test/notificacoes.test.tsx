@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { Linking } from 'react-native';
 
 import { rotaDoLink } from '@/lib/links-internos';
 import { relogio } from '@/lib/relogio';
@@ -53,6 +54,7 @@ interface Pedido {
 function api() {
   const pedidos: Pedido[] = [];
   let lidas = false;
+  let novidadeLida = false;
   globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
     const endereco = new URL(
       typeof url === 'string' ? url : url instanceof URL ? url.href : url.url,
@@ -91,6 +93,33 @@ function api() {
     if (chave === 'POST /v1/notificacoes/lidas') {
       lidas = true;
       return json({ quantidade: 1 });
+    }
+    if (chave === 'GET /v1/novidades') {
+      return json({
+        itens: [
+          {
+            id: ID('v1'),
+            titulo: 'Agora com metas',
+            descricao: 'Crie metas e acompanhe pelo Início.',
+            videoUrl: 'https://youtu.be/abc123',
+            publicadaEm: '2026-10-15T12:00:00.000Z',
+            lida: novidadeLida,
+          },
+          {
+            id: ID('v2'),
+            titulo: 'Listas de compras',
+            descricao: 'Compartilhe a lista com a família.',
+            videoUrl: null,
+            publicadaEm: '2026-10-01T12:00:00.000Z',
+            lida: true,
+          },
+        ],
+        naoLidas: novidadeLida ? 0 : 1,
+      });
+    }
+    if (chave === `POST /v1/novidades/${ID('v1')}/lida`) {
+      novidadeLida = true;
+      return Promise.resolve(new Response(null, { status: 204 }));
     }
     if (chave === 'GET /v1/preferencias-alerta') return json(PREFERENCIAS);
     if (chave === 'PUT /v1/preferencias-alerta') return json(PREFERENCIAS);
@@ -138,6 +167,11 @@ describe('central de notificações e alertas da Mony (T-087)', () => {
       params: { competencia: '2026-10' },
     });
     expect(rotaDoLink(`mony://transacoes/${ID('c7')}`)).toBe(`/transacoes/${ID('c7')}`);
+    expect(rotaDoLink('mony://notificacoes')).toBe('/notificacoes');
+    expect(rotaDoLink('mony://notificacoes?aba=novidades')).toEqual({
+      pathname: '/notificacoes',
+      params: { aba: 'novidades' },
+    });
     expect(rotaDoLink(`mony://parcelamentos/${ID('b1')}`)).toBeNull();
     expect(rotaDoLink('https://exemplo.com')).toBeNull();
     expect(rotaDoLink('mony://cartoes/../mais')).toBeNull();
@@ -181,6 +215,50 @@ describe('central de notificações e alertas da Mony (T-087)', () => {
         pedidos.some(({ metodo, rota }) => metodo === 'POST' && rota === '/v1/notificacoes/lidas'),
       ).toBe(true);
       expect(naoLida).toBeDefined();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'novidades: o push abre a aba, a nova ganha o selo e é lida, e o vídeo abre fora do app',
+    async () => {
+      const pedidos = api();
+      const abrirLink = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+      renderRouter(ROTAS, { initialUrl: '/notificacoes?aba=novidades' });
+
+      expect(await screen.findByLabelText('Nova: Agora com metas', {}, ESPERA)).toBeOnTheScreen();
+      expect(screen.getAllByTestId('novidade')).toHaveLength(2);
+      expect(screen.getByText('Compartilhe a lista com a família.')).toBeOnTheScreen();
+      await waitFor(() => {
+        expect(
+          pedidos.some(
+            ({ metodo, rota }) => metodo === 'POST' && rota === `/v1/novidades/${ID('v1')}/lida`,
+          ),
+        ).toBe(true);
+      }, ESPERA);
+      // A lida antes não é marcada de novo.
+      expect(pedidos.some(({ rota }) => rota === `/v1/novidades/${ID('v2')}/lida`)).toBe(false);
+      // Depois de ler, o contador da aba some; o selo fica até sair da aba.
+      expect(await screen.findByRole('tab', { name: 'Novidades' }, ESPERA)).toBeOnTheScreen();
+      expect(screen.getByLabelText('Nova: Agora com metas')).toBeOnTheScreen();
+
+      fireEvent.press(screen.getByRole('link', { name: 'Assistir ao vídeo: Agora com metas' }));
+      expect(abrirLink).toHaveBeenCalledWith('https://youtu.be/abc123');
+
+      fireEvent.press(screen.getByRole('tab', { name: 'Alertas' }));
+      expect(
+        await screen.findByRole('button', { name: 'Não lida: Nubank: 80% do limite' }, ESPERA),
+      ).toBeOnTheScreen();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'a aba Novidades mostra quantas há sem ler',
+    async () => {
+      api();
+      renderRouter(ROTAS, { initialUrl: '/notificacoes' });
+      expect(await screen.findByRole('tab', { name: 'Novidades (1)' }, ESPERA)).toBeOnTheScreen();
     },
     TEMPO_LIMITE_MS,
   );

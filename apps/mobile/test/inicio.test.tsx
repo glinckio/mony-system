@@ -119,6 +119,7 @@ const DASHBOARD = {
   },
   onboarding: ONBOARDING_FEITO,
   notificacoesNaoLidas: 3,
+  novidadesNaoLidas: 2,
 };
 const CATEGORIAS = [
   ['c1', 'Transporte'],
@@ -228,12 +229,12 @@ describe('Início no app (T-053)', () => {
   });
 
   it(
-    'o sino abre a central de notificações (T-087)',
+    'o sino soma alertas e novidades sem ler e abre a central (T-087, T-150)',
     async () => {
       api();
       renderRouter(ROTAS, { initialUrl: '/' });
       fireEvent.press(
-        await screen.findByRole('button', { name: '3 notificações não lidas' }, ESPERA),
+        await screen.findByRole('button', { name: '5 notificações não lidas' }, ESPERA),
       );
       expect(await screen.findByRole('header', { name: 'Notificações' }, ESPERA)).toBeOnTheScreen();
     },
@@ -252,7 +253,7 @@ describe('Início no app (T-053)', () => {
       expect(doDashboard(pedidos)[0]?.consulta).toEqual({ periodo: 'mes_atual' });
       expect(screen.getByText('Saldo de outubro')).toBeOnTheScreen();
       expect(screen.getByText('LM')).toBeOnTheScreen();
-      expect(screen.getByLabelText('3 notificações não lidas')).toBeOnTheScreen();
+      expect(screen.getByLabelText('5 notificações não lidas')).toBeOnTheScreen();
 
       expect(screen.getByTestId('inicio-receitas')).toHaveTextContent(reais('R$ 6.500,00'));
       expect(screen.getByText(reais('R$ 6.200,00 recebidos'))).toBeOnTheScreen();

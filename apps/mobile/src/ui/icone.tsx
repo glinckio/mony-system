@@ -19,6 +19,7 @@ import Circle from 'lucide-react-native/icons/circle';
 import CircleAlert from 'lucide-react-native/icons/circle-alert';
 import CircleCheck from 'lucide-react-native/icons/circle-check';
 import CircleMinus from 'lucide-react-native/icons/circle-minus';
+import CirclePlay from 'lucide-react-native/icons/circle-play';
 import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark';
 import Clock from 'lucide-react-native/icons/clock';
 import CreditCard from 'lucide-react-native/icons/credit-card';
@@ -103,6 +104,7 @@ const ICONES = {
   'circle-alert': CircleAlert,
   'circle-check': CircleCheck,
   'circle-minus': CircleMinus,
+  'circle-play': CirclePlay,
   'circle-question-mark': CircleQuestionMark,
   clock: Clock,
   'credit-card': CreditCard,

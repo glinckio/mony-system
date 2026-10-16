@@ -69,7 +69,9 @@ export default function TelaInicio() {
         }
       >
         <TopoInicio
-          notificacoesNaoLidas={dados?.notificacoesNaoLidas ?? 0}
+          notificacoesNaoLidas={
+            (dados?.notificacoesNaoLidas ?? 0) + (dados?.novidadesNaoLidas ?? 0)
+          }
           aoEscolherPeriodo={() => {
             definirEscolhendo(true);
           }}
