@@ -602,6 +602,32 @@ describe.runIf(ativo)('integração: assinaturas pela Stripe', () => {
     });
   });
 
+  it('T-105 Pix pago depois da exclusão da conta não libera o plano (RN-161)', async () => {
+    const usuario = await usuarioNovo();
+    expect(
+      (await chamar(usuario, 'POST', '/assinatura/checkout', { plano: 'anual', forma: 'pix' }))
+        .statusCode,
+    ).toBe(200);
+    const antes = await prisma.assinatura.findUniqueOrThrow({
+      where: { usuarioId: usuario.usuarioId },
+    });
+    await prisma.usuario.update({
+      where: { id: usuario.usuarioId },
+      data: { status: 'excluido' },
+    });
+
+    const pago = await pixPago(antes.stripeCustomerId ?? '', `cs_${randomUUID()}`);
+    expect((await processar(pago.id)).processadoEm).not.toBeNull();
+    expect(
+      await prisma.assinatura.findUniqueOrThrow({ where: { usuarioId: usuario.usuarioId } }),
+    ).toMatchObject({
+      plano: antes.plano,
+      status: antes.status,
+      pagoAte: null,
+      pagamentoUnicoId: null,
+    });
+  });
+
   it('T-105 avisa 7 dias antes do fim do anual com Pix, e no fim volta ao gratuito', async () => {
     const usuario = await usuarioNovo();
     const servico = app.get(AssinaturasService);

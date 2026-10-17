@@ -327,6 +327,13 @@ export class AssinaturasService {
       this.log.warn(`Evento ${evento.id}: nenhuma assinatura com o cliente ${evento.clienteId}`);
       return;
     }
+    if (gravada.contaExcluida) {
+      // A conta foi excluída (RN-161) depois de abrir o Pix: não há mais quem use os 12 meses.
+      this.log.error(
+        `Evento ${evento.id}: Pix pago (${String(evento.valorCentavos)} centavos) por conta excluída (usuário ${gravada.usuarioId}); devolver pelo painel da Stripe`,
+      );
+      return;
+    }
     const mudanca = mudancaDoPagamentoPix(gravada, evento, this.clock.agora());
     if (mudanca.tipo === 'conflito') {
       // O checkout recusa quem já assina no cartão; só dois pagamentos ao mesmo tempo chegam aqui.
