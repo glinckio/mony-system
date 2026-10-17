@@ -18,6 +18,22 @@ overrides:
   # O @nestjs/platform-fastify 11.2.7 fixa o 5.11.3, que tem falhas altas corrigidas no 5.12.2
   # (`pnpm audit`, T-144a). Igual à versão de `apps/api`; tirar quando o Nest subir a dele.
   fastify: 5.12.7
+  # A CLI do Prisma 7.10 fixa versões com falhas altas (`pnpm audit`, T-144d): o mysql2 3.15.3
+  # (GHSA-3f6p-5ww8-9rcr) e, pela @prisma/config, o deepmerge-ts 7.1.5 (GHSA-ggr8-5vv4-36mx).
+  # Tirar quando o Prisma subir as dele.
+  mysql2: 3.24.6
+  deepmerge-ts: 8.0.2
+# Falhas altas sem versão corrigida publicada em 17/10/2026 (`pnpm audit`, T-144d). As duas estão
+# em ferramentas que rodam só no desenvolvimento e no build, não no app nem na API. Rever a cada SDK
+# do Expo e tirar daqui quando sair a correção.
+auditConfig:
+  ignoreGhsas:
+    # node-forge ≤ 1.4.0, na CLI do Expo (certificado do `expo start --https` e assinatura de código
+    # dos updates, que o projeto não usa): a verificação de assinatura RSA aceita dados a mais.
+    - GHSA-86w9-cpqp-85rv
+    # braces ≤ 3.0.3, no micromatch do Metro: estouro de pilha com padrão de chaves muito aninhado.
+    # Os padrões vêm da configuração do projeto, não de quem usa o app.
+    - GHSA-vfj7-8cjw-p6xm
 allowBuilds:
   '@prisma/engines': false
   '@scarf/scarf': false

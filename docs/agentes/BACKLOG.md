@@ -345,7 +345,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - [x] **T-144a** Proteção da API: limite geral de requisições por IP (Redis), cabeçalhos de segurança (nosniff, frame, referrer, CSP, HSTS em produção), redação de dados sensíveis nos logs, `pnpm audit` no CI e Dependabot; fastify 5.12.2 (PR #117)
   - [x] **T-144b** Tipo real do arquivo no upload (magic bytes) e tamanho máximo por tipo (20 MB PDF, 10 MB imagem, 10 min de áudio), conferidos depois do envio ao S3 (PR #123)
   - [ ] **T-144c** 👤 Teste de carga contra staging (depende da T-013 aplicada)
-  - [ ] **T-144d** Resolver as vulnerabilidades altas que o `pnpm audit` ainda aponta (CLI do Prisma e Expo/React Native, sem correção publicada em 2026-10-16) e tornar o nível `high` bloqueante no CI
+  - [x] **T-144d** Resolver as vulnerabilidades altas que o `pnpm audit` ainda aponta (CLI do Prisma e Expo/React Native, sem correção publicada em 2026-10-16) e tornar o nível `high` bloqueante no CI (PR #126)
 - [ ] **T-145** 👤 Terraform e pipeline de produção
   - dep: T-142 · docs: 12
 - [ ] **T-146** 👤 Publicação: fichas das lojas, declarações de permissão, TestFlight e teste interno, envio para revisão
