@@ -12,10 +12,21 @@ updates:
       menores:
         update-types: [minor, patch]
     ignore:
-      # O SDK do Expo sobe junto, numa tarefa própria (`expo install --check` no CI).
+      # O SDK do Expo sobe junto, numa tarefa própria (`expo install --check` no CI): ele fixa o
+      # React Native, os pacotes `@react-native/*` e o React.
       - dependency-name: 'expo*'
       - dependency-name: 'react-native*'
       - dependency-name: '@expo/*'
+      - dependency-name: '@react-native/*'
+      - dependency-name: 'react'
+      - dependency-name: 'react-dom'
+      - dependency-name: 'react-test-renderer'
+      - dependency-name: '@types/react'
+      - dependency-name: '@types/react-dom'
+      # Versão major muda API (ex.: Nest 12 espera o nestjs-zod, T-014): vira tarefa no BACKLOG, não
+      # PR solto. Vulnerabilidade continua aparecendo no job Dependências do CI.
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
