@@ -3,7 +3,11 @@ import type { Plano, PlanoPago, StatusAssinatura } from '@mony/shared/enums';
 
 import { PrismaService } from '../../core/prisma/prisma.service';
 import type { EventoGravado } from '../../integracoes/cobranca/cobranca.provider';
-import type { DadosDaAssinaturaPaga, DadosDoEncerramento } from './dominio/assinatura';
+import type {
+  DadosDaAssinaturaPaga,
+  DadosDoEncerramento,
+  DadosDoPagamentoPix,
+} from './dominio/assinatura';
 
 /** A assinatura de uma pessoa, para a tela e para o checkout. */
 export interface AssinaturaDoUsuario {
@@ -14,6 +18,7 @@ export interface AssinaturaDoUsuario {
   stripeSubscriptionId: string | null;
   proximaCobranca: Date | null;
   cancelamentoAgendado: boolean;
+  pagoAte: Date | null;
   valorCentavos: number | null;
   email: string;
   nome: string;
@@ -25,6 +30,9 @@ export interface AssinaturaDoCliente {
   plano: Plano;
   status: StatusAssinatura;
   stripeSubscriptionId: string | null;
+  inicio: Date | null;
+  pagoAte: Date | null;
+  pagamentoUnicoId: string | null;
   fuso: string;
   /** A conta foi excluída (RN-161): a linha fica, mas não recebe mais avisos. */
   contaExcluida: boolean;
@@ -80,6 +88,7 @@ export class AssinaturasRepository {
         stripeSubscriptionId: true,
         proximaCobranca: true,
         cancelamentoAgendado: true,
+        pagoAte: true,
         planoPreco: { select: { valor: true } },
         usuario: { select: { email: true, nome: true } },
       },
@@ -118,6 +127,9 @@ export class AssinaturasRepository {
         plano: true,
         status: true,
         stripeSubscriptionId: true,
+        inicio: true,
+        pagoAte: true,
+        pagamentoUnicoId: true,
         usuario: { select: { fusoHorario: true, status: true } },
       },
     });
@@ -138,9 +150,35 @@ export class AssinaturasRepository {
 
   async atualizar(
     usuarioId: string,
-    dados: DadosDaAssinaturaPaga | DadosDoEncerramento,
+    dados: DadosDaAssinaturaPaga | DadosDoEncerramento | DadosDoPagamentoPix,
   ): Promise<void> {
     await this.prisma.cliente.assinatura.update({ where: { usuarioId }, data: dados });
+  }
+
+  /** T-105: o fim do anual pago com Pix da pessoa (`null`: não é Pix). */
+  async pagoAte(usuarioId: string): Promise<Date | null> {
+    const linha = await this.prisma.cliente.assinatura.findUnique({
+      where: { usuarioId },
+      select: { pagoAte: true },
+    });
+    return linha?.pagoAte ?? null;
+  }
+
+  /**
+   * T-105: o anual pago com Pix que venceu volta ao gratuito; devolve quantos. `pago_ate` fica, para
+   * o aviso do fim; a assinatura no cartão ou um Pix novo o trocam.
+   */
+  async encerrarPixVencidos(agora: Date): Promise<number> {
+    const { count } = await this.prisma.cliente.assinatura.updateMany({
+      where: { status: { not: 'cancelada' }, pagoAte: { lte: agora } },
+      data: {
+        plano: 'gratuito',
+        status: 'cancelada',
+        cancelamentoAgendado: false,
+        canceladaEm: agora,
+      },
+    });
+    return count;
   }
 
   /**

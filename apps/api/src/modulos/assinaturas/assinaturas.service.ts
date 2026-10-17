@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { LINKS_INTERNOS } from '@mony/shared/alertas';
 import type { PlanoPago } from '@mony/shared/enums';
 import type {
+  FormaPagamentoPlano,
   LinkCobranca,
   PlanosAVenda,
   ResultadoRetornoCobranca,
@@ -14,6 +15,7 @@ import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { FILAS, idDeJob } from '../../core/filas/filas';
+import { Rotina } from '../../core/rotinas/rotinas';
 import {
   CobrancaProvider,
   ErroAssinaturaWebhook,
@@ -27,7 +29,11 @@ import {
   avisoDeEncerramento,
   avisoDePagamentoRecusado,
   avisoDeRenovacao,
+  avisoDoFimDoPix,
+  avisoDoPix,
+  avisoDoPixEncerrado,
   mudancaDaAssinatura,
+  mudancaDoPagamentoPix,
   type TextoDoAviso,
 } from './dominio/assinatura';
 
@@ -78,19 +84,32 @@ export class AssinaturasService {
       cancelamentoAgendado: paga && assinatura.cancelamentoAgendado,
       testeFim: plano === 'teste' ? (assinatura.testeFim?.toISOString() ?? null) : null,
       gerenciavel: assinatura.stripeCustomerId !== null,
+      pagoAte: paga ? (assinatura.pagoAte?.toISOString() ?? null) : null,
     };
   }
 
   /**
    * `POST /assinatura/checkout`: a página da Stripe para assinar o plano pelo preço vigente. Quem já
-   * paga troca de plano pelo portal, para a Stripe acertar a diferença.
+   * paga troca de plano pelo portal, para a Stripe acertar a diferença. Com `pix` (só no anual,
+   * T-105), um pagamento único que libera 12 meses; quem já está no anual pago com Pix pode pagar
+   * mais 12 meses antes do fim, sem perder os dias que faltam.
    */
-  async checkout(contexto: Contexto, plano: PlanoPago): Promise<LinkCobranca> {
+  async checkout(
+    contexto: Contexto,
+    plano: PlanoPago,
+    forma: FormaPagamentoPlano = 'cartao',
+  ): Promise<LinkCobranca> {
     const usuarioId = usuarioDoContexto(contexto);
     const assinatura = await this.repositorio.doUsuario(usuarioId);
     if (!assinatura) throw new ErroDominio('NAO_ENCONTRADO');
+    if (forma === 'pix' && plano !== 'anual') {
+      throw new ErroDominio('REQUISICAO_INVALIDA', { mensagem: 'O Pix vale só no plano anual.' });
+    }
     const atual = planoEfetivo(assinatura, this.clock.agora());
-    if (atual === 'mensal' || atual === 'anual') throw new ErroDominio('ASSINATURA_JA_ATIVA');
+    const renovaPix = forma === 'pix' && atual === 'anual' && assinatura.pagoAte !== null;
+    if ((atual === 'mensal' || atual === 'anual') && !renovaPix) {
+      throw new ErroDominio('ASSINATURA_JA_ATIVA');
+    }
     const preco = (await this.repositorio.precosVigentes()).find((p) => p.plano === plano);
     if (!preco) {
       throw new ErroDominio('SERVICO_INDISPONIVEL', {
@@ -99,6 +118,16 @@ export class AssinaturasService {
     }
     return this.naCobranca(async () => {
       const clienteId = await this.cliente(usuarioId, assinatura);
+      if (forma === 'pix') {
+        return this.cobranca.criarPagamentoPix({
+          clienteId,
+          usuarioId,
+          planoPrecoId: preco.id,
+          valorCentavos: preco.valorCentavos,
+          urlSucesso: this.urlDoRetorno('sucesso'),
+          urlCancelado: this.urlDoRetorno('cancelado'),
+        });
+      }
       return this.cobranca.criarCheckout({
         clienteId,
         precoId: preco.stripePriceId,
@@ -201,7 +230,47 @@ export class AssinaturasService {
     await this.repositorio.concluirEvento(webhookEventoId, this.clock.agora());
   }
 
+  /**
+   * T-105 (doc 09): todo dia às 01:20, o anual pago com Pix que venceu passa para o gratuito.
+   * Antes disso ele já vale como gratuito (`planoEfetivo`); a rotina grava.
+   */
+  @Rotina({ nome: 'encerrar-pix-vencidos', padrao: '20 1 * * *' })
+  async encerrarPixVencidos(agora: Date): Promise<{ encerrados: number }> {
+    const encerrados = await this.repositorio.encerrarPixVencidos(agora);
+    if (encerrados > 0) this.log.log(`Anuais com Pix encerrados: ${String(encerrados)}`);
+    return { encerrados };
+  }
+
+  /**
+   * T-105: na rodada das 09:00 (`alertas-diarios`), o aviso 7 dias antes do fim do anual pago com
+   * Pix, que não renova sozinho, e o do fim. Um de cada por fim de período.
+   */
+  async avisosDoPix(usuarioId: string, agora: Date, fuso: string): Promise<AlertaCandidato[]> {
+    const pagoAte = await this.repositorio.pagoAte(usuarioId);
+    if (pagoAte === null) return [];
+    const aviso = avisoDoPix(pagoAte, agora);
+    if (aviso === null) return [];
+    const texto = aviso === 'fim_proximo' ? avisoDoFimDoPix(pagoAte, fuso) : avisoDoPixEncerrado();
+    return [
+      {
+        usuarioId,
+        tipo: 'assinatura',
+        chaveUnica: `assinatura:pix:${aviso}:${pagoAte.toISOString()}`,
+        // Aviso, não cobrança: espera o fim do horário de silêncio (RN-101).
+        urgente: false,
+        titulo: texto.titulo,
+        corpo: texto.corpo,
+        linkInterno: LINKS_INTERNOS.planos(),
+        vaiParaChat: true,
+      },
+    ];
+  }
+
   private async aplicar(evento: EventoGravado): Promise<void> {
+    if (evento.tipo === 'pagamento_unico') {
+      await this.aplicarPagamentoPix(evento);
+      return;
+    }
     const externa = await this.cobranca.buscarAssinatura(evento.assinaturaId);
     if (!externa) {
       this.log.warn(
@@ -247,6 +316,33 @@ export class AssinaturasService {
       );
       await this.avisar(gravada, evento.id, aviso, agora);
     }
+  }
+
+  /** T-105: o anual pago com Pix vale na hora (RN-128). */
+  private async aplicarPagamentoPix(
+    evento: Extract<EventoGravado, { tipo: 'pagamento_unico' }>,
+  ): Promise<void> {
+    const gravada = await this.repositorio.doCliente(evento.clienteId);
+    if (!gravada) {
+      this.log.warn(`Evento ${evento.id}: nenhuma assinatura com o cliente ${evento.clienteId}`);
+      return;
+    }
+    if (gravada.contaExcluida) {
+      // A conta foi excluída (RN-161) depois de abrir o Pix: não há mais quem use os 12 meses.
+      this.log.error(
+        `Evento ${evento.id}: Pix pago (${String(evento.valorCentavos)} centavos) por conta excluída (usuário ${gravada.usuarioId}); devolver pelo painel da Stripe`,
+      );
+      return;
+    }
+    const mudanca = mudancaDoPagamentoPix(gravada, evento, this.clock.agora());
+    if (mudanca.tipo === 'conflito') {
+      // O checkout recusa quem já assina no cartão; só dois pagamentos ao mesmo tempo chegam aqui.
+      this.log.error(
+        `Evento ${evento.id}: Pix pago (${String(evento.valorCentavos)} centavos) por quem já assina no cartão (usuário ${gravada.usuarioId}); devolver pelo painel da Stripe`,
+      );
+      return;
+    }
+    if (mudanca.tipo === 'paga') await this.repositorio.atualizar(gravada.usuarioId, mudanca.dados);
   }
 
   /** Tipo `assinatura` (doc 09): urgente, não desliga, vai para o chat; a chave é o evento. */

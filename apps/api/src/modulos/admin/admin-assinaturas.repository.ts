@@ -15,6 +15,7 @@ const CAMPOS_LISTA = {
       plano: true,
       status: true,
       testeFim: true,
+      pagoAte: true,
       proximaCobranca: true,
       cancelamentoAgendado: true,
       canceladaEm: true,
@@ -44,7 +45,12 @@ function filtroDaAssinatura(
     case 'teste':
       return testeValendo;
     case 'ativa':
-      return { plano: { in: [...PLANOS_PAGOS] }, status: 'ativa' };
+      // O anual pago com Pix que venceu já é gratuito (T-105), antes de a rotina o encerrar.
+      return {
+        plano: { in: [...PLANOS_PAGOS] },
+        status: 'ativa',
+        OR: [{ pagoAte: null }, { pagoAte: { gt: agora } }],
+      };
     case 'inadimplente':
       return { plano: { in: [...PLANOS_PAGOS] }, status: 'inadimplente' };
     case 'cancelada':

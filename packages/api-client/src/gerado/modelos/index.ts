@@ -378,6 +378,7 @@ export * from './parametrosDtoVersaoMinima';
 export * from './pedidoAcaoMonyDto';
 export * from './pedidoAcaoMonyDtoAcao';
 export * from './pedidoCheckoutDto';
+export * from './pedidoCheckoutDtoForma';
 export * from './pedidoCheckoutDtoPlano';
 export * from './pedidoCodigoDto';
 export * from './pedidoExclusaoContaDto';

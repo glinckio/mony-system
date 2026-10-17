@@ -18,6 +18,7 @@ const CAMPOS_RESUMO = {
       plano: true,
       status: true,
       testeFim: true,
+      pagoAte: true,
       proximaCobranca: true,
       cancelamentoAgendado: true,
       stripeCustomerId: true,

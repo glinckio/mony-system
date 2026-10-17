@@ -27,24 +27,35 @@ const AGORA = new Date('2026-10-15T15:00:00Z');
 
 describe('plano que vale agora (RN-120, RN-126)', () => {
   it('o teste vale até o fim; depois é o gratuito, mesmo antes da rotina diária', () => {
-    const teste = { plano: 'teste' as const, status: 'ativa' as const };
+    const teste = { plano: 'teste' as const, status: 'ativa' as const, pagoAte: null };
     expect(planoEfetivo({ ...teste, testeFim: new Date('2026-10-16T00:00:00Z') }, AGORA)).toBe(
       'teste',
     );
     expect(planoEfetivo({ ...teste, testeFim: AGORA }, AGORA)).toBe('gratuito');
-    expect(planoEfetivo({ ...teste, testeFim: null }, AGORA)).toBe('teste');
+    expect(planoEfetivo({ ...teste, testeFim: null, pagoAte: null }, AGORA)).toBe('teste');
+  });
+
+  it('T-105 o anual pago com Pix vale até pagoAte e depois é o gratuito', () => {
+    const pix = { plano: 'anual' as const, status: 'ativa' as const, testeFim: null };
+    expect(planoEfetivo({ ...pix, pagoAte: new Date('2026-10-15T15:00:01Z') }, AGORA)).toBe(
+      'anual',
+    );
+    expect(planoEfetivo({ ...pix, pagoAte: AGORA }, AGORA)).toBe('gratuito');
   });
 
   it('pago libera tudo, inclusive inadimplente (RN-131); cancelada e sem assinatura são o gratuito', () => {
-    expect(planoEfetivo({ plano: 'mensal', status: 'ativa', testeFim: null }, AGORA)).toBe(
-      'mensal',
-    );
-    expect(planoEfetivo({ plano: 'anual', status: 'inadimplente', testeFim: null }, AGORA)).toBe(
-      'anual',
-    );
-    expect(planoEfetivo({ plano: 'mensal', status: 'cancelada', testeFim: null }, AGORA)).toBe(
-      'gratuito',
-    );
+    expect(
+      planoEfetivo({ plano: 'mensal', status: 'ativa', testeFim: null, pagoAte: null }, AGORA),
+    ).toBe('mensal');
+    expect(
+      planoEfetivo(
+        { plano: 'anual', status: 'inadimplente', testeFim: null, pagoAte: null },
+        AGORA,
+      ),
+    ).toBe('anual');
+    expect(
+      planoEfetivo({ plano: 'mensal', status: 'cancelada', testeFim: null, pagoAte: null }, AGORA),
+    ).toBe('gratuito');
     expect(planoEfetivo(null, AGORA)).toBe('gratuito');
     expect(ehLimitado('gratuito')).toBe(true);
     expect(['teste', 'mensal', 'anual'].map((plano) => ehLimitado(plano as 'teste'))).toEqual([

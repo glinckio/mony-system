@@ -266,7 +266,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-104a · RN-120, RN-124 · docs: 13
 - [x] **T-104d** Admin: cupons espelhados na Stripe (PR #97)
   - dep: T-104a, T-102 · RN-130 · docs: 13
-- [ ] **T-105** Pix no plano anual como pagamento único que libera 12 meses (Checkout `mode=payment`), com aviso antes do fim e renovação por novo pagamento **(confirmar com cliente: pergunta 9 do doc 15)**
+- [x] **T-105** Pix no plano anual como pagamento único que libera 12 meses (Checkout `mode=payment`), com aviso antes do fim e renovação por novo pagamento **(confirmar com cliente: pergunta 9 do doc 15)** (PR #109)
   - dep: T-102 · RN-128 · docs: 10 (Stripe)
   - A Stripe não aceita Pix em assinatura recorrente (teste da T-102). O mensal fica só no cartão.
 

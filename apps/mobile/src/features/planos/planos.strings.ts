@@ -36,6 +36,10 @@ export const textosPlanos = {
   terminaEm: 'Termina em {{data}}. Não vai ser renovado.',
   inadimplente:
     'Não consegui cobrar a última fatura. Atualize a forma de pagamento para não voltar ao plano gratuito.',
+  /** Anual pago com Pix (T-105). */
+  pagoComPix: 'Pago com Pix. Vale até {{data}} e não renova sozinho.',
+  renovarPix: 'Pagar mais 12 meses com Pix',
+  renovarPixAjuda: 'Os 12 meses novos começam quando o período atual termina.',
   gerenciar: 'Gerenciar assinatura',
   gerenciarAjuda: 'Troque de plano ou de cartão, veja as faturas ou cancele.',
   erroPortal: 'Não consegui abrir a sua assinatura. Tente de novo.',
@@ -65,6 +69,9 @@ export const textosPlanos = {
     assinarAnual: 'Assinar plano anual',
     assinarMensal: 'Assinar plano mensal',
     rodape: 'Cartão · renovação automática · cancele quando quiser',
+    /** T-105: a Stripe não aceita Pix em assinatura; no anual, ele é um pagamento único. */
+    pagarPix: 'Pagar 12 meses com Pix',
+    rodapePix: 'Com Pix, só no anual: 12 meses pagos de uma vez, sem renovação automática.',
     continuarGratuito: 'Continuar no plano gratuito, com limites',
     confirmando: 'Confirmando o pagamento…',
     demorando:

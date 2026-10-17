@@ -38,6 +38,7 @@ import {
 import { type AlertaCandidato, MotorAlertas } from '../notificacoes/motor-alertas';
 import { OrcamentosService } from '../orcamentos/orcamentos.service';
 import { TesteGratis } from '../planos/teste.service';
+import { AssinaturasService } from '../assinaturas/assinaturas.service';
 import { RelatoriosService } from '../relatorios/relatorios.service';
 import { EVENTO_PARCELAMENTO_REGISTRADO } from '../parcelamentos/parcelamentos.service';
 import {
@@ -91,6 +92,7 @@ export class AvaliadoresAlertas {
     private readonly orcamentos: OrcamentosService,
     private readonly relatorios: RelatoriosService,
     private readonly teste: TesteGratis,
+    private readonly assinaturas: AssinaturasService,
     private readonly clock: Clock,
     private readonly parametros: ParametrosService,
   ) {}
@@ -274,6 +276,7 @@ export class AvaliadoresAlertas {
       ...(await this.projecaoDoMes(usuarioId, hoje)),
       ...(await this.resumos(usuarioId, hoje)),
       ...(await this.teste.avisos(usuarioId, agora, fuso)),
+      ...(await this.assinaturas.avisosDoPix(usuarioId, agora, fuso)),
     ];
     await this.emitir(candidatos, agora);
     return candidatos;

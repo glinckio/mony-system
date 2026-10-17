@@ -1,6 +1,7 @@
 import { type DataCalendario, dataNoFuso } from '@mony/shared/datas';
 import { formatarCentavos } from '@mony/shared/dinheiro';
 import type { Plano, PlanoPago, StatusAssinatura } from '@mony/shared/enums';
+import { DIAS_AVISO_FIM_PIX, MESES_PAGAMENTO_PIX } from '@mony/shared/planos';
 
 import type { AssinaturaExterna } from '../../../integracoes/cobranca/cobranca.provider';
 
@@ -21,6 +22,23 @@ export interface DadosDaAssinaturaPaga {
   proximaCobranca: Date | null;
   cancelamentoAgendado: boolean;
   canceladaEm: null;
+  /** A assinatura no cartão tira o fim do anual pago com Pix (T-105). */
+  pagoAte: null;
+}
+
+/** As colunas que o anual pago com Pix muda (T-105). */
+export interface DadosDoPagamentoPix {
+  plano: 'anual';
+  status: 'ativa';
+  /** Sem assinatura no cartão: o fim de uma antiga, chegando atrasado, não derruba o Pix. */
+  stripeSubscriptionId: null;
+  planoPrecoId: string | null;
+  inicio: Date;
+  proximaCobranca: null;
+  cancelamentoAgendado: false;
+  canceladaEm: null;
+  pagoAte: Date;
+  pagamentoUnicoId: string;
 }
 
 export interface DadosDoEncerramento {
@@ -76,6 +94,62 @@ export function mudancaDaAssinatura(
       proximaCobranca: externa.fimDoPeriodo,
       cancelamentoAgendado: externa.cancelamentoAgendado,
       canceladaEm: null,
+      pagoAte: null,
+    },
+  };
+}
+
+/** O que o pagamento com Pix precisa saber da assinatura gravada. */
+export interface AssinaturaParaPix extends AssinaturaGravada {
+  inicio: Date | null;
+  pagoAte: Date | null;
+  pagamentoUnicoId: string | null;
+}
+
+export type MudancaDoPagamentoPix =
+  | { tipo: 'nenhuma' }
+  /** Já tem assinatura no cartão valendo: o Pix não muda nada e o suporte devolve o dinheiro. */
+  | { tipo: 'conflito' }
+  | { tipo: 'paga'; dados: DadosDoPagamentoPix };
+
+/** A data `meses` depois, no mesmo horário (31/01 + 1 mês passa para março, como no `Date`). */
+export function somarMesesAoInstante(instante: Date, meses: number): Date {
+  const resultado = new Date(instante);
+  resultado.setUTCMonth(resultado.getUTCMonth() + meses);
+  return resultado;
+}
+
+/**
+ * T-105: o anual pago com Pix libera 12 meses na hora (RN-128), a partir de agora ou do fim do
+ * que ainda vale (pagar antes do fim não perde dias). O mesmo checkout não soma duas vezes.
+ */
+export function mudancaDoPagamentoPix(
+  gravada: AssinaturaParaPix,
+  pagamento: { sessaoId: string; planoPrecoId: string | null },
+  agora: Date,
+): MudancaDoPagamentoPix {
+  if (gravada.pagamentoUnicoId === pagamento.sessaoId) return { tipo: 'nenhuma' };
+  const pago = gravada.plano === 'mensal' || gravada.plano === 'anual';
+  if (pago && gravada.stripeSubscriptionId !== null && gravada.status !== 'cancelada') {
+    return { tipo: 'conflito' };
+  }
+  const valendo =
+    pago && gravada.status !== 'cancelada' && gravada.pagoAte !== null && gravada.pagoAte > agora
+      ? gravada.pagoAte
+      : null;
+  return {
+    tipo: 'paga',
+    dados: {
+      plano: 'anual',
+      status: 'ativa',
+      stripeSubscriptionId: null,
+      planoPrecoId: pagamento.planoPrecoId,
+      inicio: valendo !== null && gravada.inicio !== null ? gravada.inicio : agora,
+      proximaCobranca: null,
+      cancelamentoAgendado: false,
+      canceladaEm: null,
+      pagoAte: somarMesesAoInstante(valendo ?? agora, MESES_PAGAMENTO_PIX),
+      pagamentoUnicoId: pagamento.sessaoId,
     },
   };
 }
@@ -124,4 +198,31 @@ export function avisoDeEncerramento(): TextoDoAviso {
     corpo:
       'Você voltou para o plano gratuito, e tudo o que registrou continua aqui. Para voltar ao plano pago, toque em Ver planos.',
   };
+}
+
+/** T-105: o anual pago com Pix está perto do fim e não renova sozinho. */
+export function avisoDoFimDoPix(pagoAte: Date, fuso: string): TextoDoAviso {
+  return {
+    titulo: `Seu plano anual termina em ${diaEMes(pagoAte, fuso)}`,
+    corpo:
+      'Ele foi pago com Pix e não renova sozinho. Para continuar no plano pago, pague mais 12 meses com Pix ou assine no cartão em Ver planos.',
+  };
+}
+
+/** T-105: o anual pago com Pix acabou (o texto do fim da assinatura, com outro título). */
+export function avisoDoPixEncerrado(): TextoDoAviso {
+  return { ...avisoDeEncerramento(), titulo: 'Seu plano anual terminou' };
+}
+
+/** Os avisos do anual pago com Pix: 7 dias antes do fim e, até 3 dias depois, o fim. */
+export type AvisoDoPix = 'fim_proximo' | 'encerrado';
+
+const DIA_MS = 24 * 60 * 60 * 1000;
+/** Até quantos dias depois do fim o aviso ainda sai (a rodada das 09:00 pode ter falhado). */
+const DIAS_AVISO_ENCERRADO = 3;
+
+export function avisoDoPix(pagoAte: Date, agora: Date): AvisoDoPix | null {
+  const falta = pagoAte.getTime() - agora.getTime();
+  if (falta > 0) return falta <= DIAS_AVISO_FIM_PIX * DIA_MS ? 'fim_proximo' : null;
+  return -falta <= DIAS_AVISO_ENCERRADO * DIA_MS ? 'encerrado' : null;
 }
