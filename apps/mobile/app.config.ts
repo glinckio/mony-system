@@ -47,7 +47,7 @@ const DADOS_POR_AMBIENTE: Record<Ambiente, DadosAmbiente> = {
     nome: 'Monitorizze Dev',
     identificador: `${IDENTIFICADOR}.dev`,
     esquema: 'mony-dev',
-    // Simulador iOS. No emulador Android use http://10.0.2.2:3000; em aparelho, o IP do computador.
+    // Simulador iOS e emulador Android com `adb reverse` (README); em aparelho, o IP do computador.
     urlApi: 'http://localhost:3000',
   },
   // A API de staging e a de produção dependem do domínio do cliente: até lá, vêm da variável
