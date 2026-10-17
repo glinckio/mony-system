@@ -16,8 +16,8 @@ catalog:
 overrides:
   react-dom: 'catalog:'
   # O @nestjs/platform-fastify 11.2.7 fixa o 5.11.3, que tem falhas altas corrigidas no 5.12.2
-  # (`pnpm audit`, T-144a). Tirar quando o Nest subir a versão dele.
-  fastify: 5.12.2
+  # (`pnpm audit`, T-144a). Igual à versão de `apps/api`; tirar quando o Nest subir a dele.
+  fastify: 5.12.7
 allowBuilds:
   '@prisma/engines': false
   '@scarf/scarf': false
