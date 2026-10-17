@@ -8,6 +8,7 @@ import { FilasModule } from './core/filas/filas.module';
 import { LimitesModule } from './core/limites/limite-tentativas';
 import { NucleoModule } from './core/nucleo.module';
 import { ProcessadorRotinas } from './core/rotinas/rotinas';
+import { FalhasDasFilas } from './core/sentry/falhas-filas';
 import { EmailModule } from './integracoes/email/email.module';
 import { ProcessadorEmails } from './integracoes/email/processador-emails';
 import { AlertasModule } from './modulos/alertas/alertas.module';
@@ -82,6 +83,8 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     ProcessadorWebhooks,
     ProcessadorAvaliacaoMony,
     ExecutorAvaliacao,
+    // Falha definitiva de qualquer job vai para o Sentry (T-142c).
+    FalhasDasFilas,
   ],
 })
 export class WorkerModule {}

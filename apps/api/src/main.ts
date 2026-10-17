@@ -1,3 +1,5 @@
+// O Sentry vem antes de tudo (T-142c).
+import './instrument-api';
 import 'reflect-metadata';
 
 import { NestFactory } from '@nestjs/core';

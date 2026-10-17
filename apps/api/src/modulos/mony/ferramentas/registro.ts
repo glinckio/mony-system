@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import type { Contexto } from '../../../core/contexto/contexto';
 import { ErroDominio } from '../../../core/erros/erro-dominio';
+import { reportarErro } from '../../../core/sentry/sentry';
 import type { ChamadaFerramenta, FerramentaLlm } from '../../../integracoes/ia/llm.provider';
 import { ehErroDeLimite } from '../../planos/dominio/cotas';
 import { botaoVerPlanos } from '../aviso-limite';
@@ -115,6 +116,7 @@ export class RegistroFerramentas {
         `Falha na ferramenta ${chamada.nome} da Mony: ${motivo}`,
         erro instanceof Error ? erro.stack : undefined,
       );
+      reportarErro(erro, { origem: 'mony-ferramenta', ferramenta: chamada.nome });
       return falha({ codigo: 'ERRO_INTERNO', mensagem: 'Falha interna.' });
     }
   }
