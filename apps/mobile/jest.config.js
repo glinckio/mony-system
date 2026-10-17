@@ -1,6 +1,11 @@
+const path = require('node:path');
+
 /** @type {import('jest').Config} */
 module.exports = {
   preset: 'jest-expo',
+  // Código já transformado pelo Babel (app, React Native, Expo). O CI guarda esta pasta entre
+  // execuções: frio, o primeiro teste de cada processo do Jest passava dos 60 s (T-154).
+  cacheDirectory: path.join(__dirname, 'node_modules', '.cache', 'jest'),
   setupFiles: ['<rootDir>/test/preparar-jest.ts'],
   // O CSS do NativeWind é compilado pelo Metro; nos testes, o import do `global.css` fica vazio.
   moduleNameMapper: {

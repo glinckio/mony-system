@@ -366,3 +366,5 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-152** Teste de integração instável: `recorrencias-cartao.integracao.spec.ts` › "editar refaz as ocorrências livres nas faturas" às vezes vê R$ 100 em vez de R$ 75 em dez/2026 (uma ocorrência a mais) quando roda com a suíte inteira; sozinho passa. Achar a corrida (provavelmente a rotina ou outro teste gerando ocorrências no mesmo instante) e tornar o teste determinístico (PR #108)
   - dep: — · visto nas verificações locais das T-141f e T-150
 - [x] **T-153** Dependabot: os 5 primeiros PRs (2026-10-16) ficaram vermelhos. O grupo de menores subia `@react-native/jest-preset` para 0.87 com o React Native 0.86 do Expo, e os majors (Nest 12, Babel 8) mudam API. Ignorar os pacotes que o SDK do Expo fixa e as versões major (PR #124)
+- [x] **T-154** Testes do app estáveis no CI: o primeiro teste de cada arquivo que abre as rotas passava dos 60 s no Verificar (PRs da T-084b, da T-086a, da T-140a e o #109). Cache do Jest do app guardado entre execuções do CI (PR #128)
+  - dep: — · visto no rebase do #109 em 2026-10-17
