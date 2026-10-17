@@ -104,6 +104,20 @@ describe('tokens de acesso (JWT ES256)', () => {
       await expect(tokens.verificar(invalido)).rejects.toMatchObject({ codigo: 'NAO_AUTENTICADO' });
     }
   });
+
+  it('RN-004 o token de segundo plano (T-088b) vale 30 dias, nunca além da sessão, e leva a família', async () => {
+    const { tokens } = await criarApp();
+    const aparelho = { id: 'u1', sessaoId: 's1', dispositivoId: 'd1', familiaId: 'f1' };
+    const longe = await tokens.emitirSegundoPlano(aparelho, new Date('2026-12-08T12:00:00Z'));
+    expect(longe.expiraEm.toISOString()).toBe('2026-11-08T12:00:00.000Z');
+    await expect(tokens.verificar(longe.token)).resolves.toEqual({
+      ...usuario,
+      escopo: 'segundo-plano',
+      familiaId: 'f1',
+    });
+    const perto = await tokens.emitirSegundoPlano(aparelho, new Date('2026-10-20T08:30:00Z'));
+    expect(perto.expiraEm.toISOString()).toBe('2026-10-20T08:30:00.000Z');
+  });
 });
 
 describe('guarda de autenticação', () => {
@@ -137,6 +151,21 @@ describe('guarda de autenticação', () => {
     });
     expect(resposta.statusCode).toBe(200);
     expect(resposta.json()).toMatchObject({ usuarioId: 'u1', origem: 'app' });
+  });
+
+  it('token de segundo plano (T-088b) não abre as rotas comuns do app: 403 ACESSO_NEGADO', async () => {
+    const { api, tokens } = await criarApp();
+    const { token } = await tokens.emitirSegundoPlano(
+      { id: 'u1', sessaoId: 's1', dispositivoId: 'd1', familiaId: 'f1' },
+      new Date('2026-12-08T12:00:00Z'),
+    );
+    const resposta = await api.inject({
+      method: 'GET',
+      url: '/v1/teste-auth',
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(resposta.statusCode).toBe(403);
+    expect(resposta.json()).toMatchObject({ erro: { codigo: 'ACESSO_NEGADO' } });
   });
 
   it('rotas públicas seguem abertas', async () => {

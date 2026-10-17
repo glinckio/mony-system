@@ -297,6 +297,32 @@
         ]
       }
     },
+    "/v1/me/token-segundo-plano": {
+      "post": {
+        "operationId": "emitirTokenSegundoPlano",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Token do aparelho para a tarefa que trata o push com o app fechado (T-088b): vale só nas rotas do push, até 30 dias e nunca além da sessão. Só com o token do app.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenSegundoPlanoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "usuario"
+        ]
+      }
+    },
     "/v1/admin/auth/entrar": {
       "post": {
         "operationId": "entrarAdminAutenticacao",
@@ -6600,6 +6626,23 @@
           "codigo",
           "senha",
           "dispositivo"
+        ]
+      },
+      "TokenSegundoPlanoDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "expiraEm": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "token",
+          "expiraEm"
         ]
       },
       "LoginAdminDto": {

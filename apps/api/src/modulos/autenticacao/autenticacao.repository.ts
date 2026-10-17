@@ -255,6 +255,7 @@ export class AutenticacaoRepository {
         id: true,
         usuarioId: true,
         dispositivoId: true,
+        familiaId: true,
         expiraEm: true,
         revogadaEm: true,
         usuario: { select: CAMPOS_USUARIO },
@@ -263,11 +264,11 @@ export class AutenticacaoRepository {
   }
 
   /**
-   * RN-004: troca a sessão por uma nova. Devolve `null` se a sessão já tinha sido revogada nesse
-   * meio-tempo (duas renovações com o mesmo token), para o Service tratar como reuso.
+   * RN-004: troca a sessão por uma nova, da mesma família. Devolve `null` se a sessão já tinha sido
+   * revogada nesse meio-tempo (duas renovações com o mesmo token), para o Service tratar como reuso.
    */
   girarSessao(
-    anterior: { id: string; usuarioId: string; dispositivoId: string | null },
+    anterior: { id: string; usuarioId: string; dispositivoId: string | null; familiaId: string },
     nova: NovaSessao,
     agora: Date,
   ): Promise<{ sessaoId: string } | null> {
@@ -281,6 +282,7 @@ export class AutenticacaoRepository {
         data: {
           usuarioId: anterior.usuarioId,
           dispositivoId: anterior.dispositivoId,
+          familiaId: anterior.familiaId,
           refreshTokenHash: nova.resumoRenovacao,
           expiraEm: nova.expiraEm,
         },

@@ -523,6 +523,7 @@ export * from './simulacaoParcelamentoDto';
 export * from './situacaoAssinaturaDto';
 export * from './situacaoAssinaturaDtoPlano';
 export * from './situacaoAssinaturaDtoStatus';
+export * from './tokenSegundoPlanoDto';
 export * from './totaisTransacoesDto';
 export * from './totaisTransacoesFormaPagamento';
 export * from './totaisTransacoesOrigem';
