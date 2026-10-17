@@ -6,7 +6,7 @@ packages:
 # `@mony/api-client` precisa enxergar o mesmo React e o mesmo TanStack Query que o app (senão o
 # Metro empacota duas cópias e o `QueryClientProvider` do app não vale para os hooks gerados).
 catalog:
-  '@tanstack/react-query': 5.104.1
+  '@tanstack/react-query': 5.104.2
   '@types/react': 19.2.18
   react: 19.2.3
   react-dom: 19.2.3
@@ -16,8 +16,8 @@ catalog:
 overrides:
   react-dom: 'catalog:'
   # O @nestjs/platform-fastify 11.2.7 fixa o 5.11.3, que tem falhas altas corrigidas no 5.12.2
-  # (`pnpm audit`, T-144a). Tirar quando o Nest subir a versão dele.
-  fastify: 5.12.2
+  # (`pnpm audit`, T-144a). Igual à versão de `apps/api`; tirar quando o Nest subir a dele.
+  fastify: 5.12.7
 allowBuilds:
   '@prisma/engines': false
   '@scarf/scarf': false
