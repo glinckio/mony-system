@@ -78,6 +78,13 @@ Migrações: sempre compatíveis com a versão anterior (expandir → migrar →
 | Painel de filas | Bull Board protegido no admin |
 | Analítica de produto | PostHog: cadastros, conclusão do onboarding, uso da Mony, retenção, conversão |
 
+### Sentry (T-142c)
+
+- **O que vai:** na API, o 500 e o 5xx que não vem de regra de negócio (o `ErroDominio` de 503, como provedor sem configuração, fica de fora), com o `requestId`. No worker, a falha definitiva de qualquer job (acabaram as tentativas), com a fila e o nome do job. Também os erros inesperados que o código trata sem derrubar a resposta: o streaming da Mony, as ferramentas dela, o WebSocket das listas e os alertas. No painel, o erro que derruba a tela e o que um error boundary pega.
+- **O que não vai (doc 11):** a versão 11 do SDK coleta quase tudo por padrão; a `COLETA_MINIMA` de `@mony/shared/sentry` desliga cabeçalhos, cookies, corpos, query strings, dados das consultas, argumentos dos jobs, entradas e saídas de IA e variáveis locais. O `beforeSend` ainda tira o que sobrar. Sem rastreamento de desempenho.
+- **Releases e source maps:** a release é o commit. A imagem da API leva os IDs de depuração (`sentry-cli sourcemaps inject` no Dockerfile) e o deploy envia os mapas para os projetos `api` e `worker`. O painel gera mapas escondidos, e o deploy os envia e apaga antes de publicar o site. Só com `SENTRY_AUTH_TOKEN`.
+- **Ligar:** `SENTRY_DSN` por serviço no Terraform, `STAGING_SENTRY_DSN_ADMIN` no GitHub; passo a passo em `infra/README.md`, "Sentry".
+
 ### Métricas (T-142d)
 
 - **Por rota:** o log de cada requisição da API (pino-http) leva `rota`, o padrão da rota (ex.: `/v1/transacoes/:id`), além de `responseTime` e `res.statusCode`. Tempo de resposta e falhas por rota saem do CloudWatch Logs Insights, nas consultas salvas `mony-<ambiente>/tempo-de-resposta-por-rota` e `mony-<ambiente>/falhas-por-rota`. Uma métrica por rota custaria uns US$ 0,30 por métrica por mês, vezes as rotas; a consulta só cobra quando roda.

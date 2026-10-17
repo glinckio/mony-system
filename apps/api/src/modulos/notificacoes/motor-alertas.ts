@@ -11,6 +11,7 @@ import {
 
 import { ParametrosService } from '../../core/parametros/parametros';
 import { Rotina } from '../../core/rotinas/rotinas';
+import { reportarErro } from '../../core/sentry/sentry';
 import { ChatDosAlertas } from './chat-dos-alertas';
 import { EnvioNotificacoes, type NotificacaoParaEnvio } from './envio-notificacoes';
 import { type NotificacaoDoUsuario, NotificacoesRepository } from './notificacoes.repository';
@@ -198,6 +199,7 @@ export class MotorAlertas {
     } catch (erro) {
       const motivo = erro instanceof Error ? erro.message : String(erro);
       this.log.error(`Alerta ${candidato.chaveUnica} não foi ao chat: ${motivo}`);
+      reportarErro(erro, { origem: 'alerta-no-chat', tipo: candidato.tipo });
     }
   }
 

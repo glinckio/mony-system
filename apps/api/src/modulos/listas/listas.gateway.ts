@@ -20,6 +20,7 @@ import type { Server, Socket } from 'socket.io';
 import { type UsuarioAutenticado, TokensAcesso } from '../../core/auth/tokens-acesso';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { AvisosTempoReal } from '../../core/tempo-real/avisos-tempo-real';
+import { reportarErro } from '../../core/sentry/sentry';
 import { CompartilhamentosService } from '../compartilhamentos/compartilhamentos.service';
 
 interface DadosSocket {
@@ -90,6 +91,7 @@ export class ListasGateway implements OnGatewayInit<Server>, OnGatewayConnection
     } catch (erro) {
       if (erro instanceof ErroDominio) return { ok: false, codigo: erro.codigo };
       this.log.error(erro);
+      reportarErro(erro, { origem: 'listas-tempo-real' });
       return { ok: false, codigo: 'ERRO_INTERNO' };
     }
     await socket.join(salaDaLista(dados.data.listaId));

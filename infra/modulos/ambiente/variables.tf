@@ -171,3 +171,25 @@ variable "dias_exportacoes" {
   type        = number
   default     = 7
 }
+
+variable "sentry_dsn_api" {
+  description = "DSN do projeto `api` no Sentry (T-142c, doc 12). Vazio: o Sentry fica desligado na API."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.sentry_dsn_api == "" || can(regex("^https://[^@\\s]+@[^/\\s]+/[0-9]+$", var.sentry_dsn_api))
+    error_message = "Use o DSN do Sentry, ex.: https://chave@o123.ingest.us.sentry.io/456."
+  }
+}
+
+variable "sentry_dsn_worker" {
+  description = "DSN do projeto `worker` no Sentry (T-142c, doc 12). Vazio: o Sentry fica desligado no worker."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.sentry_dsn_worker == "" || can(regex("^https://[^@\\s]+@[^/\\s]+/[0-9]+$", var.sentry_dsn_worker))
+    error_message = "Use o DSN do Sentry, ex.: https://chave@o123.ingest.us.sentry.io/456."
+  }
+}

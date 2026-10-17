@@ -1,10 +1,11 @@
 import { type ArgumentsHost, Catch, type ExceptionFilter, HttpException } from '@nestjs/common';
 import { type CodigoErro, criarRespostaErro, type RespostaErro } from '@mony/shared/erros';
-import type { FastifyReply } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 import { ZodValidationException } from 'nestjs-zod';
 import { ZodError } from 'zod';
 
+import { reportarErro } from '../sentry/sentry';
 import { ErroDominio } from './erro-dominio';
 
 interface Traducao {
@@ -46,9 +47,19 @@ function problemasDeValidacao(erro: ZodError): { caminho: string; mensagem: stri
 }
 
 /**
+ * Vai para o Sentry (T-142c) o erro que ninguém esperava: o 500, e o 5xx que não veio de uma regra
+ * de negócio. O `ErroDominio` de 503 (`SERVICO_INDISPONIVEL`: provedor sem configuração, Stripe
+ * fora do ar) é situação prevista, e os 4xx são erros de quem chamou.
+ */
+export function deveReportar(excecao: unknown, status: number): boolean {
+  if (status < 500) return false;
+  return status === 500 || !(excecao instanceof ErroDominio);
+}
+
+/**
  * Filtro global: toda resposta de erro sai no formato `{ erro: { codigo, mensagem, detalhes? } }`
  * (docs/arquitetura/05). Erro inesperado vira `ERRO_INTERNO` sem mensagem nem stack na resposta;
- * o detalhe vai só para o log.
+ * o detalhe vai para o log e para o Sentry, com o `requestId` para achar o log (doc 11).
  */
 @Catch()
 export class FiltroErros implements ExceptionFilter {
@@ -58,6 +69,10 @@ export class FiltroErros implements ExceptionFilter {
     const { status, corpo } = this.traduzir(excecao);
     if (status >= 500) {
       this.log.error({ err: excecao }, 'Erro não tratado');
+    }
+    if (deveReportar(excecao, status)) {
+      const requisicao = host.switchToHttp().getRequest<FastifyRequest | undefined>();
+      reportarErro(excecao, requisicao === undefined ? {} : { requestId: requisicao.id });
     }
     const resposta = host.switchToHttp().getResponse<FastifyReply>();
     void resposta.status(status).send(corpo);

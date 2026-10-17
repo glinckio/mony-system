@@ -18,6 +18,9 @@ RUN pnpm fetch
 COPY . .
 RUN pnpm install --frozen-lockfile --offline --filter "api..."
 RUN pnpm turbo run build --filter=api
+# IDs de depuração nos arquivos da API, para o Sentry casar cada erro com o source map que o deploy
+# envia (T-142c). Roda sem rede e sem token; os .map vão na imagem, mas só o deploy os lê.
+RUN pnpm --filter api exec sentry-cli sourcemaps inject dist
 # Pasta só com a API, o @mony/shared compilado e as dependências de produção.
 RUN pnpm --filter api deploy --prod --legacy /saida
 
@@ -36,5 +39,9 @@ COPY --from=build --chown=node:node /saida ./
 USER node
 # Baixa já na imagem os binários que o CLI do Prisma usa nas migrações.
 RUN prisma version
+# Release do Sentry: o commit da imagem (`--build-arg SENTRY_RELEASE=<sha>` no deploy). Fica no fim
+# para não invalidar o cache das camadas de cima a cada commit.
+ARG SENTRY_RELEASE=""
+ENV SENTRY_RELEASE=${SENTRY_RELEASE}
 EXPOSE 3000
 CMD ["node", "dist/main.js"]

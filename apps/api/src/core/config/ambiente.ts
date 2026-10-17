@@ -22,8 +22,27 @@ const listaPorVirgula = z
       .filter((item) => item !== ''),
   );
 
+/**
+ * Sentry (T-142c, doc 12). Lidas também antes do Nest subir (`core/sentry/sentry.ts`), porque o SDK
+ * precisa iniciar antes dos outros módulos. Sem DSN, o Sentry fica desligado.
+ */
+export const camposSentry = {
+  /** DSN do projeto: `api` na API e `worker` no worker. */
+  SENTRY_DSN: z.preprocess(vazioComoAusente, z.url().optional()),
+  /** Ambiente no Sentry (ex.: `staging`); sem ele, o `NODE_ENV`. */
+  SENTRY_AMBIENTE: z.preprocess(vazioComoAusente, z.string().optional()),
+  /** Release: o commit da imagem (`--build-arg SENTRY_RELEASE` no Dockerfile). */
+  SENTRY_RELEASE: z.preprocess(vazioComoAusente, z.string().optional()),
+};
+
+export const esquemaSentry = z.object({
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  ...camposSentry,
+});
+
 export const esquemaAmbiente = z
   .object({
+    ...camposSentry,
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().min(1).max(65535).default(3000),
     DATABASE_URL: z

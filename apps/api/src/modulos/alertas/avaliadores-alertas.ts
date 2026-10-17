@@ -29,6 +29,7 @@ import { AoEvento } from '../../core/eventos/ao-evento.decorator';
 import type { EventoDominio } from '../../core/eventos/evento-dominio';
 import { ParametrosService } from '../../core/parametros/parametros';
 import { Rotina } from '../../core/rotinas/rotinas';
+import { reportarErro } from '../../core/sentry/sentry';
 import {
   CartoesService,
   EVENTO_FATURA_ATRASADA,
@@ -239,6 +240,7 @@ export class AvaliadoresAlertas {
           falhas += 1;
           const motivo = erro instanceof Error ? erro.message : String(erro);
           this.log.error(`Alertas diários do usuário ${usuarioId} falharam: ${motivo}`);
+          reportarErro(erro, { origem: 'alertas-diarios', usuarioId });
         }
       }
       depoisDe = lote.at(-1) ?? null;

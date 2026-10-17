@@ -17,6 +17,7 @@ import { CABECALHO_ID_REQUISICAO } from '../../configurar-app';
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
 import { criarDto } from '../../core/openapi/dto';
+import { reportarErro } from '../../core/sentry/sentry';
 import { RecursoLimitado } from '../planos/recurso-limitado.decorator';
 import { MonyService } from './mony.service';
 import { NfceMony } from './nfce.service';
@@ -77,6 +78,7 @@ export class MonyController {
       }
     } catch (erro) {
       requisicao.log.error({ err: erro }, 'Falha na resposta da Mony');
+      reportarErro(erro, { requestId: requisicao.id, origem: 'mony-sse' });
       if (!controle.signal.aborted) {
         saida.write(
           formatarEventoSse({

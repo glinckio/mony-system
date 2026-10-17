@@ -37,6 +37,9 @@ jobs:
     env:
       CLUSTER: ${{ vars.STAGING_ECS_CLUSTER }}
       REPOSITORIO: ${{ vars.STAGING_ECR_REPOSITORIO }}
+      # Sentry (T-142c): sem o token, os source maps não são enviados (infra/README.md, "Sentry").
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
     steps:
       - name: Baixar o código
         uses: actions/checkout@v7
@@ -63,8 +66,26 @@ jobs:
           tags: |
             ${{ env.REPOSITORIO }}:${{ github.sha }}
             ${{ env.REPOSITORIO }}:staging
+          # A release do Sentry é o commit (T-142c).
+          build-args: |
+            SENTRY_RELEASE=${{ github.sha }}
           cache-from: type=gha,scope=api
           cache-to: type=gha,scope=api,mode=max
+
+      - name: Source maps da API e do worker no Sentry
+        # Os arquivos saem da própria imagem, que já tem os IDs de depuração (Dockerfile). Uma falha
+        # aqui não impede o deploy: só deixa a pilha dos erros sem o código-fonte.
+        if: env.SENTRY_AUTH_TOKEN != ''
+        continue-on-error: true
+        run: |
+          docker pull "$REPOSITORIO:$GITHUB_SHA"
+          conteiner=$(docker create "$REPOSITORIO:$GITHUB_SHA")
+          docker cp "$conteiner:/app/dist" ./dist-api
+          docker rm "$conteiner"
+          for projeto in api worker; do
+            npx --yes @sentry/cli@2.58.4 sourcemaps upload --org "$SENTRY_ORG" \
+              --project "$projeto" --release "$GITHUB_SHA" ./dist-api
+          done
 
       - name: Migrações e seed
         # Tarefa avulsa com a imagem nova, antes dos serviços: migração é sempre compatível com a
