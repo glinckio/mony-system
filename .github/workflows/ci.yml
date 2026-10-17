@@ -48,6 +48,18 @@ jobs:
       - name: Instalar dependências
         run: pnpm install --frozen-lockfile
 
+      - name: Cache do Jest do app
+        # Depois da instalação, porque fica dentro de `apps/mobile/node_modules`. Frio, o primeiro
+        # teste de cada processo do Jest transforma o app e o React Native do zero e passava dos
+        # 60 s com o Metro e a API rodando junto (T-154). O Jest confere cada arquivo pelo conteúdo,
+        # então um cache de outro lockfile serve de ponto de partida.
+        uses: actions/cache@v6
+        with:
+          path: apps/mobile/node_modules/.cache/jest
+          key: jest-app-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'apps/mobile/babel.config.js', 'apps/mobile/jest.config.js') }}
+          restore-keys: |
+            jest-app-${{ runner.os }}-
+
       - name: Formatação (Prettier)
         run: pnpm format:check
 
