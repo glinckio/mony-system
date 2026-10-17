@@ -110,13 +110,13 @@ jobs:
           node-version-file: .nvmrc
 
       - name: Falhas conhecidas nas dependências de produção (pnpm audit)
-        # Barra só as críticas. As altas sem correção (ferramentas do React Native e do Expo, CLI do
-        # Prisma) aparecem no passo abaixo, que não barra; resolver é a T-144d (doc 11).
-        run: pnpm audit --prod --audit-level critical
-
-      - name: Relatório das altas (não barra)
-        continue-on-error: true
+        # Barra a partir das altas (T-144d). As altas sem correção publicada ficam em
+        # `auditConfig.ignoreGhsas` no pnpm-workspace.yaml, cada uma com o motivo (doc 11).
         run: pnpm audit --prod --audit-level high
+
+      - name: Relatório das moderadas (não barra)
+        continue-on-error: true
+        run: pnpm audit --prod --audit-level moderate
 
   infra:
     name: Infra
