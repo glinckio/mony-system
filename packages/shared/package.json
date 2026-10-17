@@ -118,6 +118,10 @@
       "types": "./dist/transacoes.d.ts",
       "default": "./dist/transacoes.js"
     },
+    "./sentry": {
+      "types": "./dist/sentry.d.ts",
+      "default": "./dist/sentry.js"
+    },
     "./usuario": {
       "types": "./dist/usuario.d.ts",
       "default": "./dist/usuario.js"

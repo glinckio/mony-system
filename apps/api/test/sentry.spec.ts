@@ -11,12 +11,9 @@ import { Publico } from '../src/core/auth/publico.decorator';
 import { ErroDominio } from '../src/core/erros/erro-dominio';
 import { deveReportar } from '../src/core/erros/filtro-erros';
 import { FalhasDasFilas, falhaDefinitiva } from '../src/core/sentry/falhas-filas';
-import {
-  limparBreadcrumb,
-  limparEvento,
-  opcoesSentry,
-  semConsulta,
-} from '../src/core/sentry/sentry';
+import { COLETA_MINIMA } from '@mony/shared/sentry';
+
+import { opcoesSentry } from '../src/core/sentry/sentry';
 import { semServicosExternos } from './utilitarios';
 
 const DSN = 'https://chave@o0.ingest.sentry.io/1';
@@ -47,19 +44,8 @@ describe('Sentry: opções (T-142c)', () => {
       release: 'abc123',
       initialScope: { tags: { processo: 'worker' } },
     });
-    // Os padrões da versão 11 coletam quase tudo; aqui, nada além do erro.
-    expect(opcoes?.dataCollection).toEqual({
-      userInfo: false,
-      cookies: false,
-      httpHeaders: false,
-      httpBodies: [],
-      urlQueryParams: false,
-      graphQL: { document: false, variables: false },
-      genAI: { inputs: false, outputs: false },
-      databaseQueryData: false,
-      queues: false,
-      stackFrameVariables: false,
-    });
+    // Os padrões da versão 11 coletam quase tudo; aqui, nada além do erro (`@mony/shared/sentry`).
+    expect(opcoes?.dataCollection).toBe(COLETA_MINIMA);
     expect(opcoes).not.toHaveProperty('tracesSampleRate');
   });
 
@@ -67,48 +53,6 @@ describe('Sentry: opções (T-142c)', () => {
     const opcoes = opcoesSentry('api', { SENTRY_DSN: DSN, NODE_ENV: 'production' });
     expect(opcoes?.environment).toBe('production');
     expect(opcoes).not.toHaveProperty('release');
-  });
-});
-
-describe('Sentry: o que sai do servidor (doc 11)', () => {
-  it('URL sem query string nem fragmento', () => {
-    expect(semConsulta('https://api.x/v1/admin/usuarios?busca=ana@x.com#topo')).toBe(
-      'https://api.x/v1/admin/usuarios',
-    );
-    expect(semConsulta('/v1/saude')).toBe('/v1/saude');
-  });
-
-  it('da requisição ficam só o método e a rota; do usuário, só o id', () => {
-    const evento = limparEvento({
-      request: {
-        method: 'POST',
-        url: 'https://api.x/v1/auth/login?email=ana@x.com',
-        headers: { authorization: 'Bearer segredo', cookie: 'a=b' },
-        cookies: { a: 'b' },
-        data: { email: 'ana@x.com', senha: 'segredo' },
-        query_string: 'email=ana@x.com',
-        env: { REMOTE_ADDR: '1.2.3.4' },
-      },
-      user: { id: 'u1', email: 'ana@x.com', ip_address: '1.2.3.4' },
-    });
-    expect(evento.request).toEqual({ method: 'POST', url: 'https://api.x/v1/auth/login' });
-    expect(evento.user).toEqual({ id: 'u1' });
-    expect(JSON.stringify(evento)).not.toContain('segredo');
-    expect(JSON.stringify(evento)).not.toContain('ana@x.com');
-  });
-
-  it('rastros: sem console; das chamadas HTTP, a URL sem query string', () => {
-    expect(limparBreadcrumb({ category: 'console', message: 'ana@x.com' })).toBeNull();
-    expect(
-      limparBreadcrumb({
-        category: 'http',
-        data: { url: 'https://api.stripe.com/v1/x?cliente=1', method: 'GET' },
-      }),
-    ).toEqual({ category: 'http', data: { url: 'https://api.stripe.com/v1/x', method: 'GET' } });
-    const evento = limparEvento({
-      breadcrumbs: [{ category: 'console' }, { category: 'http', data: { url: '/a?b=c' } }],
-    });
-    expect(evento.breadcrumbs).toEqual([{ category: 'http', data: { url: '/a' } }]);
   });
 });
 

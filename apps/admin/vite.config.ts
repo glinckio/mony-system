@@ -23,6 +23,9 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: { '@': `${import.meta.dirname}/src` },
     },
+    // Source maps para o Sentry (T-142c), sem o comentário que os aponta no JS: o deploy os envia
+    // ao Sentry e os apaga antes de publicar o site.
+    build: { sourcemap: 'hidden' },
     server: {
       port: 5173,
       // Em desenvolvimento o painel chama /v1 no próprio endereço e o Vite repassa para a API local,

@@ -1,3 +1,4 @@
+import { COLETA_MINIMA, limparBreadcrumb, limparEvento } from '@mony/shared/sentry';
 import * as Sentry from '@sentry/nestjs';
 
 import { esquemaSentry } from '../config/ambiente';
@@ -6,68 +7,6 @@ import { esquemaSentry } from '../config/ambiente';
 export type ProcessoSentry = 'api' | 'worker';
 
 type Variaveis = Record<string, string | undefined>;
-
-/** `https://api.exemplo.com/v1/x?email=a@b.c#y` → `https://api.exemplo.com/v1/x`. */
-export function semConsulta(url: string): string {
-  return url.replace(/[?#].*$/s, '');
-}
-
-/**
- * O que sai do servidor para o Sentry (doc 11): só o erro, o método e a rota. Sem cabeçalhos
- * (token de acesso, cookies), sem corpo, sem query string (a busca do painel leva e-mail) e sem
- * dados do usuário além do id.
- */
-export function limparEvento<T extends Sentry.Event>(evento: T): T {
-  if (evento.request) {
-    const { method, url } = evento.request;
-    evento.request = {
-      ...(method === undefined ? {} : { method }),
-      ...(url === undefined ? {} : { url: semConsulta(url) }),
-    };
-  }
-  if (evento.user) {
-    const { id } = evento.user;
-    evento.user = id === undefined ? {} : { id };
-  }
-  if (evento.breadcrumbs) {
-    evento.breadcrumbs = evento.breadcrumbs
-      .map((migalha) => limparBreadcrumb(migalha))
-      .filter((migalha): migalha is Sentry.Breadcrumb => migalha !== null);
-  }
-  return evento;
-}
-
-/**
- * Rastro do que aconteceu antes do erro. O console sai inteiro (pode ter dado de usuário); das
- * chamadas HTTP fica a URL sem a query string.
- */
-export function limparBreadcrumb(migalha: Sentry.Breadcrumb): Sentry.Breadcrumb | null {
-  if (migalha.category === 'console') return null;
-  const url: unknown = migalha.data?.url;
-  if (typeof url === 'string') {
-    return { ...migalha, data: { ...migalha.data, url: semConsulta(url) } };
-  }
-  return migalha;
-}
-
-/**
- * O que o SDK coleta sozinho (doc 11). Os padrões da versão 11 coletam quase tudo: cabeçalhos,
- * cookies, corpos, query strings, dados das consultas ao banco, argumentos dos jobs, entradas e
- * saídas de IA (as mensagens da Mony) e as variáveis locais de cada ponto da pilha. Aqui, nada
- * disso: fica o erro com a pilha e as linhas de código em volta.
- */
-export const COLETA_MINIMA = {
-  userInfo: false,
-  cookies: false,
-  httpHeaders: false,
-  httpBodies: [],
-  urlQueryParams: false,
-  graphQL: { document: false, variables: false },
-  genAI: { inputs: false, outputs: false },
-  databaseQueryData: false,
-  queues: false,
-  stackFrameVariables: false,
-} as const satisfies NonNullable<Sentry.NodeOptions['dataCollection']>;
 
 /**
  * As opções do SDK, ou `undefined` sem DSN (Sentry desligado). Variável malformada também
