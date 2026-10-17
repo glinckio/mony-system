@@ -60,6 +60,11 @@ export class ListasGateway implements OnGatewayInit<Server>, OnGatewayConnection
       }
       this.tokens.verificar(token).then(
         (usuario) => {
+          // Só o token do app: o do painel e o de segundo plano (T-088b) não abrem o tempo real.
+          if (usuario.escopo !== undefined) {
+            proximo(erroConexao('ACESSO_NEGADO'));
+            return;
+          }
           (socket.data as DadosSocket).usuario = usuario;
           proximo();
         },

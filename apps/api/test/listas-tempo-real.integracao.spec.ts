@@ -134,6 +134,12 @@ describe.runIf(ativo)('integração: listas em tempo real', () => {
     await expect(conectar('nao-e-um-jwt').conectado).rejects.toThrow('NAO_AUTENTICADO');
   });
 
+  it('o token de segundo plano do aparelho (T-088b) não abre o tempo real', async () => {
+    const ana = await usuarioNovo('Ana Souza');
+    const { token } = await ok<{ token: string }>(ana, 'POST', '/me/token-segundo-plano');
+    await expect(conectar(token).conectado).rejects.toThrow('ACESSO_NEGADO');
+  });
+
   it('RN-074 só entra na sala quem tem acesso; cada mudança avisa quem está nela', async () => {
     const ana = await usuarioNovo('Ana Souza');
     const bia = await usuarioNovo('Bia Lima');

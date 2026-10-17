@@ -35,6 +35,7 @@ import {
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { Idempotente } from '../../core/idempotencia/idempotente.decorator';
 import { criarDto } from '../../core/openapi/dto';
+import { SegundoPlano } from '../../core/auth/segundo-plano.decorator';
 import { RecursoLimitado } from '../planos/recurso-limitado.decorator';
 import { LembretesService } from './lembretes.service';
 
@@ -68,6 +69,7 @@ export class LembretesController {
   }
 
   @Get('alarmes')
+  @SegundoPlano()
   @ApiOkResponse({
     type: AlarmesLembretesDto,
     description: 'Os 50 próximos alarmes (35 dias), para o aparelho agendar.',
@@ -115,6 +117,7 @@ export class LembretesController {
   }
 
   @Post(':id/concluir')
+  @SegundoPlano()
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: LembreteDto, description: 'O [Feito] (RN-076).' })
   concluir(
@@ -126,6 +129,7 @@ export class LembretesController {
   }
 
   @Post(':id/adiar')
+  @SegundoPlano()
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: LembreteDto, description: 'A soneca: 10 min, 1 h ou amanhã (RN-076).' })
   adiar(
