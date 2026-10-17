@@ -219,3 +219,44 @@ run "dominio_invalido" {
 
   expect_failures = [var.dominio]
 }
+
+# T-142c: o DSN de cada serviço vai só para o contêiner dele; o ambiente do Sentry, para os dois.
+run "sentry_por_servico" {
+  command = plan
+
+  variables {
+    sentry_dsn_api    = "https://chave@o1.ingest.sentry.io/11"
+    sentry_dsn_worker = "https://chave@o1.ingest.sentry.io/22"
+  }
+
+  assert {
+    condition = (
+      strcontains(aws_ecs_task_definition.api.container_definitions, "ingest.sentry.io/11") &&
+      !strcontains(aws_ecs_task_definition.api.container_definitions, "ingest.sentry.io/22")
+    )
+    error_message = "A API leva só o DSN do projeto api."
+  }
+
+  assert {
+    condition = (
+      strcontains(aws_ecs_task_definition.worker.container_definitions, "ingest.sentry.io/22") &&
+      !strcontains(aws_ecs_task_definition.worker.container_definitions, "ingest.sentry.io/11")
+    )
+    error_message = "O worker leva só o DSN do projeto worker."
+  }
+
+  assert {
+    condition     = strcontains(aws_ecs_task_definition.worker.container_definitions, "\"SENTRY_AMBIENTE\",\"value\":\"staging\"")
+    error_message = "O ambiente do Sentry é o nome do ambiente."
+  }
+}
+
+run "sentry_dsn_invalido" {
+  command = plan
+
+  variables {
+    sentry_dsn_api = "chave@sentry"
+  }
+
+  expect_failures = [var.sentry_dsn_api]
+}

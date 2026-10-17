@@ -39,6 +39,9 @@ jobs:
       TURBO_TELEMETRY_DISABLED: '1'
       BUCKET: ${{ vars.STAGING_ADMIN_BUCKET }}
       DISTRIBUICAO: ${{ vars.STAGING_ADMIN_CLOUDFRONT }}
+      # Sentry (T-142c): sem o token, os source maps não são enviados (infra/README.md, "Sentry").
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
     steps:
       - name: Baixar o código
         uses: actions/checkout@v7
@@ -61,7 +64,24 @@ jobs:
         # API (infra/modulos/ambiente/admin.tf).
         env:
           VITE_API_URL: ''
+          # Sem o DSN, o Sentry fica desligado no painel (T-142c).
+          VITE_SENTRY_DSN: ${{ vars.STAGING_SENTRY_DSN_ADMIN }}
+          VITE_SENTRY_AMBIENTE: staging
+          VITE_SENTRY_RELEASE: ${{ github.sha }}
         run: pnpm turbo run build --filter=admin
+
+      - name: Source maps do painel no Sentry
+        # IDs de depuração nos arquivos e envio dos mapas. Uma falha aqui não impede o deploy.
+        if: env.SENTRY_AUTH_TOKEN != ''
+        continue-on-error: true
+        run: |
+          npx --yes @sentry/cli@2.58.4 sourcemaps inject apps/admin/dist
+          npx --yes @sentry/cli@2.58.4 sourcemaps upload --org "$SENTRY_ORG" --project admin \
+            --release "$GITHUB_SHA" apps/admin/dist
+
+      - name: Tirar os source maps do site
+        # Gerados só para o Sentry (vite.config.ts): o código-fonte não vai para o bucket público.
+        run: find apps/admin/dist -name '*.map' -delete
 
       - name: Entrar na AWS (OIDC, sem chave guardada)
         uses: aws-actions/configure-aws-credentials@v6

@@ -61,6 +61,7 @@
     "@mony/config": "workspace:*",
     "@nestjs/cli": "^11.0.24",
     "@nestjs/testing": "^11.2.7",
+    "@sentry/cli": "2.58.4",
     "@swc/core": "^1.16.18",
     "@types/node": "^24.19.2",
     "@types/pdfkit": "0.17.6",

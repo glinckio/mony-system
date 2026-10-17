@@ -100,6 +100,8 @@ locals {
     { name = "AWS_REGION", value = local.regiao },
     { name = "ALERTAS_TECNICOS_EMAILS", value = join(",", var.emails_alertas) },
     { name = "METRICAS_NAMESPACE", value = local.namespace_metricas },
+    # O DSN é de cada serviço (abaixo); a release vem da imagem (`SENTRY_RELEASE`, Dockerfile).
+    { name = "SENTRY_AMBIENTE", value = var.ambiente },
   ]
 
   segredos_container = [
@@ -128,7 +130,7 @@ resource "aws_ecs_task_definition" "api" {
       image        = local.imagem
       essential    = true
       portMappings = [{ containerPort = 3000, protocol = "tcp" }]
-      environment  = local.ambiente_container
+      environment  = concat(local.ambiente_container, [{ name = "SENTRY_DSN", value = var.sentry_dsn_api }])
       secrets      = local.segredos_container
       stopTimeout  = 30
       logConfiguration = {
@@ -165,7 +167,7 @@ resource "aws_ecs_task_definition" "worker" {
       image       = local.imagem
       essential   = true
       command     = ["node", "dist/worker.js"]
-      environment = local.ambiente_container
+      environment = concat(local.ambiente_container, [{ name = "SENTRY_DSN", value = var.sentry_dsn_worker }])
       secrets     = local.segredos_container
       stopTimeout = 60
       logConfiguration = {

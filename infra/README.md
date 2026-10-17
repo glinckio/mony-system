@@ -135,6 +135,30 @@ Quando o cliente tiver o domínio (doc 15, pergunta 16), staging usa um subdomí
 
 O certificado do admin fica na `us-east-1`, porque o CloudFront só aceita certificado de lá; por isso o ambiente usa também o provider `aws.us_east_1`.
 
+## Sentry
+
+Erros da API, do worker, do painel e do app (T-142c, doc 12). Sem configuração, o Sentry fica desligado e nada sai do ambiente.
+
+1. Na conta do cliente no [Sentry](https://sentry.io), crie a organização e quatro projetos: `api` e `worker` (Node), `admin` (React) e `mobile` (React Native).
+2. **API e worker:** em `ambientes/staging/main.tf`, preencha `sentry_dsn_api` e `sentry_dsn_worker` com o DSN de cada projeto e aplique (`terraform apply`). O ambiente no Sentry é o nome do ambiente (`staging`), e a release é o commit da imagem.
+3. **Painel:** grave o DSN do projeto `admin` na variável do GitHub:
+
+   ```bash
+   gh variable set STAGING_SENTRY_DSN_ADMIN --body '<DSN do projeto admin>'
+   ```
+
+4. **Source maps** (pilha dos erros com o código-fonte): crie um token de organização no Sentry (Settings → Developer Settings → Organization Tokens) e grave-o no GitHub com a organização:
+
+   ```bash
+   gh secret set SENTRY_AUTH_TOKEN
+   gh variable set SENTRY_ORG --body '<slug da organização>'
+   ```
+
+   Os deploys de staging enviam os source maps a cada merge. Sem o token, esse passo é pulado.
+5. **App:** `EXPO_PUBLIC_SENTRY_DSN` e o segredo `SENTRY_AUTH_TOKEN` nos ambientes do EAS (README da raiz, "EAS").
+
+O que vai para o Sentry: o erro com a pilha, a rota e o `requestId` (para achar o log no CloudWatch). Cabeçalhos, corpo, query string, dados do usuário, argumentos dos jobs e variáveis locais ficam de fora (`@mony/shared/sentry`, doc 11).
+
 ## CI
 
 O job **Infra** do CI roda em todo PR:

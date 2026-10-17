@@ -89,4 +89,9 @@ module "ambiente" {
   # Quem recebe os alarmes (SNS) e os alertas técnicos do worker (T-142). Cada endereço confirma a
   # assinatura do SNS no primeiro e-mail. Ex.: ["tecnico@exemplo.com.br"].
   emails_alertas = []
+
+  # DSNs dos projetos `api` e `worker` no Sentry (T-142c), quando o cliente criar a conta. Vazios:
+  # o Sentry fica desligado. O painel e o app têm os deles (infra/README.md, "Sentry").
+  sentry_dsn_api    = ""
+  sentry_dsn_worker = ""
 }
