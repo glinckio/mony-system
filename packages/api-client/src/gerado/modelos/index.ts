@@ -555,6 +555,7 @@ export * from './situacaoAssinaturaDto';
 export * from './situacaoAssinaturaDtoPlano';
 export * from './situacaoAssinaturaDtoStatus';
 export * from './tokenEventoDto';
+export * from './tokenSegundoPlanoDto';
 export * from './totaisTransacoesDto';
 export * from './totaisTransacoesFormaPagamento';
 export * from './totaisTransacoesOrigem';
