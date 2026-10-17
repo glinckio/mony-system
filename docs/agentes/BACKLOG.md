@@ -368,3 +368,5 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-153** Dependabot: os 5 primeiros PRs (2026-10-16) ficaram vermelhos. O grupo de menores subia `@react-native/jest-preset` para 0.87 com o React Native 0.86 do Expo, e os majors (Nest 12, Babel 8) mudam API. Ignorar os pacotes que o SDK do Expo fixa e as versões major (PR #124)
 - [x] **T-154** Testes do app estáveis no CI: o primeiro teste de cada arquivo que abre as rotas passava dos 60 s no Verificar (PRs da T-084b, da T-086a, da T-140a e o #109). Cache do Jest do app guardado entre execuções do CI (PR #128)
   - dep: — · visto no rebase do #109 em 2026-10-17
+- [x] **T-155** Roteiro no README para testar o sistema inteiro no computador (emulador Android, API, worker e painel, com os provedores de teste): `adb reverse` para a API e o S3 local, compilação dos pacotes antes do `dev`, contas, promover admin com 2FA e o que cada provedor de teste faz; tira do README o atalho de login e o "painel sem login", que não existem mais (PR #129)
+  - dep: — · pedido do humano em 2026-10-17

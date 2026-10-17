@@ -55,9 +55,12 @@ Porta ocupada na sua máquina? Defina `POSTGRES_PORTA`, `REDIS_PORTA`, `S3_PORTA
 
 ```bash
 cp apps/api/.env.example apps/api/.env   # uma vez
+pnpm turbo run build --filter=api... --filter=@mony/api-client...   # pacotes compartilhados e Prisma Client
 pnpm --filter api dev          # API em http://localhost:3000, recarrega ao salvar
 pnpm --filter api dev:worker   # worker (filas e rotinas)
 ```
+
+O `dev` não compila o `@mony/shared` nem gera o Prisma Client: rode o `turbo run build` acima na primeira vez e de novo depois de puxar mudanças em `packages/` ou no `schema.prisma`.
 
 - Saúde: `http://localhost:3000/v1/health`
 - Documentação OpenAPI (fora de produção): `http://localhost:3000/v1/docs`, JSON em `/v1/docs/openapi.json`
@@ -103,10 +106,10 @@ pnpm --filter mobile ios        # idem no simulador (só no macOS, com Xcode)
 pnpm --filter mobile build      # empacota o JS de iOS e Android em apps/mobile/dist (o CI roda)
 ```
 
-- **URL da API:** `http://localhost:3000` serve no simulador iOS. No emulador Android use `http://10.0.2.2:3000`; em aparelho, o IP do computador na rede (`http://192.168.x.x:3000`).
+- **URL da API:** no emulador Android, deixe `http://localhost:3000` e rode `adb reverse tcp:3000 tcp:3000` e `adb reverse tcp:8333 tcp:8333` (veja [Testar o sistema inteiro no computador](#testar-o-sistema-inteiro-no-computador)). Em aparelho, o IP do computador na rede (`http://192.168.x.x:3000`), com `S3_ENDPOINT` no mesmo IP no `apps/api/.env` para os uploads funcionarem. No simulador iOS, `localhost` já serve.
 - **Ambientes:** `APP_ENV` = `development`, `preview` ou `production` (perfis do [`eas.json`](apps/mobile/eas.json)). Cada um tem nome, identificador e esquema de link próprios (`mony-dev://`, `mony-preview://`, `mony://`), então os três convivem no mesmo aparelho. Tudo em [`app.config.ts`](apps/mobile/app.config.ts).
 - **Rotas** ficam em `app/` (finas: só importam a tela de `src/features/<feature>/screens`); textos em `src/features/<feature>/<feature>.strings.ts`, via i18next (`t('cartoes.titulo')`, chave conferida pelo TypeScript). Detalhes em [`docs/arquitetura/04`](docs/arquitetura/04-app-mobile.md).
-- **Sem login ainda** (T-030): em desenvolvimento, a tela de login tem o atalho "Ver o app sem entrar", que não existe em preview e produção.
+- **Telas de teste** das provas de conceito, só no build de desenvolvimento: "Teste do alarme" (T-023a) e "Teste da detecção de apps" (T-022), no Perfil.
 - **Pastas `ios/` e `android/`** são geradas pelo `expo prebuild` e ficam fora do Git: nada nativo é editado à mão.
 
 ### EAS (builds e updates)
@@ -144,7 +147,80 @@ pnpm --filter admin build     # gera apps/admin/dist (site estático)
 - **API:** em desenvolvimento o painel chama `/v1` no próprio endereço e o Vite repassa para `http://localhost:3000` (troque com `API_LOCAL` no `apps/admin/.env`). Em produção, `VITE_API_URL` aponta para a API.
 - **Rotas** em `apps/admin/src/rotas/` (um arquivo por página). O `src/rotas.gen.ts` é gerado pelo plugin do TanStack Router ao rodar `dev` ou `build` e vai para o Git; o CI falha se ele estiver desatualizado.
 - **Componentes do shadcn/ui** ficam em `src/components/ui/`. Para adicionar outro: `pnpm dlx shadcn@latest add <componente>` dentro de `apps/admin`.
-- **Sem login ainda:** o login do admin com 2FA tem tarefa própria no BACKLOG.
+- **Login:** e-mail e senha de uma conta do app com papel `admin`, mais o 2FA (código de um app autenticador), configurado no primeiro acesso. Para promover uma conta, com a API compilada (`turbo run build` da seção API):
+
+  ```bash
+  # Git Bash. O script não lê o apps/api/.env: o banco vai no comando.
+  DATABASE_URL=postgresql://mony:mony-local@localhost:5432/mony pnpm --filter api admin:promover --email voce@exemplo.com
+  # PowerShell
+  $env:DATABASE_URL="postgresql://mony:mony-local@localhost:5432/mony"; pnpm --filter api admin:promover --email voce@exemplo.com
+  ```
+
+  `--refazer-2fa` pede o 2FA de novo no próximo login, e `--rebaixar` volta a conta a usuário comum.
+
+## Testar o sistema inteiro no computador
+
+Roteiro para usar a API, o worker, o painel e o app no emulador Android, tudo local e com os provedores de teste: nenhuma conta externa é necessária. O iPhone fica para depois ([DECISOES](docs/agentes/DECISOES.md), 2026-10-17).
+
+**Uma vez:**
+
+1. Os [pré-requisitos](#pré-requisitos), mais o **Android Studio** com um emulador (AVD), as variáveis `ANDROID_HOME` e `JAVA_HOME` (o JDK que vem com o Android Studio serve) e o `adb` no `PATH` (`platform-tools` do SDK). Passo a passo da Expo: [Android Studio Emulator](https://docs.expo.dev/workflow/android-studio-emulator).
+2. Na raiz do repositório:
+
+   ```bash
+   pnpm install
+   docker compose up -d --wait
+   cp apps/api/.env.example apps/api/.env
+   cp apps/mobile/.env.example apps/mobile/.env
+   pnpm turbo run build --filter=api... --filter=@mony/api-client...
+   pnpm --filter api prisma migrate deploy
+   pnpm --filter api seed
+   ```
+
+**Cada vez**, um terminal para cada:
+
+| Terminal | Comando | O quê |
+|---|---|---|
+| 1 | `pnpm --filter api dev` | API em `http://localhost:3000` |
+| 2 | `pnpm --filter api dev:worker` | Filas e rotinas: e-mails, alertas, exportações |
+| 3 | `pnpm --filter admin dev` | Painel em `http://localhost:5173` |
+| 4 | `pnpm --filter mobile android` na primeira vez (gera o projeto nativo e instala no emulador; leva alguns minutos), depois `pnpm --filter mobile start` | App no emulador |
+
+Com o emulador aberto, antes de usar o app:
+
+```bash
+adb reverse tcp:3000 tcp:3000   # API
+adb reverse tcp:8333 tcp:8333   # S3 local: fotos, PDFs e áudios
+```
+
+Assim o `localhost` do emulador passa a ser o computador, e o `apps/mobile/.env` fica com `http://localhost:3000`, como no exemplo. Com `http://10.0.2.2:3000` a API responde, mas os uploads falham, porque a API gera os links do S3 com `localhost:8333`. O `adb reverse` se perde quando o emulador reinicia.
+
+Depois de puxar mudanças: `pnpm install`, o `turbo run build` de novo e o `prisma migrate deploy`. Se mudou algo nativo (pacote com código nativo, `app.config.ts` ou `modules/`), rode `pnpm --filter mobile android` de novo.
+
+**Contas:**
+
+- Crie a sua pelo app. A primeira conta de cada aparelho começa com 3 dias de teste grátis, com tudo liberado (RN-006). As seguintes no mesmo emulador entram direto no gratuito, porque o teste é um por pessoa e por aparelho (RN-125); serve para testar os limites do gratuito.
+- Códigos por e-mail (recuperar a senha, por exemplo) chegam ao Mailpit, em `http://localhost:8025`, com o worker rodando.
+- O `demo@mony.local` do seed não tem senha: para usá-lo, peça o código em "Esqueci a senha".
+- Painel: promova a sua conta ([Login](#painel-admin-appsadmin) do painel) e entre com o mesmo e-mail e senha.
+
+**O que cada provedor de teste faz**, com o `apps/api/.env` do exemplo:
+
+| Recurso | Com o `.env` do exemplo | Para usar o de verdade |
+|---|---|---|
+| E-mail | Chega ao Mailpit | `EMAIL_PROVEDOR=brevo` e a chave ([BLOQUEIOS](docs/agentes/BLOQUEIOS.md), T-031) |
+| Push | Não sai do computador: o worker escreve no log. Os alertas aparecem na central de notificações do app | Chaves do FCM e do APNs no EAS (BLOQUEIOS, T-081) |
+| Mony | Lançamentos simples funcionam pelas regras (ex.: "gastei 45 no mercado no pix"); o resto recebe um texto fixo | `IA_PROVEDOR=anthropic` e `ANTHROPIC_CHAVE_API` |
+| Áudio na Mony | Todo áudio vira "gastei 10 no mercado" | `TRANSCRICAO_PROVEDOR=deepgram` e a chave (BLOQUEIOS, T-064) |
+| Cupom fiscal (NFC-e) | Toda chave devolve o mesmo cupom de exemplo (arroz, feijão e leite) | `NFCE_PROVEDOR=infosimples` e o token (BLOQUEIOS, T-066a) |
+| Planos | O checkout volta como pago, mas o plano não muda | `COBRANCA_PROVEDOR=stripe` com as chaves de teste, os preços criados por `pnpm --filter api cobranca:configurar` e o webhook pelo `stripe listen --forward-to localhost:3000/v1/webhooks/stripe` |
+| Entrar com Google e Apple | A API responde 503 | Clientes OAuth (BLOQUEIOS, T-032) |
+
+- **Recursos pagos sem a Stripe:** use os 3 dias de teste da primeira conta, ou "Estender o teste" na página do usuário no painel.
+- **Alarme e detecção de apps de compra:** telas de teste no Perfil, só no build de desenvolvimento.
+- **Rotinas** (alertas das 09:00, faturas, lembretes) rodam no worker, cada uma no seu horário; a página Filas do painel mostra os jobs que falharam.
+- **Open Finance, agendas e lembrete por ligação** ainda não existem: são tarefas 👤 do [BACKLOG](docs/agentes/BACKLOG.md).
+- **Fluxos automáticos:** os três fluxos do Maestro rodam no mesmo emulador ([`apps/mobile/.maestro`](apps/mobile/.maestro/README.md)).
 
 ## Infraestrutura
 
