@@ -1152,3 +1152,6 @@ Contexto: a T-085 esperava os clientes OAuth e a verificação do Google. Decis�
 - **Acesso revogado no provedor** não apaga nada: a conexão fica em `reconectar` (`desconectada_em`) e o compromisso novo fica só no Mony.
 - **Período da sincronização:** 30 dias para trás e 180 para a frente. O que sumiu do provedor nesse período sai daqui, inclusive os criados pelo app.
 Reversível: sim, `modulos/agenda`, `integracoes/agenda`, `core/cripto` e a migração `20261020120000_agenda_conexoes`.
+
+## 2026-10-20 — T-086b — Compromissos pela Mony
+Contexto: o doc 08 só nomeia as ferramentas. Decisão: `criar_compromisso` recebe a duração em minutos (o modelo converte "das 14h às 15h") e não põe fim quando ela não é dita; não devolve botão enquanto o app não tem a tela da agenda (o [Ver agenda] entra com a T-085c). `consultar_agenda` vai até 31 dias, para a resposta caber no modelo. Alternativa: hora de fim em `HH:MM` (falha quando passa da meia-noite). Reversível: sim, `ferramentas/criar-compromisso.tool.ts` e `consultar-agenda.tool.ts`.

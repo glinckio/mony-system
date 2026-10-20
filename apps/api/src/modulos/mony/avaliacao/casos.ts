@@ -168,6 +168,23 @@ export const CASOS_AVALIACAO: readonly CasoAvaliacao[] = [
       ],
     },
   },
+  // Agenda (T-086b).
+  {
+    id: 'compromisso-com-dia-e-hora',
+    entrada: 'marca dentista sexta às 14h',
+    espera: {
+      ferramentas: [{ nome: 'criar_compromisso', args: { hora: '14:00' } }],
+      semFerramentas: ['criar_lembrete', 'criar_transacao'],
+    },
+  },
+  {
+    id: 'consultar-agenda',
+    entrada: 'o que eu tenho na agenda amanhã?',
+    espera: {
+      ferramentas: [{ nome: 'consultar_agenda' }],
+      semFerramentas: ['consultar_lembretes'],
+    },
+  },
   {
     id: 'ajuda-do-app',
     entrada: 'como eu exporto meus relatórios?',

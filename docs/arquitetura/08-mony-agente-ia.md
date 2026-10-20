@@ -89,7 +89,7 @@ Cada ferramenta é um objeto com `nome`, `descricao`, `schema` (Zod, convertido 
 | `criar_lembrete` | `LembretesService.criar` | Com canal |
 | `criar_compromisso` | `AgendaService.criarCompromisso` | Na agenda padrão |
 | `consultar_lembretes` | `LembretesService.listar` | Os ativos (T-086a) |
-| `consultar_agenda` | `AgendaService.listar` | |
+| `consultar_agenda` | `AgendaService.agendaDoPeriodo` | Até 31 dias (T-086b) |
 | `ler_documento` | `DocumentosMony.ler` | Foto, print, PDF → lista de lançamentos candidatos. Não fica com o modelo da conversa: a mensagem com foto ou PDF vai direto à leitura, que obriga o modelo a responder por esta ferramenta (T-065) |
 | `consultar_nfce` | — | Não é ferramenta do modelo: o QR Code lido no app vai direto a `POST /mony/nfce` (`NfceMony`, T-066a), sem passar pela conversa. Sem como consultar, a Mony pede a foto |
 | `ajuda_app` | `AjudaService.buscar` | Responde com base em uma base de ajuda do app (markdown versionado) |
@@ -114,7 +114,9 @@ Ferramentas que gravam (`criar_*`, `editar_*`, `pagar_fatura`, `definir_orcament
   - **`consultar_lembretes`:** os 20 primeiros ativos, com data e hora locais, a repetição, se já tocou e a soneca.
   - **`ajuda_app`:** busca a pergunta em `modulos/ajuda/base-ajuda.ts`, uma base de ajuda em markdown versionada com o código, um tópico por assunto com as palavras-chave. Devolve os 3 tópicos mais próximos pelas palavras-chave e pelo título; sem nenhum, a Mony diz que não sabe. Quando uma tela muda, o tópico muda no mesmo PR.
   - **Contexto:** passa a ter "Agora: HH:MM", para "daqui a 2 horas" e "às 9h" de hoje.
-  - **Compromissos e agenda:** `criar_compromisso` e `consultar_agenda` entram com a T-086b, depois das agendas (T-085).
+- **Agenda (T-086b):**
+  - **`criar_compromisso`:** título, data (`AAAA-MM-DD`) e hora (`HH:MM`) no fuso do usuário, e a duração em minutos e o local só se ditos (sem duração, sem fim). Grava direto pelo `AgendaService.criarCompromisso` com origem `mony`, na agenda padrão (RN-079); sem agenda conectada, ou com ela para reconectar, fica só no Mony. Devolve a data, as horas e em qual agenda entrou (`google`, `outlook` ou `null`). Sem botão por enquanto: a tela da agenda entra com a T-085c.
+  - **`consultar_agenda`:** de `inicio` até `fim` (inclusive; sem fim, 7 dias; no máximo 31), os 30 primeiros compromissos com data e horas locais, local, a agenda (`mony` quando só no Mony) e `soLeitura` nos externos.
 - **Consultoria pós-lançamento (RN-089, T-067):** todo lançamento gravado pela Mony (rascunho, ferramentas, documento confirmado) leva em `lancamento.impacto` o orçamento da categoria no mês da despesa (percentual, quanto falta, faixa) e o limite do cartão (percentual, disponível, faixa), com a frase pronta em `comentario` ("Mercado: 45% do orçamento de outubro, faltam R$ 550,00."; "Atenção: …" a partir de 80%; "passou R$ X" acima de 100%). O cartão de resumo mostra a frase; o modelo recebe o impacto no resultado da ferramenta e só alerta, sem repetir os números. Sem orçamento na categoria nem cartão, não há impacto. Falha no cálculo vai ao log e não desfaz o lançamento.
 
 ## Rascunhos e perguntas com botões

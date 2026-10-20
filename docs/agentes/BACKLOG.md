@@ -231,14 +231,14 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
     - dep: T-084a · docs: 05, 06, 10, 11 · RN-079, RN-161
   - [ ] **T-085b** 👤 Provedores de verdade: Google Calendar e Microsoft Graph, clientes OAuth do cliente, chave mestra na KMS e verificação do app no Google
     - dep: T-085a · requer as contas do cliente
-  - [ ] **T-085c** Tela Agenda no app (calendário do design) e agenda do aparelho (`expo-calendar`)
+  - [ ] **T-085c** Tela Agenda no app (calendário do design) e agenda do aparelho (`expo-calendar`); com ela, o [Ver agenda] na resposta do `criar_compromisso` da Mony
     - dep: T-085a · docs: 04 · testar em aparelho
   - [ ] **T-085d** Aviso do compromisso com antecedência (tipo `compromisso` do doc 09, `compromisso:<id>`): a antecedência nas preferências e a rotina que avisa
     - dep: T-085a, T-080 · docs: 09
 - [x] **T-086a** Ferramentas da Mony: `criar_lembrete`, `consultar_lembretes` e `ajuda_app` (base de ajuda versionada) (PR #79)
   - dep: T-084a, T-062b
   - A T-086 foi dividida: lembretes e ajuda (T-086a) e compromissos e agenda (T-086b), que dependem das agendas da T-085.
-- [ ] **T-086b** Ferramentas da Mony: `criar_compromisso` e `consultar_agenda`
+- [x] **T-086b** Ferramentas da Mony: `criar_compromisso` e `consultar_agenda` (PR #134)
   - dep: T-085a, T-086a
 - [x] **T-087** Preferências de alerta e horário de silêncio no app; central de notificações (PR #67)
   - dep: T-081, T-011, T-034 · docs: 04

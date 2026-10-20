@@ -23,7 +23,10 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { AppModule } from '../src/app.module';
 import { configurarApp, criarAdaptadorFastify } from '../src/configurar-app';
 import { Clock, ClockFixo } from '../src/core/clock/clock';
+import { Cifra } from '../src/core/cripto/cifra';
 import { criarClientePrisma } from '../src/core/prisma/cliente';
+import { ProvedoresAgenda } from '../src/integracoes/agenda/agenda.module';
+import type { CalendarFake } from '../src/integracoes/agenda/calendar-fake';
 import { LlmFake, RESPOSTA_FAKE } from '../src/integracoes/ia/llm-fake';
 import { type BlocoLlm, ErroLlm, LlmProvider } from '../src/integracoes/ia/llm.provider';
 import { MENSAGEM_FALHA } from '../src/modulos/mony/orquestrador.service';
@@ -309,6 +312,8 @@ describe.runIf(ativo)('integração: Mony', () => {
       'atualizar_meta',
       'criar_lembrete',
       'consultar_lembretes',
+      'criar_compromisso',
+      'consultar_agenda',
       'gerenciar_lista_compras',
       'ajuda_app',
     ]);
@@ -1444,6 +1449,95 @@ describe.runIf(ativo)('integração: Mony', () => {
       'Relatórios, exportação e histórico de preços',
     );
     expect(semAjuda).toMatchObject({ erro: false, dados: { topicos: [] } });
+  });
+
+  it('RN-079 criar_compromisso vai para a agenda padrão no fuso do usuário e consultar_agenda marca os externos', async () => {
+    const usuario = await usuarioNovo();
+    // Sem agenda conectada: fica só no Mony.
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'criar_compromisso',
+            entrada: { titulo: 'Dentista', data: '2026-10-16', hora: '14:00', duracaoMinutos: 60 },
+          },
+        ],
+      },
+      { texto: 'Marcado!' },
+    );
+    await conversar(usuario, 'marca dentista amanhã das 14h às 15h');
+    expect(resultadosDaFerramenta(1)).toMatchObject([
+      {
+        erro: false,
+        dados: { criado: true, data: '2026-10-16', hora: '14:00', horaFim: '15:00', agenda: null },
+      },
+    ]);
+
+    // Com o Google conectado e padrão (provedor falso): vai para lá, e o externo vem marcado.
+    const acesso = `fake-acesso-${randomUUID()}`;
+    const conta = {
+      tokens: { acesso, renovacao: null, expiraEm: null },
+      agendaPrincipal: 'principal',
+    };
+    const agenda = await prisma.agendaConectada.create({
+      data: {
+        usuarioId: usuario.usuarioId,
+        provedor: 'google',
+        agendaPadrao: 'principal',
+        tokensCifrados: app.get(Cifra).cifrar(JSON.stringify(conta)),
+      },
+    });
+    await prisma.compromisso.create({
+      data: {
+        usuarioId: usuario.usuarioId,
+        agendaId: agenda.id,
+        idExterno: 'reuniao',
+        origem: 'externo',
+        titulo: 'Reunião do trabalho',
+        inicio: new Date('2026-10-16T12:00:00Z'),
+      },
+    });
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'criar_compromisso',
+            entrada: { titulo: 'Academia', data: '2026-10-16', hora: '19:00', local: 'Smart Fit' },
+          },
+          { nome: 'consultar_agenda', entrada: { inicio: '2026-10-16', fim: '2026-10-16' } },
+          { nome: 'consultar_agenda', entrada: { inicio: '2026-10-16', fim: '2026-12-30' } },
+        ],
+      },
+      { texto: 'Pronto.' },
+    );
+    await conversar(usuario, 'marca academia amanhã às 19h e me diz o que tenho amanhã');
+    const [criado, doDia, longo] = resultadosDaFerramenta(3);
+    expect(criado).toMatchObject({
+      erro: false,
+      dados: { hora: '19:00', horaFim: null, local: 'Smart Fit', agenda: 'google' },
+    });
+    const provedor = app.get(ProvedoresAgenda).de('google') as CalendarFake;
+    expect([...provedor.eventosDe(acesso).values()].map(({ titulo }) => titulo)).toEqual([
+      'Academia',
+    ]);
+    expect(doDia).toMatchObject({
+      erro: false,
+      dados: {
+        de: '2026-10-16',
+        ate: '2026-10-16',
+        total: 3,
+        compromissos: [
+          { titulo: 'Reunião do trabalho', hora: '09:00', agenda: 'google', soLeitura: true },
+          { titulo: 'Dentista', hora: '14:00', horaFim: '15:00', agenda: 'mony', soLeitura: false },
+          { titulo: 'Academia', hora: '19:00', agenda: 'google', soLeitura: false },
+        ],
+      },
+    });
+    expect(longo).toMatchObject({ erro: true, dados: { erro: { codigo: 'REQUISICAO_INVALIDA' } } });
+    const gravados = await prisma.compromisso.findMany({
+      where: { usuarioId: usuario.usuarioId, origem: 'mony' },
+    });
+    expect(gravados).toHaveLength(2);
   });
 
   it('RN-070 RN-072 RN-092 gerenciar_lista_compras: cria, põe, marca e tira itens; o Finalizar só lança no toque', async () => {
