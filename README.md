@@ -219,7 +219,8 @@ Depois de puxar mudanças: `pnpm install`, o `turbo run build` de novo e o `pris
 - **Recursos pagos sem a Stripe:** use os 3 dias de teste da primeira conta, ou "Estender o teste" na página do usuário no painel.
 - **Alarme e detecção de apps de compra:** telas de teste no Perfil, só no build de desenvolvimento.
 - **Rotinas** (alertas das 09:00, faturas, lembretes) rodam no worker, cada uma no seu horário; a página Filas do painel mostra os jobs que falharam.
-- **Open Finance, agendas e lembrete por ligação** ainda não existem: são tarefas 👤 do [BACKLOG](docs/agentes/BACKLOG.md).
+- **Agendas e lembrete por ligação** usam provedores de teste: conectar o Google ou o Outlook (Agenda, botão do calendário) volta conectado na hora com uma agenda vazia, e a ligação não toca: ela e o SMS com o código de verificação do celular só aparecem no log (da API ou do worker). Os de verdade são tarefas 👤 do [BACKLOG](docs/agentes/BACKLOG.md) (T-085b, T-122c).
+- **Open Finance** ainda não existe (T-120, 👤).
 - **Fluxos automáticos:** os três fluxos do Maestro rodam no mesmo emulador ([`apps/mobile/.maestro`](apps/mobile/.maestro/README.md)).
 
 ## Infraestrutura
