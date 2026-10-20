@@ -9,7 +9,14 @@ import { cores } from '@/ui/tokens';
 import { Linha } from '../components/linha';
 
 type ChaveAtalho =
-  'orcamentos' | 'metas' | 'relatorios' | 'listas' | 'lembretes' | 'categorias' | 'contas';
+  | 'orcamentos'
+  | 'metas'
+  | 'relatorios'
+  | 'listas'
+  | 'lembretes'
+  | 'agenda'
+  | 'categorias'
+  | 'contas';
 
 /**
  * A grade do design (página 8) tem Parcelamentos, Orçamentos, Metas, Relatórios, Listas, Lembretes,
@@ -22,6 +29,7 @@ const ATALHOS: { chave: ChaveAtalho; icone: NomeIcone; cor: string; rota: Href }
   { chave: 'relatorios', icone: 'chart-column', cor: cores.link, rota: '/relatorios' },
   { chave: 'listas', icone: 'shopping-cart', cor: cores.receita, rota: '/listas' },
   { chave: 'lembretes', icone: 'bell', cor: cores.atencao, rota: '/lembretes' },
+  { chave: 'agenda', icone: 'calendar', cor: cores.link, rota: '/agenda' },
   { chave: 'categorias', icone: 'tag', cor: cores.estourado, rota: '/mais/categorias' },
   { chave: 'contas', icone: 'landmark', cor: cores.receita, rota: '/mais/contas' },
 ];

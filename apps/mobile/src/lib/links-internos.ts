@@ -18,6 +18,8 @@ const ROTAS: readonly { padrao: RegExp; rota: (partes: string[], consulta: strin
   },
   { padrao: /^mony$/, rota: () => '/mony' },
   { padrao: /^planos$/, rota: () => '/planos' },
+  // O `?conexao=` da volta do Google e do Outlook (T-085a) não muda a tela.
+  { padrao: /^agenda$/, rota: () => '/agenda' },
   { padrao: new RegExp(`^cartoes/${ID}$`), rota: ([, id]) => `/cartoes/${id ?? ''}` },
   {
     padrao: new RegExp(`^cartoes/${ID}/faturas/${ID}$`),
