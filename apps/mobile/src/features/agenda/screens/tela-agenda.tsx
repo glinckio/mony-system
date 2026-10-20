@@ -1,4 +1,4 @@
-import type { Compromisso } from '@mony/shared/agenda';
+import type { Compromisso, ResultadoConexaoAgenda } from '@mony/shared/agenda';
 import { type DataCalendario, ehDataCalendario } from '@mony/shared/datas';
 import { somarDias } from '@mony/shared/recorrencias';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -22,7 +22,8 @@ import {
 } from '@/ui';
 import { cores } from '@/ui/tokens';
 
-import { useAgendaDoPeriodo, useAgendas } from '../hooks/use-agenda';
+import { FolhaAgendas } from '../components/folha-agendas';
+import { resultadoDaConexao, useAgendaDoPeriodo, useAgendas } from '../hooks/use-agenda';
 import {
   compromissosDoDia,
   type CompromissoDoDia,
@@ -146,7 +147,8 @@ function LinhaCompromisso({ item, aoAbrir }: { item: CompromissoDoDia; aoAbrir: 
  * Agenda (`/agenda`, design, página 7; RN-079): a semana de segunda a domingo, os compromissos do
  * dia escolhido (os do app, os da Mony e os do Google e do Outlook) e os filtros por agenda. O "+"
  * marca um novo; tocar abre (os do app e da Mony editam, os de fora só mostram). Aberta pela grade
- * de Mais, pelo aviso do compromisso e pelo [Ver agenda] da Mony (`mony://agenda`).
+ * de Mais, pelo aviso do compromisso e pelo [Ver agenda] da Mony (`mony://agenda`). O calendário
+ * do topo abre Suas agendas (T-085e).
  */
 export default function TelaAgenda() {
   const { t } = useTranslation();
@@ -154,11 +156,16 @@ export default function TelaAgenda() {
   const fuso = useFusoDoUsuario();
   const hoje = useHoje();
   const tituloDoMes = useTituloDoMes();
-  const parametros = useLocalSearchParams<{ dia?: string }>();
+  const parametros = useLocalSearchParams<{ dia?: string; conexao?: string }>();
   const [escolhido, definirEscolhido] = useState<DataCalendario>(() =>
     parametros.dia !== undefined && ehDataCalendario(parametros.dia) ? parametros.dia : hoje,
   );
   const [escondidas, definirEscondidas] = useState<FonteCompromisso[]>([]);
+  const [verAgendas, definirVerAgendas] = useState(false);
+  // A volta do Google e do Outlook: no navegador do app (a folha) ou pelo link `?conexao=`.
+  const [conexao, definirConexao] = useState<ResultadoConexaoAgenda | null>(() =>
+    resultadoDaConexao(`?conexao=${parametros.conexao ?? ''}`),
+  );
   const segunda = inicioDaSemana(escolhido);
   const consulta = useAgendaDoPeriodo(periodoDaSemana(segunda, fuso));
   const agendas = useAgendas();
@@ -232,8 +239,30 @@ export default function TelaAgenda() {
       <Cabecalho
         titulo={t('agenda.titulo')}
         aoVoltar={voltar}
-        acao={<BotaoIcone icone="plus" comFundo rotulo={t('agenda.novo')} aoPressionar={novo} />}
+        acao={
+          <View className="flex-row gap-2">
+            <BotaoIcone
+              icone="calendar"
+              comFundo
+              rotulo={t('agenda.agendas.abrir')}
+              aoPressionar={() => {
+                definirConexao(null);
+                definirVerAgendas(true);
+              }}
+            />
+            <BotaoIcone icone="plus" comFundo rotulo={t('agenda.novo')} aoPressionar={novo} />
+          </View>
+        }
       />
+      {conexao === null ? null : (
+        <Texto
+          cor={conexao === 'erro' ? 'perigo' : 'suave'}
+          accessibilityRole={conexao === 'erro' ? 'alert' : 'text'}
+          accessibilityLiveRegion="polite"
+        >
+          {t(`agenda.agendas.conexao.${conexao}`)}
+        </Texto>
+      )}
       <View className="flex-row items-center gap-1">
         <Texto variante="corpo-sm" cor="suave" className="flex-1">
           {tituloDoMes(escolhido)}
@@ -289,6 +318,16 @@ export default function TelaAgenda() {
       >
         {conteudo()}
       </ScrollView>
+      <FolhaAgendas
+        visivel={verAgendas}
+        aoFechar={() => {
+          definirVerAgendas(false);
+        }}
+        aoConectar={(resultado) => {
+          definirConexao(resultado);
+          if (resultado === 'sucesso') definirVerAgendas(false);
+        }}
+      />
     </Tela>
   );
 }

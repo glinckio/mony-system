@@ -2,11 +2,18 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
+import * as WebBrowser from 'expo-web-browser';
 
 import { compromissosDoDia, inicioDaSemana, periodoDaSemana } from '@/features/agenda/lib/semana';
 import { rotaDoLink } from '@/lib/links-internos';
 import { relogio } from '@/lib/relogio';
 import { useSessao } from '@/stores/sessao';
+
+// O navegador do app (consentimento do Google e do Outlook): cada teste diz como ele fecha.
+jest.mock('expo-web-browser', () => ({
+  openAuthSessionAsync: jest.fn(),
+  WebBrowserResultType: { CANCEL: 'cancel' },
+}));
 
 const ROTAS = path.resolve(__dirname, '../app');
 const ESPERA = { timeout: 10_000 };
@@ -53,7 +60,17 @@ interface Pedido {
   cabecalhos: Headers;
 }
 
-function api() {
+const agenda = (padrao: boolean, dados: { id: string; provedor: string }, extra: object = {}) => ({
+  ...dados,
+  padrao,
+  situacao: 'conectada',
+  sincronizadaEm: '2026-10-15T14:45:00.000Z',
+  conectadaEm: '2026-10-01T12:00:00.000Z',
+  ...extra,
+});
+const CONECTADAS = [agenda(true, GOOGLE), agenda(false, OUTLOOK)];
+
+function api(agendas: object[] = CONECTADAS) {
   const pedidos: Pedido[] = [];
   globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
     const endereco = new URL(
@@ -70,19 +87,15 @@ function api() {
       cabecalhos: new Headers(opcoes?.headers),
     };
     pedidos.push(pedido);
-    const agenda = (padrao: boolean, dados: { id: string; provedor: string }) => ({
-      ...dados,
-      padrao,
-      situacao: 'conectada',
-      sincronizadaEm: '2026-10-15T14:45:00.000Z',
-      conectadaEm: '2026-10-01T12:00:00.000Z',
-    });
     const respostas: Record<string, { status: number; corpo?: unknown }> = {
       'GET /v1/agenda': { status: 200, corpo: { itens: [REUNIAO, DENTISTA, FISIO] } },
-      'GET /v1/agendas': {
+      'GET /v1/agendas': { status: 200, corpo: { itens: agendas } },
+      'POST /v1/agendas/conectar': {
         status: 200,
-        corpo: { itens: [agenda(true, GOOGLE), agenda(false, OUTLOOK)] },
+        corpo: { url: 'https://accounts.exemplo.test/consentimento' },
       },
+      'PUT /v1/agendas/padrao': { status: 200, corpo: { itens: agendas } },
+      [`DELETE /v1/agendas/${GOOGLE.id}`]: { status: 204 },
       [`GET /v1/compromissos/${REUNIAO.id}`]: { status: 200, corpo: REUNIAO },
       [`GET /v1/compromissos/${DENTISTA.id}`]: { status: 200, corpo: DENTISTA },
       [`PATCH /v1/compromissos/${DENTISTA.id}`]: {
@@ -301,6 +314,86 @@ describe('agenda no app (T-085c)', () => {
       }, ESPERA);
       await waitFor(() => {
         expect(app.getPathname()).toBe('/agenda');
+      }, ESPERA);
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'T-085e conecta o Google no navegador do app e diz como voltou',
+    async () => {
+      const pedidos = api([]);
+      jest.mocked(WebBrowser.openAuthSessionAsync).mockResolvedValue({
+        type: 'success',
+        url: 'mony://agenda?conexao=sucesso',
+      });
+      renderRouter(ROTAS, { initialUrl: '/agenda' });
+      fireEvent.press(await screen.findByRole('button', { name: 'Suas agendas' }, ESPERA));
+      fireEvent.press(await screen.findByRole('button', { name: 'Conectar Google' }, ESPERA));
+
+      expect(
+        await screen.findByText(
+          'Agenda conectada. Os compromissos chegam em instantes.',
+          {},
+          ESPERA,
+        ),
+      ).toBeOnTheScreen();
+      expect(doMetodo(pedidos, 'POST', '/v1/agendas/conectar')?.corpo).toEqual({
+        provedor: 'google',
+      });
+      expect(WebBrowser.openAuthSessionAsync).toHaveBeenCalledWith(
+        'https://accounts.exemplo.test/consentimento',
+        'mony://agenda',
+      );
+
+      // Fechar o navegador sem voltar é cancelar.
+      jest.mocked(WebBrowser.openAuthSessionAsync).mockResolvedValue({
+        type: WebBrowser.WebBrowserResultType.CANCEL,
+      });
+      fireEvent.press(screen.getByRole('button', { name: 'Suas agendas' }));
+      fireEvent.press(await screen.findByRole('button', { name: 'Conectar Outlook' }, ESPERA));
+      expect(await screen.findByText('Conexão cancelada.', {}, ESPERA)).toBeOnTheScreen();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it('T-085e o link de volta com erro avisa na agenda', async () => {
+    api();
+    renderRouter(ROTAS, { initialUrl: '/agenda?conexao=erro' });
+    expect(
+      await screen.findByText('Não deu para conectar a agenda. Tente de novo.', {}, ESPERA),
+    ).toBeOnTheScreen();
+  });
+
+  it(
+    'RN-079 T-085e Suas agendas: quando sincronizou, reconectar, a padrão e desconectar',
+    async () => {
+      const pedidos = api([
+        agenda(true, GOOGLE),
+        agenda(false, OUTLOOK, { situacao: 'reconectar' }),
+      ]);
+      renderRouter(ROTAS, { initialUrl: '/agenda' });
+      fireEvent.press(await screen.findByRole('button', { name: 'Suas agendas' }, ESPERA));
+
+      const google = within(await screen.findByTestId('agenda-google', {}, ESPERA));
+      expect(google.getByText('Sincronizada em 15/out, 11:45')).toBeOnTheScreen();
+      expect(google.getByRole('button', { name: 'Padrão' })).toBeSelected();
+      const outlook = within(screen.getByTestId('agenda-outlook'));
+      expect(
+        outlook.getByText('O acesso foi recusado. Conecte de novo para voltar a sincronizar.'),
+      ).toBeOnTheScreen();
+      expect(outlook.getByRole('button', { name: 'Reconectar' })).toBeOnTheScreen();
+
+      fireEvent.press(screen.getByTestId('agenda-so-no-mony'));
+      await waitFor(() => {
+        expect(doMetodo(pedidos, 'PUT', '/v1/agendas/padrao')?.corpo).toEqual({ agendaId: null });
+      }, ESPERA);
+
+      fireEvent.press(screen.getByRole('button', { name: 'Desconectar Google' }));
+      expect(await screen.findByText('Desconectar Google?', {}, ESPERA)).toBeOnTheScreen();
+      fireEvent.press(screen.getByRole('button', { name: 'Desconectar' }));
+      await waitFor(() => {
+        expect(doMetodo(pedidos, 'DELETE', `/v1/agendas/${GOOGLE.id}`)).toBeDefined();
       }, ESPERA);
     },
     TEMPO_LIMITE_MS,

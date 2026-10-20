@@ -233,7 +233,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
     - dep: T-085a · requer as contas do cliente
   - [x] **T-085c** Tela Agenda no app (calendário do design) com os compromissos do servidor: semana, dia, filtros por agenda, novo, editar e excluir; o link `mony://agenda`, o atalho em Mais e o [Ver agenda] na resposta do `criar_compromisso` da Mony; e, em Alertas da Mony, a chave e a antecedência do aviso do compromisso (`antecedenciaMinutos`, T-085d) (PR #141)
     - dep: T-085a · docs: 04
-  - [ ] **T-085e** Conectar o Google e o Outlook pelo app: a lista de agendas na tela Agenda (conectar no navegador do app, volta em `mony://agenda?conexao=`, "reconectar", escolher a padrão, desconectar); anda com o provedor falso e fica de verdade com a T-085b
+  - [x] **T-085e** Conectar o Google e o Outlook pelo app: a lista de agendas na tela Agenda (conectar no navegador do app, volta em `mony://agenda?conexao=`, "reconectar", escolher a padrão, desconectar); anda com o provedor falso e fica de verdade com a T-085b (PR #142)
     - dep: T-085c · docs: 04, 05
   - [ ] **T-085f** Agenda do aparelho (`expo-calendar`, pacote novo: aguarda o dono) nos compromissos da tela Agenda e na permissão do onboarding
     - dep: T-085c · docs: 04 · testar em aparelho
