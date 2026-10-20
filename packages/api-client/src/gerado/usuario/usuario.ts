@@ -30,6 +30,7 @@ import type {
   PedidoExclusaoContaDto,
   PerfilDto,
   RegistroDispositivoDto,
+  TokenSegundoPlanoDto,
   UltimaExportacaoDadosDto,
 } from '../modelos';
 
@@ -52,6 +53,80 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   return result;
 };
 
+export const getEmitirTokenSegundoPlanoUrl = () => {
+  return `/v1/me/token-segundo-plano`;
+};
+
+export const emitirTokenSegundoPlano = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<TokenSegundoPlanoDto> => {
+  return requisicao<TokenSegundoPlanoDto>(getEmitirTokenSegundoPlanoUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getEmitirTokenSegundoPlanoMutationKey = () => ['emitirTokenSegundoPlano'] as const;
+
+export const getEmitirTokenSegundoPlanoMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof emitirTokenSegundoPlano>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof emitirTokenSegundoPlano>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = getEmitirTokenSegundoPlanoMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof emitirTokenSegundoPlano>>,
+    void
+  > = () => {
+    return emitirTokenSegundoPlano(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EmitirTokenSegundoPlanoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof emitirTokenSegundoPlano>>
+>;
+
+export type EmitirTokenSegundoPlanoMutationError = unknown;
+
+export const useEmitirTokenSegundoPlano = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof emitirTokenSegundoPlano>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof emitirTokenSegundoPlano>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getEmitirTokenSegundoPlanoMutationOptions(options), queryClient);
+};
 export const getPerfilUsuariosUrl = () => {
   return `/v1/me`;
 };

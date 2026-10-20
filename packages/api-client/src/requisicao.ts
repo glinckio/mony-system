@@ -34,6 +34,15 @@ export function configurarCliente(nova: ConfiguracaoCliente): void {
   renovacaoEmCurso = null;
 }
 
+/**
+ * `true` depois do primeiro `configurarCliente`. A tarefa do push com o app fechado (T-088b) roda
+ * às vezes sem a tela, antes de o app configurar o cliente: aí ela configura só a URL e os
+ * cabeçalhos, sem token nem renovação; com o app aberto, fica a configuração dele.
+ */
+export function clienteConfigurado(): boolean {
+  return configuracao.urlBase !== '';
+}
+
 /** Uma renovação por vez: quem chega durante uma renovação espera o resultado dela (doc 04). */
 export function renovarSessaoUmaVez(): Promise<boolean> {
   const renovar = configuracao.renovarSessao;

@@ -2,6 +2,7 @@
 export * from './gerado';
 export * from './gerado/modelos';
 export {
+  clienteConfigurado,
   configurarCliente,
   ErroApi,
   renovarSessaoUmaVez,

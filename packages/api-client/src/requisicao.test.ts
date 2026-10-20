@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { verificarSaude } from './gerado';
-import { configurarCliente, ErroApi, requisicao } from './requisicao';
+import { clienteConfigurado, configurarCliente, ErroApi, requisicao } from './requisicao';
 
 const fetchFalso = vi.fn<typeof fetch>();
 
@@ -23,6 +23,12 @@ afterEach(() => {
 });
 
 describe('requisicao', () => {
+  it('sabe se já foi configurado (a tarefa do push sem a tela, T-088b)', () => {
+    expect(clienteConfigurado()).toBe(true);
+    configurarCliente({ urlBase: '' });
+    expect(clienteConfigurado()).toBe(false);
+  });
+
   it('usa a URL base, manda o token e devolve o JSON', async () => {
     configurarCliente({ urlBase: 'https://api.teste', obterToken: () => 'token-1' });
     fetchFalso.mockResolvedValue(responder(200, { status: 'ok' }));

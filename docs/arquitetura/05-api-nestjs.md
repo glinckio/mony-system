@@ -104,7 +104,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Grupo | Rotas |
 |---|---|
 | Autenticação | `POST /auth/cadastro` · `POST /auth/login` · `POST /auth/social` · `POST /auth/social/vincular` **(proposta)** · `POST /auth/renovar` · `POST /auth/sair` · `POST /auth/sair-todos` **(proposta)** · `POST /auth/senha/codigo` · `POST /auth/senha/conferir` **(proposta)** · `POST /auth/senha/redefinir` |
-| Usuário | `GET /me` · `PATCH /me` · `POST /me/dispositivos` · `GET /me/onboarding` · `PATCH /me/onboarding` **(proposta)** · `POST /me/exportar` e `GET /me/exportar` (T-140a) · `GET /me/exclusao` · `POST /me/exclusao/codigo` · `POST /me/exclusao` com `{ senha }` ou `{ codigo }` · `DELETE /me/exclusao` (desistir; T-140b) |
+| Usuário | `GET /me` · `PATCH /me` · `POST /me/dispositivos` · `POST /me/token-segundo-plano` (T-088b) · `GET /me/onboarding` · `PATCH /me/onboarding` **(proposta)** · `POST /me/exportar` e `GET /me/exportar` (T-140a) · `GET /me/exclusao` · `POST /me/exclusao/codigo` · `POST /me/exclusao` com `{ senha }` ou `{ codigo }` · `DELETE /me/exclusao` (desistir; T-140b) |
 | App | `GET /config-app` **(proposta)**: versão mínima, flags, sugestões do chat |
 | Planos e assinatura | `GET /planos` · `GET /assinatura` · `GET /assinatura/uso` · `POST /assinatura/checkout` · `POST /assinatura/portal` · `POST /webhooks/stripe` |
 | Categorias | `GET /categorias` · `POST /categorias` · `PATCH /categorias/:id` · `DELETE /categorias/:id?mover_para=` |
@@ -163,6 +163,7 @@ Implementado na T-033.
 | `GET /me` | — | Perfil: nome, e-mail, telefone (e se está verificado), foto, fuso, `onboardingConcluido`, `temSenha`, `loginsSociais` |
 | `PATCH /me` | `nome`, `telefone`, `fusoHorario` (só os que mudam) | Perfil. Telefone novo perde a verificação (RN-078) |
 | `POST /me/dispositivos` | `tokenPush` (ou `null`), `modelo` | 204. Grava no aparelho da sessão |
+| `POST /me/token-segundo-plano` | — | `{ token, expiraEm }` (T-088b): token do aparelho para a tarefa do push com o app fechado. Audiência própria, só abre as rotas com `@SegundoPlano()` (alarmes, concluir, adiar e marcar notificação como lida; nas outras, 403). Vale 30 dias e nunca além da sessão; a guarda confere a família da sessão no banco a cada uso. Só com o token do app |
 | `GET /me/onboarding` | — | `concluido`, `etapas` (pendente, concluída ou dispensada), `checklistVisivel` (RN-024), `dicasVistas` |
 | `PATCH /me/onboarding` | `concluido`, `etapas`, `dicasVistas` | O progresso atualizado |
 | `POST /me/exportar` | — (`Idempotency-Key`) | 202 + a exportação (`processando`). Pedir de novo enquanto gera devolve a mesma (RN-160) |

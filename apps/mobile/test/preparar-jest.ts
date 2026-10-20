@@ -175,6 +175,9 @@ jest.mock('expo-notifications', () => {
     ),
     addPushTokenListener: jest.fn((ouvinte: MockOuvinte) => assinar(ouvintes.token, ouvinte)),
     getLastNotificationResponse: jest.fn(() => estado.ultima),
+    dismissNotificationAsync: jest.fn(() => Promise.resolve()),
+    registerTaskAsync: jest.fn(() => Promise.resolve(null)),
+    BackgroundNotificationTaskResult: { NewData: 0, NoData: 1, Failed: 2 },
     clearLastNotificationResponse: jest.fn(() => {
       estado.ultima = null;
     }),
@@ -198,5 +201,18 @@ jest.mock('expo-notifications', () => {
         estado.ultima = null;
       },
     },
+  };
+});
+
+// Tarefas de segundo plano (T-088b): o falso guarda a função definida, para o teste chamá-la.
+jest.mock('expo-task-manager', () => {
+  type MockTarefa = (mockCorpo: unknown) => Promise<unknown>;
+  const tarefas = new Map<string, MockTarefa>();
+  return {
+    defineTask: jest.fn((mockNome: string, mockExecutar: MockTarefa) => {
+      tarefas.set(mockNome, mockExecutar);
+    }),
+    isTaskDefined: jest.fn((mockNome: string) => tarefas.has(mockNome)),
+    __tarefas: tarefas,
   };
 });

@@ -22,6 +22,8 @@ export const VALIDADE_ACESSO_SEGUNDOS = 15 * 60;
 export const VALIDADE_DESAFIO_ADMIN_SEGUNDOS = 5 * 60;
 /** A sessão do admin renova de 15 em 15 minutos, até 8 horas depois do login com 2FA. */
 export const DURACAO_MAXIMA_SESSAO_ADMIN_SEGUNDOS = 8 * 60 * 60;
+/** O token de segundo plano do aparelho (T-088b) vale até 30 dias, nunca além da sessão. */
+export const VALIDADE_SEGUNDO_PLANO_SEGUNDOS = 30 * 24 * 60 * 60;
 
 const ALGORITMO = 'ES256';
 const EMISSOR = 'mony-api';
@@ -29,6 +31,8 @@ const AUDIENCIA = 'mony';
 /** Token do painel: outra audiência, para o do app não abrir o admin, nem o contrário. */
 const AUDIENCIA_ADMIN = 'mony-admin';
 const AUDIENCIA_DESAFIO_ADMIN = 'mony-admin-2fa';
+/** Token de segundo plano: outra audiência, para ele não abrir as rotas comuns do app. */
+const AUDIENCIA_SEGUNDO_PLANO = 'mony-segundo-plano';
 
 /** O que a API sabe de quem fez a requisição, tirado do token de acesso. */
 export interface UsuarioAutenticado {
@@ -38,10 +42,16 @@ export interface UsuarioAutenticado {
   dispositivoId: string | null;
   /**
    * `admin`: token do painel, emitido depois da senha e do 2FA, com a hora do login (`auth_time`,
-   * em segundos). Sem o campo, é token do app.
+   * em segundos). `segundo-plano`: token da tarefa que trata o push com o app fechado (T-088b),
+   * só para as rotas com `@SegundoPlano()`. Sem o campo, é token do app.
    */
-  escopo?: 'admin';
+  escopo?: 'admin' | 'segundo-plano';
   autenticadoEm?: number;
+  /**
+   * Só no token de segundo plano: a família da sessão (RN-004). A sessão do `sessaoId` gira a cada
+   * renovação do app; a família continua a mesma até sair, sair de todos ou o reuso derrubá-la.
+   */
+  familiaId?: string;
 }
 
 /**
@@ -118,6 +128,35 @@ export class TokensAcesso implements OnModuleInit {
     return { token, expiraEm: new Date(expiraEm * 1000) };
   }
 
+  /**
+   * Token de segundo plano do aparelho (T-088b): o mesmo usuário, sessão e aparelho do token do
+   * app, mais a família da sessão, com outra audiência. Vale 30 dias ou até `limite` (o fim da
+   * sessão), o que vier antes.
+   */
+  async emitirSegundoPlano(
+    usuario: { id: string; sessaoId: string; dispositivoId: string; familiaId: string },
+    limite: Date,
+  ): Promise<{ token: string; expiraEm: Date }> {
+    const agora = Math.floor(this.clock.agora().getTime() / 1000);
+    const expiraEm = Math.min(
+      agora + VALIDADE_SEGUNDO_PLANO_SEGUNDOS,
+      Math.floor(limite.getTime() / 1000),
+    );
+    const token = await this.assinar(
+      {
+        papel: 'usuario',
+        sid: usuario.sessaoId,
+        did: usuario.dispositivoId,
+        fam: usuario.familiaId,
+      },
+      usuario.id,
+      AUDIENCIA_SEGUNDO_PLANO,
+      agora,
+      expiraEm,
+    );
+    return { token, expiraEm: new Date(expiraEm * 1000) };
+  }
+
   /** O desafio do 2FA: prova que a senha de um admin estava certa, por 5 minutos. */
   async emitirDesafioAdmin(usuarioId: string): Promise<{ token: string; expiraEm: Date }> {
     const agora = Math.floor(this.clock.agora().getTime() / 1000);
@@ -161,19 +200,20 @@ export class TokensAcesso implements OnModuleInit {
   }
 
   /**
-   * Confere assinatura, emissor, audiência (app ou painel) e validade. Lança `TOKEN_EXPIRADO` ou
-   * `NAO_AUTENTICADO`. O desafio do 2FA não passa aqui: a audiência dele é outra.
+   * Confere assinatura, emissor, audiência (app, painel ou segundo plano) e validade. Lança
+   * `TOKEN_EXPIRADO` ou `NAO_AUTENTICADO`. O desafio do 2FA não passa aqui: a audiência dele é
+   * outra. O token de segundo plano ainda passa pela guarda, que confere a sessão no banco.
    */
   async verificar(token: string): Promise<UsuarioAutenticado> {
     try {
       const { payload } = await jwtVerify(token, this.chavePublica, {
         algorithms: [ALGORITMO],
         issuer: EMISSOR,
-        audience: [AUDIENCIA, AUDIENCIA_ADMIN],
+        audience: [AUDIENCIA, AUDIENCIA_ADMIN, AUDIENCIA_SEGUNDO_PLANO],
         currentDate: this.clock.agora(),
         requiredClaims: ['sub', 'exp', 'sid'],
       });
-      const { sub, papel, sid, did, aud, auth_time: autenticadoEm } = payload;
+      const { sub, papel, sid, did, fam, aud, auth_time: autenticadoEm } = payload;
       if (typeof sub !== 'string' || typeof sid !== 'string') throw new Error('claims');
       if (papel !== 'usuario' && papel !== 'admin') throw new Error('papel');
       const usuario: UsuarioAutenticado = {
@@ -186,6 +226,12 @@ export class TokensAcesso implements OnModuleInit {
       if (audiencias.includes(AUDIENCIA_ADMIN)) {
         if (papel !== 'admin' || typeof autenticadoEm !== 'number') throw new Error('admin');
         return { ...usuario, escopo: 'admin', autenticadoEm };
+      }
+      if (audiencias.includes(AUDIENCIA_SEGUNDO_PLANO)) {
+        if (papel !== 'usuario' || usuario.dispositivoId === null || typeof fam !== 'string') {
+          throw new Error('segundo plano');
+        }
+        return { ...usuario, escopo: 'segundo-plano', familiaId: fam };
       }
       return usuario;
     } catch (erro) {
