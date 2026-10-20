@@ -288,10 +288,11 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - O intervalo por app (RN-104) vem do painel: `ParametrosService.obter()` → `alertas.intervaloAppCompraHoras` (T-141g).
   - Android sobre o módulo `mony-app-usage` da T-022; a abertura vai para o servidor com o token de evento recomendado em `docs/agentes/poc/T-022.md` ("Limitações da PoC"). A tela de teste da PoC sai quando a do produto existir.
   - Dividida para andar sem os aparelhos:
-  - [ ] **T-121a** No servidor: `GET/PUT /apps-monitorados`, o token de evento por aparelho (emitir, revogar, e revogado ao sair e ao perder o plano pago) e `POST /eventos/app-compra-aberto` com o intervalo da RN-104 e o push com o orçamento de compras
-    - dep: T-081 · docs: 05, 06, 09, 10 · RN-104, RN-121
+  - [x] **T-121a** No servidor: `GET/PUT /apps-monitorados`, o token de evento por aparelho (emitir, revogar, e revogado ao sair e ao perder o plano pago) e `POST /eventos/app-compra-aberto` com o intervalo da RN-104 e o push com o orçamento de compras
+    - dep: T-081 · docs: 05, 06, 09, 10 · RN-104, RN-121 · (PR #136)
   - [ ] **T-121b** No Android: o worker do `mony-app-usage` manda a abertura com o token de evento, e a tela de apps de compra (escolher os apps, ligar o recurso)
     - dep: T-121a, T-022 · docs: 04, 10 · requer aparelho Android para testar
+    - O token vem de `POST /apps-monitorados/token-evento` ao ligar o recurso (guardar no armazenamento nativo cifrado); com 401 ou 403 na abertura, parar de mandar até pedir outro. A lista sai de `GET/PUT /apps-monitorados`.
   - [ ] **T-121c** 👤 No iOS: a extensão `DeviceActivityMonitor` com o mesmo token
     - dep: T-121a, T-021 · requer Mac, iPhone e o entitlement da Apple
 - [ ] **T-122** 👤 Lembrete por ligação (`VozProvider`), telefone verificado, limite mensal

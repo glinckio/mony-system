@@ -119,7 +119,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Compartilhamento | `GET /compartilhamentos` · `POST /compartilhamentos` · `POST /compartilhamentos/:id/aceitar` · `POST /compartilhamentos/:id/recusar` · `PATCH /compartilhamentos/:id` · `DELETE /compartilhamentos/:id` (prontas para listas, T-124a, e lembretes, T-124c) |
 | Lembretes e agenda | `GET /lembretes` · `POST /lembretes` · `PATCH /lembretes/:id` · `DELETE /lembretes/:id` · `POST /lembretes/:id/concluir` · `POST /lembretes/:id/adiar` · `GET /lembretes/alarmes` (prontas: T-084a) · `GET /agenda?inicio=&fim=` · `GET /agendas` · `POST /agendas/conectar` · `GET /agendas/oauth/callback` · `PUT /agendas/padrao` · `DELETE /agendas/:id` · `GET /compromissos/:id` · `POST /compromissos` · `PATCH /compromissos/:id` · `DELETE /compromissos/:id` (prontas: T-085a) |
 | Notificações | `GET /notificacoes` · `POST /notificacoes/:id/lida` · `GET /preferencias-alerta` · `PUT /preferencias-alerta` |
-| Apps de compra | `GET /apps-monitorados` · `PUT /apps-monitorados` · `POST /eventos/app-compra-aberto` |
+| Apps de compra | `GET /apps-monitorados` · `PUT /apps-monitorados` · `POST /apps-monitorados/token-evento` · `DELETE /apps-monitorados/token-evento` · `POST /eventos/app-compra-aberto` (prontas: T-121a) |
 | Open Finance | `POST /open-finance/token-conexao` · `GET /open-finance/conexoes` · `POST /open-finance/conexoes/:id/sincronizar` · `DELETE /open-finance/conexoes/:id` · `POST /webhooks/open-finance` |
 | Mony | `POST /mony/mensagens` (SSE) · `POST /mony/acoes` · `GET /mony/conversa` · `POST /mony/nfce` (prontas: T-020, T-060 e T-066a; SSE fora do OpenAPI, contrato em `@mony/shared/mony`) |
 | Arquivos | `POST /arquivos` (retorna URL assinada de upload) · `GET /arquivos/:id` (retorna URL assinada de leitura) |
@@ -469,6 +469,23 @@ Como está (T-085a, RN-079), com o provedor falso; o Google e o Outlook de verda
 - **Período:** `GET /agenda?inicio=&fim=` (até 93 dias) devolve os compromissos que cruzam o período, do mais cedo ao mais tarde, até 500.
 - **Sincronização:** a rotina `sincronizar-agendas` (a cada 15 min) põe um job `sincronizar-agenda` por conexão na fila `agenda` (id por rodada). O job lê os eventos de 30 dias para trás a 180 para a frente: o que veio entra ou muda (o que já existe mantém a origem), e o que sumiu de lá dentro do período sai daqui. Acesso revogado deixa a conexão em `reconectar` e para de sincronizar.
 - **Desconectar:** `DELETE /agendas/:id` revoga no provedor (se falhar, só registra), tira os externos e deixa os do app e da Mony só no Mony. Na exclusão da conta (RN-161), `AgendaService.revogarTodas` faz o mesmo com todas, antes de apagar os dados.
+
+## Apps de compra
+
+Implementado na T-121a (RN-104, RN-121, doc 10), em `modulos/apps-compra`; o contrato fica em `@mony/shared/apps-compra`. O Android manda as aberturas na T-121b e o iOS na T-121c.
+
+| Rota | O que faz |
+|---|---|
+| `GET /apps-monitorados` | Os apps da lista (no cadastro, os sugeridos do doc 06), por nome, com o último alerta, e `disponivel` (plano pago ou teste, RN-121) |
+| `PUT /apps-monitorados` | Troca a lista inteira (`itens`: `identificadorApp`, `nome`, `ativo`; até 50, sem repetir). O que não vier sai; quem fica guarda o último alerta. Vale em qualquer plano |
+| `POST /apps-monitorados/token-evento` | Liga o recurso no aparelho da sessão: 201 com o token (`mte_…`), mostrado só nesta resposta (o banco guarda o SHA-256). Pedir de novo troca o token. No gratuito, 403 `RECURSO_EXIGE_PLANO_PAGO` (`detalhes.recurso: 'apps_compra'`) |
+| `DELETE /apps-monitorados/token-evento` | Desliga o recurso no aparelho (204) |
+| `POST /eventos/app-compra-aberto` | Pública para a guarda da sessão, com o token de evento no `Authorization: Bearer` e liberada para versão antiga. Corpo: `identificadorApp`, `abertoEm`. Responde `{ alertado, motivo }` |
+
+- **O token de evento** serve só para esta rota: o worker nativo roda sem a sessão do app (doc 10). Cai ao sair do aparelho, ao sair de todos, no reuso do token de renovação (RN-004), no `DELETE` e ao perder o plano pago: a abertura sem plano revoga o token e responde 403, e voltar ao pago pede um token novo. Token que não vale (ou o token de acesso no lugar dele) → 401 `NAO_AUTENTICADO`.
+- **A abertura** vira o alerta `app_compra` (doc 09) "Abriu a Shopee?", com o orçamento da categoria padrão Compras no mês de hoje ("Seu orçamento de compras tem R$ 120,00 livres.", "…já acabou.", "…já passou R$ X do limite."; sem orçamento, "Que tal ver quanto ainda cabe no mês antes de comprar?") e o link para os orçamentos do mês.
+- **Sem alerta** (`motivo`): app fora da lista ou desligado nela (`nao_monitorado`), outro alerta do mesmo app no intervalo do painel (`intervalo`, RN-104, `alertas.intervaloAppCompraHoras`, padrão 24 h, contado da abertura), aberta há mais de 60 minutos (`antigo`, o aparelho ficou sem rede), alerta desligado pela pessoa (`desligado`, RN-100) ou horário de silêncio (`silencio`, RN-101: o aviso só vale na hora, então não espera o fim do silêncio). Desligado e silêncio não gastam o intervalo.
+- **Concorrência:** a marca do último alerta é gravada com a condição do intervalo, então duas aberturas juntas dão um alerta só. Abertura com o relógio do aparelho adiantado conta como agora.
 
 ## Listas de compras
 
