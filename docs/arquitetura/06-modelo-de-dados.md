@@ -137,7 +137,7 @@ erDiagram
 | `recorrencias` | `tipo`, `descricao`, `valor`, `forma_pagamento`, `conta_id`, `cartao_id`, `data_inicio`, `ativa` | Modelo da ocorrência que a rotina materializa (RN-043) (T-007) |
 | `dispositivos` | `ativo` | Token de push inválido desativa o dispositivo (doc 09) (T-007) |
 | `codigos_recuperacao` | `tentativas` | No máximo 5 tentativas por código (RN-003) (T-007) |
-| `codigos_recuperacao` | `finalidade` (`recuperacao`, `exclusao_conta`) | O código que confirma a exclusão da conta (RN-161) não troca a senha, e o contrário (T-140b) |
+| `codigos_recuperacao` | `finalidade` (`recuperacao`, `exclusao_conta`, `verificacao_telefone`) | O código que confirma a exclusão da conta (RN-161) não troca a senha, e o contrário (T-140b) |
 | `listas_compras` | `finalizada_em` | Finalizar a lista gera a despesa (RN-072) (T-007) |
 | `faturas`, `parcelas`, `anexos`, `nfce_itens`, `metas_aportes`, `itens_lista`, `mensagens` | `usuario_id` | Regra "toda tabela de dados do usuário tem `usuario_id`" também nas tabelas filhas (T-007) |
 
@@ -151,7 +151,7 @@ erDiagram
 | `controle_teste` | tipo (`email`,`google`,`apple`,`aparelho`), valor_hash, usado_em | Um teste por pessoa (RN-125) |
 | `cupons` | codigo, stripe_coupon_id, percentual, validade, ativo, criado_por | CRUD de cupons no admin espelhando a Stripe |
 | `mony_config` | versao, prompt_sistema, ferramentas (`jsonb`), modelo, ativo, avaliacao (`jsonb`), avaliacao_pedida_em, avaliacao_falha (T-141e), criado_por | Prompt versionado e editável sem nova versão do app |
-| `ligacoes` | lembrete_id, status, provedor_id, custo_centavos, iniciada_em | Custo e limite mensal de ligações |
+| `ligacoes` | lembrete_id, status, provedor_id, custo_centavos, chave_unica, iniciada_em | Custo e limite mensal de ligações. `chave_unica` é a do aviso do lembrete: uma ligação por aviso (T-122a); `status = 'falhou'` não conta no limite |
 | `dicas_vistas` | chave, vista_em | Dicas contextuais de primeira visita e checklist de onboarding |
 | `importacoes_documento` | arquivo_id, tipo, status, resultado (`jsonb`: documento, estabelecimento, aviso e os lançamentos lidos, cada um com o estado e o id do que foi gravado) | Leitura de fatura PDF/foto com vários lançamentos aguardando confirmação (T-065) |
 

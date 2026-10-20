@@ -291,10 +291,11 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-084a, T-102 · RN-078
   - O limite mensal vem do painel: `ParametrosService.obter()` → `ligacoes.limiteMensal` (T-141g).
   - Dividida para andar sem a conta no provedor de voz:
-  - [ ] **T-122a** Ligação no servidor com provedor falso: `VozProvider`, verificação do telefone por SMS, canal `ligacao` no lembrete (só pago e com telefone verificado), a ligação no disparo e o limite mensal
-    - dep: T-084a, T-102 · docs: 05, 09, 10 · RN-078, RN-121
+  - [x] **T-122a** Ligação no servidor com provedor falso: `VozProvider`, verificação do telefone por SMS, canal `ligacao` no lembrete (só pago e com telefone verificado), a ligação no disparo e o limite mensal
+    - dep: T-084a, T-102 · docs: 05, 09, 10 · RN-078, RN-121 · (PR #135)
   - [ ] **T-122b** No app: verificar o telefone e escolher a ligação no lembrete
     - dep: T-122a · docs: 04
+    - Rotas prontas: `POST /me/telefone/codigo` e `/me/telefone/verificar`; o canal `ligacao` responde `RECURSO_EXIGE_PLANO_PAGO` (mostrar [Ver planos]) ou `TELEFONE_NAO_VERIFICADO` (levar à verificação). O formulário já guarda a ligação ao editar; falta a opção.
   - [ ] **T-122c** 👤 Provedor de voz de verdade (conta e chave), webhook de status e custo em `ligacoes`, e o limite mensal confirmado pelo cliente (pergunta do doc 15)
     - dep: T-122a · requer a conta no provedor
 - [x] **T-123a** Listas de compras na API: listas, itens, preço por NFC-e, orçamento e "Finalizar" com a despesa (PR #82)
