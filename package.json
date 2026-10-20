@@ -21,7 +21,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
     "@mony/config": "workspace:*",
-    "eslint": "^10.12.0",
+    "eslint": "^10.13.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.10",
