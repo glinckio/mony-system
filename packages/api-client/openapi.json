@@ -18230,6 +18230,18 @@
                     }
                   ]
                 },
+                "antecedenciaMinutos": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
                 "desligavel": {
                   "type": "boolean"
                 }
@@ -18238,6 +18250,7 @@
                 "tipo",
                 "ativo",
                 "antecedenciaDias",
+                "antecedenciaMinutos",
                 "desligavel"
               ]
             }
@@ -18310,6 +18323,18 @@
                       "type": "integer",
                       "minimum": 0,
                       "maximum": 30
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "antecedenciaMinutos": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1440
                     },
                     {
                       "type": "null"

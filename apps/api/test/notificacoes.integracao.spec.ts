@@ -168,9 +168,27 @@ describe.runIf(ativo)('integração: motor de alertas e central', () => {
     expect(padrao.json()).toMatchObject({ silencio: null });
     expect(padrao.json<{ tipos: object[] }>().tipos).toEqual(
       expect.arrayContaining([
-        { tipo: 'orcamento', ativo: true, antecedenciaDias: null, desligavel: true },
-        { tipo: 'fatura_vencimento', ativo: true, antecedenciaDias: 3, desligavel: true },
-        { tipo: 'assinatura', ativo: true, antecedenciaDias: null, desligavel: false },
+        {
+          tipo: 'orcamento',
+          ativo: true,
+          antecedenciaDias: null,
+          antecedenciaMinutos: null,
+          desligavel: true,
+        },
+        {
+          tipo: 'fatura_vencimento',
+          ativo: true,
+          antecedenciaDias: 3,
+          antecedenciaMinutos: null,
+          desligavel: true,
+        },
+        {
+          tipo: 'assinatura',
+          ativo: true,
+          antecedenciaDias: null,
+          antecedenciaMinutos: null,
+          desligavel: false,
+        },
       ]),
     );
     const recusado = await chamar('PUT', usuario, '/preferencias-alerta', {

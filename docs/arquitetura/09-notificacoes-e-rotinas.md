@@ -52,7 +52,7 @@ Cada avaliador é uma classe com `tipo`, `avaliar(contexto) → AlertaCandidato[
 | `vencimento_pendente` | Parcela/conta X dias antes | `venc:<parcela ou transacao>:<dias>` | não | não |
 | `app_compra` | Evento do aparelho (`POST /eventos/app-compra-aberto`, T-121a); no silêncio é descartado, porque só vale na hora | `app:<app>:<instante da abertura>`; o intervalo da RN-104 fica em `apps_monitorados.ultimo_alerta` | não | não |
 | `lembrete` | Data/hora, ações [Feito] [Adiar] | `lembrete:<id>:<ocorrencia>` | sim (ignora silêncio) | não |
-| `compromisso` | Antecedência do usuário | `compromisso:<id>` | sim | não |
+| `compromisso` | Antecedência do usuário (preferência `antecedenciaMinutos`, de 0 a 1 dia, padrão 30 min; T-085d): "Dentista às 10h", com quanto falta e o local, abrindo `mony://agenda`. Vale também para os vindos do Google e do Outlook | `compromisso:<id>:<início>`: mudou a hora, avisa de novo (`compromissos.aviso_para` guarda o início avisado) | sim | não |
 | `resumo_periodo` | Segunda e dia 1 | `resumo:<semana ou mes>` | não | sim |
 | `open_finance` | Consentimento perto de vencer ou erro | `of:<conexao>:<motivo>:<data>` | não | sim |
 | `assinatura` | Pagamento recusado, renovação, cancelamento; teste no 2º dia, no último e no fim (T-101, não urgentes) | `assinatura:<evento_id>`; `assinatura:teste:<segundo-dia, ultimo-dia ou fim>` | sim (os do teste, não) | sim |
@@ -104,6 +104,7 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 | Sincronização Open Finance | A cada 6 h | Além dos webhooks |
 | Aviso de consentimento | Diária | 7 dias antes de vencer (RN-144) |
 | Disparo de lembretes e ligações (`disparar-lembretes`) | A cada minuto | Lembretes com `data_hora` (ou `adiado_ate`) vencidos e ainda não tocados: push urgente com [Feito] [Adiar], também para quem aceitou o convite do lembrete (T-124c); a repetição passa para a próxima ocorrência. Implementada na T-084a (doc 05, "Lembretes"); com o canal ligação, um job por aviso na fila `lembretes` (T-122a) |
+| Aviso dos compromissos (`avisar-compromissos`) | A cada minuto | Os compromissos que começam dentro da antecedência de cada pessoa e ainda não foram avisados para esse início: push urgente pelo motor (tipo `compromisso`), em lotes de 500. Implementada na T-085d |
 | Sincronização de agendas externas (`sincronizar-agendas`) | A cada 15 min | Um job por agenda conectada na fila `agenda`, que espelha os eventos de 30 dias atrás a 180 à frente. Implementada na T-085a com o provedor falso; Google e Microsoft na T-085b (prefira webhooks/delta quando disponíveis) |
 | Liberação do silêncio (`liberar-silencio`) | A cada 15 min | Envia alertas adiados cujo silêncio terminou; mais de 3 para o mesmo usuário saem num envio agrupado. Implementada na T-080 |
 | Limpeza | Diária 03:00 | Rascunhos, códigos, sessões expiradas; arquivos fora do prazo de retenção (RN-162). Os rascunhos da Mony já saem na `limpar-rascunhos` (T-061, RN-088) |

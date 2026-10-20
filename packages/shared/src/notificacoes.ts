@@ -110,6 +110,11 @@ export const esquemaConsultaNotificacoes = z.object({
   limite: z.coerce.number().int().min(1).max(100).default(30),
 });
 
+/** T-085d: o aviso do compromisso sai tantos minutos antes, se a pessoa não escolher outro. */
+export const ANTECEDENCIA_PADRAO_COMPROMISSO_MINUTOS = 30;
+/** T-085d: no máximo um dia antes; `0` avisa na hora do começo. */
+export const ANTECEDENCIA_MAXIMA_COMPROMISSO_MINUTOS = 24 * 60;
+
 const esquemaSilencio = z
   .object({
     inicio: z.string().regex(REGEX_HORA, 'Hora no formato HH:MM'),
@@ -127,6 +132,8 @@ export const esquemaPreferenciasAlerta = z.object({
       ativo: z.boolean(),
       /** Dias de antecedência dos avisos de vencimento (RN-108). */
       antecedenciaDias: z.number().int().nullable(),
+      /** Minutos de antecedência do aviso do compromisso (T-085d); `null` usa o padrão (30). */
+      antecedenciaMinutos: z.number().int().nullable(),
       /** RN-100: falso para os de assinatura. */
       desligavel: z.boolean(),
     }),
@@ -142,6 +149,13 @@ export const esquemaAtualizacaoPreferenciasAlerta = z.object({
         tipo: z.enum(TIPOS_ALERTA),
         ativo: z.boolean().optional(),
         antecedenciaDias: z.number().int().min(0).max(30).nullable().optional(),
+        antecedenciaMinutos: z
+          .number()
+          .int()
+          .min(0)
+          .max(ANTECEDENCIA_MAXIMA_COMPROMISSO_MINUTOS)
+          .nullable()
+          .optional(),
       }),
     )
     .max(TIPOS_ALERTA.length)

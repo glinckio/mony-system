@@ -83,6 +83,7 @@ export class NotificacoesService {
           tipo,
           ativo: !desligavel || (porTipo.get(tipo)?.ativo ?? true),
           antecedenciaDias: porTipo.get(tipo)?.antecedenciaDias ?? null,
+          antecedenciaMinutos: porTipo.get(tipo)?.antecedenciaMinutos ?? null,
           desligavel,
         };
       }),
@@ -105,10 +106,11 @@ export class NotificacoesService {
       });
     }
     await this.repositorio.garantirPreferencias(usuarioId, TIPOS_ALERTA);
-    for (const { tipo, ativo, antecedenciaDias } of dados.tipos ?? []) {
+    for (const { tipo, ativo, antecedenciaDias, antecedenciaMinutos } of dados.tipos ?? []) {
       await this.repositorio.atualizarPreferencia(usuarioId, tipo, {
         ...(ativo === undefined ? {} : { ativo }),
         ...(antecedenciaDias === undefined ? {} : { antecedenciaDias }),
+        ...(antecedenciaMinutos === undefined ? {} : { antecedenciaMinutos }),
       });
     }
     if (dados.silencio !== undefined) {

@@ -37,6 +37,7 @@ export class NotificacoesRepository {
         tipoAlerta: true,
         ativo: true,
         antecedenciaDias: true,
+        antecedenciaMinutos: true,
         silencioInicio: true,
         silencioFim: true,
       },
@@ -188,7 +189,11 @@ export class NotificacoesRepository {
   async atualizarPreferencia(
     usuarioId: string,
     tipoAlerta: TipoAlerta,
-    dados: { ativo?: boolean; antecedenciaDias?: number | null },
+    dados: {
+      ativo?: boolean;
+      antecedenciaDias?: number | null;
+      antecedenciaMinutos?: number | null;
+    },
   ): Promise<void> {
     await this.prisma.cliente.preferenciaAlerta.update({
       where: { usuarioId_tipoAlerta: { usuarioId, tipoAlerta } },

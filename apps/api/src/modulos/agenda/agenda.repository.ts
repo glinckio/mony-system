@@ -37,6 +37,16 @@ export type CompromissoGravado = Prisma.CompromissoGetPayload<{
   select: typeof CAMPOS_COMPROMISSO;
 }>;
 
+/** Um compromisso que a rotina `avisar-compromissos` avisa (T-085d). */
+export interface CompromissoParaAvisar {
+  id: string;
+  usuarioId: string;
+  titulo: string;
+  inicio: Date;
+  local: string | null;
+  fuso: string;
+}
+
 /** No máximo tantos compromissos por consulta da agenda. */
 const MAXIMO_COMPROMISSOS_PERIODO = 500;
 
@@ -168,6 +178,42 @@ export class AgendaRepository {
       orderBy: { id: 'asc' },
     });
     return linhas.map(({ id }) => id);
+  }
+
+  /**
+   * T-085d: os compromissos que começam de `agora` até a antecedência de cada pessoa (a da
+   * preferência `compromisso`, ou o padrão) e ainda não foram avisados para esse início, de contas
+   * ativas com o aviso ligado. `agora` é o começo do minuto: o que começa nele também entra.
+   */
+  paraAvisar(
+    agora: Date,
+    padraoMinutos: number,
+    maximoMinutos: number,
+    limite: number,
+  ): Promise<CompromissoParaAvisar[]> {
+    return this.prisma.cliente.$queryRaw<CompromissoParaAvisar[]>`
+      SELECT c.id, c.usuario_id AS "usuarioId", c.titulo, c.inicio, c.local,
+             u.fuso_horario AS fuso
+      FROM compromissos c
+      JOIN usuarios u ON u.id = c.usuario_id AND u.status = 'ativo'
+      LEFT JOIN preferencias_alerta p
+        ON p.usuario_id = c.usuario_id AND p.tipo_alerta = 'compromisso'
+      WHERE c.inicio >= ${agora}
+        AND c.inicio < ${agora}::timestamptz + make_interval(mins => ${maximoMinutos + 1}::int)
+        AND c.inicio < ${agora}::timestamptz
+          + make_interval(mins => COALESCE(p.antecedencia_minutos::int, ${padraoMinutos}::int) + 1)
+        AND COALESCE(p.ativo, true)
+        AND c.aviso_para IS DISTINCT FROM c.inicio
+      ORDER BY c.inicio, c.id
+      LIMIT ${limite}`;
+  }
+
+  /** Grava o início avisado; se o compromisso mudou de hora no meio, não marca. */
+  async marcarAvisado(id: string, inicio: Date): Promise<void> {
+    await this.prisma.cliente.compromisso.updateMany({
+      where: { id, inicio },
+      data: { avisoPara: inicio },
+    });
   }
 
   /** Os compromissos que cruzam o período, do mais cedo ao mais tarde. */
