@@ -117,7 +117,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Dashboard e relatórios | `GET /dashboard?periodo=` · `GET /relatorios/:tipo?inicio=&fim=` · `POST /relatorios/exportar` |
 | Listas de compras | `GET /listas` · `GET /listas/:id` · `POST /listas` · `PATCH /listas/:id` · `DELETE /listas/:id` · `POST /listas/:id/itens` · `PATCH /itens/:id` · `DELETE /itens/:id` **(proposta)** · `POST /listas/:id/finalizar` (prontas: T-123a) |
 | Compartilhamento | `GET /compartilhamentos` · `POST /compartilhamentos` · `POST /compartilhamentos/:id/aceitar` · `POST /compartilhamentos/:id/recusar` · `PATCH /compartilhamentos/:id` · `DELETE /compartilhamentos/:id` (prontas para listas, T-124a, e lembretes, T-124c) |
-| Lembretes e agenda | `GET /lembretes` · `POST /lembretes` · `PATCH /lembretes/:id` · `DELETE /lembretes/:id` · `POST /lembretes/:id/concluir` · `POST /lembretes/:id/adiar` · `GET /lembretes/alarmes` (prontas: T-084a) · `GET /agenda?inicio=&fim=` · `POST /agendas/conectar` · `GET /agendas/oauth/callback` **(proposta)** · `POST /compromissos` · `PATCH /compromissos/:id` **(proposta)** |
+| Lembretes e agenda | `GET /lembretes` · `POST /lembretes` · `PATCH /lembretes/:id` · `DELETE /lembretes/:id` · `POST /lembretes/:id/concluir` · `POST /lembretes/:id/adiar` · `GET /lembretes/alarmes` (prontas: T-084a) · `GET /agenda?inicio=&fim=` · `GET /agendas` · `POST /agendas/conectar` · `GET /agendas/oauth/callback` · `PUT /agendas/padrao` · `DELETE /agendas/:id` · `GET /compromissos/:id` · `POST /compromissos` · `PATCH /compromissos/:id` · `DELETE /compromissos/:id` (prontas: T-085a) |
 | Notificações | `GET /notificacoes` · `POST /notificacoes/:id/lida` · `GET /preferencias-alerta` · `PUT /preferencias-alerta` |
 | Apps de compra | `GET /apps-monitorados` · `PUT /apps-monitorados` · `POST /eventos/app-compra-aberto` |
 | Open Finance | `POST /open-finance/token-conexao` · `GET /open-finance/conexoes` · `POST /open-finance/conexoes/:id/sincronizar` · `DELETE /open-finance/conexoes/:id` · `POST /webhooks/open-finance` |
@@ -457,6 +457,17 @@ Implementado na T-084a (RN-075 a RN-077), em `modulos/lembretes`; a regra da rep
   - **O push silencioso:** toda mudança num lembrete com alarme (criar, mudar, concluir, adiar, excluir) põe um job `sincronizar-alarmes` na fila `notificacoes`. O id é por usuário e o job espera 5 s, então mudanças seguidas viram um push só. O worker manda o push silencioso (`_contentAvailable`, só `dados.tipo = sincronizar_alarmes`) a cada aparelho com token.
 - **Gratuito (RN-120):** 5 lembretes ativos, conferidos ao criar e ao reativar (`conferirQuantidade(contexto, 'lembrete_ativo', tx)`).
 
+## Agenda
+
+Como está (T-085a, RN-079), com o provedor falso; o Google e o Outlook de verdade entram na T-085b.
+
+- **Conectar:** `POST /agendas/conectar` (`provedor`: `google` ou `outlook`) devolve a `url` do consentimento, que o app abre no navegador. O `state` vai cifrado (`core/cripto`) com quem pediu e vale 10 minutos. A volta (`GET /agendas/oauth/callback`, pública) troca o `code`, grava os tokens cifrados e redireciona para `mony://agenda?conexao=sucesso`, `cancelado` (a pessoa recusou) ou `erro` (estado inválido ou vencido, código recusado). Uma conexão por provedor (`@@unique([usuarioId, provedor])`): conectar de novo troca os tokens e tira o `reconectar`. Em produção com o provedor falso, ou sem `CRIPTO_CHAVE_MESTRA`, responde 503.
+- **Agenda padrão:** a primeira conexão vira a padrão; as outras entram sem ser. `PUT /agendas/padrao` com `agendaId` (ou `null`, para os compromissos novos ficarem só no Mony). `GET /agendas` traz `padrao`, `situacao` (`conectada` ou `reconectar`, quando o provedor recusou os tokens) e `sincronizadaEm`.
+- **Compromissos:** `POST /compromissos` vai para a agenda padrão; sem padrão, ou com ela em `reconectar`, fica só no Mony (`agenda: null`). `PATCH` e `DELETE` só nos do app e da Mony (`editavel`); nos externos, 409 `COMPROMISSO_SO_LEITURA`. A mudança vai junto para o provedor; se o evento sumiu de lá, o compromisso fica só no Mony. Provedor fora do ar: 503 `AGENDA_INDISPONIVEL`, sem gravar.
+- **Período:** `GET /agenda?inicio=&fim=` (até 93 dias) devolve os compromissos que cruzam o período, do mais cedo ao mais tarde, até 500.
+- **Sincronização:** a rotina `sincronizar-agendas` (a cada 15 min) põe um job `sincronizar-agenda` por conexão na fila `agenda` (id por rodada). O job lê os eventos de 30 dias para trás a 180 para a frente: o que veio entra ou muda (o que já existe mantém a origem), e o que sumiu de lá dentro do período sai daqui. Acesso revogado deixa a conexão em `reconectar` e para de sincronizar.
+- **Desconectar:** `DELETE /agendas/:id` revoga no provedor (se falhar, só registra), tira os externos e deixa os do app e da Mony só no Mony. Na exclusão da conta (RN-161), `AgendaService.revogarTodas` faz o mesmo com todas, antes de apagar os dados.
+
 ## Listas de compras
 
 Implementado na T-123a (RN-070 a RN-073), em `modulos/listas`; o contrato e as contas puras ficam em `@mony/shared/listas`. As telas chegam com a T-123b, a ferramenta da Mony com a T-123c e o compartilhamento (RN-074) com a T-124a (o tempo real na T-124b e as telas na T-124d).
@@ -579,7 +590,7 @@ Implementado na T-102 (RN-128, RN-131), em `modulos/assinaturas`; a Stripe está
 | `relatorios` | Exportação PDF/XLSX dos relatórios (RN-151) |
 | `privacidade` | Exportar meus dados (`exportar-dados`, RN-160, T-140a; 3 tentativas). Exclusão definitiva da conta (`excluir-conta`, RN-161, T-140b; 5 tentativas, e a rotina `excluir-contas` põe de novo na hora seguinte) |
 | `lembretes` | Disparo por minuto e ligações |
-| `agenda` | Sincronização Google/Microsoft |
+| `agenda` | Sincronização de cada agenda conectada (`sincronizar-agenda`, T-085a; a rotina `sincronizar-agendas` põe a cada 15 min) |
 | `rotinas` | Rotinas diárias, semanais e mensais (ver [09](09-notificacoes-e-rotinas.md#rotinas-agendadas)) |
 | `mony-avaliacao` | Frases de teste de uma versão do prompt pedidas no painel (T-141e): o worker roda o `avaliar-mony` num processo à parte, uma por vez, sem nova tentativa |
 

@@ -97,6 +97,7 @@ Google e Apple (RN-002). O app usa os SDKs do doc 02 e manda o `id_token` à API
 - **Google e Outlook:** OAuth no servidor (`POST /agendas/conectar` devolve URL de consentimento; callback grava tokens criptografados). Escopos mínimos de leitura/escrita de eventos. O Google exige **verificação do app** para escopos de agenda ao público: iniciar o processo cedo (Fase 0/1), porque leva semanas.
 - **Agenda do aparelho (iPhone/Android):** `expo-calendar` no app, com permissão. Leitura local; o app envia ao servidor apenas os compromissos do período para exibir junto **(decisão técnica: ou não envia nada e mescla só na tela; escolher na Fase 1 pensando em LGPD)**.
 - Compromisso criado pela Mony vai para a agenda padrão. Se a padrão for a do aparelho, o servidor cria o compromisso e o app grava localmente na próxima sincronização (push silencioso).
+- **Como está (T-085a):** `CalendarProvider` (`integracoes/agenda`) com um falso por provedor (`ProvedoresAgenda`), que guarda os eventos na memória e devolve o consentimento direto para o callback. As rotas, a sincronização e a revogação estão no doc 05, "Agenda". Faltam os de verdade (Google Calendar e Microsoft Graph, com os clientes OAuth do cliente) e a KMS na T-085b, e a agenda do aparelho e a tela na T-085c.
 
 ## Detecção de apps de compra
 
