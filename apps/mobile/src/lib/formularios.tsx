@@ -54,3 +54,13 @@ export function mensagemDeErro(erro: unknown, semConexao: string): string {
 export function ehLimiteDoPlano(erro: unknown): boolean {
   return erro instanceof ErroApi && erro.codigo === 'LIMITE_PLANO_ATINGIDO';
 }
+
+/** O recurso é só dos planos pagos (a ligação do lembrete, RN-078): a tela também mostra o [Ver planos]. */
+export function exigePlanoPago(erro: unknown): boolean {
+  return erro instanceof ErroApi && erro.codigo === 'RECURSO_EXIGE_PLANO_PAGO';
+}
+
+/** A ligação do lembrete precisa do celular verificado (RN-078): a tela leva à verificação. */
+export function ehTelefoneNaoVerificado(erro: unknown): boolean {
+  return erro instanceof ErroApi && erro.codigo === 'TELEFONE_NAO_VERIFICADO';
+}

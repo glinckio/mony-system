@@ -399,4 +399,105 @@ describe('lembretes no app (T-084b)', () => {
     },
     TEMPO_LIMITE_MS,
   );
+
+  it(
+    'RN-078 ligação: no gratuito mostra [Ver planos]; sem o celular verificado, verifica por SMS e volta para salvar',
+    async () => {
+      let verificado = false;
+      let respostaLigacao: 'plano' | 'telefone' = 'plano';
+      const perfil = () => ({
+        id: 'u1',
+        nome: 'Ana',
+        email: 'ana@exemplo.com',
+        telefone: '+5511987654321',
+        telefoneVerificado: verificado,
+        fotoUrl: null,
+        fusoHorario: 'America/Sao_Paulo',
+        onboardingConcluido: true,
+        temSenha: true,
+        loginsSociais: [],
+        criadoEm: '2026-10-01T12:00:00.000Z',
+      });
+      const erro = (codigo: string, mensagem: string, status: number) => ({
+        status,
+        corpo: { erro: { codigo, mensagem, detalhes: null } },
+      });
+      const pedidos = api((pedido) => {
+        if (pedido.metodo === 'POST' && pedido.rota === '/v1/lembretes' && !verificado) {
+          return respostaLigacao === 'plano'
+            ? erro(
+                'RECURSO_EXIGE_PLANO_PAGO',
+                'Este recurso está disponível só nos planos pagos.',
+                403,
+              )
+            : erro(
+                'TELEFONE_NAO_VERIFICADO',
+                'Verifique seu telefone para receber lembretes por ligação.',
+                409,
+              );
+        }
+        if (pedido.rota === '/v1/me') return { status: 200, corpo: perfil() };
+        if (pedido.rota === '/v1/me/telefone/codigo') return { status: 204 };
+        if (pedido.rota === '/v1/me/telefone/verificar') {
+          if (pedido.corpo.codigo !== '123456') {
+            return erro('CODIGO_INVALIDO', 'Código inválido ou expirado.', 400);
+          }
+          verificado = true;
+          return { status: 200, corpo: perfil() };
+        }
+        return undefined;
+      });
+      const app = renderRouter(ROTAS, { initialUrl: '/lembretes/novo' });
+
+      fireEvent.changeText(
+        await screen.findByLabelText('O que lembrar', {}, ESPERA),
+        'Buscar as crianças',
+      );
+      fireEvent.press(
+        screen.getByRole('checkbox', { name: 'Ligação para o seu celular (planos pagos)' }),
+      );
+      fireEvent.press(screen.getByRole('button', { name: 'Salvar' }));
+      expect(
+        await screen.findByText('Este recurso está disponível só nos planos pagos.', {}, ESPERA),
+      ).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: 'Ver planos' })).toBeOnTheScreen();
+      expect(screen.queryByRole('button', { name: 'Verificar telefone' })).toBeNull();
+
+      respostaLigacao = 'telefone';
+      fireEvent.press(screen.getByRole('button', { name: 'Salvar' }));
+      fireEvent.press(await screen.findByRole('button', { name: 'Verificar telefone' }, ESPERA));
+      expect(screen.queryByRole('button', { name: 'Ver planos' })).toBeNull();
+      await waitFor(() => {
+        expect(app.getPathname()).toBe('/verificar-telefone');
+      }, ESPERA);
+
+      fireEvent.press(await screen.findByRole('button', { name: 'Enviar código por SMS' }, ESPERA));
+      fireEvent.changeText(await screen.findByLabelText('Código de 6 dígitos', {}, ESPERA), '12a3');
+      fireEvent.press(screen.getByRole('button', { name: 'Verificar' }));
+      expect(
+        await screen.findByText('Digite os 6 números do código.', {}, ESPERA),
+      ).toBeOnTheScreen();
+      fireEvent.changeText(screen.getByLabelText('Código de 6 dígitos'), '123456');
+      fireEvent.press(screen.getByRole('button', { name: 'Verificar' }));
+      await waitFor(() => {
+        expect(app.getPathname()).toBe('/lembretes/novo');
+      }, ESPERA);
+
+      // O formulário ficou como estava: salvar de novo cria com a ligação.
+      fireEvent.press(await screen.findByRole('button', { name: 'Salvar' }, ESPERA));
+      await waitFor(() => {
+        expect(app.getPathname()).not.toBe('/lembretes/novo');
+      }, ESPERA);
+      const criacoes = pedidos.filter(
+        ({ metodo, rota }) => metodo === 'POST' && rota === '/v1/lembretes',
+      );
+      expect(criacoes).toHaveLength(3);
+      expect(criacoes[2]?.corpo).toMatchObject({
+        titulo: 'Buscar as crianças',
+        canais: ['push', 'ligacao'],
+      });
+      expect(doMetodo(pedidos, 'POST', '/v1/me/telefone/codigo')).toBeDefined();
+    },
+    TEMPO_LIMITE_MS,
+  );
 });

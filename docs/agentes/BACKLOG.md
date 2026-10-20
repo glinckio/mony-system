@@ -301,7 +301,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Dividida para andar sem a conta no provedor de voz:
   - [x] **T-122a** Ligação no servidor com provedor falso: `VozProvider`, verificação do telefone por SMS, canal `ligacao` no lembrete (só pago e com telefone verificado), a ligação no disparo e o limite mensal
     - dep: T-084a, T-102 · docs: 05, 09, 10 · RN-078, RN-121 · (PR #135)
-  - [ ] **T-122b** No app: verificar o telefone e escolher a ligação no lembrete
+  - [x] **T-122b** No app: verificar o telefone e escolher a ligação no lembrete (PR #139)
     - dep: T-122a · docs: 04
     - Rotas prontas: `POST /me/telefone/codigo` e `/me/telefone/verificar`; o canal `ligacao` responde `RECURSO_EXIGE_PLANO_PAGO` (mostrar [Ver planos]) ou `TELEFONE_NAO_VERIFICADO` (levar à verificação). O formulário já guarda a ligação ao editar; falta a opção.
   - [ ] **T-122c** 👤 Provedor de voz de verdade (conta e chave), webhook de status e custo em `ligacoes`, e o limite mensal confirmado pelo cliente (pergunta do doc 15)

@@ -77,6 +77,23 @@ export const textosMais = {
       nome: 'Informe seu nome.',
       telefone: 'Informe um celular com DDD, ex.: (11) 98765-4321.',
     },
+    telefoneVerificado: 'Celular verificado.',
+    verificarTelefone: 'Verificar celular',
+  },
+  /** RN-078: o código por SMS libera os lembretes por ligação. */
+  verificarTelefone: {
+    titulo: 'Verificar celular',
+    texto:
+      'Enviamos um código por SMS para {{telefone}}. Com o celular verificado, a Mony pode ligar para lembrar você.',
+    semTelefone: 'Cadastre um celular nos dados pessoais para verificar.',
+    irParaDados: 'Ir para dados pessoais',
+    enviar: 'Enviar código por SMS',
+    reenviar: 'Enviar outro código',
+    enviado: 'Código enviado. Ele vale por 15 minutos.',
+    codigo: 'Código de 6 dígitos',
+    verificar: 'Verificar',
+    verificado: 'Celular verificado.',
+    validacao: 'Digite os 6 números do código.',
   },
   semConexao: 'Sem conexão. Tente de novo.',
 };

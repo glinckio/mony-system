@@ -97,6 +97,8 @@ export const textosLembretes = {
     canais: 'Avisar por',
     push: 'Notificação',
     alarme: 'Alarme (toca mesmo sem internet)',
+    ligacao: 'Ligação para o seu celular (planos pagos)',
+    verificarTelefone: 'Verificar telefone',
     salvar: 'Salvar',
     validacao: {
       titulo: 'Diga o que lembrar.',
