@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { FilasModule } from '../../core/filas/filas.module';
 import { IntegracaoAgendaModule } from '../../integracoes/agenda/agenda.module';
+import { RegistroConsentimentosModule } from '../consentimentos/registro-consentimentos';
 import { AgendaController, AgendasController, CompromissosController } from './agenda.controller';
 import { AgendaRepository } from './agenda.repository';
 import { AgendaService } from './agenda.service';
@@ -11,7 +12,7 @@ import { AgendaService } from './agenda.service';
  * worker registra o `ProcessadorAgenda`, que sincroniza cada agenda pela fila `agenda`.
  */
 @Module({
-  imports: [FilasModule, IntegracaoAgendaModule],
+  imports: [FilasModule, IntegracaoAgendaModule, RegistroConsentimentosModule],
   controllers: [AgendasController, AgendaController, CompromissosController],
   providers: [AgendaService, AgendaRepository],
   exports: [AgendaService],

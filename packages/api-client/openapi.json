@@ -6144,6 +6144,66 @@
         ]
       }
     },
+    "/v1/consentimentos": {
+      "get": {
+        "operationId": "listarConsentimentos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Cada finalidade, se vale agora e as datas do último consentimento.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaConsentimentosDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "consentimentos"
+        ]
+      }
+    },
+    "/v1/consentimentos/{finalidade}": {
+      "delete": {
+        "operationId": "revogarConsentimentos",
+        "parameters": [
+          {
+            "name": "finalidade",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open_finance",
+                "agenda",
+                "apps_compra",
+                "ligacao"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Consentimento revogado e o recurso desligado."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "consentimentos"
+        ]
+      }
+    },
     "/v1/config-app": {
       "get": {
         "operationId": "obterConfigApp",
@@ -19406,6 +19466,64 @@
         "required": [
           "alertado",
           "motivo"
+        ]
+      },
+      "ListaConsentimentosDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "finalidade": {
+                  "type": "string",
+                  "enum": [
+                    "open_finance",
+                    "agenda",
+                    "apps_compra",
+                    "ligacao"
+                  ]
+                },
+                "concedido": {
+                  "type": "boolean"
+                },
+                "concedidoEm": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "revogadoEm": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "finalidade",
+                "concedido",
+                "concedidoEm",
+                "revogadoEm"
+              ]
+            }
+          }
+        },
+        "required": [
+          "itens"
         ]
       },
       "ConfigAppDto": {

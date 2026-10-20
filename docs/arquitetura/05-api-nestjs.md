@@ -104,7 +104,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Grupo | Rotas |
 |---|---|
 | Autenticação | `POST /auth/cadastro` · `POST /auth/login` · `POST /auth/social` · `POST /auth/social/vincular` **(proposta)** · `POST /auth/renovar` · `POST /auth/sair` · `POST /auth/sair-todos` **(proposta)** · `POST /auth/senha/codigo` · `POST /auth/senha/conferir` **(proposta)** · `POST /auth/senha/redefinir` |
-| Usuário | `GET /me` · `PATCH /me` · `POST /me/dispositivos` · `GET /me/onboarding` · `PATCH /me/onboarding` **(proposta)** · `POST /me/exportar` e `GET /me/exportar` (T-140a) · `GET /me/exclusao` · `POST /me/exclusao/codigo` · `POST /me/exclusao` com `{ senha }` ou `{ codigo }` · `DELETE /me/exclusao` (desistir; T-140b) |
+| Usuário | `GET /me` · `PATCH /me` · `POST /me/dispositivos` · `GET /me/onboarding` · `PATCH /me/onboarding` **(proposta)** · `POST /me/exportar` e `GET /me/exportar` (T-140a) · `GET /me/exclusao` · `POST /me/exclusao/codigo` · `POST /me/exclusao` com `{ senha }` ou `{ codigo }` · `DELETE /me/exclusao` (desistir; T-140b) · `POST /me/telefone/codigo` e `POST /me/telefone/verificar` (T-122a) · `GET /consentimentos` · `DELETE /consentimentos/:finalidade` (T-140d) |
 | App | `GET /config-app` **(proposta)**: versão mínima, flags, sugestões do chat |
 | Planos e assinatura | `GET /planos` · `GET /assinatura` · `GET /assinatura/uso` · `POST /assinatura/checkout` · `POST /assinatura/portal` · `POST /webhooks/stripe` |
 | Categorias | `GET /categorias` · `POST /categorias` · `PATCH /categorias/:id` · `DELETE /categorias/:id?mover_para=` |
@@ -469,6 +469,18 @@ Como está (T-085a, RN-079), com o provedor falso; o Google e o Outlook de verda
 - **Período:** `GET /agenda?inicio=&fim=` (até 93 dias) devolve os compromissos que cruzam o período, do mais cedo ao mais tarde, até 500.
 - **Sincronização:** a rotina `sincronizar-agendas` (a cada 15 min) põe um job `sincronizar-agenda` por conexão na fila `agenda` (id por rodada). O job lê os eventos de 30 dias para trás a 180 para a frente: o que veio entra ou muda (o que já existe mantém a origem), e o que sumiu de lá dentro do período sai daqui. Acesso revogado deixa a conexão em `reconectar` e para de sincronizar.
 - **Desconectar:** `DELETE /agendas/:id` revoga no provedor (se falhar, só registra), tira os externos e deixa os do app e da Mony só no Mony. Na exclusão da conta (RN-161), `AgendaService.revogarTodas` faz o mesmo com todas, antes de apagar os dados.
+
+## Consentimentos
+
+Implementado na T-140d (doc 11), em `modulos/consentimentos`; o contrato fica em `@mony/shared/consentimentos`.
+
+| Rota | O que faz |
+|---|---|
+| `GET /consentimentos` | Cada finalidade (`open_finance`, `agenda`, `apps_compra`, `ligacao`), se vale agora (`concedido`) e as datas do último consentimento |
+| `DELETE /consentimentos/:finalidade` | Revoga e desliga o recurso (204). Sem consentimento que valha, não faz nada |
+
+- **Concedido ao ligar o recurso**, depois da tela que explica o motivo (doc 04, "Permissões"): conectar uma agenda (`agenda`), `POST /apps-monitorados/token-evento` (`apps_compra`) e pôr a ligação num lembrete (`ligacao`). Ligar de novo depois de revogar grava uma linha nova; as linhas ficam como prova, também na exclusão da conta.
+- **Revogar desliga:** `agenda` desconecta as agendas externas (revoga no provedor e tira os compromissos externos; os criados no app ou pela Mony ficam, só no Mony); `apps_compra` derruba o token de evento de todos os aparelhos (a lista de apps fica); `ligacao` tira a ligação dos lembretes, e o que só tinha ligação passa a ter a notificação. O `open_finance` entra com o provedor (T-140f).
 
 ## Apps de compra
 

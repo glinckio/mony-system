@@ -8,6 +8,7 @@ export * from './autenticacao/autenticacao';
 export * from './cartoes/cartoes';
 export * from './categorias/categorias';
 export * from './compartilhamentos/compartilhamentos';
+export * from './consentimentos/consentimentos';
 export * from './contas/contas';
 export * from './dashboard/dashboard';
 export * from './lembretes/lembretes';

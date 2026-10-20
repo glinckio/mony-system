@@ -31,6 +31,7 @@ import {
   ErroAgenda,
   type SessaoAgenda,
 } from '../../integracoes/agenda/calendar.provider';
+import { RegistroConsentimentos } from '../consentimentos/registro-consentimentos';
 import { type AgendaGravada, AgendaRepository, type CompromissoGravado } from './agenda.repository';
 
 export const JOB_SINCRONIZAR_AGENDA = 'sincronizar-agenda';
@@ -112,6 +113,7 @@ export class AgendaService {
     private readonly cifra: Cifra,
     private readonly config: Configuracao,
     private readonly clock: Clock,
+    private readonly consentimentos: RegistroConsentimentos,
     @InjectQueue(FILAS.agenda) private readonly fila: Queue<DadosJobSincronizarAgenda>,
   ) {}
 
@@ -163,6 +165,8 @@ export class AgendaService {
         this.cifra.cifrar(JSON.stringify(conta)),
         conta.agendaPrincipal,
       );
+      // Conectar é o consentimento da finalidade agenda (doc 11, T-140d).
+      await this.consentimentos.conceder(estado.usuarioId, 'agenda');
       await this.pedirSincronizacao(agenda.id);
       this.log.log({ usuarioId: estado.usuarioId, provedor: estado.provedor }, 'Agenda conectada');
     } catch (erro) {

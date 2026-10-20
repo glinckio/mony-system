@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { RegistroConsentimentosModule } from '../consentimentos/registro-consentimentos';
 import { NotificacoesModule } from '../notificacoes/notificacoes.module';
 import { OrcamentosModule } from '../orcamentos/orcamentos.module';
 import { PlanosModule } from '../planos/planos.module';
@@ -12,8 +13,9 @@ import { AppsCompraService } from './apps-compra.service';
  * que vira o alerta `app_compra` pelo motor de alertas.
  */
 @Module({
-  imports: [NotificacoesModule, OrcamentosModule, PlanosModule],
+  imports: [NotificacoesModule, OrcamentosModule, PlanosModule, RegistroConsentimentosModule],
   controllers: [AppsMonitoradosController, EventosAppsController],
   providers: [AppsCompraService, AppsCompraRepository],
+  exports: [AppsCompraService],
 })
 export class AppsCompraModule {}

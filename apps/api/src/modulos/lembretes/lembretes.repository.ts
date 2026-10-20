@@ -34,6 +34,22 @@ const MAXIMO_CONCLUIDOS = 100;
 export class LembretesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Tira a ligação dos lembretes do usuário; sem outro canal, fica a notificação (T-140d). */
+  async tirarLigacao(usuarioId: string): Promise<number> {
+    const linhas = await this.prisma.cliente.lembrete.findMany({
+      where: { usuarioId, canais: { has: 'ligacao' } },
+      select: { id: true, canais: true },
+    });
+    for (const { id, canais } of linhas) {
+      const restantes = canais.filter((canal) => canal !== 'ligacao');
+      await this.prisma.cliente.lembrete.update({
+        where: { id },
+        data: { canais: restantes.length > 0 ? restantes : ['push'] },
+      });
+    }
+    return linhas.length;
+  }
+
   /** RN-078: a ligação só vai para telefone verificado. */
   async telefoneVerificado(usuarioId: string): Promise<boolean> {
     const usuario = await this.prisma.cliente.usuario.findUniqueOrThrow({
