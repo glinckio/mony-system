@@ -7,6 +7,7 @@ import {
   situacaoAssinaturas,
 } from '@mony/api-client';
 import type { PlanoPago } from '@mony/shared/enums';
+import type { FormaPagamentoPlano } from '@mony/shared/planos';
 import { useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef, useState } from 'react';
@@ -54,30 +55,36 @@ export function useAssinar() {
   // Função, e não `montado.current` direto: o valor muda entre os `await`.
   const ativo = () => montado.current;
 
-  /** `true` quando a API já mostra o plano pago; atualiza as telas que mostram o plano. */
-  async function liberado(): Promise<boolean> {
+  /**
+   * `true` quando a API já mostra o plano pago; atualiza as telas que mostram o plano. Na renovação
+   * com Pix (T-105) o plano já era pago: liberado é o fim (`pagoAte`) ter mudado.
+   */
+  async function liberado(pagoAteAntes: string | null): Promise<boolean> {
     const situacao = await situacaoAssinaturas();
     cliente.setQueryData(getSituacaoAssinaturasQueryKey(), situacao);
     if (situacao.plano !== 'mensal' && situacao.plano !== 'anual') return false;
+    if (pagoAteAntes !== null && situacao.pagoAte === pagoAteAntes) return false;
     await cliente.invalidateQueries({ queryKey: getUsoAssinaturaQueryKey() });
     return true;
   }
 
-  async function assinar(plano: PlanoPago) {
+  async function assinar(plano: PlanoPago, forma: FormaPagamentoPlano) {
     definirErro(null);
     definirEtapa('abrindo');
     try {
-      const { url } = await checkoutAssinaturas({ plano });
+      const pagoAteAntes = forma === 'pix' ? (await situacaoAssinaturas()).pagoAte : null;
+      const liberou = () => liberado(pagoAteAntes);
+      const { url } = await checkoutAssinaturas({ plano, forma });
       const resultado = await WebBrowser.openAuthSessionAsync(url, URL_RETORNO_COBRANCA);
       if (!ativo()) return;
       const pagou = resultado.type === 'success' && resultado.url.includes('checkout=sucesso');
       if (!pagou) {
-        definirEtapa((await liberado()) ? 'pago' : 'parado');
+        definirEtapa((await liberou()) ? 'pago' : 'parado');
         return;
       }
       definirEtapa('confirmando');
       for (let tentativa = 0; tentativa < TENTATIVAS_CONFIRMACAO; tentativa += 1) {
-        if (await liberado()) {
+        if (await liberou()) {
           if (ativo()) definirEtapa('pago');
           return;
         }
@@ -97,7 +104,8 @@ export function useAssinar() {
     erro,
     /** Quem já tem plano pago troca pelo portal; a tela leva para "Seu plano". */
     jaAssina: erro instanceof ErroApi && erro.codigo === 'ASSINATURA_JA_ATIVA',
-    assinar: (plano: PlanoPago) => void assinar(plano),
+    assinar: (plano: PlanoPago, forma: FormaPagamentoPlano = 'cartao') =>
+      void assinar(plano, forma),
   };
 }
 

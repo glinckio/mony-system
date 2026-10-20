@@ -19351,6 +19351,16 @@
           },
           "gerenciavel": {
             "type": "boolean"
+          },
+          "pagoAte": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -19360,7 +19370,8 @@
           "proximaCobranca",
           "cancelamentoAgendado",
           "testeFim",
-          "gerenciavel"
+          "gerenciavel",
+          "pagoAte"
         ]
       },
       "PedidoCheckoutDto": {
@@ -19371,6 +19382,14 @@
             "enum": [
               "mensal",
               "anual"
+            ]
+          },
+          "forma": {
+            "default": "cartao",
+            "type": "string",
+            "enum": [
+              "cartao",
+              "pix"
             ]
           }
         },

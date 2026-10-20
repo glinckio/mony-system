@@ -9,7 +9,7 @@ import {
 } from './cobranca.provider';
 import { criarPrecoVigente } from './configuracao-stripe';
 import { criarCupomStripe, desativarCupomStripe } from './cupons-stripe';
-import { assinaturaDaStripe, eventoDaStripe } from './traducao-stripe';
+import { assinaturaDaStripe, eventoDaStripe, TIPO_PAGAMENTO_PIX_ANUAL } from './traducao-stripe';
 
 /** A Stripe não conhece a assinatura (`resource_missing`): para quem chama, não há o que fazer. */
 async function semAssinaturaNaoFazNada(chamada: Promise<unknown>): Promise<void> {
@@ -31,7 +31,8 @@ const TEMPO_LIMITE_MS = 10_000;
 
 /**
  * Assinaturas pela Stripe (doc 10), na versão da API fixada pelo pacote `stripe`. As formas de
- * pagamento (cartão e Pix) são as ligadas no painel da conta, não uma lista no código.
+ * pagamento da assinatura são as ligadas no painel da conta, não uma lista no código; o anual com
+ * Pix (T-105) é um pagamento único que pede o Pix.
  */
 export class CobrancaStripe extends CobrancaProvider {
   private readonly stripe: Stripe;
@@ -76,6 +77,47 @@ export class CobrancaStripe extends CobrancaProvider {
       line_items: [{ price: pedido.precoId, quantity: 1 }],
       subscription_data: { metadata: { usuarioId: pedido.usuarioId } },
       // Cupons do admin (RN-130) entram como códigos promocionais na página da Stripe.
+      allow_promotion_codes: true,
+      locale: 'pt-BR',
+      success_url: pedido.urlSucesso,
+      cancel_url: pedido.urlCancelado,
+    });
+    if (sessao.url === null) throw new Error('A Stripe não devolveu o endereço do checkout');
+    return { url: sessao.url };
+  }
+
+  async criarPagamentoPix(pedido: {
+    clienteId: string;
+    usuarioId: string;
+    planoPrecoId: string;
+    valorCentavos: number;
+    urlSucesso: string;
+    urlCancelado: string;
+  }): Promise<{ url: string }> {
+    const metadata = {
+      tipo: TIPO_PAGAMENTO_PIX_ANUAL,
+      usuarioId: pedido.usuarioId,
+      planoPrecoId: pedido.planoPrecoId,
+    };
+    const sessao = await this.stripe.checkout.sessions.create({
+      mode: 'payment',
+      customer: pedido.clienteId,
+      client_reference_id: pedido.usuarioId,
+      // Filtro sobre as formas ligadas no painel da conta: o Pix precisa estar ligado lá.
+      allowed_payment_method_types: ['pix'],
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: 'brl',
+            unit_amount: pedido.valorCentavos,
+            product_data: { name: 'Mony anual (12 meses)' },
+          },
+        },
+      ],
+      metadata,
+      payment_intent_data: { metadata },
+      // Os cupons do admin (RN-130) valem aqui também.
       allow_promotion_codes: true,
       locale: 'pt-BR',
       success_url: pedido.urlSucesso,

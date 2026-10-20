@@ -110,6 +110,7 @@ const SITUACAO_ANUAL: SituacaoAssinaturaPaga = {
   cancelamentoAgendado: false,
   testeFim: null,
   gerenciavel: true,
+  pagoAte: null,
 };
 
 const SITUACAO_TESTE: SituacaoAssinaturaPaga = {
@@ -120,7 +121,18 @@ const SITUACAO_TESTE: SituacaoAssinaturaPaga = {
   cancelamentoAgendado: false,
   testeFim: TESTE.testeFim,
   gerenciavel: false,
+  pagoAte: null,
 };
+
+/** T-105: o anual pago com Pix, sem renovação automática. */
+const SITUACAO_PIX: SituacaoAssinaturaPaga = {
+  ...SITUACAO_ANUAL,
+  proximaCobranca: null,
+  pagoAte: '2027-10-15T15:00:00.000Z',
+};
+
+/** Os corpos de `POST /assinatura/checkout`, na ordem. */
+const checkouts: unknown[] = [];
 
 /** O que a API responde agora; o teste troca no meio (ex.: o webhook liberou o plano). */
 interface EstadoApi {
@@ -130,6 +142,7 @@ interface EstadoApi {
 
 function api(uso: UsoPlano, estado: EstadoApi = { uso, situacao: SITUACAO_TESTE }) {
   const pedidos: string[] = [];
+  checkouts.length = 0;
   globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
     const endereco = new URL(
       typeof url === 'string' ? url : url instanceof URL ? url.href : url.url,
@@ -142,6 +155,7 @@ function api(uso: UsoPlano, estado: EstadoApi = { uso, situacao: SITUACAO_TESTE 
     if (chave === 'GET /v1/assinatura') return json(estado.situacao);
     if (chave === 'GET /v1/planos') return json(PRECOS);
     if (chave === 'POST /v1/assinatura/checkout') {
+      checkouts.push(typeof opcoes?.body === 'string' ? JSON.parse(opcoes.body) : null);
       return json({ url: 'https://checkout.stripe.com/c/pay/cs_test_1' });
     }
     if (chave === 'POST /v1/assinatura/portal') {
@@ -388,6 +402,74 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
       expect(
         await screen.findByText('Termina em 15/out. Não vai ser renovado.', {}, ESPERA),
       ).toBeOnTheScreen();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'T-105 no anual, pagar com Pix abre o pagamento único e espera a API liberar os 12 meses',
+    async () => {
+      const estado: EstadoApi = { uso: TESTE, situacao: SITUACAO_TESTE };
+      api(TESTE, estado);
+      jest.mocked(WebBrowser.openAuthSessionAsync).mockImplementation(() => {
+        estado.uso = ANUAL;
+        estado.situacao = SITUACAO_PIX;
+        return Promise.resolve({ type: 'success', url: 'mony://planos?checkout=sucesso' });
+      });
+      const app = renderRouter(ROTAS, { initialUrl: '/planos' });
+      expect(
+        await screen.findByText(
+          'Com Pix, só no anual: 12 meses pagos de uma vez, sem renovação automática.',
+          {},
+          ESPERA,
+        ),
+      ).toBeOnTheScreen();
+      fireEvent.press(screen.getByRole('button', { name: 'Pagar 12 meses com Pix' }));
+      await waitFor(() => {
+        expect(app.getPathname()).toBe('/mais/plano');
+      }, ESPERA);
+      expect(checkouts).toEqual([{ plano: 'anual', forma: 'pix' }]);
+      expect(
+        await screen.findByText('Pago com Pix. Vale até 15/out e não renova sozinho.', {}, ESPERA),
+      ).toBeOnTheScreen();
+      // Sem assinatura no cartão, não há o que gerenciar no portal.
+      expect(screen.queryByRole('button', { name: 'Gerenciar assinatura' })).toBeNull();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'T-105 o mensal não oferece o Pix',
+    async () => {
+      api(TESTE);
+      renderRouter(ROTAS, { initialUrl: '/planos' });
+      fireEvent.press(await screen.findByRole('radio', { name: /^Mensal/ }, ESPERA));
+      expect(screen.queryByRole('button', { name: 'Pagar 12 meses com Pix' })).toBeNull();
+      fireEvent.press(screen.getByRole('button', { name: 'Assinar plano mensal' }));
+      await waitFor(() => {
+        expect(checkouts).toEqual([{ plano: 'mensal', forma: 'cartao' }]);
+      }, ESPERA);
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'T-105 em Seu plano, pagar mais 12 meses com Pix espera o novo fim',
+    async () => {
+      const estado: EstadoApi = { uso: ANUAL, situacao: SITUACAO_PIX };
+      api(ANUAL, estado);
+      jest.mocked(WebBrowser.openAuthSessionAsync).mockImplementation(() => {
+        estado.situacao = { ...SITUACAO_PIX, pagoAte: '2028-11-20T15:00:00.000Z' };
+        return Promise.resolve({ type: 'success', url: 'mony://planos?checkout=sucesso' });
+      });
+      renderRouter(ROTAS, { initialUrl: '/mais/plano' });
+      fireEvent.press(
+        await screen.findByRole('button', { name: 'Pagar mais 12 meses com Pix' }, ESPERA),
+      );
+      expect(
+        await screen.findByText('Pago com Pix. Vale até 20/nov e não renova sozinho.', {}, ESPERA),
+      ).toBeOnTheScreen();
+      expect(checkouts).toEqual([{ plano: 'anual', forma: 'pix' }]);
     },
     TEMPO_LIMITE_MS,
   );

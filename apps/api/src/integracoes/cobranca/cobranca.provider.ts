@@ -47,6 +47,16 @@ export type EventoCobranca =
       valorCentavos: number;
       data: string;
     }
+  | {
+      id: string;
+      tipo: 'pagamento_unico';
+      /** O checkout pago (`cs_…`): o mesmo pagamento não soma duas vezes. */
+      sessaoId: string;
+      clienteId: string;
+      valorCentavos: number;
+      /** A linha de `planos_precos` do anual vendido, que foi no checkout. */
+      planoPrecoId: string | null;
+    }
   | { id: string; tipo: 'ignorado'; tipoOriginal: string };
 
 /** O evento como fica em `webhook_eventos.payload` e na fila. */
@@ -77,6 +87,19 @@ export abstract class CobrancaProvider {
     clienteId: string;
     precoId: string;
     usuarioId: string;
+    urlSucesso: string;
+    urlCancelado: string;
+  }): Promise<{ url: string }>;
+
+  /**
+   * T-105: a página de um pagamento único com Pix que libera 12 meses do anual. A Stripe não aceita
+   * Pix em assinatura recorrente (doc 10). Pago, chega o evento `pagamento_unico`.
+   */
+  abstract criarPagamentoPix(pedido: {
+    clienteId: string;
+    usuarioId: string;
+    planoPrecoId: string;
+    valorCentavos: number;
     urlSucesso: string;
     urlCancelado: string;
   }): Promise<{ url: string }>;

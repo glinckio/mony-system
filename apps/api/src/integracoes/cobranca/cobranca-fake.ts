@@ -72,6 +72,24 @@ export class CobrancaFake extends CobrancaProvider {
     });
   }
 
+  readonly pagamentosPix: { clienteId: string; usuarioId: string; valorCentavos: number }[] = [];
+
+  criarPagamentoPix(pedido: {
+    clienteId: string;
+    usuarioId: string;
+    valorCentavos: number;
+    urlSucesso: string;
+  }): Promise<{ url: string }> {
+    return this.responder(() => {
+      this.pagamentosPix.push({
+        clienteId: pedido.clienteId,
+        usuarioId: pedido.usuarioId,
+        valorCentavos: pedido.valorCentavos,
+      });
+      return { url: pedido.urlSucesso };
+    });
+  }
+
   criarPortal(pedido: { urlRetorno: string }): Promise<{ url: string }> {
     return this.responder(() => ({ url: pedido.urlRetorno }));
   }

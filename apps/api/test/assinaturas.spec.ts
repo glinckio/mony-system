@@ -13,7 +13,9 @@ import {
   avisoDeEncerramento,
   avisoDePagamentoRecusado,
   avisoDeRenovacao,
+  avisoDoPix,
   mudancaDaAssinatura,
+  mudancaDoPagamentoPix,
 } from '../src/modulos/assinaturas/dominio/assinatura';
 
 const segundos = (iso: string) => Math.floor(new Date(iso).getTime() / 1000);
@@ -184,6 +186,7 @@ describe('T-102 mudança da assinatura gravada', () => {
           proximaCobranca: new Date('2026-11-15T15:00:00Z'),
           cancelamentoAgendado: false,
           canceladaEm: null,
+          pagoAte: null,
         },
       },
     );
@@ -275,5 +278,109 @@ describe('T-102 avisos da assinatura', () => {
 
   it('o fim da assinatura chama de volta para os planos', () => {
     expect(avisoDeEncerramento().titulo).toBe('Sua assinatura terminou');
+  });
+});
+
+describe('T-105 anual pago com Pix', () => {
+  const AGORA_PIX = new Date('2026-10-15T15:00:00Z');
+  const gratuito = {
+    plano: 'gratuito' as const,
+    status: 'ativa' as const,
+    stripeSubscriptionId: null,
+    inicio: null,
+    pagoAte: null,
+    pagamentoUnicoId: null,
+  };
+  const pagamento = { sessaoId: 'cs_1', planoPrecoId: 'pp_anual' };
+
+  it('T-105 libera 12 meses a partir de agora, sem assinatura no cartão', () => {
+    expect(mudancaDoPagamentoPix(gratuito, pagamento, AGORA_PIX)).toEqual({
+      tipo: 'paga',
+      dados: {
+        plano: 'anual',
+        status: 'ativa',
+        stripeSubscriptionId: null,
+        planoPrecoId: 'pp_anual',
+        inicio: AGORA_PIX,
+        proximaCobranca: null,
+        cancelamentoAgendado: false,
+        canceladaEm: null,
+        pagoAte: new Date('2027-10-15T15:00:00Z'),
+        pagamentoUnicoId: 'cs_1',
+      },
+    });
+  });
+
+  it('T-105 pagar antes do fim soma ao fim; o mesmo checkout não soma de novo', () => {
+    const pix = {
+      ...gratuito,
+      plano: 'anual' as const,
+      inicio: new Date('2026-01-10T15:00:00Z'),
+      pagoAte: new Date('2026-11-01T15:00:00Z'),
+      pagamentoUnicoId: 'cs_0',
+    };
+    expect(mudancaDoPagamentoPix(pix, pagamento, AGORA_PIX)).toMatchObject({
+      tipo: 'paga',
+      dados: { inicio: pix.inicio, pagoAte: new Date('2027-11-01T15:00:00Z') },
+    });
+    expect(
+      mudancaDoPagamentoPix({ ...pix, pagamentoUnicoId: 'cs_1' }, pagamento, AGORA_PIX),
+    ).toEqual({ tipo: 'nenhuma' });
+    // Vencido: conta de agora.
+    expect(
+      mudancaDoPagamentoPix(
+        { ...pix, pagoAte: new Date('2026-10-01T15:00:00Z') },
+        pagamento,
+        AGORA_PIX,
+      ),
+    ).toMatchObject({ dados: { inicio: AGORA_PIX, pagoAte: new Date('2027-10-15T15:00:00Z') } });
+  });
+
+  it('T-105 com assinatura no cartão valendo, o Pix não muda nada (conflito para o suporte)', () => {
+    const cartao = { ...gratuito, plano: 'mensal' as const, stripeSubscriptionId: 'sub_1' };
+    expect(mudancaDoPagamentoPix(cartao, pagamento, AGORA_PIX)).toEqual({ tipo: 'conflito' });
+    expect(
+      mudancaDoPagamentoPix({ ...cartao, status: 'cancelada' }, pagamento, AGORA_PIX),
+    ).toMatchObject({ tipo: 'paga' });
+  });
+
+  it('T-105 avisa 7 dias antes do fim e até 3 dias depois', () => {
+    const fim = new Date('2026-10-22T15:00:00Z');
+    expect(avisoDoPix(fim, new Date('2026-10-15T14:59:59Z'))).toBeNull();
+    expect(avisoDoPix(fim, AGORA_PIX)).toBe('fim_proximo');
+    expect(avisoDoPix(fim, fim)).toBe('encerrado');
+    expect(avisoDoPix(fim, new Date('2026-10-25T15:00:01Z'))).toBeNull();
+  });
+
+  it('T-105 o Pix pago chega como pagamento único; o não pago e o de outro checkout são ignorados', () => {
+    const sessao = {
+      id: 'cs_1',
+      object: 'checkout.session',
+      mode: 'payment',
+      payment_status: 'paid',
+      customer: 'cus_1',
+      amount_total: 19900,
+      metadata: { tipo: 'anual_pix', planoPrecoId: 'pp_anual' },
+    };
+    const evento = (tipo: string, objeto: object) =>
+      eventoDaStripe({
+        id: 'evt_1',
+        type: tipo,
+        data: { object: objeto },
+      } as unknown as Stripe.Event);
+    expect(evento('checkout.session.async_payment_succeeded', sessao)).toEqual({
+      id: 'evt_1',
+      tipo: 'pagamento_unico',
+      sessaoId: 'cs_1',
+      clienteId: 'cus_1',
+      valorCentavos: 19900,
+      planoPrecoId: 'pp_anual',
+    });
+    expect(
+      evento('checkout.session.completed', { ...sessao, payment_status: 'unpaid' }),
+    ).toMatchObject({ tipo: 'ignorado' });
+    expect(evento('checkout.session.completed', { ...sessao, metadata: {} })).toMatchObject({
+      tipo: 'ignorado',
+    });
   });
 });

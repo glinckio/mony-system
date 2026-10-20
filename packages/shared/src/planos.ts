@@ -66,10 +66,35 @@ export const esquemaSituacaoAssinatura = z.object({
   cancelamentoAgendado: z.boolean(),
   testeFim: z.string().nullable(),
   gerenciavel: z.boolean(),
+  /**
+   * T-105: o anual pago com Pix (pagamento único) vale até aqui e não renova sozinho; `null` na
+   * assinatura no cartão. Com ele, `proximaCobranca` é `null`.
+   */
+  pagoAte: z.string().nullable(),
 });
 
-/** `POST /assinatura/checkout`. */
-export const esquemaPedidoCheckout = z.object({ plano: z.enum(PLANOS_PAGOS) });
+/**
+ * Como pagar o plano (T-105): `cartao` é a assinatura que renova sozinha; `pix` é um pagamento
+ * único que libera 12 meses, só no anual (a Stripe não aceita Pix em assinatura recorrente).
+ */
+export const FORMAS_PAGAMENTO_PLANO = ['cartao', 'pix'] as const;
+export type FormaPagamentoPlano = (typeof FORMAS_PAGAMENTO_PLANO)[number];
+
+/** Quantos meses o pagamento único com Pix libera. */
+export const MESES_PAGAMENTO_PIX = 12;
+/** Quantos dias antes do fim do anual pago com Pix o app avisa. */
+export const DIAS_AVISO_FIM_PIX = 7;
+
+/** `POST /assinatura/checkout`. Sem `forma`, o cartão. */
+export const esquemaPedidoCheckout = z
+  .object({
+    plano: z.enum(PLANOS_PAGOS),
+    forma: z.enum(FORMAS_PAGAMENTO_PLANO).default('cartao'),
+  })
+  .refine(({ plano, forma }) => forma === 'cartao' || plano === 'anual', {
+    message: 'O Pix vale só no plano anual.',
+    path: ['forma'],
+  });
 
 /** A página da Stripe que o app abre (checkout ou portal). */
 export const esquemaLinkCobranca = z.object({ url: z.url() });
