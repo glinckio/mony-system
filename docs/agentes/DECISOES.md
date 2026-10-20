@@ -1170,3 +1170,6 @@ Contexto: o PDF diz só "antecedência definida pelo usuário" e a tabela `prefe
 
 ## 2026-10-20 — T-122b — Onde fica a verificação do celular no app
 Contexto: o design não tem tela para verificar o celular. Decisão: tela própria `/verificar-telefone` no grupo `(telas)` (por cima das abas, para o voltar levar ao lembrete de onde veio), aberta pelos dados pessoais e pelo erro `TELEFONE_NAO_VERIFICADO` do formulário do lembrete; a opção Ligação aparece sempre e a API decide (plano e celular), sem checar antes no app. Alternativa: esconder a ligação no gratuito. Reversível: sim, `TelaVerificarTelefone` e o `FormularioLembrete`.
+
+## 2026-10-20 — T-140e — Autorizações na tela de Permissões
+Contexto: o design não mostra os consentimentos. Decisão: seção "Suas autorizações" só na tela de Permissões de Configurações (o onboarding pede, não revoga); o Open Finance fica escondido até ter histórico (T-120); revogar confirma numa folha com o efeito e, depois, invalida todas as consultas do app, porque o servidor mexe em agendas, lembretes e apps de compra. Alternativa: invalidar só as consultas de cada recurso. Reversível: sim, `ListaConsentimentos` e `useRevogarConsentimento`.

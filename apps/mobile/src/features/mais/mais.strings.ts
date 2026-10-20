@@ -80,6 +80,35 @@ export const textosMais = {
     telefoneVerificado: 'Celular verificado.',
     verificarTelefone: 'Verificar celular',
   },
+  /** LGPD (doc 11, T-140e): o que a pessoa autorizou, com [Revogar]. */
+  consentimentos: {
+    titulo: 'Suas autorizações',
+    texto:
+      'O que você autorizou a Mony a usar. Revogar desliga o recurso; para ligar de novo, é só usar o recurso outra vez.',
+    finalidades: {
+      open_finance: 'Conexão com o banco (Open Finance)',
+      agenda: 'Agenda do Google ou do Outlook',
+      apps_compra: 'Aviso ao abrir apps de compra',
+      ligacao: 'Lembretes por ligação',
+    },
+    desde: 'Autorizado em {{data}}',
+    revogadoEm: 'Revogado em {{data}}',
+    nunca: 'Não autorizado',
+    revogar: 'Revogar',
+    revogarRotulo: 'Revogar {{nome}}',
+    confirmarTitulo: 'Revogar: {{nome}}',
+    efeitos: {
+      open_finance: 'A conexão com o banco é desfeita e as transações deixam de chegar sozinhas.',
+      agenda:
+        'As agendas conectadas são desconectadas e os compromissos que vieram delas saem do app. Os que você criou no Mony ficam.',
+      apps_compra:
+        'A Mony para de avisar quando você abre um app de compra. A lista de apps fica guardada.',
+      ligacao:
+        'Os lembretes deixam de ligar para você. Os que só ligavam passam a avisar por notificação.',
+    },
+    confirmar: 'Revogar autorização',
+    cancelar: 'Cancelar',
+  },
   /** RN-078: o código por SMS libera os lembretes por ligação. */
   verificarTelefone: {
     titulo: 'Verificar celular',

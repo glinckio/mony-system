@@ -47,6 +47,22 @@ function api(opcoes: { temSenha?: boolean; agendadaPara?: string | null } = {}) 
   let perfil = { ...PERFIL, temSenha: opcoes.temSenha ?? true };
   let agendadaPara = opcoes.agendadaPara ?? null;
   let consultasExportacao = 0;
+  let consentimentos = [
+    { finalidade: 'open_finance', concedido: false, concedidoEm: null, revogadoEm: null },
+    {
+      finalidade: 'agenda',
+      concedido: true,
+      concedidoEm: '2026-10-05T15:00:00.000Z',
+      revogadoEm: null,
+    },
+    { finalidade: 'apps_compra', concedido: false, concedidoEm: null, revogadoEm: null },
+    {
+      finalidade: 'ligacao',
+      concedido: false,
+      concedidoEm: '2026-10-01T15:00:00.000Z',
+      revogadoEm: '2026-10-02T15:00:00.000Z',
+    },
+  ];
   let exportacao: Record<string, unknown> | null = null;
   globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
     const endereco = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
@@ -80,6 +96,19 @@ function api(opcoes: { temSenha?: boolean; agendadaPara?: string | null } = {}) 
         };
       }
       return Promise.resolve(new Response(JSON.stringify({ exportacao }), { status: 200 }));
+    }
+    if (pedido.rota === '/v1/consentimentos') {
+      return Promise.resolve(
+        new Response(JSON.stringify({ itens: consentimentos }), { status: 200 }),
+      );
+    }
+    if (pedido.rota === '/v1/consentimentos/agenda' && pedido.metodo === 'DELETE') {
+      consentimentos = consentimentos.map((item) =>
+        item.finalidade === 'agenda'
+          ? { ...item, concedido: false, revogadoEm: '2026-10-20T18:00:00.000Z' }
+          : item,
+      );
+      return Promise.resolve(new Response(null, { status: 204 }));
     }
     if (pedido.rota === '/v1/me/telefone/codigo') {
       return Promise.resolve(new Response(null, { status: 204 }));
@@ -205,6 +234,34 @@ describe('aba Mais e Perfil (T-057)', () => {
         '/v1/me/telefone/codigo',
         '/v1/me/telefone/verificar',
         '/v1/me/telefone/verificar',
+      ]);
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'LGPD autorizações nas Permissões: mostra cada uma e revoga a agenda depois de confirmar',
+    async () => {
+      const pedidos = api();
+      renderRouter(ROTAS, { initialUrl: '/mais/permissoes' });
+
+      expect(await screen.findByText('Suas autorizações', {}, ESPERA)).toBeOnTheScreen();
+      expect(await screen.findByText('Autorizado em 5/out', {}, ESPERA)).toBeOnTheScreen();
+      expect(screen.getByText('Revogado em 2/out')).toBeOnTheScreen();
+      expect(screen.getByText('Não autorizado')).toBeOnTheScreen();
+      expect(screen.queryByText('Conexão com o banco (Open Finance)')).toBeNull();
+      expect(screen.getAllByRole('button', { name: /^Revogar / })).toHaveLength(1);
+
+      fireEvent.press(
+        screen.getByRole('button', { name: 'Revogar Agenda do Google ou do Outlook' }),
+      );
+      expect(
+        await screen.findByText(/As agendas conectadas são desconectadas/, {}, ESPERA),
+      ).toBeOnTheScreen();
+      fireEvent.press(screen.getByRole('button', { name: 'Revogar autorização' }));
+      expect(await screen.findByText('Revogado em 20/out', {}, ESPERA)).toBeOnTheScreen();
+      expect(pedidos.filter(({ metodo }) => metodo === 'DELETE').map(({ rota }) => rota)).toEqual([
+        '/v1/consentimentos/agenda',
       ]);
     },
     TEMPO_LIMITE_MS,
