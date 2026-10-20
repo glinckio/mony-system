@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { FilasModule } from '../../core/filas/filas.module';
 import { EmailModule } from '../../integracoes/email/email.module';
+import { AgendaModule } from '../agenda/agenda.module';
 import { AssinaturasModule } from '../assinaturas/assinaturas.module';
 import { RecuperacaoSenhaRepository } from '../autenticacao/recuperacao-senha.repository';
 import { ExclusaoContaRepository } from './exclusao-conta.repository';
@@ -18,7 +19,7 @@ import { RetencaoArquivosService } from './retencao-arquivos.service';
  * arquivos e faz as exclusões com os Services daqui.
  */
 @Module({
-  imports: [FilasModule, EmailModule, AssinaturasModule],
+  imports: [FilasModule, EmailModule, AssinaturasModule, AgendaModule],
   controllers: [LgpdController],
   providers: [
     ExportacaoDadosService,

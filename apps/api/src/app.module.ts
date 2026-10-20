@@ -13,6 +13,7 @@ import { LimiteGeralModule } from './core/limites/limite-geral';
 import { VersaoAppModule } from './core/versao-app/versao-app';
 import { ArmazenamentoModule } from './core/arquivos/armazenamento-arquivos';
 import { AdminModule } from './modulos/admin/admin.module';
+import { AgendaModule } from './modulos/agenda/agenda.module';
 import { ArquivosModule } from './modulos/arquivos/arquivos.module';
 import { AutenticacaoModule } from './modulos/autenticacao/autenticacao.module';
 import { CartoesModule } from './modulos/cartoes/cartoes.module';
@@ -49,6 +50,7 @@ import { UsuariosModule } from './modulos/usuarios/usuarios.module';
     LimitesModule,
     AutenticacaoModule,
     AdminModule,
+    AgendaModule,
     UsuariosModule,
     ConfigAppModule,
     CategoriasModule,

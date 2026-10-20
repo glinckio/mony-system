@@ -1187,15 +1187,20 @@ model AgendaConectada {
   provedor       ProvedorAgenda
   /// Tokens OAuth cifrados na aplicação (criptografia de envelope, doc 11).
   tokensCifrados String?        @map("tokens_cifrados")
-  /// Agenda onde o app cria compromissos (RN-079).
+  /// Agenda onde o app cria compromissos (RN-079): o id da agenda no provedor; só uma conexão do usuário tem.
   agendaPadrao   String?        @map("agenda_padrao")
+  /// O provedor recusou os tokens (acesso revogado lá): a sincronização para até conectar de novo (T-085a).
+  desconectadaEm DateTime?      @map("desconectada_em") @db.Timestamptz(6)
+  /// Última sincronização que deu certo.
+  sincronizadaEm DateTime?      @map("sincronizada_em") @db.Timestamptz(6)
   criadoEm       DateTime       @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm   DateTime       @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   usuario      Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   compromissos Compromisso[]
 
-  @@index([usuarioId])
+  /// Uma conexão por provedor; conectar de novo troca os tokens.
+  @@unique([usuarioId, provedor])
   @@map("agendas_conectadas")
 }
 

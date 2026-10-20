@@ -14,6 +14,10 @@
       "types": "./dist/admin.d.ts",
       "default": "./dist/admin.js"
     },
+    "./agenda": {
+      "types": "./dist/agenda.d.ts",
+      "default": "./dist/agenda.js"
+    },
     "./alertas": {
       "types": "./dist/alertas.d.ts",
       "default": "./dist/alertas.js"

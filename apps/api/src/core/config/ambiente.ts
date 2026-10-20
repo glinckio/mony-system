@@ -148,6 +148,21 @@ export const esquemaAmbiente = z
     ALERTAS_TECNICOS_EMAILS: listaPorVirgula.pipe(z.array(z.email()).max(10)),
     /** Namespace das métricas que o worker escreve no log para o CloudWatch (T-142d). */
     METRICAS_NAMESPACE: z.string().min(1).default('Mony/local'),
+    /**
+     * Chave mestra (32 bytes em base64) que cifra as chaves de dados dos tokens de terceiros
+     * (agenda, T-085a; doc 11). Fora de produção, sem ela, vale uma chave fixa de desenvolvimento;
+     * em produção, sem ela, nada é cifrado (a conexão da agenda responde 503). A KMS entra na T-085b.
+     */
+    CRIPTO_CHAVE_MESTRA: z.preprocess(
+      vazioComoAusente,
+      z
+        .base64()
+        .refine(
+          (valor) => Buffer.from(valor, 'base64').length === 32,
+          'deve ter 32 bytes em base64',
+        )
+        .optional(),
+    ),
     /** Limite geral de requisições por IP por minuto (T-144a, doc 11); 0 desliga. */
     LIMITE_REQUISICOES_IP_MINUTO: z.coerce.number().int().min(0).max(1_000_000).default(1200),
   })

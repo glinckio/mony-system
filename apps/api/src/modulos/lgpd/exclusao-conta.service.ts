@@ -20,6 +20,7 @@ import {
   emailContaExcluida,
   emailExclusaoAgendada,
 } from '../../integracoes/email/modelos/exclusao-conta';
+import { AgendaService } from '../agenda/agenda.service';
 import { AssinaturasService } from '../assinaturas/assinaturas.service';
 import {
   gerarCodigoRecuperacao,
@@ -62,6 +63,7 @@ export class ExclusaoContaService {
     private readonly repositorio: ExclusaoContaRepository,
     private readonly codigos: RecuperacaoSenhaRepository,
     private readonly assinaturas: AssinaturasService,
+    private readonly agendas: AgendaService,
     private readonly armazenamento: ArmazenamentoArquivos,
     private readonly emails: EnvioEmails,
     private readonly limites: LimiteTentativas,
@@ -169,8 +171,8 @@ export class ExclusaoContaService {
   }
 
   /**
-   * No worker: a exclusão definitiva. Cancela a assinatura na hora, apaga os arquivos e depois os
-   * dados. Cada passo pode repetir sem estrago, então a nova tentativa recomeça do início.
+   * No worker: a exclusão definitiva. Cancela a assinatura na hora, revoga as agendas no provedor,
+   * apaga os arquivos e depois os dados. Cada passo pode repetir sem estrago, então a nova tentativa recomeça do início.
    */
   async excluir(usuarioId: string): Promise<void> {
     const conta = await this.repositorio.conta(usuarioId);
@@ -184,6 +186,7 @@ export class ExclusaoContaService {
       return;
     }
     await this.assinaturas.cancelarParaExclusao(usuarioId);
+    await this.agendas.revogarTodas(usuarioId);
     const chaves = await this.repositorio.chavesDeArquivos(usuarioId);
     for (const chave of chaves) await this.armazenamento.apagar(chave);
     if (!(await this.repositorio.apagar(usuarioId, agora))) return;
