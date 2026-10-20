@@ -134,10 +134,18 @@ Regras de cache:
   - O toque no corpo abre o `linkInterno` (`rotaDoLink`), e todo toque marca a notificação como lida.
   - [Feito] chama `POST /lembretes/:id/concluir` com a `ocorrencia` do link; [Adiar] chama `POST /lembretes/:id/adiar` com 10 min. Os dois sincronizam os alarmes.
   - [Paguei] chama `POST /faturas/:id/pagar` sem corpo, com a `Idempotency-Key` `paguei-<notificação>`, para o toque repetido não pagar duas vezes.
-  - Depois, abre a tela do lembrete ou da fatura. O mesmo toque entregue duas vezes (o ouvinte e a última resposta) é tratado uma vez só.
-- **Botões abrem o app:** o JS só recebe o botão que não abre o app se ele ainda estiver vivo.
+  - Depois, abre a tela do lembrete ou da fatura. O mesmo toque entregue duas vezes (o ouvinte, a última resposta ou a tarefa de segundo plano) é tratado uma vez só (`src/lib/toques-push.ts`, na memória e no `AsyncStorage`).
 - **App fechado:** o toque que abriu o app vem pela última resposta.
-- **Push silencioso** (`sincronizar_alarmes`): com o app aberto, busca os alarmes de novo. Com o app fechado, quem cobre é a sincronização da próxima abertura (T-088b).
+- **Push silencioso** (`sincronizar_alarmes`): com o app aberto, o ouvinte busca os alarmes de novo; com o app fechado, a tarefa de segundo plano (abaixo).
+
+**Com o app fechado (T-088b):** `src/features/notificacoes/push-segundo-plano.ts`, definida e registrada em `tarefa-push.ts`, que a entrada do app (`index.ts`, antes do `expo-router/entry`) carrega primeiro. O sistema roda o JS sem a tela para executá-la.
+
+- **O que ela trata:**
+  - o push silencioso, nos dois sistemas: troca a agenda de alarmes (`GET /lembretes/alarmes`);
+  - no Android, [Feito] e [Adiar]: os botões não abrem o app (`opensAppToForeground: false`). A tarefa conclui ou adia, tira a notificação da barra, marca como lida e sincroniza os alarmes.
+- **iOS:** a tarefa não recebe toques nos botões, então [Feito] e [Adiar] continuam abrindo o app, que faz a ação. [Paguei] abre o app nos dois sistemas.
+- **Token de segundo plano:** a tarefa não usa a sessão do app, porque renovar nela e no app ao mesmo tempo derrubaria a sessão (RN-004). A cada abertura com a sessão aberta, o app pede `POST /me/token-segundo-plano` e guarda o token no cofre (`mony.segundo-plano`, sem biometria). A tarefa o manda em cada chamada, no `Authorization`, que vence o token do app e não dispara renovação. Sem o app aberto nesta vida do processo, ela configura o cliente só com a URL e os cabeçalhos. 401 tira o token do cofre, e "sair deste aparelho" também.
+- **Falha:** sem rede, o toque volta a ficar livre e a notificação fica na barra; tocar no corpo abre o lembrete.
 
 ## Módulos nativos (Expo Modules API)
 

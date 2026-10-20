@@ -14,9 +14,13 @@ export async function comecarSessao(sessao: Sessao): Promise<void> {
   useSessao.getState().iniciar({ id, nome, onboardingConcluido }, sessao.tokens.acesso);
 }
 
-/** Esquece a sessão neste aparelho (sem falar com a API). */
+/**
+ * Esquece a sessão neste aparelho (sem falar com a API), com o token de segundo plano (T-088b):
+ * a API também o derruba junto com a sessão, mas sem rede ele ficaria no cofre.
+ */
 export async function encerrarSessaoLocal(): Promise<void> {
   await cofre.apagarRenovacao();
+  await cofre.apagarSegundoPlano().catch(() => undefined);
   useSessao.getState().encerrar();
 }
 
