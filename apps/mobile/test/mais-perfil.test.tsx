@@ -47,7 +47,12 @@ function api(opcoes: { temSenha?: boolean; agendadaPara?: string | null } = {}) 
   let perfil = { ...PERFIL, temSenha: opcoes.temSenha ?? true };
   let agendadaPara = opcoes.agendadaPara ?? null;
   let consultasExportacao = 0;
-  let consentimentos = [
+  let consentimentos: {
+    finalidade: string;
+    concedido: boolean;
+    concedidoEm: string | null;
+    revogadoEm: string | null;
+  }[] = [
     { finalidade: 'open_finance', concedido: false, concedidoEm: null, revogadoEm: null },
     {
       finalidade: 'agenda',
