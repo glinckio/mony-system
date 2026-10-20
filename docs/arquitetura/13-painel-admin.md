@@ -117,7 +117,7 @@ O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa
 | Campo | Padrão | Limites | Quem usa |
 |---|---|---|---|
 | Alertas de consultoria por dia (RN-103) | 3 | 1 a 20 | Motor de alertas (doc 09) |
-| Intervalo do alerta de app de compra, em horas (RN-104) | 24 | 1 a 168 | Detecção de apps (T-121), quando existir |
+| Intervalo do alerta de app de compra, em horas (RN-104) | 24 | 1 a 168 | Detecção de apps: o servidor aplica desde a T-121a; os aparelhos mandam as aberturas com a T-121b e a T-121c |
 | Gasto fora do padrão (RN-106): múltiplo da média, mínimo de lançamentos, valor mínimo | 3×, 5, R$ 50,00 | 2 a 20, 1 a 100, até R$ 1.000.000,00 | Avaliador `gasto_fora_padrao` |
 | Ligações por mês por usuário (RN-078) | 10 | 0 a 100 | Lembrete por ligação (T-122), quando existir |
 | Versão mínima do app, iOS e Android | a do ambiente | formato 1.2.3 | Guarda de versão e `GET /config-app` (doc 05) |

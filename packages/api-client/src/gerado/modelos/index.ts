@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1
  */
 
+export * from './aberturaAppCompraDto';
 export * from './adiamentoLembreteDto';
 export * from './adiamentoLembreteDtoOpcao';
 export * from './adminDto';
@@ -22,6 +23,8 @@ export * from './assinaturasAdminDto';
 export * from './assinaturasAdminDtoItensItem';
 export * from './assinaturasAdminDtoItensItemPlano';
 export * from './assinaturasAdminDtoItensItemSituacao';
+export * from './atualizacaoAppsMonitoradosDto';
+export * from './atualizacaoAppsMonitoradosDtoItensItem';
 export * from './atualizacaoCartaoDto';
 export * from './atualizacaoCartaoDtoBandeira';
 export * from './atualizacaoCategoriaDto';
@@ -207,6 +210,8 @@ export * from './listaAgendasDto';
 export * from './listaAgendasDtoItensItem';
 export * from './listaAgendasDtoItensItemProvedor';
 export * from './listaAgendasDtoItensItemSituacao';
+export * from './listaAppsMonitoradosDto';
+export * from './listaAppsMonitoradosDtoItensItem';
 export * from './listaCartoesDto';
 export * from './listaCartoesDtoItensItem';
 export * from './listaCartoesDtoItensItemFaturaAtual';
@@ -526,6 +531,8 @@ export * from './respostaTransacaoDtoTransacaoNatureza';
 export * from './respostaTransacaoDtoTransacaoOrigem';
 export * from './respostaTransacaoDtoTransacaoStatus';
 export * from './respostaTransacaoDtoTransacaoTipo';
+export * from './resultadoAberturaAppDto';
+export * from './resultadoAberturaAppDtoMotivo';
 export * from './resultadoLoteDto';
 export * from './resultadoSimulacaoDto';
 export * from './resultadoSimulacaoDtoParcelasItem';
@@ -544,6 +551,7 @@ export * from './simulacaoParcelamentoDto';
 export * from './situacaoAssinaturaDto';
 export * from './situacaoAssinaturaDtoPlano';
 export * from './situacaoAssinaturaDtoStatus';
+export * from './tokenEventoDto';
 export * from './totaisTransacoesDto';
 export * from './totaisTransacoesFormaPagamento';
 export * from './totaisTransacoesOrigem';

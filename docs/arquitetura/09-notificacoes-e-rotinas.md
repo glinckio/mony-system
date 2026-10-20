@@ -50,7 +50,7 @@ Cada avaliador é uma classe com `tipo`, `avaliar(contexto) → AlertaCandidato[
 | `gasto_fora_padrao` | RN-106 | `fora_padrao:<transacao>` | não | sim (consultoria) |
 | `projecao_mes` | RN-107 | `projecao:<ano-semana>` | não | sim (consultoria) |
 | `vencimento_pendente` | Parcela/conta X dias antes | `venc:<parcela ou transacao>:<dias>` | não | não |
-| `app_compra` | Evento do aparelho | `app:<app>:<data>` | não | não |
+| `app_compra` | Evento do aparelho (`POST /eventos/app-compra-aberto`, T-121a); no silêncio é descartado, porque só vale na hora | `app:<app>:<instante da abertura>`; o intervalo da RN-104 fica em `apps_monitorados.ultimo_alerta` | não | não |
 | `lembrete` | Data/hora, ações [Feito] [Adiar] | `lembrete:<id>:<ocorrencia>` | sim (ignora silêncio) | não |
 | `compromisso` | Antecedência do usuário | `compromisso:<id>` | sim | não |
 | `resumo_periodo` | Segunda e dia 1 | `resumo:<semana ou mes>` | não | sim |

@@ -54,6 +54,7 @@ export const TABELAS_APAGADAS = {
     tx.exportacaoRelatorio.deleteMany({ where: { usuarioId: id } }),
   exportacoes_dados: (tx, id) => tx.exportacaoDados.deleteMany({ where: { usuarioId: id } }),
   codigos_recuperacao: (tx, id) => tx.codigoRecuperacao.deleteMany({ where: { usuarioId: id } }),
+  tokens_evento: (tx, id) => tx.tokenEvento.deleteMany({ where: { usuarioId: id } }),
   sessoes: (tx, id) => tx.sessao.deleteMany({ where: { usuarioId: id } }),
   dispositivos: (tx, id) => tx.dispositivo.deleteMany({ where: { usuarioId: id } }),
   logins_sociais: (tx, id) => tx.loginSocial.deleteMany({ where: { usuarioId: id } }),

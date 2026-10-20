@@ -152,6 +152,7 @@ erDiagram
 | `cupons` | codigo, stripe_coupon_id, percentual, validade, ativo, criado_por | CRUD de cupons no admin espelhando a Stripe |
 | `mony_config` | versao, prompt_sistema, ferramentas (`jsonb`), modelo, ativo, avaliacao (`jsonb`), avaliacao_pedida_em, avaliacao_falha (T-141e), criado_por | Prompt versionado e editável sem nova versão do app |
 | `ligacoes` | lembrete_id, status, provedor_id, custo_centavos, chave_unica, iniciada_em | Custo e limite mensal de ligações. `chave_unica` é a do aviso do lembrete: uma ligação por aviso (T-122a); `status = 'falhou'` não conta no limite |
+| `tokens_evento` | usuario_id, dispositivo_id (único), token_hash (SHA-256, único), ultimo_uso, revogado_em | O token do aparelho que só manda as aberturas dos apps de compra (T-121a); um por aparelho, revogado ao sair e ao perder o plano pago |
 | `dicas_vistas` | chave, vista_em | Dicas contextuais de primeira visita e checklist de onboarding |
 | `importacoes_documento` | arquivo_id, tipo, status, resultado (`jsonb`: documento, estabelecimento, aviso e os lançamentos lidos, cada um com o estado e o id do que foi gravado) | Leitura de fatura PDF/foto com vários lançamentos aguardando confirmação (T-065) |
 

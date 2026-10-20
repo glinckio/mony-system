@@ -1,6 +1,7 @@
 export * from './admin/admin';
 export * from './agenda/agenda';
 export * from './app/app';
+export * from './apps-compra/apps-compra';
 export * from './arquivos/arquivos';
 export * from './assinatura/assinatura';
 export * from './autenticacao/autenticacao';

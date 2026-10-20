@@ -102,11 +102,12 @@ export class CotasService {
   }
 
   /**
-   * RN-121: o que o gratuito não tem (a ligação do lembrete, T-122a). O teste e os pagos liberam;
+   * RN-121: o que o gratuito não tem (a ligação do lembrete, T-122a; os apps de compra, T-121a).
+   * O teste e os pagos liberam;
    * no gratuito, `RECURSO_EXIGE_PLANO_PAGO` com o recurso nos detalhes, para o app mostrar
    * [Ver planos].
    */
-  async exigirPlanoPago(contexto: Contexto, recurso: 'ligacao'): Promise<void> {
+  async exigirPlanoPago(contexto: Contexto, recurso: 'ligacao' | 'apps_compra'): Promise<void> {
     if (await this.temPlanoPago(usuarioDoContexto(contexto))) return;
     throw new ErroDominio('RECURSO_EXIGE_PLANO_PAGO', { detalhes: { recurso } });
   }

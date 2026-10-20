@@ -303,8 +303,8 @@ export class AutenticacaoRepository {
 
   /**
    * RN-004: reuso de token antigo revoga todas as sessões daquele aparelho (a "família"). Ao
-   * encerrar sessões, o aparelho também perde o token de push: quem saiu não recebe mais
-   * notificações (doc 09).
+   * encerrar sessões, o aparelho também perde o token de push (quem saiu não recebe mais
+   * notificações, doc 09) e o token de evento dos apps de compra (T-121a).
    */
   async revogarFamilia(
     sessao: { usuarioId: string; dispositivoId: string | null },
@@ -326,10 +326,18 @@ export class AutenticacaoRepository {
         },
         data: { tokenPush: null },
       }),
+      this.prisma.cliente.tokenEvento.updateMany({
+        where: {
+          usuarioId: sessao.usuarioId,
+          revogadoEm: null,
+          ...(sessao.dispositivoId ? { dispositivoId: sessao.dispositivoId } : {}),
+        },
+        data: { revogadoEm: agora },
+      }),
     ]);
   }
 
-  /** Sai deste aparelho: revoga a sessão e apaga o token de push dele. */
+  /** Sai deste aparelho: revoga a sessão e apaga o token de push e o de evento dele. */
   async revogarPorToken(resumoRenovacao: string, agora: Date): Promise<void> {
     await this.prisma.cliente.$transaction(async (tx) => {
       const sessao = await tx.sessao.findUnique({
@@ -346,11 +354,18 @@ export class AutenticacaoRepository {
           where: { id: sessao.dispositivoId },
           data: { tokenPush: null },
         });
+        await tx.tokenEvento.updateMany({
+          where: { dispositivoId: sessao.dispositivoId, revogadoEm: null },
+          data: { revogadoEm: agora },
+        });
       }
     });
   }
 
-  /** "Sair de todos os aparelhos" (RN-004): nenhum aparelho recebe mais push deste usuário. */
+  /**
+   * "Sair de todos os aparelhos" (RN-004): nenhum aparelho recebe mais push deste usuário nem
+   * manda aberturas de apps de compra.
+   */
   async revogarDoUsuario(usuarioId: string, agora: Date): Promise<void> {
     await this.prisma.cliente.$transaction([
       this.prisma.cliente.sessao.updateMany({
@@ -360,6 +375,10 @@ export class AutenticacaoRepository {
       this.prisma.cliente.dispositivo.updateMany({
         where: { usuarioId },
         data: { tokenPush: null },
+      }),
+      this.prisma.cliente.tokenEvento.updateMany({
+        where: { usuarioId, revogadoEm: null },
+        data: { revogadoEm: agora },
       }),
     ]);
   }
