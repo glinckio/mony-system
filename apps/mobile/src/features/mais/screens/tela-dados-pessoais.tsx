@@ -102,6 +102,20 @@ function FormularioDados({ perfil }: { perfil: Perfil }) {
           autoComplete="tel"
           maxLength={30}
         />
+        {perfil.telefone === null ? null : perfil.telefoneVerificado ? (
+          <Texto variante="corpo-sm" cor="suave">
+            {t('mais.dados.telefoneVerificado')}
+          </Texto>
+        ) : (
+          <Botao
+            titulo={t('mais.dados.verificarTelefone')}
+            variante="secundaria"
+            larguraTotal
+            aoPressionar={() => {
+              router.push('/verificar-telefone');
+            }}
+          />
+        )}
         {erroEnvio === null ? null : (
           <Texto cor="perigo" accessibilityRole="alert" accessibilityLiveRegion="polite">
             {erroEnvio}
@@ -118,7 +132,10 @@ function FormularioDados({ perfil }: { perfil: Perfil }) {
   );
 }
 
-/** Dados pessoais (`/mais/dados-pessoais`): nome e celular (`PATCH /me`); o e-mail só aparece. */
+/**
+ * Dados pessoais (`/mais/dados-pessoais`): nome e celular (`PATCH /me`); o e-mail só aparece. O
+ * celular cadastrado e ainda não verificado leva à verificação por SMS (RN-078, T-122b).
+ */
 export default function TelaDadosPessoais() {
   const { t } = useTranslation();
   const router = useRouter();

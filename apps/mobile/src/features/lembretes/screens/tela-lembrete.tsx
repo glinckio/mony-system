@@ -153,9 +153,7 @@ export default function TelaLembrete() {
           )}
           <Linha
             rotulo={t('lembretes.detalhe.canais')}
-            valor={lembrete.canais
-              .map((canal) => t(`lembretes.formulario.${canal === 'alarme' ? 'alarme' : 'push'}`))
-              .join(' · ')}
+            valor={lembrete.canais.map((canal) => t(`lembretes.formulario.${canal}`)).join(' · ')}
           />
           {lembrete.adiadoAte === null ? null : (
             <Texto cor="atencao" className="font-forte">

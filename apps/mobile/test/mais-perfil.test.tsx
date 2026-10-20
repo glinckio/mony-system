@@ -81,6 +81,17 @@ function api(opcoes: { temSenha?: boolean; agendadaPara?: string | null } = {}) 
       }
       return Promise.resolve(new Response(JSON.stringify({ exportacao }), { status: 200 }));
     }
+    if (pedido.rota === '/v1/me/telefone/codigo') {
+      return Promise.resolve(new Response(null, { status: 204 }));
+    }
+    if (pedido.rota === '/v1/me/telefone/verificar') {
+      if (pedido.corpo.codigo !== '123456') {
+        const erro = { codigo: 'CODIGO_INVALIDO', mensagem: 'Código inválido ou expirado.' };
+        return Promise.resolve(new Response(JSON.stringify({ erro }), { status: 400 }));
+      }
+      perfil = { ...perfil, telefoneVerificado: true };
+      return Promise.resolve(new Response(JSON.stringify(perfil), { status: 200 }));
+    }
     if (pedido.rota === '/v1/me/exclusao/codigo') {
       return Promise.resolve(new Response(null, { status: 204 }));
     }
@@ -162,6 +173,39 @@ describe('aba Mais e Perfil (T-057)', () => {
       expect(await screen.findByRole('header', { name: 'Perfil' }, ESPERA)).toBeOnTheScreen();
       expect(useSessao.getState().usuario?.nome).toBe('Ana Lima');
       expect(screen.getByText('AL')).toBeOnTheScreen();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'RN-078 dados pessoais: o celular não verificado recebe o código por SMS e fica verificado',
+    async () => {
+      const pedidos = api();
+      renderRouter(ROTAS, { initialUrl: '/mais/dados-pessoais' });
+      fireEvent.press(await screen.findByRole('button', { name: 'Verificar celular' }, ESPERA));
+
+      expect(
+        await screen.findByText(/Enviamos um código por SMS para \(11\) 98765-4321/, {}, ESPERA),
+      ).toBeOnTheScreen();
+      fireEvent.press(screen.getByRole('button', { name: 'Enviar código por SMS' }));
+      fireEvent.changeText(
+        await screen.findByLabelText('Código de 6 dígitos', {}, ESPERA),
+        '654321',
+      );
+      fireEvent.press(screen.getByRole('button', { name: 'Verificar' }));
+      expect(await screen.findByText('Código inválido ou expirado.', {}, ESPERA)).toBeOnTheScreen();
+
+      fireEvent.changeText(screen.getByLabelText('Código de 6 dígitos'), '123456');
+      fireEvent.press(screen.getByRole('button', { name: 'Verificar' }));
+      expect(await screen.findByText('Celular verificado.', {}, ESPERA)).toBeOnTheScreen();
+      expect(screen.queryByRole('button', { name: 'Verificar celular' })).toBeNull();
+      expect(
+        pedidos.filter(({ rota }) => rota.startsWith('/v1/me/telefone')).map(({ rota }) => rota),
+      ).toEqual([
+        '/v1/me/telefone/codigo',
+        '/v1/me/telefone/verificar',
+        '/v1/me/telefone/verificar',
+      ]);
     },
     TEMPO_LIMITE_MS,
   );

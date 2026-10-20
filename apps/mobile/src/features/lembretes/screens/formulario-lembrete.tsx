@@ -15,7 +15,12 @@ import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 
 import { BotaoVerPlanos } from '@/features/planos/components/botao-ver-planos';
 import { dataParaTexto, mascararData, textoParaData } from '@/features/transacoes/lib/periodo';
-import { ehLimiteDoPlano, mensagemDeErro } from '@/lib/formularios';
+import {
+  ehLimiteDoPlano,
+  ehTelefoneNaoVerificado,
+  exigePlanoPago,
+  mensagemDeErro,
+} from '@/lib/formularios';
 import { useFusoDoUsuario } from '@/lib/fuso';
 import { mascararHora } from '@/lib/mascaras';
 import { relogio } from '@/lib/relogio';
@@ -62,7 +67,7 @@ export interface PropsFormularioLembrete {
 /**
  * Novo e editar lembrete (RN-075): o que lembrar, a data e a hora (no fuso do usuário), a repetição
  * (diária, semanal nos dias escolhidos, mensal ou anual, a cada N, até uma data) e como avisar
- * (notificação e alarme). A edição manda só o que mudou; o feito é lembrado de novo com uma data
+ * (notificação, alarme e, nos planos pagos com o celular verificado, ligação, RN-078). A edição manda só o que mudou; o feito é lembrado de novo com uma data
  * nova. No primeiro com alarme, pede as liberações do Android que faltam.
  */
 export function FormularioLembrete({ original }: PropsFormularioLembrete) {
@@ -87,14 +92,13 @@ export function FormularioLembrete({ original }: PropsFormularioLembrete) {
     original === null ? SEM_REPETICAO : repeticaoOriginal,
   );
   const [canais, definirCanais] = useState<CanalLembreteDisponivel[]>(
-    original === null
-      ? ['push']
-      : // A ligação ainda não tem opção aqui (T-122b), mas fica no lembrete ao salvar.
-        [...original.canais],
+    original === null ? ['push'] : [...original.canais],
   );
   const [tentou, definirTentou] = useState(false);
   const [erroEnvio, definirErroEnvio] = useState<string | null>(null);
   const [limite, definirLimite] = useState(false);
+  // A ligação (RN-078): no gratuito, [Ver planos]; sem o celular verificado, a verificação.
+  const [verificarTelefone, definirVerificarTelefone] = useState(false);
   const [permissoes, definirPermissoes] = useState<('alarmeExato' | 'telaCheia')[]>([]);
   const salvando = criar.isPending || atualizar.isPending;
 
@@ -157,6 +161,7 @@ export function FormularioLembrete({ original }: PropsFormularioLembrete) {
     definirTentou(true);
     definirErroEnvio(null);
     definirLimite(false);
+    definirVerificarTelefone(false);
     if (problemas.length > 0 || instante === null || !regra.ok) return;
     try {
       if (original === null) {
@@ -182,7 +187,8 @@ export function FormularioLembrete({ original }: PropsFormularioLembrete) {
       }
     } catch (falha) {
       definirErroEnvio(mensagemDeErro(falha, t('lembretes.semConexao')));
-      definirLimite(ehLimiteDoPlano(falha));
+      definirLimite(ehLimiteDoPlano(falha) || exigePlanoPago(falha));
+      definirVerificarTelefone(ehTelefoneNaoVerificado(falha));
       return;
     }
     const faltam = canais.includes('alarme') ? await permissoesParaPedir() : [];
@@ -322,6 +328,13 @@ export function FormularioLembrete({ original }: PropsFormularioLembrete) {
               aoMudar={(marcada) => {
                 alternarCanal('alarme', marcada);
               }}
+            />
+            <CaixaDeSelecao
+              rotulo={t('lembretes.formulario.ligacao')}
+              marcada={canais.includes('ligacao')}
+              aoMudar={(marcada) => {
+                alternarCanal('ligacao', marcada);
+              }}
               erro={erro('canais')}
             />
           </View>
@@ -332,6 +345,16 @@ export function FormularioLembrete({ original }: PropsFormularioLembrete) {
             </Texto>
           )}
           {limite ? <BotaoVerPlanos /> : null}
+          {verificarTelefone ? (
+            <Botao
+              titulo={t('lembretes.formulario.verificarTelefone')}
+              variante="secundaria"
+              larguraTotal
+              aoPressionar={() => {
+                router.push('/verificar-telefone');
+              }}
+            />
+          ) : null}
           <Botao
             titulo={t('lembretes.formulario.salvar')}
             larguraTotal

@@ -1,9 +1,11 @@
 import {
   atualizarPerfilUsuarios,
   getPerfilUsuariosQueryKey,
+  pedirCodigoTelefoneUsuarios,
   usePerfilUsuarios,
+  verificarTelefoneUsuarios,
 } from '@mony/api-client';
-import type { DadosAtualizacaoPerfil } from '@mony/shared/usuario';
+import type { DadosAtualizacaoPerfil, DadosVerificacaoTelefone } from '@mony/shared/usuario';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useSessao } from '@/stores/sessao';
@@ -22,6 +24,22 @@ export function useAtualizarPerfil() {
     onSuccess: (perfil) => {
       cliente.setQueryData(getPerfilUsuariosQueryKey(), perfil);
       mudarNome(perfil.nome);
+    },
+  });
+}
+
+/** RN-078: o código de 6 dígitos por SMS para o celular do perfil (`POST /me/telefone/codigo`). */
+export function usePedirCodigoTelefone() {
+  return useMutation({ mutationFn: () => pedirCodigoTelefoneUsuarios() });
+}
+
+/** `POST /me/telefone/verificar`: o perfil volta com o celular verificado. */
+export function useVerificarTelefone() {
+  const cliente = useQueryClient();
+  return useMutation({
+    mutationFn: (dados: DadosVerificacaoTelefone) => verificarTelefoneUsuarios(dados),
+    onSuccess: (perfil) => {
+      cliente.setQueryData(getPerfilUsuariosQueryKey(), perfil);
     },
   });
 }
