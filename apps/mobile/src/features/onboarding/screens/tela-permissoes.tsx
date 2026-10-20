@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 
+import { ListaConsentimentos } from '@/features/mais/components/lista-consentimentos';
 import { mensagemDeErro } from '@/lib/formularios';
 import { Botao, BotaoIcone, Tela, Texto } from '@/ui';
 
@@ -11,7 +12,8 @@ import { etapaPendente } from '../lib/etapas';
 
 /**
  * Permissões fora do onboarding (`/mais/permissoes`, doc 04): o mesmo quadro, aberto pelo passo
- * "Liberar os avisos" do checklist ou pela aba Mais. "Pronto" conclui esse passo.
+ * "Liberar os avisos" do checklist ou pela aba Mais. "Pronto" conclui esse passo. Embaixo, as
+ * autorizações dadas à Mony, com [Revogar] (LGPD, T-140e).
  */
 export default function TelaPermissoes() {
   const { t } = useTranslation();
@@ -44,6 +46,7 @@ export default function TelaPermissoes() {
       <ScrollView className="flex-1" contentContainerClassName="gap-4 py-4">
         <Texto cor="suave">{t('onboarding.permissoes.textoConfiguracoes')}</Texto>
         <ListaPermissoes />
+        <ListaConsentimentos />
         {atualizar.isError ? (
           <Texto cor="perigo" accessibilityRole="alert">
             {mensagemDeErro(atualizar.error, t('onboarding.semConexao'))}

@@ -339,7 +339,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - [x] **T-140b** Excluir conta: confirmação com senha ou código, 7 dias de arrependimento, depois cancela a Stripe, revoga conexões, apaga arquivos e apaga ou anonimiza os dados (mantém a `controle_teste`) · RN-161 (PR #115)
   - [x] **T-140c** Retenção de fotos e áudios: limpeza diária apaga o arquivo depois do prazo (padrão 90 dias, no painel) e o lançamento fica · RN-162 (PR #116)
   - [x] **T-140d** Consentimentos no servidor (tabela `consentimentos`) para agenda, apps de compra e ligações: registrados ao ligar o recurso, `GET /consentimentos` e `DELETE /consentimentos/:finalidade`, e revogar desliga o recurso · docs: 05, 11 (PR #137)
-  - [ ] **T-140e** No app: os consentimentos na tela de Permissões, com "Revogar" (dep: T-140d) · docs: 04
+  - [x] **T-140e** No app: os consentimentos na tela de Permissões, com "Revogar" (dep: T-140d) · docs: 04 (PR #140)
   - [ ] **T-140f** Consentimento do Open Finance, com o provedor (dep: T-120, T-140d)
 - [x] **T-141** Admin completo: usuários, assinaturas, métricas, novidades, Mony (prompt e custos), auditoria, filas. Dividida em T-141a a T-141g, uma seção do painel por vez.
   - dep: T-104b, T-104c, T-104d, T-068 · docs: 13

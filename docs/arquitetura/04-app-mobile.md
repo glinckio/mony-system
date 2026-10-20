@@ -160,6 +160,8 @@ Cada módulo é um pacote do workspace (`modules/<nome>`) e entra no app como de
 
 Pedidas uma por vez, com tela explicativa antes do diálogo do sistema (onboarding passo 5): notificações, agenda, detecção de apps de compra, conexão bancária. Recusa nunca bloqueia o app; a tela de Permissões em Configurações mostra o estado e leva às configurações do sistema.
 
+**Suas autorizações** (T-140e, LGPD, doc 11): embaixo da tela de Permissões de Configurações (`/mais/permissoes`, não no onboarding), cada consentimento de `GET /consentimentos` (agenda, apps de compra e ligação; o Open Finance só depois de existir) com "Autorizado em", "Revogado em" ou "Não autorizado". [Revogar] abre uma folha que diz o que desliga e confirma com `DELETE /consentimentos/:finalidade`; depois, o app busca tudo de novo. Ligar outra vez é pelo próprio recurso.
+
 **Como está (T-046, notificações na T-088):** `src/lib/permissoes.ts` lista as quatro permissões e guarda, em `PEDIDOS_DE_PERMISSAO`, quem sabe ver o estado e pedir cada uma. O quadro (`ListaPermissoes`) aparece no onboarding e em `/mais/permissoes`: chave para notificações, agenda e apps de compra, botão "Conectar" para o banco, e a explicação de onde liberar quando a pessoa recusa. Sem o pedido no build, o item mostra "Em breve". Cada módulo nativo entra na sua tarefa: notificações na T-088, agenda na T-085, apps de compra na T-121 e banco na T-120.
 
 ## Design system
