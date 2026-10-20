@@ -50,6 +50,7 @@ function paraLembrete(linha: LembreteGravado, visao: Visao): Lembrete {
 }
 
 const temAlarme = (canais: readonly CanalLembrete[]) => canais.includes('alarme');
+const temLigacao = (canais: readonly CanalLembrete[]) => canais.includes('ligacao');
 
 const naoEncontrado = () =>
   new ErroDominio('NAO_ENCONTRADO', { mensagem: 'Lembrete não encontrado.' });
@@ -99,7 +100,10 @@ export class LembretesService {
     return this.umComVisao(contexto, linha);
   }
 
-  /** RN-075; RN-120: no gratuito, até 5 lembretes ativos. */
+  /**
+   * RN-075; RN-120: no gratuito, até 5 lembretes ativos. RN-078 e RN-121: a ligação só no plano
+   * pago (ou no teste) e com o telefone verificado.
+   */
   async criar(contexto: Contexto, dados: DadosNovoLembrete): Promise<Lembrete> {
     const usuarioId = usuarioDoContexto(contexto);
     const agora = this.clock.agora();
@@ -108,6 +112,7 @@ export class LembretesService {
     if (!agenda.ok) throw repeticaoAcabou();
     this.conferirFuturo(agenda.dataHora, agora);
     const canais = [...new Set(dados.canais)];
+    if (temLigacao(canais)) await this.conferirLigacao(contexto, usuarioId);
     const criado = await this.repositorio.emTransacao(async (tx) => {
       await this.cotas.conferirQuantidade(contexto, 'lembrete_ativo', tx);
       return this.repositorio.criar(tx, {
@@ -135,6 +140,11 @@ export class LembretesService {
     const { donoId: usuarioId } = await this.acesso(contexto, id, 'dono');
     const agora = this.clock.agora();
     const fuso = await this.repositorio.fusoDoUsuario(usuarioId);
+    if (dados.canais !== undefined && temLigacao(dados.canais)) {
+      // Só quando a ligação entra: quem voltou ao gratuito ainda pode tirar os outros canais.
+      const atual = await this.repositorio.buscar(usuarioId, id);
+      if (atual && !temLigacao(atual.canais)) await this.conferirLigacao(contexto, usuarioId);
+    }
     const { antes, depois } = await this.repositorio.emTransacao(async (tx) => {
       const atual = await this.exigir(tx, usuarioId, id);
       const mudaAgenda = dados.dataHora !== undefined || dados.recorrencia !== undefined;
@@ -312,6 +322,14 @@ export class LembretesService {
   }
 
   /** O primeiro aviso não pode ter passado (o minuto de agora ainda vale). */
+  /** RN-121 e RN-078: plano pago (ou teste) e telefone verificado, nesta ordem. */
+  private async conferirLigacao(contexto: Contexto, usuarioId: string): Promise<void> {
+    await this.cotas.exigirPlanoPago(contexto, 'ligacao');
+    if (!(await this.repositorio.telefoneVerificado(usuarioId))) {
+      throw new ErroDominio('TELEFONE_NAO_VERIFICADO');
+    }
+  }
+
   private conferirFuturo(dataHora: Date, agora: Date): void {
     if (dataHora.getTime() < inicioDoMinuto(agora).getTime()) {
       throw new ErroDominio('REQUISICAO_INVALIDA', {

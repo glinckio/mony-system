@@ -29,8 +29,8 @@ export class UsuariosRepository {
   }
 
   /**
-   * Muda só os campos informados. Telefone novo perde a verificação (RN-078: ligação só para
-   * número verificado).
+   * Muda só os campos informados. Telefone novo perde a verificação, e o código de verificação já
+   * enviado deixa de valer (RN-078: ligação só para número verificado).
    */
   async atualizarPerfil(
     usuarioId: string,
@@ -46,7 +46,34 @@ export class UsuariosRepository {
         where: { id: usuarioId },
         data: { ...dados, ...(telefoneMudou ? { telefoneVerificadoEm: null } : {}) },
       });
+      if (telefoneMudou) {
+        await tx.codigoRecuperacao.updateMany({
+          where: { usuarioId, finalidade: 'verificacao_telefone', usado: false },
+          data: { usado: true },
+        });
+      }
     });
+  }
+
+  /** O telefone do perfil e se já está verificado (T-122a). */
+  telefone(usuarioId: string) {
+    return this.prisma.cliente.usuario.findUnique({
+      where: { id: usuarioId },
+      select: { telefone: true, telefoneVerificadoEm: true },
+    });
+  }
+
+  /** RN-078: marca o telefone como verificado, se ainda é o mesmo de quando o código foi pedido. */
+  async marcarTelefoneVerificado(
+    usuarioId: string,
+    telefone: string,
+    agora: Date,
+  ): Promise<boolean> {
+    const { count } = await this.prisma.cliente.usuario.updateMany({
+      where: { id: usuarioId, telefone },
+      data: { telefoneVerificadoEm: agora },
+    });
+    return count > 0;
   }
 
   /**

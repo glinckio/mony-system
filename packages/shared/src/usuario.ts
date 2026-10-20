@@ -156,5 +156,14 @@ export const esquemaExclusaoConta = z.object({
   agendadaPara: z.iso.datetime().nullable(),
 });
 
+/**
+ * `POST /me/telefone/verificar` (RN-078, T-122a): o código de 6 dígitos que foi por SMS para o
+ * telefone do perfil, pedido em `POST /me/telefone/codigo`.
+ */
+export const esquemaVerificacaoTelefone = z.object({
+  codigo: z.string().regex(/^\d{6}$/, 'Código de 6 dígitos'),
+});
+
+export type DadosVerificacaoTelefone = z.infer<typeof esquemaVerificacaoTelefone>;
 export type DadosPedidoExclusaoConta = z.infer<typeof esquemaPedidoExclusaoConta>;
 export type ExclusaoConta = z.infer<typeof esquemaExclusaoConta>;

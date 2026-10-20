@@ -23,6 +23,7 @@ import { ProcessadorAvaliacaoMony } from '../src/modulos/mony/avaliacao/pedidos-
 import { ProcessadorMonyMidia } from '../src/modulos/mony/processador-mony-midia';
 import { ProcessadorNotificacoes } from '../src/modulos/notificacoes/processador-notificacoes';
 import { ProcessadorAgenda } from '../src/modulos/agenda/processador-agenda';
+import { ProcessadorLembretes } from '../src/modulos/lembretes/processador-lembretes';
 import { ProcessadorPrivacidade } from '../src/modulos/lgpd/processador-privacidade';
 import { ProcessadorRelatorios } from '../src/modulos/relatorios/processador-relatorios';
 
@@ -49,7 +50,7 @@ export function parametrosFalsos(config: Configuracao) {
 }
 
 /**
- * Troca filas BullMQ, consumidores (eventos, e-mails, notificações, relatórios, mídia da Mony, webhooks, privacidade e agenda), arquivos (S3), armazenamento de idempotência e contadores de
+ * Troca filas BullMQ, consumidores (eventos, e-mails, notificações, relatórios, mídia da Mony, webhooks, privacidade, agenda e lembretes), arquivos (S3), armazenamento de idempotência e contadores de
  * tentativas por versões em memória, e os parâmetros do painel pelos padrões, para os testes unitários não dependerem de Redis. As filas
  * falsas ficam em `filas`.
  */
@@ -79,6 +80,8 @@ export function semServicosExternos(
     .overrideProvider(ProcessadorPrivacidade)
     .useValue({})
     .overrideProvider(ProcessadorAgenda)
+    .useValue({})
+    .overrideProvider(ProcessadorLembretes)
     .useValue({})
     .overrideProvider(ArmazenamentoArquivos)
     .useValue(new ArmazenamentoMemoria())

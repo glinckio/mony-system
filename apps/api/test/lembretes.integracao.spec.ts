@@ -178,7 +178,7 @@ describe.runIf(ativo)('integração: lembretes', () => {
     expect((await chamar(bia, 'POST', `/lembretes/${unico.id}/concluir`, {})).statusCode).toBe(404);
   });
 
-  it('recusa data passada, repetição fora do subconjunto ou que já acabou, e a ligação', async () => {
+  it('recusa data passada, repetição fora do subconjunto ou que já acabou, e canal que não existe', async () => {
     const ana = await usuarioNovo();
     const passado = await chamar(ana, 'POST', '/lembretes', {
       titulo: 'Ontem',
@@ -195,7 +195,7 @@ describe.runIf(ativo)('integração: lembretes', () => {
     for (const dados of [
       { recorrencia: 'FREQ=HOURLY' },
       { recorrencia: 'FREQ=DAILY;COUNT=3' },
-      { canais: ['ligacao'] },
+      { canais: ['fax'] },
       { canais: [] },
     ]) {
       const resposta = await chamar(ana, 'POST', '/lembretes', {

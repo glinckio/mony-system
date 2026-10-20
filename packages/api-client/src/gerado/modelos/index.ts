@@ -582,6 +582,7 @@ export * from './usuariosAdminDtoItensItem';
 export * from './usuariosAdminDtoItensItemPapel';
 export * from './usuariosAdminDtoItensItemPlano';
 export * from './usuariosAdminDtoItensItemStatus';
+export * from './verificacaoTelefoneDto';
 export * from './versaoMonyAdminDto';
 export * from './versaoMonyAdminDtoAvaliacao';
 export * from './versaoMonyAdminDtoCasosItem';

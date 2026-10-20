@@ -230,7 +230,11 @@ export const TIPOS_CONTROLE_TESTE = ['email', 'google', 'apple', 'aparelho'] as 
 export type TipoControleTeste = (typeof TIPOS_CONTROLE_TESTE)[number];
 
 /** Para que serve o código de 6 dígitos por e-mail (RN-003 e RN-161). */
-export const FINALIDADES_CODIGO = ['recuperacao', 'exclusao_conta'] as const;
+export const FINALIDADES_CODIGO = [
+  'recuperacao',
+  'exclusao_conta',
+  'verificacao_telefone',
+] as const;
 export type FinalidadeCodigo = (typeof FINALIDADES_CODIGO)[number];
 
 // Contexto dos Services (doc 05)
