@@ -1,5 +1,6 @@
 import type { TipoAlerta } from '@mony/shared/enums';
 import {
+  ANTECEDENCIA_PADRAO_COMPROMISSO_MINUTOS,
   type DadosAtualizacaoPreferenciasAlerta,
   type PreferenciasAlerta,
   REGEX_HORA,
@@ -20,7 +21,7 @@ import { cores } from '@/ui/tokens';
 
 /**
  * Os alertas que o app já manda, na ordem da tela; os de recursos que ainda não existem (lembretes,
- * agenda, apps de compra, banco) entram com eles.
+ * apps de compra, banco) entram com eles. O do compromisso entrou com a tela Agenda (T-085c).
  */
 const TIPOS_NA_TELA: readonly TipoAlerta[] = [
   'limite_cartao',
@@ -32,11 +33,14 @@ const TIPOS_NA_TELA: readonly TipoAlerta[] = [
   'gasto_fora_padrao',
   'projecao_mes',
   'resumo_periodo',
+  'compromisso',
   'assinatura',
 ];
 
 /** RN-108: dias de antecedência oferecidos nos avisos de vencimento. */
 const ANTECEDENCIAS = [0, 1, 3, 5, 7] as const;
+/** T-085d: minutos de antecedência do aviso do compromisso (de 0 a 1 dia). */
+const ANTECEDENCIAS_MINUTOS = [0, 10, 30, 60, 120, 1440] as const;
 
 function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
@@ -63,6 +67,10 @@ function FormularioAlertas({ preferencias }: { preferencias: PreferenciasAlerta 
       ),
     ),
   );
+  // O do compromisso, em minutos (T-085d); `null` na API é o padrão de 30.
+  const [minutos, definirMinutos] = useState<number | null>(null);
+  const minutosAntes =
+    doTipo.get('compromisso')?.antecedenciaMinutos ?? ANTECEDENCIA_PADRAO_COMPROMISSO_MINUTOS;
   const [comSilencio, definirComSilencio] = useState(preferencias.silencio !== null);
   const [inicio, definirInicio] = useState(preferencias.silencio?.inicio ?? '22:00');
   const [fim, definirFim] = useState(preferencias.silencio?.fim ?? '07:00');
@@ -82,12 +90,14 @@ function FormularioAlertas({ preferencias }: { preferencias: PreferenciasAlerta 
     const tipos = preferencias.tipos.flatMap(({ tipo, ativo, antecedenciaDias }) => {
       const novoAtivo = ativos[tipo] ?? ativo;
       const novaAntecedencia = antecedencias[tipo] ?? antecedenciaDias;
-      if (novoAtivo === ativo && novaAntecedencia === antecedenciaDias) return [];
+      const mudouMinutos = tipo === 'compromisso' && minutos !== null && minutos !== minutosAntes;
+      if (novoAtivo === ativo && novaAntecedencia === antecedenciaDias && !mudouMinutos) return [];
       return [
         {
           tipo,
           ...(novoAtivo === ativo ? {} : { ativo: novoAtivo }),
           ...(novaAntecedencia === antecedenciaDias ? {} : { antecedenciaDias: novaAntecedencia }),
+          ...(mudouMinutos ? { antecedenciaMinutos: minutos } : {}),
         },
       ];
     });
@@ -209,6 +219,26 @@ function FormularioAlertas({ preferencias }: { preferencias: PreferenciasAlerta 
                         selecionado={antecedencia === dias}
                         aoPressionar={() => {
                           definirAntecedencias((atuais) => ({ ...atuais, [tipo]: dias }));
+                        }}
+                      />
+                    ))}
+                  </View>
+                ) : null}
+                {ativo && tipo === 'compromisso' ? (
+                  <View className="flex-row flex-wrap gap-2">
+                    {ANTECEDENCIAS_MINUTOS.map((opcao) => (
+                      <Chip
+                        key={opcao}
+                        rotulo={
+                          opcao === 0
+                            ? t('notificacoes.alertas.naHora')
+                            : opcao < 60
+                              ? t('notificacoes.alertas.minutos', { count: opcao })
+                              : t('notificacoes.alertas.horas', { count: opcao / 60 })
+                        }
+                        selecionado={(minutos ?? minutosAntes) === opcao}
+                        aoPressionar={() => {
+                          definirMinutos(opcao);
                         }}
                       />
                     ))}

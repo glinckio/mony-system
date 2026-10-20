@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { LINKS_INTERNOS } from '@mony/shared/alertas';
 import {
   TAMANHO_MAXIMO_LOCAL_COMPROMISSO,
   TAMANHO_MAXIMO_TITULO_COMPROMISSO,
@@ -87,6 +88,18 @@ export class CriarCompromissoTool implements Ferramenta<typeof esquema> {
         // Em qual agenda conectada entrou; `null` quando ficou só no Mony.
         agenda: compromisso.agenda?.provedor ?? null,
       },
+      componentes: [
+        {
+          tipo: 'botoes',
+          opcoes: [
+            {
+              id: 'ver-agenda',
+              rotulo: 'Ver agenda',
+              acao: { tipo: 'abrir', link: LINKS_INTERNOS.agenda() },
+            },
+          ],
+        },
+      ],
     };
   }
 }

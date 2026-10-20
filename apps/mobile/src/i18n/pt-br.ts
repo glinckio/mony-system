@@ -1,3 +1,4 @@
+import { textosAgenda } from '@/features/agenda/agenda.strings';
 import { textosAlarmes } from '@/features/alarmes/alarmes.strings';
 import { textosAppsDeCompra } from '@/features/apps-de-compra/apps-de-compra.strings';
 import { textosAtualizacao } from '@/features/atualizacao/atualizacao.strings';
@@ -42,6 +43,7 @@ export const textosPtBr = {
   orcamentos: textosOrcamentos,
   metas: textosMetas,
   lembretes: textosLembretes,
+  agenda: textosAgenda,
   listas: textosListas,
   compartilhamentos: textosCompartilhamentos,
   relatorios: textosRelatorios,

@@ -1451,7 +1451,7 @@ describe.runIf(ativo)('integração: Mony', () => {
     expect(semAjuda).toMatchObject({ erro: false, dados: { topicos: [] } });
   });
 
-  it('RN-079 criar_compromisso vai para a agenda padrão no fuso do usuário e consultar_agenda marca os externos', async () => {
+  it('RN-079 criar_compromisso vai para a agenda padrão no fuso do usuário, com [Ver agenda], e consultar_agenda marca os externos', async () => {
     const usuario = await usuarioNovo();
     // Sem agenda conectada: fica só no Mony.
     modelo.roteirizar(
@@ -1465,7 +1465,11 @@ describe.runIf(ativo)('integração: Mony', () => {
       },
       { texto: 'Marcado!' },
     );
-    await conversar(usuario, 'marca dentista amanhã das 14h às 15h');
+    const { eventos } = await conversar(usuario, 'marca dentista amanhã das 14h às 15h');
+    // T-085c: o [Ver agenda] abre a tela Agenda do app.
+    expect(
+      eventos.flatMap((evento) => botoes(evento)).find(({ id }) => id === 'ver-agenda')?.acao,
+    ).toEqual({ tipo: 'abrir', link: 'mony://agenda' });
     expect(resultadosDaFerramenta(1)).toMatchObject([
       {
         erro: false,

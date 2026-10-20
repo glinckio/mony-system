@@ -8,6 +8,7 @@ export const textosMais = {
     relatorios: 'Relatórios',
     listas: 'Listas',
     lembretes: 'Lembretes',
+    agenda: 'Agenda',
     categorias: 'Categorias',
     contas: 'Contas',
   },

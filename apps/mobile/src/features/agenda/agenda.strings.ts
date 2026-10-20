@@ -1,0 +1,60 @@
+export const textosAgenda = {
+  titulo: 'Agenda',
+  novo: 'Novo compromisso',
+  editar: 'Editar compromisso',
+  diasCurtos: ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'],
+  /** "Sexta, 9 de outubro", para o leitor de tela no dia da semana. */
+  diaRotulo: '{{semana}}, {{dia}} de {{mes}}',
+  semanaAnterior: 'Semana anterior',
+  proximaSemana: 'Próxima semana',
+  filtrosRotulo: 'Mostrar compromissos de',
+  fontes: {
+    google: 'Google',
+    outlook: 'Outlook',
+    aparelho: 'Aparelho',
+    monitorizze: 'Monitorizze',
+  },
+  /** O que começou em outro dia e continua neste. */
+  continua: 'Continua',
+  ate: 'até {{hora}}',
+  pelaMony: 'Marcado pela Mony',
+  vazio: {
+    titulo: 'Nada marcado neste dia',
+    descricao: 'Marque um compromisso aqui ou peça para a Mony: "marca dentista sexta às 10h".',
+  },
+  semConexao: 'Não deu para salvar. Confira a conexão e tente de novo.',
+  formulario: {
+    titulo: 'O que é',
+    tituloExemplo: 'Ex.: Dentista',
+    data: 'Data',
+    dataAjuda: 'DD/MM/AAAA',
+    inicio: 'Começa',
+    fim: 'Termina',
+    horaAjuda: 'HH:MM',
+    fimAjuda: 'Opcional',
+    local: 'Onde',
+    localExemplo: 'Opcional',
+    salvar: 'Salvar',
+    excluir: 'Excluir compromisso',
+    /** Para onde vai o novo (RN-079). */
+    vaiPara: 'Vai para a sua agenda {{agenda}}.',
+    soNoMony: 'Fica só no Monitorizze.',
+    validacao: {
+      titulo: 'Diga o que é.',
+      data: 'Data inválida.',
+      inicio: 'Hora inválida.',
+      fim: 'Hora inválida, ou antes do começo.',
+    },
+  },
+  detalhe: {
+    externo: 'Este compromisso vem da sua agenda {{agenda}}. Para mudar, use o app dela.',
+    quando: '{{data}}, {{hora}}',
+    quandoAte: '{{data}}, {{hora}} até {{fim}}',
+  },
+  excluir: {
+    titulo: 'Excluir compromisso?',
+    texto: 'Ele sai também da agenda conectada.',
+    confirmar: 'Excluir',
+    cancelar: 'Cancelar',
+  },
+};

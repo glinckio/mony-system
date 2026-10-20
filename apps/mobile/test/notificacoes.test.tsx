@@ -40,6 +40,7 @@ const PREFERENCIAS = {
     tipo('gasto_fora_padrao'),
     tipo('resumo_periodo'),
     tipo('lembrete'),
+    tipo('compromisso', { antecedenciaMinutos: null }),
     tipo('assinatura', { desligavel: false }),
   ],
 };
@@ -317,6 +318,27 @@ describe('central de notificações e alertas da Mony (T-087)', () => {
       fireEvent.changeText(screen.getByLabelText('Começa às'), '25');
       expect(screen.getByText('Hora no formato 22:00.')).toBeOnTheScreen();
       expect(screen.getByRole('button', { name: 'Salvar' })).toBeDisabled();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'T-085d o aviso do compromisso: 30 minutos antes por padrão, muda a antecedência e desliga',
+    async () => {
+      const pedidos = api();
+      renderRouter(ROTAS, { initialUrl: '/mais/alertas' });
+
+      const chave = await screen.findByRole('switch', { name: 'Compromissos' }, ESPERA);
+      expect(screen.getByRole('button', { name: '30 min antes' })).toBeSelected();
+      fireEvent.press(screen.getByRole('button', { name: '2 horas antes' }));
+      fireEvent.press(screen.getByRole('button', { name: 'Salvar' }));
+      expect(await screen.findByText('Alertas salvos.', {}, ESPERA)).toBeOnTheScreen();
+      expect(pedidos.find(({ metodo }) => metodo === 'PUT')?.corpo).toEqual({
+        tipos: [{ tipo: 'compromisso', antecedenciaMinutos: 120 }],
+      });
+
+      fireEvent(chave, 'valueChange', false);
+      expect(screen.queryByRole('button', { name: 'Na hora' })).toBeNull();
     },
     TEMPO_LIMITE_MS,
   );
