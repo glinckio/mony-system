@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { FilasModule } from '../../core/filas/filas.module';
 import { VozModule } from '../../integracoes/voz/voz.module';
 import { CompartilhamentosModule } from '../compartilhamentos/compartilhamentos.module';
+import { RegistroConsentimentosModule } from '../consentimentos/registro-consentimentos';
 import { NotificacoesModule } from '../notificacoes/notificacoes.module';
 import { PlanosModule } from '../planos/planos.module';
 import { DisparoLembretes } from './disparo-lembretes';
@@ -19,7 +20,14 @@ import { LigacoesRepository } from './ligacoes.repository';
  * que o worker consome no `ProcessadorLembretes`.
  */
 @Module({
-  imports: [CompartilhamentosModule, NotificacoesModule, PlanosModule, FilasModule, VozModule],
+  imports: [
+    CompartilhamentosModule,
+    NotificacoesModule,
+    PlanosModule,
+    FilasModule,
+    VozModule,
+    RegistroConsentimentosModule,
+  ],
   controllers: [LembretesController],
   providers: [
     LembretesService,

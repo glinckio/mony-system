@@ -21,6 +21,7 @@ import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
 import { ErroDominio } from '../../core/erros/erro-dominio';
 import { ParametrosService } from '../../core/parametros/parametros';
 import { resumir } from '../autenticacao/dominio/sessoes';
+import { RegistroConsentimentos } from '../consentimentos/registro-consentimentos';
 import { MotorAlertas } from '../notificacoes/motor-alertas';
 import { OrcamentosService } from '../orcamentos/orcamentos.service';
 import { CotasService } from '../planos/cotas.service';
@@ -54,6 +55,7 @@ export class AppsCompraService {
     private readonly orcamentos: OrcamentosService,
     private readonly motor: MotorAlertas,
     private readonly parametros: ParametrosService,
+    private readonly consentimentos: RegistroConsentimentos,
     private readonly clock: Clock,
   ) {}
 
@@ -85,13 +87,22 @@ export class AppsCompraService {
     return this.listar(contexto);
   }
 
-  /** Liga o recurso no aparelho desta sessão: o token aparece só nesta resposta. */
+  /**
+   * Liga o recurso no aparelho desta sessão: o token aparece só nesta resposta. Ligar é o
+   * consentimento da finalidade `apps_compra` (doc 11, T-140d).
+   */
   async emitirToken(usuario: UsuarioAutenticado, contexto: Contexto): Promise<TokenEvento> {
     await this.cotas.exigirPlanoPago(contexto, 'apps_compra');
     const dispositivoId = this.aparelho(usuario);
     const token = `${PREFIXO_TOKEN_EVENTO}${randomBytes(32).toString('base64url')}`;
     await this.repositorio.gravarToken(usuario.id, dispositivoId, resumir(token));
+    await this.consentimentos.conceder(usuario.id, 'apps_compra');
     return { token };
+  }
+
+  /** Consentimento revogado (T-140d): nenhum aparelho manda mais aberturas; a lista fica. */
+  async desligarDoUsuario(usuarioId: string): Promise<void> {
+    await this.repositorio.revogarDoUsuario(usuarioId, this.clock.agora());
   }
 
   /** Desliga o recurso no aparelho desta sessão. */

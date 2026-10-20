@@ -8,6 +8,7 @@ export * from './cartoes.js';
 export * from './categorias.js';
 export * from './compartilhamentos.js';
 export * from './config-app.js';
+export * from './consentimentos.js';
 export * from './contas.js';
 export * from './dashboard.js';
 export * from './datas.js';

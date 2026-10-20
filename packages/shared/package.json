@@ -50,6 +50,10 @@
       "types": "./dist/config-app.d.ts",
       "default": "./dist/config-app.js"
     },
+    "./consentimentos": {
+      "types": "./dist/consentimentos.d.ts",
+      "default": "./dist/consentimentos.js"
+    },
     "./dinheiro": {
       "types": "./dist/dinheiro.d.ts",
       "default": "./dist/dinheiro.js"

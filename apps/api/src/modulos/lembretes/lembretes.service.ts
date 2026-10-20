@@ -19,6 +19,7 @@ import {
   CompartilhamentosService,
   type RecursoRecebido,
 } from '../compartilhamentos/compartilhamentos.service';
+import { RegistroConsentimentos } from '../consentimentos/registro-consentimentos';
 import { SincronizacaoAlarmes } from '../notificacoes/sincronizacao-alarmes';
 import { CotasService } from '../planos/cotas.service';
 import { adiarAte, agendar, alarmesDe, concluir, inicioDoMinuto } from './dominio/agenda';
@@ -77,6 +78,7 @@ export class LembretesService {
     private readonly cotas: CotasService,
     private readonly sincronizacao: SincronizacaoAlarmes,
     private readonly compartilhamentos: CompartilhamentosService,
+    private readonly consentimentos: RegistroConsentimentos,
     private readonly clock: Clock,
   ) {}
 
@@ -322,12 +324,24 @@ export class LembretesService {
   }
 
   /** O primeiro aviso não pode ter passado (o minuto de agora ainda vale). */
-  /** RN-121 e RN-078: plano pago (ou teste) e telefone verificado, nesta ordem. */
+  /**
+   * Consentimento da ligação revogado (T-140d): a ligação sai de todos os lembretes do usuário; o
+   * que só tinha ligação passa a ter a notificação, para continuar avisando.
+   */
+  async tirarLigacao(usuarioId: string): Promise<number> {
+    return this.repositorio.tirarLigacao(usuarioId);
+  }
+
+  /**
+   * RN-121 e RN-078: plano pago (ou teste) e telefone verificado, nesta ordem. Pôr a ligação num
+   * lembrete é o consentimento da finalidade `ligacao` (doc 11, T-140d).
+   */
   private async conferirLigacao(contexto: Contexto, usuarioId: string): Promise<void> {
     await this.cotas.exigirPlanoPago(contexto, 'ligacao');
     if (!(await this.repositorio.telefoneVerificado(usuarioId))) {
       throw new ErroDominio('TELEFONE_NAO_VERIFICADO');
     }
+    await this.consentimentos.conceder(usuarioId, 'ligacao');
   }
 
   private conferirFuturo(dataHora: Date, agora: Date): void {

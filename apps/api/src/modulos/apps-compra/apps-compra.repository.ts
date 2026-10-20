@@ -106,6 +106,13 @@ export class AppsCompraRepository {
     });
   }
 
+  async revogarDoUsuario(usuarioId: string, agora: Date): Promise<void> {
+    await this.prisma.cliente.tokenEvento.updateMany({
+      where: { usuarioId, revogadoEm: null },
+      data: { revogadoEm: agora },
+    });
+  }
+
   async revogar(id: string, agora: Date): Promise<void> {
     await this.prisma.cliente.tokenEvento.updateMany({
       where: { id, revogadoEm: null },
