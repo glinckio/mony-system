@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "App Monitorizze (Expo, iOS e Android)",
-  "main": "expo-router/entry",
+  "main": "index.ts",
   "scripts": {
     "start": "expo start --dev-client",
     "android": "expo run:android",
@@ -38,6 +38,7 @@
     "expo-secure-store": "57.0.4",
     "expo-splash-screen": "57.0.10",
     "expo-system-ui": "57.0.4",
+    "expo-task-manager": "57.0.21",
     "expo-updates": "57.0.26",
     "expo-web-browser": "57.0.3",
     "i18next": "26.4.7",

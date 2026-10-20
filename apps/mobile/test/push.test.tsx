@@ -2,12 +2,15 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Alert, Platform } from 'react-native';
 
 import type { ModuloAlarmes } from '@/lib/alarmes';
+import { cofre } from '@/lib/auth/cofre';
 import { acaoDoPush, prepararPush } from '@/lib/push';
 import { relogio } from '@/lib/relogio';
+import { chaveDoToque, esquecerToquesEmMemoria, reservarToque } from '@/lib/toques-push';
 import { useSessao } from '@/stores/sessao';
 
 // O módulo nativo do alarme só existe no Android: nos testes, um falso trocado por teste.
@@ -58,6 +61,9 @@ function api() {
     });
     const json = (dados: unknown, status = 200) =>
       Promise.resolve(new Response(JSON.stringify(dados), { status }));
+    if (rota === '/v1/me/token-segundo-plano') {
+      return json({ token: 'token-de-segundo-plano', expiraEm: '2026-11-14T15:00:00.000Z' });
+    }
     if (rota === '/v1/me/dispositivos' || rota.endsWith('/lida')) {
       return Promise.resolve(new Response(null, { status: 204 }));
     }
@@ -144,12 +150,39 @@ describe('push: o que cada toque faz (T-088)', () => {
       ['lembretes', 'Lembretes'],
       ['novidades', 'Novidades'],
     ]);
+    // T-088b: no Android, [Feito] e [Adiar] não abrem o app (a tarefa de segundo plano age).
     expect(Notifications.setNotificationCategoryAsync).toHaveBeenCalledWith('lembrete', [
-      { identifier: 'feito', buttonTitle: 'Feito' },
-      { identifier: 'adiar', buttonTitle: 'Adiar 10 min' },
+      { identifier: 'feito', buttonTitle: 'Feito', options: { opensAppToForeground: false } },
+      {
+        identifier: 'adiar',
+        buttonTitle: 'Adiar 10 min',
+        options: { opensAppToForeground: false },
+      },
     ]);
     expect(Notifications.setNotificationCategoryAsync).toHaveBeenCalledWith('fatura_atrasada', [
       { identifier: 'paguei', buttonTitle: 'Paguei' },
+    ]);
+  });
+
+  it('no iOS, os botões do lembrete abrem o app (a tarefa de segundo plano não recebe toques)', async () => {
+    const plataforma = Platform.OS;
+    Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true });
+    try {
+      await prepararPush({
+        canais: { alertas: 'Alertas', lembretes: 'Lembretes', novidades: 'Novidades' },
+        feito: 'Feito',
+        adiar: 'Adiar 10 min',
+        paguei: 'Paguei',
+      });
+    } finally {
+      Object.defineProperty(Platform, 'OS', { value: plataforma, configurable: true });
+    }
+    expect(Notifications.setNotificationCategoryAsync).toHaveBeenLastCalledWith('fatura_atrasada', [
+      { identifier: 'paguei', buttonTitle: 'Paguei' },
+    ]);
+    expect(Notifications.setNotificationCategoryAsync).toHaveBeenCalledWith('lembrete', [
+      { identifier: 'feito', buttonTitle: 'Feito' },
+      { identifier: 'adiar', buttonTitle: 'Adiar 10 min' },
     ]);
   });
 });
@@ -157,8 +190,10 @@ describe('push: o que cada toque faz (T-088)', () => {
 describe('push no app (T-088)', () => {
   const fetchOriginal = globalThis.fetch;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.spyOn(relogio, 'agora').mockReturnValue(new Date('2026-10-15T15:00:00.000Z'));
+    esquecerToquesEmMemoria();
+    await AsyncStorage.clear();
     push.reiniciar();
     useSessao.getState().encerrar();
     useSessao.getState().iniciar({ id: 'u1', nome: 'Ana', onboardingConcluido: true }, 'acesso');
@@ -185,6 +220,15 @@ describe('push no app (T-088)', () => {
       push.trocarToken();
       await waitFor(() => {
         expect(doMetodo(pedidos, 'POST', '/v1/me/dispositivos')).toHaveLength(2);
+      }, ESPERA);
+      // T-088b: ao abrir, o token de segundo plano novo, com a sessão do app, vai para o cofre.
+      const [pedidoToken] = doMetodo(pedidos, 'POST', '/v1/me/token-segundo-plano');
+      expect(pedidoToken?.cabecalhos.get('authorization')).toBe('Bearer acesso');
+      await waitFor(async () => {
+        expect(await cofre.lerSegundoPlano()).toEqual({
+          token: 'token-de-segundo-plano',
+          expiraEm: '2026-11-14T15:00:00.000Z',
+        });
       }, ESPERA);
     },
     TEMPO_LIMITE_MS,
@@ -362,6 +406,32 @@ describe('push no app (T-088)', () => {
         expect(sincronizar).toHaveBeenCalledTimes(2);
       }, ESPERA);
       expect(doMetodo(pedidos, 'GET', '/v1/lembretes/alarmes')).toHaveLength(2);
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'T-088b o [Feito] que a tarefa de segundo plano já tratou não é feito de novo quando o app abre',
+    async () => {
+      // A tarefa rodou sem o app (outro processo) e reservou o toque no aparelho.
+      expect(await reservarToque(chaveDoToque('push-tarefa', 'feito'))).toBe(true);
+      esquecerToquesEmMemoria();
+      push.estado.status = 'granted';
+      push.estado.ultima = {
+        actionIdentifier: 'feito',
+        notification: push.notificacao(
+          { linkInterno: `mony://lembretes/${ID('e1')}`, notificacaoId: ID('n4') },
+          'push-tarefa',
+        ),
+      };
+      const pedidos = api();
+      const app = renderRouter(ROTAS, { initialUrl: '/' });
+      await screen.findByRole('header', { name: 'Início' }, ESPERA);
+      await waitFor(() => {
+        expect(doMetodo(pedidos, 'POST', '/v1/me/token-segundo-plano')).toHaveLength(1);
+      }, ESPERA);
+      expect(doMetodo(pedidos, 'POST', `/v1/lembretes/${ID('e1')}/concluir`)).toEqual([]);
+      expect(app.getPathname()).toBe('/');
     },
     TEMPO_LIMITE_MS,
   );

@@ -46,7 +46,7 @@ erDiagram
 | `usuarios` | nome, email (único, minúsculo), telefone, senha_hash, foto_url, papel (`usuario`,`admin`), status (`ativo`,`bloqueado`,`excluido`), onboarding_concluido, ultimo_acesso, exclusao_agendada_para e exclusao_cancelou_assinatura (RN-161, T-140b) | raiz |
 | `logins_sociais` | provedor (`google`,`apple`), id_externo | usuarios. Único (provedor, id_externo) |
 | `dispositivos` | plataforma, token_push, identificador_aparelho, modelo, ultimo_uso | usuarios |
-| `sessoes` | refresh_token_hash, dispositivo_id, expira_em, revogada_em | usuarios, dispositivos |
+| `sessoes` | refresh_token_hash, dispositivo_id, familia_id (T-088b), expira_em, revogada_em | usuarios, dispositivos |
 | `acessos_diarios` | usuario_id, dia (São Paulo); chave nos dois | usuarios. Um dia em que a pessoa abriu o app (login, cadastro ou renovação), para os usuários ativos do painel (T-141f). As métricas do painel leem as *materialized views* `metricas_ativos_dia`, `metricas_lancamentos_dia` e `metricas_alertas_dia` |
 | `codigos_recuperacao` | codigo_hash, expira_em, usado, ip | usuarios |
 | `assinaturas` | plano (`teste`,`gratuito`,`mensal`,`anual`), status, teste_inicio, teste_fim, stripe_customer_id, stripe_subscription_id, inicio, proxima_cobranca, cancelamento_agendado, cancelada_em, pago_ate e pagamento_unico_id (anual pago com Pix, T-105) | usuarios, planos_precos |
