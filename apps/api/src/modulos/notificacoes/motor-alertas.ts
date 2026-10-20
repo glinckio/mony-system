@@ -35,10 +35,16 @@ export interface AlertaCandidato {
   vaiParaChat: boolean;
   /** O texto no chat, quando é mais que o título e o corpo do push (os resumos). */
   textoChat?: string;
+  /**
+   * Só vale na hora (a abertura de um app de compra, T-121a): no horário de silêncio, é
+   * descartado em vez de esperar o fim dele.
+   */
+  soNaHora?: boolean;
 }
 
 /** Por que um candidato não virou notificação. */
-export type MotivoDescarte = 'desligado' | 'repetido' | 'cota_consultoria' | 'link_invalido';
+export type MotivoDescarte =
+  'desligado' | 'repetido' | 'cota_consultoria' | 'link_invalido' | 'silencio';
 
 export interface ResultadoEmissao {
   enviadas: string[];
@@ -61,7 +67,8 @@ interface SituacaoDoUsuario {
  * 1. tipo desligado pelo usuário (RN-100; assinatura não desliga);
  * 2. cota diária de consultoria (RN-103);
  * 3. chave única já usada (RN-102);
- * 4. horário de silêncio (RN-101): o não urgente fica gravado e espera o fim do silêncio.
+ * 4. horário de silêncio (RN-101): o não urgente fica gravado e espera o fim do silêncio; o que
+ *    só vale na hora (`soNaHora`) é descartado antes de ser gravado.
  * O que passa vai para a central e para os canais (`EnvioNotificacoes`); com `vaiParaChat`,
  * também para o chat da Mony (`ChatDosAlertas`).
  */
@@ -103,6 +110,10 @@ export class MotorAlertas {
         }
         if (situacao.desligados.has(candidato.tipo)) {
           descartar('desligado');
+          continue;
+        }
+        if (candidato.soNaHora === true && !candidato.urgente && this.emSilencio(situacao, agora)) {
+          descartar('silencio');
           continue;
         }
         const consultoria = TIPOS_CONSULTORIA.includes(candidato.tipo);

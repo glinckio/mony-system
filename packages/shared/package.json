@@ -22,6 +22,10 @@
       "types": "./dist/alertas.d.ts",
       "default": "./dist/alertas.js"
     },
+    "./apps-compra": {
+      "types": "./dist/apps-compra.d.ts",
+      "default": "./dist/apps-compra.js"
+    },
     "./arquivos": {
       "types": "./dist/arquivos.d.ts",
       "default": "./dist/arquivos.js"

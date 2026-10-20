@@ -6005,6 +6005,145 @@
         ]
       }
     },
+    "/v1/apps-monitorados": {
+      "get": {
+        "operationId": "listarAppsMonitorados",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Os apps da lista e se o recurso está no plano (RN-121).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaAppsMonitoradosDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "apps-compra"
+        ]
+      },
+      "put": {
+        "operationId": "atualizarAppsMonitorados",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtualizacaoAppsMonitoradosDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A lista depois da troca.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListaAppsMonitoradosDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "apps-compra"
+        ]
+      }
+    },
+    "/v1/apps-monitorados/token-evento": {
+      "post": {
+        "operationId": "emitirTokenAppsMonitorados",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Liga o recurso neste aparelho: o token só para mandar as aberturas. Pedir de novo troca o token. No gratuito, RECURSO_EXIGE_PLANO_PAGO.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenEventoDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "apps-compra"
+        ]
+      },
+      "delete": {
+        "operationId": "revogarTokenAppsMonitorados",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Desliga o recurso neste aparelho."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "apps-compra"
+        ]
+      }
+    },
+    "/v1/eventos/app-compra-aberto": {
+      "post": {
+        "operationId": "aberturaEventosApps",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AberturaAppCompraDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Se o alerta saiu (RN-104: um por app no intervalo do painel) ou por que não. Token que não vale, 401; sem plano pago, o token cai e a resposta é RECURSO_EXIGE_PLANO_PAGO.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoAberturaAppDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "apps-compra"
+        ]
+      }
+    },
     "/v1/config-app": {
       "get": {
         "operationId": "obterConfigApp",
@@ -19127,6 +19266,147 @@
             "type": "boolean"
           }
         }
+      },
+      "ListaAppsMonitoradosDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "identificadorApp": {
+                  "type": "string"
+                },
+                "nome": {
+                  "type": "string"
+                },
+                "ativo": {
+                  "type": "boolean"
+                },
+                "ultimoAlerta": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "identificadorApp",
+                "nome",
+                "ativo",
+                "ultimoAlerta"
+              ]
+            }
+          },
+          "disponivel": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "itens",
+          "disponivel"
+        ]
+      },
+      "AtualizacaoAppsMonitoradosDto": {
+        "type": "object",
+        "properties": {
+          "itens": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "identificadorApp": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                },
+                "nome": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                },
+                "ativo": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "identificadorApp",
+                "nome",
+                "ativo"
+              ]
+            }
+          }
+        },
+        "required": [
+          "itens"
+        ]
+      },
+      "TokenEventoDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "AberturaAppCompraDto": {
+        "type": "object",
+        "properties": {
+          "identificadorApp": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "abertoEm": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "identificadorApp",
+          "abertoEm"
+        ]
+      },
+      "ResultadoAberturaAppDto": {
+        "type": "object",
+        "properties": {
+          "alertado": {
+            "type": "boolean"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "nao_monitorado",
+                  "intervalo",
+                  "antigo",
+                  "desligado",
+                  "silencio"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "alertado",
+          "motivo"
+        ]
       },
       "ConfigAppDto": {
         "type": "object",

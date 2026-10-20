@@ -122,6 +122,7 @@ export const TABELAS_EXPORTADAS = {
 /** Tabelas com `usuario_id` que não entram, e por quê. */
 export const TABELAS_FORA_DA_EXPORTACAO = {
   codigos_recuperacao: 'Códigos de uso único da recuperação de senha; só o hash, de vida curta.',
+  tokens_evento: 'Credencial do aparelho para mandar as aberturas dos apps de compra; só o hash.',
   auditoria: 'Registro de segurança das ações dos administradores no painel.',
 } as const;
 

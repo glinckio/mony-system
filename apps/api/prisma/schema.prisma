@@ -460,6 +460,7 @@ model Usuario {
   notificacoes           Notificacao[]
   preferenciasAlerta     PreferenciaAlerta[]
   appsMonitorados        AppMonitorado[]
+  tokensEvento           TokenEvento[]
   conexoesOpenFinance    ConexaoOpenFinance[]
   conversas              Conversa[]
   mensagens              Mensagem[]
@@ -509,8 +510,9 @@ model Dispositivo {
   criadoEm              DateTime              @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm          DateTime              @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
-  usuario Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  sessoes Sessao[]
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  sessoes     Sessao[]
+  tokenEvento TokenEvento?
 
   @@unique([usuarioId, identificadorAparelho])
   @@index([usuarioId])
@@ -1281,6 +1283,25 @@ model AppMonitorado {
 
   @@unique([usuarioId, identificadorApp])
   @@map("apps_monitorados")
+}
+
+/// Token de evento do aparelho (T-121a): só serve para `POST /eventos/app-compra-aberto`, que o
+/// worker nativo chama sem a sessão do app. Um por aparelho; guardado só o SHA-256.
+model TokenEvento {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  usuarioId     String    @map("usuario_id") @db.Uuid
+  dispositivoId String    @unique @map("dispositivo_id") @db.Uuid
+  tokenHash     String    @unique @map("token_hash")
+  ultimoUso     DateTime? @map("ultimo_uso") @db.Timestamptz(6)
+  revogadoEm    DateTime? @map("revogado_em") @db.Timestamptz(6)
+  criadoEm      DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm  DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario     Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  dispositivo Dispositivo @relation(fields: [dispositivoId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("tokens_evento")
 }
 
 // ─── Open Finance (1) ───────────────────────────────────────────────────────────────────────────
