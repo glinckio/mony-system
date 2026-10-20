@@ -110,6 +110,12 @@ export class Configuracao {
     return this.config.get('API_URL_PUBLICA', { infer: true }).replace(/\/+$/, '');
   }
 
+  /** Chave mestra da cifra dos tokens de terceiros (32 bytes), quando configurada. */
+  get chaveMestraCripto(): Buffer | undefined {
+    const valor = this.config.get('CRIPTO_CHAVE_MESTRA', { infer: true });
+    return valor === undefined ? undefined : Buffer.from(valor, 'base64');
+  }
+
   get provedorPush(): Ambiente['PUSH_PROVEDOR'] {
     return this.config.get('PUSH_PROVEDOR', { infer: true });
   }

@@ -151,6 +151,9 @@ export const LINKS_INTERNOS = {
     ocorrencia === undefined
       ? `mony://lembretes/${lembreteId}`
       : `mony://lembretes/${lembreteId}?ocorrencia=${String(ocorrencia.getTime())}`,
+  /** A agenda (T-085a); `conexao` volta do consentimento no provedor. */
+  agenda: (conexao?: string): string =>
+    conexao === undefined ? 'mony://agenda' : `mony://agenda?conexao=${conexao}`,
   /** A lista de compras (T-123b). */
   lista: (listaId: string): string => `mony://listas/${listaId}`,
 } as const;

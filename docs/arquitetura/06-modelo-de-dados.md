@@ -87,7 +87,7 @@ erDiagram
 | Tabela | Campos principais | Relações |
 |---|---|---|
 | `lembretes` | titulo, data_hora (a ocorrência atual), recorrencia (RRULE), canais (`push`,`alarme`,`ligacao`), status, adiado_ate, disparado_em (T-084a: a ocorrência atual já tocou) | usuarios |
-| `agendas_conectadas` | provedor (`google`,`outlook`,`aparelho`), tokens criptografados, agenda_padrao | usuarios |
+| `agendas_conectadas` | provedor (`google`,`outlook`,`aparelho`), tokens criptografados, agenda_padrao (o id da agenda no provedor; só a padrão tem), desconectada_em (o provedor recusou os tokens), sincronizada_em (T-085a) | usuarios. Único (usuario_id, provedor) |
 | `compromissos` | titulo, inicio, fim, local, id_externo, origem | usuarios, agendas_conectadas |
 | `notificacoes` | tipo, titulo, corpo, link_interno, enviada_em, lida_em, chave_unica | usuarios. Único (usuario_id, chave_unica) |
 | `preferencias_alerta` | tipo_alerta, ativo, antecedencia_dias, silencio_inicio, silencio_fim | usuarios |

@@ -131,6 +131,16 @@ export const CATALOGO_ERROS = {
     mensagem: 'Você atingiu o limite de ligações deste mês.',
   },
 
+  // Agenda (RN-079)
+  COMPROMISSO_SO_LEITURA: {
+    status: 409,
+    mensagem: 'Este compromisso veio da sua agenda e só pode ser mudado nela.',
+  },
+  AGENDA_INDISPONIVEL: {
+    status: 503,
+    mensagem: 'Não conseguimos falar com a sua agenda agora. Tente de novo em instantes.',
+  },
+
   // Integrações
   WEBHOOK_ASSINATURA_INVALIDA: {
     status: 400,

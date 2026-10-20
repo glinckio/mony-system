@@ -104,7 +104,7 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 | Sincronização Open Finance | A cada 6 h | Além dos webhooks |
 | Aviso de consentimento | Diária | 7 dias antes de vencer (RN-144) |
 | Disparo de lembretes e ligações (`disparar-lembretes`) | A cada minuto | Lembretes com `data_hora` (ou `adiado_ate`) vencidos e ainda não tocados: push urgente com [Feito] [Adiar], também para quem aceitou o convite do lembrete (T-124c); a repetição passa para a próxima ocorrência. Implementada na T-084a (doc 05, "Lembretes"); as ligações, na T-122 |
-| Sincronização de agendas externas | A cada 15 min | Google e Microsoft (prefira webhooks/delta quando disponíveis) |
+| Sincronização de agendas externas (`sincronizar-agendas`) | A cada 15 min | Um job por agenda conectada na fila `agenda`, que espelha os eventos de 30 dias atrás a 180 à frente. Implementada na T-085a com o provedor falso; Google e Microsoft na T-085b (prefira webhooks/delta quando disponíveis) |
 | Liberação do silêncio (`liberar-silencio`) | A cada 15 min | Envia alertas adiados cujo silêncio terminou; mais de 3 para o mesmo usuário saem num envio agrupado. Implementada na T-080 |
 | Limpeza | Diária 03:00 | Rascunhos, códigos, sessões expiradas; arquivos fora do prazo de retenção (RN-162). Os rascunhos da Mony já saem na `limpar-rascunhos` (T-061, RN-088) |
 | Retenção de arquivos (`limpar-arquivos`) | Diária 03:30 | Apaga do S3 as fotos, documentos e áudios enviados há mais dias que o prazo do painel (padrão 90, RN-162) e tira a linha de `anexos`; o lançamento fica. Implementada na T-140c |
