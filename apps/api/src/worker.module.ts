@@ -16,6 +16,7 @@ import { ProcessadorAgenda } from './modulos/agenda/processador-agenda';
 import { AlertasModule } from './modulos/alertas/alertas.module';
 import { CartoesModule } from './modulos/cartoes/cartoes.module';
 import { LembretesModule } from './modulos/lembretes/lembretes.module';
+import { ProcessadorLembretes } from './modulos/lembretes/processador-lembretes';
 import { ConsultasNfceModule } from './modulos/mony/consultas-nfce.module';
 import {
   ExecutorAvaliacao,
@@ -83,6 +84,7 @@ import { RecorrenciasModule } from './modulos/recorrencias/recorrencias.module';
     ProcessadorRelatorios,
     ProcessadorPrivacidade,
     ProcessadorAgenda,
+    ProcessadorLembretes,
     ProcessadorMonyMidia,
     ProcessadorWebhooks,
     ProcessadorAvaliacaoMony,

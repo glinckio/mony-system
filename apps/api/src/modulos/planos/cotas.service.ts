@@ -102,6 +102,22 @@ export class CotasService {
   }
 
   /**
+   * RN-121: o que o gratuito não tem (a ligação do lembrete, T-122a). O teste e os pagos liberam;
+   * no gratuito, `RECURSO_EXIGE_PLANO_PAGO` com o recurso nos detalhes, para o app mostrar
+   * [Ver planos].
+   */
+  async exigirPlanoPago(contexto: Contexto, recurso: 'ligacao'): Promise<void> {
+    if (await this.temPlanoPago(usuarioDoContexto(contexto))) return;
+    throw new ErroDominio('RECURSO_EXIGE_PLANO_PAGO', { detalhes: { recurso } });
+  }
+
+  /** O plano que vale agora libera os recursos pagos (teste incluído). */
+  async temPlanoPago(usuarioId: string): Promise<boolean> {
+    const { assinatura } = await this.repositorio.situacao(this.repositorio.banco, usuarioId);
+    return !ehLimitado(planoEfetivo(assinatura, this.clock.agora()));
+  }
+
+  /**
    * RN-120: no gratuito, a tela de relatórios mostra só o mês atual. Devolve o período dentro do
    * mês de hoje, ou lança `LIMITE_PLANO_ATINGIDO` se o pedido não tem nenhum dia nele. As consultas
    * da Mony e os resumos das rotinas não são a tela de relatórios e não mudam.

@@ -89,7 +89,8 @@ export function FormularioLembrete({ original }: PropsFormularioLembrete) {
   const [canais, definirCanais] = useState<CanalLembreteDisponivel[]>(
     original === null
       ? ['push']
-      : original.canais.filter((canal): canal is CanalLembreteDisponivel => canal !== 'ligacao'),
+      : // A ligação ainda não tem opção aqui (T-122b), mas fica no lembrete ao salvar.
+        [...original.canais],
   );
   const [tentou, definirTentou] = useState(false);
   const [erroEnvio, definirErroEnvio] = useState<string | null>(null);

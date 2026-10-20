@@ -139,6 +139,12 @@ Avaliação completa na PoC [T-026](../agentes/poc/T-026.md); API na T-066a.
 
 Servidor agenda, o provedor liga para o número verificado e fala o texto do lembrete com voz sintética em pt-BR. Webhook de status grava resultado e custo em `ligacoes`. Limitado por plano e por mês (RN-078).
 
+Como está (T-122a):
+
+- **`VozProvider`** (`integracoes/voz`): `ligar(para, texto)` devolve o id e a situação inicial da ligação; `enviarSms(para, texto)` manda o código de verificação do telefone. Números em E.164. `ErroVoz` diz se a falha é permanente (número recusado) ou dá para repetir.
+- **Só o falso por enquanto** (`VozFake`): guarda o que foi pedido e, fora de produção, escreve no log do worker e da API, inclusive o código do SMS, para testar o app sem provedor. Em produção fica indisponível: a verificação do telefone responde 503 e o lembrete com ligação toca por push.
+- **Falta (T-122c):** escolher o provedor (Twilio ou Zenvia, por exemplo), a conta e a chave, o webhook de status (`ligacoes.status`, `custo_centavos`) e o limite mensal confirmado pelo cliente.
+
 ## Push
 
 Expo Push via `PushProvider` (doc 09, "Envio de push"). Como está (T-081):

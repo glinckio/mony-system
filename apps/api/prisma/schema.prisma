@@ -391,6 +391,7 @@ enum TipoControleTeste {
 enum FinalidadeCodigo {
   recuperacao
   exclusao_conta
+  verificacao_telefone
 
   @@map("finalidade_codigo")
 }
@@ -1596,6 +1597,8 @@ model Ligacao {
   status        String
   provedorId    String?  @unique @map("provedor_id")
   custoCentavos BigInt?  @map("custo_centavos")
+  /// Um aviso do lembrete liga uma vez só, mesmo com novas tentativas do job (T-122a).
+  chaveUnica    String?  @unique @map("chave_unica")
   iniciadaEm    DateTime @map("iniciada_em") @db.Timestamptz(6)
   criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm  DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)

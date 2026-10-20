@@ -31,6 +31,7 @@ import type {
   PerfilDto,
   RegistroDispositivoDto,
   UltimaExportacaoDadosDto,
+  VerificacaoTelefoneDto,
 } from '../modelos';
 
 import { requisicao } from '../../requisicao';
@@ -257,6 +258,180 @@ export const useAtualizarPerfilUsuarios = <TError = unknown, TContext = unknown>
   TContext
 > => {
   return useMutation(getAtualizarPerfilUsuariosMutationOptions(options), queryClient);
+};
+export const getPedirCodigoTelefoneUsuariosUrl = () => {
+  return `/v1/me/telefone/codigo`;
+};
+
+export const pedirCodigoTelefoneUsuarios = async (
+  options?: Parameters<typeof requisicao>[1],
+): Promise<void> => {
+  return requisicao<void>(getPedirCodigoTelefoneUsuariosUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getPedirCodigoTelefoneUsuariosMutationKey = () =>
+  ['pedirCodigoTelefoneUsuarios'] as const;
+
+export const getPedirCodigoTelefoneUsuariosMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof pedirCodigoTelefoneUsuarios>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof pedirCodigoTelefoneUsuarios>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = getPedirCodigoTelefoneUsuariosMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof pedirCodigoTelefoneUsuarios>>,
+    void
+  > = () => {
+    return pedirCodigoTelefoneUsuarios(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PedirCodigoTelefoneUsuariosMutationResult = NonNullable<
+  Awaited<ReturnType<typeof pedirCodigoTelefoneUsuarios>>
+>;
+
+export type PedirCodigoTelefoneUsuariosMutationError = unknown;
+
+export const usePedirCodigoTelefoneUsuarios = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof pedirCodigoTelefoneUsuarios>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof pedirCodigoTelefoneUsuarios>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getPedirCodigoTelefoneUsuariosMutationOptions(options), queryClient);
+};
+export const getVerificarTelefoneUsuariosUrl = () => {
+  return `/v1/me/telefone/verificar`;
+};
+
+export const verificarTelefoneUsuarios = async (
+  verificacaoTelefoneDto: VerificacaoTelefoneDto,
+  options?: Parameters<typeof requisicao>[1],
+): Promise<PerfilDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return requisicao<PerfilDto>(getVerificarTelefoneUsuariosUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(verificacaoTelefoneDto),
+  });
+};
+
+export const getVerificarTelefoneUsuariosMutationKey = () => ['verificarTelefoneUsuarios'] as const;
+
+export const getVerificarTelefoneUsuariosMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof verificarTelefoneUsuarios>>,
+    TError,
+    VerificarTelefoneUsuariosMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof requisicao>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof verificarTelefoneUsuarios>>,
+  TError,
+  VerificarTelefoneUsuariosMutationVariables,
+  TContext
+> => {
+  const mutationKey = getVerificarTelefoneUsuariosMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof verificarTelefoneUsuarios>>,
+    VerificarTelefoneUsuariosMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return verificarTelefoneUsuarios(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type VerificarTelefoneUsuariosMutationResult = NonNullable<
+  Awaited<ReturnType<typeof verificarTelefoneUsuarios>>
+>;
+export type VerificarTelefoneUsuariosMutationBody = VerificacaoTelefoneDto;
+export type VerificarTelefoneUsuariosMutationError = unknown;
+export type VerificarTelefoneUsuariosMutationVariables = { data: VerificacaoTelefoneDto };
+
+export const useVerificarTelefoneUsuarios = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof verificarTelefoneUsuarios>>,
+      TError,
+      VerificarTelefoneUsuariosMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof requisicao>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof verificarTelefoneUsuarios>>,
+  TError,
+  VerificarTelefoneUsuariosMutationVariables,
+  TContext
+> => {
+  return useMutation(getVerificarTelefoneUsuariosMutationOptions(options), queryClient);
 };
 export const getRegistrarDispositivoUsuariosUrl = () => {
   return `/v1/me/dispositivos`;

@@ -234,7 +234,8 @@ describe('esquemas dos lembretes', () => {
     expect(esquemaNovoLembrete.safeParse({ ...dados, canais: ['push', 'push'] }).success).toBe(
       false,
     );
-    expect(esquemaNovoLembrete.safeParse({ ...dados, canais: ['ligacao'] }).success).toBe(false);
+    expect(esquemaNovoLembrete.safeParse({ ...dados, canais: ['ligacao'] }).success).toBe(true);
+    expect(esquemaNovoLembrete.safeParse({ ...dados, canais: ['fax'] }).success).toBe(false);
     expect(
       esquemaNovoLembrete.safeParse({ ...dados, dataHora: '2026-10-15T08:00:00-03:00' }).success,
     ).toBe(true);

@@ -162,6 +162,8 @@ Implementado na T-033.
 |---|---|---|
 | `GET /me` | — | Perfil: nome, e-mail, telefone (e se está verificado), foto, fuso, `onboardingConcluido`, `temSenha`, `loginsSociais` |
 | `PATCH /me` | `nome`, `telefone`, `fusoHorario` (só os que mudam) | Perfil. Telefone novo perde a verificação (RN-078) |
+| `POST /me/telefone/codigo` | — | 204. Código de 6 dígitos por SMS para o telefone do perfil, com a validade e as tentativas do RN-003 (T-122a). Já verificado: não manda. Sem telefone, 400; provedor de voz fora do ar, 503 |
+| `POST /me/telefone/verificar` | `codigo` | Perfil com `telefoneVerificado: true` (RN-078). Errado, `CODIGO_INVALIDO`; vencido ou pedido antes de trocar o telefone, `CODIGO_EXPIRADO` |
 | `POST /me/dispositivos` | `tokenPush` (ou `null`), `modelo` | 204. Grava no aparelho da sessão |
 | `GET /me/onboarding` | — | `concluido`, `etapas` (pendente, concluída ou dispensada), `checklistVisivel` (RN-024), `dicasVistas` |
 | `PATCH /me/onboarding` | `concluido`, `etapas`, `dicasVistas` | O progresso atualizado |
@@ -416,7 +418,7 @@ Implementado na T-042 (RN-050 a RN-055).
 
 ## Lembretes
 
-Implementado na T-084a (RN-075 a RN-077), em `modulos/lembretes`; a regra da repetição fica em `@mony/shared/lembretes`, e as telas chegam com a T-084b. A ligação (RN-078) é a T-122: até lá, os canais aceitos são `push` e `alarme`.
+Implementado na T-084a (RN-075 a RN-077), em `modulos/lembretes`; a regra da repetição fica em `@mony/shared/lembretes`, e as telas chegam com a T-084b. Os canais são `push`, `alarme` e `ligacao`. A ligação (RN-078, T-122a) só entra no lembrete com o plano pago ou o teste (senão 403 `RECURSO_EXIGE_PLANO_PAGO`, `detalhes.recurso: 'ligacao'`, RN-121) e com o telefone verificado (senão 409 `TELEFONE_NAO_VERIFICADO`); a conferência é feita quando a ligação entra, então quem voltou ao gratuito ainda muda os outros canais. Na hora, a rotina põe um job `ligar-lembrete` por aviso na fila `lembretes` (doc 09, "Lembretes").
 
 | Rota | O que faz |
 |---|---|

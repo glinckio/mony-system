@@ -34,6 +34,15 @@ const MAXIMO_CONCLUIDOS = 100;
 export class LembretesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** RN-078: a ligação só vai para telefone verificado. */
+  async telefoneVerificado(usuarioId: string): Promise<boolean> {
+    const usuario = await this.prisma.cliente.usuario.findUniqueOrThrow({
+      where: { id: usuarioId },
+      select: { telefone: true, telefoneVerificadoEm: true },
+    });
+    return usuario.telefone !== null && usuario.telefoneVerificadoEm !== null;
+  }
+
   async fusoDoUsuario(usuarioId: string): Promise<string> {
     const usuario = await this.prisma.cliente.usuario.findUniqueOrThrow({
       where: { id: usuarioId },

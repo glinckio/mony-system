@@ -2551,6 +2551,61 @@
         ]
       }
     },
+    "/v1/me/telefone/codigo": {
+      "post": {
+        "operationId": "pedirCodigoTelefoneUsuarios",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Código enviado por SMS para o telefone do perfil."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "usuario"
+        ]
+      }
+    },
+    "/v1/me/telefone/verificar": {
+      "post": {
+        "operationId": "verificarTelefoneUsuarios",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificacaoTelefoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil com o telefone verificado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "usuario"
+        ]
+      }
+    },
     "/v1/me/dispositivos": {
       "post": {
         "operationId": "registrarDispositivoUsuarios",
@@ -12382,6 +12437,18 @@
           }
         }
       },
+      "VerificacaoTelefoneDto": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "pattern": "^\\d{6}$"
+          }
+        },
+        "required": [
+          "codigo"
+        ]
+      },
       "RegistroDispositivoDto": {
         "type": "object",
         "properties": {
@@ -17300,13 +17367,14 @@
           },
           "canais": {
             "minItems": 1,
-            "maxItems": 2,
+            "maxItems": 3,
             "type": "array",
             "items": {
               "type": "string",
               "enum": [
                 "push",
-                "alarme"
+                "alarme",
+                "ligacao"
               ]
             }
           }
@@ -17342,13 +17410,14 @@
           },
           "canais": {
             "minItems": 1,
-            "maxItems": 2,
+            "maxItems": 3,
             "type": "array",
             "items": {
               "type": "string",
               "enum": [
                 "push",
-                "alarme"
+                "alarme",
+                "ligacao"
               ]
             }
           }

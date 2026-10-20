@@ -18,7 +18,7 @@ export interface AtualizacaoLembreteDto {
   recorrencia?: string | null;
   /**
    * @minItems 1
-   * @maxItems 2
+   * @maxItems 3
    */
   canais?: AtualizacaoLembreteDtoCanaisItem[];
 }

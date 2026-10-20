@@ -6,6 +6,7 @@ import { CompartilhamentosService } from '../compartilhamentos/compartilhamentos
 import { type AlertaCandidato, MotorAlertas } from '../notificacoes/motor-alertas';
 import { corpoDoAviso, disparar, inicioDoMinuto, precisaDePush } from './dominio/agenda';
 import { LembretesRepository } from './lembretes.repository';
+import { type DadosJobLigarLembrete, LigacoesLembrete } from './ligacoes-lembrete';
 
 /** Lembretes tocados por volta da rotina; o que sobrar fica para o minuto seguinte. */
 const LOTE = 500;
@@ -15,8 +16,10 @@ const LOTE = 500;
  * é urgente e ignora o horário de silêncio (RN-077), com [Feito] e [Adiar] (categoria `lembrete`) e
  * a ocorrência no link. Quem aceitou o convite do lembrete (RN-074, T-124c) recebe o mesmo push,
  * com a hora no fuso dele e o nome do dono, mesmo que o dono só tenha o alarme (o alarme é do
- * aparelho do dono). Depois do aviso, a repetição passa para a próxima ocorrência. Se a rotina
- * falhar no meio, a volta seguinte repete: a chave única do aviso segura a notificação repetida.
+ * aparelho do dono). Com o canal ligação (RN-078, T-122a), o aviso também vira um job de ligação
+ * para o dono na fila `lembretes`. Depois do aviso, a repetição passa para a próxima ocorrência. Se
+ * a rotina falhar no meio, a volta seguinte repete: a chave única do aviso segura a notificação e
+ * a ligação repetidas.
  */
 @Injectable()
 export class DisparoLembretes {
@@ -26,6 +29,7 @@ export class DisparoLembretes {
     private readonly repositorio: LembretesRepository,
     private readonly motor: MotorAlertas,
     private readonly compartilhamentos: CompartilhamentosService,
+    private readonly ligacoes: LigacoesLembrete,
   ) {}
 
   @Rotina({ nome: 'disparar-lembretes', padrao: '* * * * *' })
@@ -45,11 +49,24 @@ export class DisparoLembretes {
       lembrete,
       disparo: disparar(lembrete, agora, lembrete.fuso),
     }));
+    const ligacoes: DadosJobLigarLembrete[] = [];
     const candidatos: AlertaCandidato[] = disparos.flatMap(({ lembrete, disparo }) => {
+      const comPush = precisaDePush(lembrete.canais, comIphone.has(lembrete.usuarioId));
+      if (lembrete.canais.includes('ligacao')) {
+        for (const aviso of disparo.avisos) {
+          ligacoes.push({
+            usuarioId: lembrete.usuarioId,
+            lembreteId: lembrete.id,
+            chaveUnica: aviso.chaveUnica,
+            titulo: lembrete.titulo,
+            corpo: corpoDoAviso(lembrete.dataHora, aviso.adiado, lembrete.fuso),
+            linkInterno: LINKS_INTERNOS.lembrete(lembrete.id, aviso.ocorrencia),
+            comPush,
+          });
+        }
+      }
       const destinos = [
-        ...(precisaDePush(lembrete.canais, comIphone.has(lembrete.usuarioId))
-          ? [{ usuarioId: lembrete.usuarioId, fuso: lembrete.fuso, de: '' }]
-          : []),
+        ...(comPush ? [{ usuarioId: lembrete.usuarioId, fuso: lembrete.fuso, de: '' }] : []),
         ...(convidados.get(lembrete.id) ?? []).map(({ usuarioId, fuso, donoNome }) => ({
           usuarioId,
           fuso,
@@ -70,6 +87,7 @@ export class DisparoLembretes {
       );
     });
     if (candidatos.length > 0) await this.motor.emitir(candidatos, agora);
+    if (ligacoes.length > 0) await this.ligacoes.pedir(ligacoes);
     let tocados = 0;
     for (const { lembrete, disparo } of disparos) {
       if (await this.repositorio.registrarDisparo(lembrete, disparo.mudancas)) {

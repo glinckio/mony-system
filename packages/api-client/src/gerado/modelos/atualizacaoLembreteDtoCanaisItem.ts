@@ -12,4 +12,5 @@ export type AtualizacaoLembreteDtoCanaisItem =
 export const AtualizacaoLembreteDtoCanaisItem = {
   push: 'push',
   alarme: 'alarme',
+  ligacao: 'ligacao',
 } as const;

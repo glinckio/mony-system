@@ -22,8 +22,11 @@ import { CANAIS_LEMBRETE, STATUS_LEMBRETE } from './enums.js';
 import { diaDaSemana, somarDias } from './recorrencias.js';
 
 export const TAMANHO_MAXIMO_TITULO_LEMBRETE = 120;
-/** Canais que a API aceita hoje; a ligação (RN-078) entra com a T-122. */
-export const CANAIS_LEMBRETE_DISPONIVEIS = ['push', 'alarme'] as const;
+/**
+ * Canais que a API aceita. A ligação (RN-078, T-122a) só no plano pago ou no teste e com o
+ * telefone verificado: fora disso, `RECURSO_EXIGE_PLANO_PAGO` ou `TELEFONE_NAO_VERIFICADO`.
+ */
+export const CANAIS_LEMBRETE_DISPONIVEIS = ['push', 'alarme', 'ligacao'] as const;
 export type CanalLembreteDisponivel = (typeof CANAIS_LEMBRETE_DISPONIVEIS)[number];
 
 /** RN-076: adiar por 10 minutos (o padrão), 1 hora ou para amanhã, no mesmo horário. */
