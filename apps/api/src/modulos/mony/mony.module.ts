@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { IaModule } from '../../integracoes/ia/ia.module';
+import { AgendaModule } from '../agenda/agenda.module';
 import { AjudaModule } from '../ajuda/ajuda.module';
 import { ArquivosModule } from '../arquivos/arquivos.module';
 import { CartoesModule } from '../cartoes/cartoes.module';
@@ -21,12 +22,14 @@ import { ContextoMonyService } from './contexto.service';
 import { DocumentosMony } from './documentos.service';
 import { AjudaAppTool } from './ferramentas/ajuda-app.tool';
 import { AtualizarMetaTool } from './ferramentas/atualizar-meta.tool';
+import { ConsultarAgendaTool } from './ferramentas/consultar-agenda.tool';
 import { ConsultarCartaoTool } from './ferramentas/consultar-cartao.tool';
 import { ConsultarLembretesTool } from './ferramentas/consultar-lembretes.tool';
 import { ConsultarMetasTool } from './ferramentas/consultar-metas.tool';
 import { ConsultarOrcamentosTool } from './ferramentas/consultar-orcamentos.tool';
 import { ConsultarTransacoesTool } from './ferramentas/consultar-transacoes.tool';
 import { CriarCategoriaTool } from './ferramentas/criar-categoria.tool';
+import { CriarCompromissoTool } from './ferramentas/criar-compromisso.tool';
 import { CriarLembreteTool } from './ferramentas/criar-lembrete.tool';
 import { CriarParcelamentoTool } from './ferramentas/criar-parcelamento.tool';
 import { CriarTransacaoTool } from './ferramentas/criar-transacao.tool';
@@ -72,6 +75,8 @@ const FERRAMENTAS = [
   AtualizarMetaTool,
   CriarLembreteTool,
   ConsultarLembretesTool,
+  CriarCompromissoTool,
+  ConsultarAgendaTool,
   GerenciarListaComprasTool,
   AjudaAppTool,
 ];
@@ -96,6 +101,7 @@ const FERRAMENTAS = [
     TransacoesModule,
     UsuariosModule,
     LembretesModule,
+    AgendaModule,
     ListasModule,
     RascunhosModule,
     ConsultasNfceModule,
