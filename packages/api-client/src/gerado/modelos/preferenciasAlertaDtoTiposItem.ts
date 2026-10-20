@@ -11,5 +11,6 @@ export type PreferenciasAlertaDtoTiposItem = {
   tipo: PreferenciasAlertaDtoTiposItemTipo;
   ativo: boolean;
   antecedenciaDias: number | null;
+  antecedenciaMinutos: number | null;
   desligavel: boolean;
 };

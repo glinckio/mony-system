@@ -231,9 +231,9 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
     - dep: T-084a · docs: 05, 06, 10, 11 · RN-079, RN-161
   - [ ] **T-085b** 👤 Provedores de verdade: Google Calendar e Microsoft Graph, clientes OAuth do cliente, chave mestra na KMS e verificação do app no Google
     - dep: T-085a · requer as contas do cliente
-  - [ ] **T-085c** Tela Agenda no app (calendário do design) e agenda do aparelho (`expo-calendar`); com ela, o [Ver agenda] na resposta do `criar_compromisso` da Mony
+  - [ ] **T-085c** Tela Agenda no app (calendário do design) e agenda do aparelho (`expo-calendar`); com ela, o [Ver agenda] na resposta do `criar_compromisso` da Mony; e, em Alertas da Mony, a chave e a antecedência do aviso do compromisso (`antecedenciaMinutos`, T-085d)
     - dep: T-085a · docs: 04 · testar em aparelho
-  - [ ] **T-085d** Aviso do compromisso com antecedência (tipo `compromisso` do doc 09, `compromisso:<id>`): a antecedência nas preferências e a rotina que avisa
+  - [x] **T-085d** Aviso do compromisso com antecedência (tipo `compromisso` do doc 09, `compromisso:<id>:<início>`): a antecedência nas preferências e a rotina que avisa (PR #138)
     - dep: T-085a, T-080 · docs: 09
 - [x] **T-086a** Ferramentas da Mony: `criar_lembrete`, `consultar_lembretes` e `ajuda_app` (base de ajuda versionada) (PR #79)
   - dep: T-084a, T-062b

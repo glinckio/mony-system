@@ -321,8 +321,8 @@ Implementado na T-080 (RN-100 a RN-105; motor no doc 09), na T-081 (push) e na T
 | `GET /notificacoes?tipo=&naoLidas=&cursor=&limite=` | Central, da mais nova para a mais antiga → `{ itens, proximoCursor, naoLidas }` |
 | `POST /notificacoes/:id/lida` | Marca como lida (de novo não muda a hora) |
 | `POST /notificacoes/lidas` | Marca todas → `{ afetadas }` |
-| `GET /preferencias-alerta` | `{ silencio, tipos }`: cada tipo com `ativo`, `antecedenciaDias` e `desligavel` |
-| `PUT /preferencias-alerta` | Só o que veio: `tipos` (ligar, desligar, antecedência) e `silencio` (`{ inicio, fim }` em `HH:MM` local, ou `null`) |
+| `GET /preferencias-alerta` | `{ silencio, tipos }`: cada tipo com `ativo`, `antecedenciaDias`, `antecedenciaMinutos` (só no `compromisso`, T-085d; `null` é o padrão de 30) e `desligavel` |
+| `PUT /preferencias-alerta` | Só o que veio: `tipos` (ligar, desligar, antecedência em dias de 0 a 30, ou em minutos de 0 a 1440 no `compromisso`) e `silencio` (`{ inicio, fim }` em `HH:MM` local, ou `null`) |
 
 - O `GET /dashboard` traz `notificacoesNaoLidas`.
 - **`MotorAlertas.emitir(candidatos, agora)`** é a porta dos avaliadores. Cada candidato traz `tipo`, `chaveUnica`, `urgente`, `titulo`, `corpo`, `linkInterno` (`mony://…`) e `vaiParaChat`.
