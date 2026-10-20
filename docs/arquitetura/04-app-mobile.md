@@ -316,15 +316,16 @@ Telas em `src/features/lembretes`, no design da página 6, sobre as rotas da T-0
 Telas em `src/features/agenda`, no design da página 7, sobre as rotas da T-085a (doc 05, "Agenda"; RN-079):
 
 - **Agenda** (`/agenda`, pela grade da aba Mais e pelo link `mony://agenda`):
-  - **Topo:** "Agenda", o mês ("Outubro 2026"), semana anterior e próxima, e o "+".
+  - **Topo:** "Agenda", o mês ("Outubro 2026"), semana anterior e próxima, o calendário (Suas agendas) e o "+".
   - **Semana:** de segunda a domingo (SEG 12 … DOM 18), o dia escolhido claro e hoje em azul. Abre no dia de hoje, no fuso do usuário. Cada semana é um `GET /agenda` (da meia-noite da segunda à da segunda seguinte).
   - **Filtros:** um chip por agenda (Google, Outlook, Aparelho, as conectadas ou com compromissos na semana) e Monitorizze (os que ficam só no app). Tocar esconde ou mostra; só aparecem com mais de uma agenda.
   - **O dia:** a hora, o ponto da agenda e o título; embaixo, "até 09:00" (quando termina no mesmo dia), "Marcado pela Mony", o local e a agenda. O que começou em outro dia e continua aparece como "Continua". Sem nada: "Nada marcado neste dia", com [Novo compromisso].
-  - **Fora:** os lembretes e as faturas do design ficam nas telas deles; conectar o Google e o Outlook na tela é a T-085e; a agenda do aparelho, a T-085f.
+  - **Fora:** os lembretes e as faturas do design ficam nas telas deles; a agenda do aparelho é a T-085f.
 - **Novo** (`/agenda/novo?dia=`, pelo "+", no dia escolhido) e **editar** (`/agenda/<id>`, os do app e da Mony):
   - **Campos:** o que é, a data, quando começa e termina (o fim é opcional e no mesmo dia; depois do começo) e onde. O novo sugere a próxima hora cheia e diz para onde vai ("Vai para a sua agenda Google." ou "Fica só no Monitorizze.", RN-079).
   - **Envio:** `POST /compromissos` com a `Idempotency-Key` do formulário; a edição manda só o que mudou (o fim que passa do dia, vindo da Mony, fica se o horário não muda). Excluir confirma numa folha ("Ele sai também da agenda conectada.").
 - **O de fora** (`/agenda/<id>`, Google e Outlook): só mostra quando e onde, e "Para mudar, use o app dela." (RN-079).
+- **Suas agendas** (folha da Agenda, T-085e): o Google e o Outlook. Sem conexão, [Conectar Google]: `POST /agendas/conectar` e o consentimento no navegador do app (`openAuthSessionAsync`, volta em `mony://agenda?conexao=sucesso|cancelado|erro`; fechar sem voltar é cancelado). A tela diz como foi ("Agenda conectada. Os compromissos chegam em instantes."), também quando a volta chega pelo link. Conectada: "Sincronizada em 15/out, 11:45", o chip Padrão ou [Usar como padrão] (`PUT /agendas/padrao`) e [Desconectar], que confirma ("Os compromissos de lá saem do Monitorizze. Os que você marcou no app ou pela Mony ficam, só aqui."). A recusada no provedor mostra o aviso e [Reconectar] (conectar de novo). "Só no Monitorizze" é a padrão `null` (RN-079).
 
 ## Listas de compras (T-123b)
 
