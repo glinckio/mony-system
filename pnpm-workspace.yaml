@@ -34,6 +34,15 @@ auditConfig:
     # braces ≤ 3.0.3, no micromatch do Metro: estouro de pilha com padrão de chaves muito aninhado.
     # Os padrões vêm da configuração do projeto, não de quem usa o app.
     - GHSA-vfj7-8cjw-p6xm
+    # Publicadas em 29/10/2026, com correção que não serve aqui (T-HOTFIX de 2026-10-29):
+    # zod < 4.6.6, no zod 3 da CLI do Expo (`@expo/cli` pede `^3.25.76`, e o zod 3 não terá
+    # correção): esgota memória ao validar coleções enormes. Só valida a configuração do projeto.
+    - GHSA-mrhx-c7xc-m3w5
+    # decode-uri-component ≤ 0.5.0, no query-string 7 do expo-router: decodificar um link com muitos
+    # `%` seguidos é quadrático. O 0.5.1 corrige, mas é só ESM e quebra o `require` do query-string 7.
+    # No pior caso, um link forjado aberto no próprio aparelho trava o app daquela pessoa. Tirar
+    # quando o expo-router subir o query-string.
+    - GHSA-qr28-fpjm-wq7f
 allowBuilds:
   '@prisma/engines': false
   '@scarf/scarf': false
