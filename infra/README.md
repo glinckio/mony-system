@@ -4,28 +4,33 @@ AWS em `sa-east-1` (São Paulo), como descrito em [docs/arquitetura/12](../docs/
 
 ```
 infra/
-├─ bootstrap/             # Uma vez por conta: bucket do estado do Terraform e provedor OIDC do GitHub
-├─ modulos/ambiente/      # Um ambiente completo: rede, RDS, Valkey, S3, segredos, ECR, ALB, ECS, admin, domínio, papel de deploy
-│  └─ tests/              # terraform test com a AWS simulada
-└─ ambientes/staging/     # Staging: chama o módulo com tamanhos mínimos
+├─ bootstrap/                # Uma vez por conta: bucket do estado do Terraform e provedor OIDC do GitHub
+├─ modulos/servidor-unico/   # Staging (T-156): um EC2 com a API, o worker, o Postgres e o Valkey, e o CloudFront na frente
+│  └─ tests/                 # terraform test com a AWS simulada
+├─ modulos/ambiente/         # Produção (T-145): rede, RDS, Valkey, S3, segredos, ECR, ALB, ECS, admin, domínio
+│  └─ tests/
+├─ servidor/atualizar.sh     # O que o deploy de staging roda no servidor (pelo SSM)
+└─ ambientes/staging/        # Staging: chama o módulo servidor-unico
 ```
 
-O que o ambiente cria:
+## Staging: um servidor só
+
+Para gastar o mínimo enquanto o uso é pequeno, o staging roda num servidor só (ADR-010, doc 12): **~US$ 27 por mês** em São Paulo. O que o módulo `servidor-unico` cria:
 
 | Peça | Recurso |
 |---|---|
-| Rede | VPC com sub-redes públicas (ALB, NAT) e privadas (containers, banco, cache) em 2 zonas; endpoint do S3 |
-| API e worker | ECS Fargate, serviços `api` (atrás do ALB, escala pela CPU) e `worker`, mesma imagem |
-| Banco | RDS PostgreSQL 18, criptografado, backup com PITR, TLS obrigatório |
-| Filas e cache | ElastiCache Valkey 8 (compatível com Redis), TLS, `noeviction` |
+| Rede | VPC com uma sub-rede pública. Sem NAT e sem ALB |
+| Servidor | EC2 `t4g.small` (ARM), Amazon Linux 2023, disco gp3 de 20 GB cifrado, Elastic IP. A porta 80 só aceita o CloudFront; sem SSH (acesso pelo Session Manager) |
+| Containers | `api`, `worker`, `postgres` (18) e `valkey` (8), na rede `mony` do Docker. Dados em `/var/lib/mony` |
+| Endereço | CloudFront com o HTTPS dele (`https://<id>.cloudfront.net`): o painel admin na raiz e a API em `/v1/*` |
+| Backup | Snapshot diário do disco às 03:00 de Brasília, 7 guardados |
 | Arquivos | S3 privado, criptografado, só TLS; `exportacoes/` expira em 7 dias |
-| Segredos | Secrets Manager: `mony/<ambiente>/infra` (`DATABASE_URL`, escrita pelo Terraform) e `mony/<ambiente>/app` (chaves da aplicação, preenchidas à mão) |
-| Imagem | ECR `mony-<ambiente>-api`, com análise de vulnerabilidades |
-| Admin | Bucket privado + CloudFront. O CloudFront também repassa `/v1/*` para o ALB: o painel chama a API no próprio domínio, sem CORS |
-| Domínio (com `dominio`) | Zona no Route 53, certificados do ACM validados por DNS, `api.<dominio>` (ALB em HTTPS) e `admin.<dominio>` (CloudFront) |
-| Deploy | Papel que o GitHub Actions assume por OIDC, só pelo job do ambiente (`environment: staging`): API (ECR e ECS) e admin (bucket e invalidação do CloudFront) |
+| Configuração | Parameter Store: `/mony/staging/config` (Terraform) e `/mony/staging/app` (chaves da aplicação, cifrado, preenchido à mão) |
+| Imagem | ECR `mony-staging-api` (arm64), as 10 mais recentes |
+| Alarmes | Falha de sistema do EC2 (recupera sozinho), falha da instância (reinicia), rotina `monitorar` parada, alerta técnico sem e-mail |
+| Deploy | Papel que o GitHub Actions assume por OIDC, só pelo job do ambiente (`environment: staging`): ECR, Run Command no servidor, bucket e invalidação do admin |
 
-A senha do banco é gerada no `apply` e vai direto para o RDS e para o Secrets Manager: ela não fica no estado do Terraform (argumentos *write-only*). Para trocar a senha, aumente `versao_senha_banco` no módulo.
+A senha do Postgres é gerada no próprio servidor no primeiro deploy (`/var/lib/mony/senha-banco`) e não sai dele: o banco não abre porta, só a rede do Docker o alcança.
 
 ## Pré-requisitos
 
@@ -53,7 +58,7 @@ O estado do bootstrap fica em `infra/bootstrap/terraform.tfstate`, fora do Git. 
 cd infra/ambientes/staging
 terraform init -backend-config="bucket=<bucket_estado do passo 1>"
 terraform plan        # confira o que será criado
-terraform apply       # 15 a 25 minutos (RDS e ElastiCache demoram)
+terraform apply       # uns 5 minutos (o CloudFront é o que mais demora)
 ```
 
 Commite os arquivos `.terraform.lock.hcl` que o `init` criar em `infra/bootstrap` e `infra/ambientes/staging`: eles travam as versões dos providers.
@@ -66,11 +71,11 @@ Na raiz do repositório:
 terraform -chdir=infra/ambientes/staging output -raw comandos_github | sh
 ```
 
-Isso grava as variáveis `STAGING_*` do repositório (região, papel de deploy, ECR, cluster, sub-redes, bucket e CloudFront do admin etc.). Sem elas, os workflows [Deploy de staging](../.github/workflows/deploy-staging.yml) e [Deploy do admin em staging](../.github/workflows/deploy-admin-staging.yml) ficam parados.
+Isso grava as variáveis `STAGING_*` do repositório (região, papel de deploy, ECR, servidor, bucket e CloudFront do admin). Sem elas, os workflows [Deploy de staging](../.github/workflows/deploy-staging.yml) e [Deploy do admin em staging](../.github/workflows/deploy-admin-staging.yml) ficam parados.
 
 ### 4. Chaves da aplicação
 
-A API não sobe em produção sem a chave dos tokens de acesso (`JWT_CHAVE_PRIVADA`, ES256), lida do segredo `mony/staging/app`. Gere a chave e grave o segredo, na raiz do repositório:
+A API não sobe em produção sem a chave dos tokens de acesso (`JWT_CHAVE_PRIVADA`, ES256), lida do parâmetro `/mony/staging/app` (JSON, cifrado). Gere a chave e grave o parâmetro, na raiz do repositório:
 
 ```bash
 node -e "
@@ -79,11 +84,12 @@ const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
 const pem = privateKey.export({ type: 'pkcs8', format: 'pem' });
 process.stdout.write(JSON.stringify({ JWT_CHAVE_PRIVADA: pem }));
 " > segredo-app.json
-aws secretsmanager put-secret-value --secret-id mony/staging/app --secret-string file://segredo-app.json
+aws ssm put-parameter --name /mony/staging/app --type SecureString --overwrite \
+  --value file://segredo-app.json
 rm segredo-app.json
 ```
 
-O `put-secret-value` troca o JSON inteiro: quando houver outras chaves (Stripe, provedor de IA), grave todas juntas. Trocar a chave JWT derruba os tokens de acesso em uso; o app renova sozinho.
+O `put-parameter` troca o JSON inteiro: quando houver outras chaves (Stripe, provedor de IA, Brevo, Expo), grave todas juntas. Cada chave do JSON vira uma variável de ambiente da API e do worker, com o mesmo nome (lista em `apps/api/src/core/config/ambiente.ts`). O parâmetro aceita até 4 KB. Trocar a chave JWT derruba os tokens de acesso em uso; o app renova sozinho.
 
 ### 5. Primeiro deploy
 
@@ -92,55 +98,44 @@ gh workflow run deploy-staging.yml
 gh run watch
 ```
 
-O workflow publica a imagem da API no ECR (tags do commit e `staging`), roda `prisma migrate deploy && prisma db seed` numa tarefa avulsa e faz o deploy dos serviços `api` e `worker`. Antes desse primeiro deploy os serviços ficam tentando subir sem imagem; é esperado.
+O workflow publica a imagem arm64 da API no ECR (tags do commit e `staging`) e roda o [`atualizar.sh`](servidor/atualizar.sh) no servidor pelo SSM: no primeiro, ele também sobe o Postgres e o Valkey. Depois roda `prisma migrate deploy && prisma db seed`, troca a API (e volta para a anterior se `/v1/health` não responder) e troca o worker. A saída do script aparece no log do job.
 
 O painel admin vai no workflow dele:
 
 ```bash
 gh workflow run deploy-admin-staging.yml
-terraform -chdir=infra/ambientes/staging output -raw endereco_admin   # abra no navegador
+terraform -chdir=infra/ambientes/staging output -raw endereco   # abra no navegador
 ```
 
-Depois, todo merge na `main` que mexe na API faz o mesmo.
+Depois, todo merge na `main` que mexe na API ou no painel faz o mesmo.
 
 ```bash
-curl "$(terraform -chdir=infra/ambientes/staging output -raw endereco_api)/v1/health"   # {"status":"ok"}
+curl "$(terraform -chdir=infra/ambientes/staging output -raw endereco)/v1/health"   # {"status":"ok"}
 ```
+
+No app, o perfil `preview` do EAS usa `EXPO_PUBLIC_API_URL=<endereco>`.
 
 ## Dia a dia
 
-- **Logs:** CloudWatch, grupos `/mony/staging/api` e `/mony/staging/worker` (30 dias).
-- **Alarmes** (T-142, doc 12): API fora do ar, 5xx acima de 1% em 5 minutos, rotina `monitorar` do worker parada, alerta técnico sem e-mail e backup diário do banco não encontrado. Avisam no tópico SNS `mony-staging-alertas` (output `topico_alertas`), que manda e-mail para `emails_alertas` em `ambientes/staging/main.tf`. Cada endereço recebe primeiro um e-mail da AWS para confirmar a assinatura; sem confirmar, não recebe nada. A mesma lista vai para o worker (`ALERTAS_TECNICOS_EMAILS`), que manda os alertas dele (fila parada, falha em webhook, custo de IA) pelo provedor de e-mail. Com o ambiente recém-criado, o alarme de backup fica em alarme até o primeiro backup automático (janela das 06:00 UTC).
-- **Chaves da aplicação** (JWT, Stripe, provedor de IA): no segredo `mony/staging/app`, em JSON (passo 4). A tarefa que passar a usar uma chave inclui a leitura dela no `infra/modulos/ambiente/ecs.tf`. Depois de mudar o segredo, um novo deploy (`gh workflow run deploy-staging.yml`) faz as tarefas lerem o valor novo.
-- **HTTPS:** até existir o domínio, o ALB atende só HTTP e o admin fica no endereço do CloudFront (`https://<id>.cloudfront.net`). Veja "Domínio e HTTPS" abaixo.
-- **Custos:** os itens fixos são o NAT gateway, o ALB, o RDS, o ElastiCache e as tarefas do Fargate, mesmo sem uso. Estime na [calculadora da AWS](https://calculator.aws/) antes de aplicar.
-- **Apagar o ambiente:** mude `banco_protecao_exclusao` para `false`, `terraform apply`, depois `terraform destroy`. O RDS deixa um snapshot final.
+- **Entrar no servidor:** `aws ssm start-session --target "$(terraform -chdir=infra/ambientes/staging output -raw servidor)"` (precisa do [plugin do Session Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html)). Lá: `sudo docker ps`, `sudo docker logs --tail 100 api`, `sudo docker exec -it postgres psql -U mony`.
+- **Logs:** CloudWatch, grupos `/mony/staging/api` e `/mony/staging/worker` (14 dias). Os do Postgres e do Valkey ficam no servidor (`docker logs`).
+- **Alarmes** (T-142, doc 12): falha de sistema do EC2 (a AWS recupera o servidor em outro hospedeiro, com o mesmo disco e IP), falha da instância (reinicia), rotina `monitorar` do worker parada e alerta técnico sem e-mail. Avisam no tópico SNS `mony-staging-alertas`, que manda e-mail para `emails_alertas` em `ambientes/staging/main.tf`. Cada endereço recebe primeiro um e-mail da AWS para confirmar a assinatura; sem confirmar, não recebe nada. A mesma lista vai para o worker (`ALERTAS_TECNICOS_EMAILS`).
+- **Chaves da aplicação:** no parâmetro `/mony/staging/app` (passo 4). Depois de mudar, um novo deploy (`gh workflow run deploy-staging.yml`) faz a API e o worker lerem o valor novo.
+- **Atualizar o sistema do servidor:** pelo Session Manager, `sudo dnf upgrade -y` e, se o kernel mudou, `sudo reboot` (os containers voltam sozinhos). O Terraform não troca a AMI de um servidor que já existe, porque o banco está no disco dele.
+- **Voltar um backup:** no console do EC2, em Snapshots (etiqueta `Backup = mony-staging`), crie um volume do snapshot na mesma zona, pare o servidor, troque o disco raiz pelo volume novo e ligue de novo.
+- **Custos (~US$ 27 por mês):** EC2 US$ 19,56, disco US$ 3,04, IPv4 US$ 3,65 e snapshots ~US$ 0,50. CloudFront, CloudWatch (logs até 5 GB, 10 alarmes), Parameter Store, ECR e S3 ficam no nível sempre gratuito ou em centavos. Um Savings Plan de 1 ano tira ~30% do EC2.
+- **Apagar o ambiente:** `terraform destroy`. O banco vai junto com o disco; os snapshots do DLM ficam até vencer.
 
 ## Domínio e HTTPS
 
-Quando o cliente tiver o domínio (doc 15, pergunta 16), staging usa um subdomínio dele, com zona própria no Route 53 (ex.: `staging.monitorizze.com.br`). Assim o DNS do domínio principal continua onde está (Registro.br ou outro).
-
-1. Em `ambientes/staging/main.tf`, preencha `dominio = "staging.<domínio do cliente>"`.
-2. Crie só a zona e veja os servidores de nome dela:
-
-   ```bash
-   cd infra/ambientes/staging
-   terraform apply -target=module.ambiente.aws_route53_zone.principal
-   terraform output servidores_dns
-   ```
-
-3. No DNS do domínio principal, crie um registro **NS** para `staging` com esses quatro servidores. Confira com `dig NS staging.<domínio> +short`.
-4. Aplique o resto: `terraform apply`. O ACM valida os certificados pelo DNS (alguns minutos depois da delegação; o `apply` espera). A API passa a responder em `https://api.<dominio>` (o HTTP redireciona) e o admin em `https://admin.<dominio>`.
-5. Para o app de preview apontar para a API nova, use `EXPO_PUBLIC_API_URL=https://api.<dominio>` no perfil `preview` do EAS.
-
-O certificado do admin fica na `us-east-1`, porque o CloudFront só aceita certificado de lá; por isso o ambiente usa também o provider `aws.us_east_1`.
+Até existir o domínio, o staging usa o HTTPS do próprio CloudFront (`https://<id>.cloudfront.net`), que já serve para o app, o painel e os webhooks. Quando o cliente tiver o domínio (doc 15, pergunta 16), o módulo `servidor-unico` ganha um certificado do ACM na `us-east-1` e o nome (ex.: `staging.monitorizze.com.br`) como alias do CloudFront (tarefa nova no BACKLOG quando chegar a hora). O módulo `ambiente` (produção) já faz isso com a variável `dominio`.
 
 ## Sentry
 
 Erros da API, do worker, do painel e do app (T-142c, doc 12). Sem configuração, o Sentry fica desligado e nada sai do ambiente.
 
 1. Na conta do cliente no [Sentry](https://sentry.io), crie a organização e quatro projetos: `api` e `worker` (Node), `admin` (React) e `mobile` (React Native).
-2. **API e worker:** em `ambientes/staging/main.tf`, preencha `sentry_dsn_api` e `sentry_dsn_worker` com o DSN de cada projeto e aplique (`terraform apply`). O ambiente no Sentry é o nome do ambiente (`staging`), e a release é o commit da imagem.
+2. **API e worker:** em `ambientes/staging/main.tf`, preencha `sentry_dsn_api` e `sentry_dsn_worker` com o DSN de cada projeto, aplique (`terraform apply`) e rode um deploy (`gh workflow run deploy-staging.yml`). O ambiente no Sentry é o nome do ambiente (`staging`), e a release é o commit da imagem.
 3. **Painel:** grave o DSN do projeto `admin` na variável do GitHub:
 
    ```bash
@@ -165,5 +160,6 @@ O job **Infra** do CI roda em todo PR:
 
 - `terraform fmt -check`;
 - `terraform validate`, sem tocar na AWS;
-- `terraform test` do módulo (`modulos/ambiente/tests`), com a AWS simulada: o plano com e sem domínio;
-- o build da imagem da API.
+- `terraform test` dos dois módulos, com a AWS simulada: o `ambiente` com e sem domínio, e o `servidor-unico`;
+- `shellcheck` no `servidor/atualizar.sh`;
+- o build da imagem da API (x86; o deploy de staging faz a arm64).

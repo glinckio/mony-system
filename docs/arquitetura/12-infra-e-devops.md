@@ -37,7 +37,38 @@ flowchart TB
 | Arquivos | S3 privado + ciclo de vida | Exportações expiram em 7 dias; mídias conforme RN-162 |
 | Admin | S3 + CloudFront | Build estático. O CloudFront repassa `/v1/*` para o ALB, então o painel chama a API no próprio domínio, sem CORS (T-015) |
 | DNS e certificados | Route 53 + ACM | `api.<dominio>`, `admin.<dominio>`, `app.<dominio>` (universal links). Cada ambiente tem zona própria (staging: subdomínio delegado, ex.: `staging.<dominio>`); o certificado do admin fica na `us-east-1`, exigência do CloudFront. `app.<dominio>` entra com os universal links |
-| Infra como código | Terraform em `infra/` | `bootstrap/` (estado e OIDC do GitHub, uma vez por conta), módulo `modulos/ambiente` e uma pasta por ambiente em `ambientes/`, cada uma com o próprio estado. Ver [infra/README.md](../../infra/README.md) |
+| Infra como código | Terraform em `infra/` | `bootstrap/` (estado e OIDC do GitHub, uma vez por conta), os módulos `modulos/ambiente` (produção) e `modulos/servidor-unico` (staging, T-156) e uma pasta por ambiente em `ambientes/`, cada uma com o próprio estado. Ver [infra/README.md](../../infra/README.md) |
+
+### Staging num servidor só (T-156, ADR-010)
+
+Para gastar o mínimo enquanto o uso é pequeno, o staging não usa o desenho acima: tudo roda num EC2 (`infra/modulos/servidor-unico`).
+
+```mermaid
+flowchart LR
+  U[App / Admin] --> CF[CloudFront<br/>HTTPS *.cloudfront.net]
+  CF -->|"/"| S3A[(S3 do painel)]
+  CF -->|"/v1/*, porta 80"| EC2
+  subgraph EC2[EC2 t4g.small, Docker]
+    API[api] --> PG[(Postgres 18)]
+    WRK[worker] --> PG
+    API --> VK[(Valkey 8)]
+    WRK --> VK
+  end
+  EC2 --> S3[(S3 dos arquivos)]
+  EC2 --> CW[CloudWatch Logs]
+```
+
+| Peça | Como fica | Observação |
+|---|---|---|
+| Servidor | EC2 `t4g.small` (2 vCPU ARM, 2 GB + 2 GB de swap), disco gp3 de 20 GB, Elastic IP | A porta 80 só aceita o CloudFront (lista de IPs gerenciada pela AWS). Sem SSH: o acesso é pelo Session Manager do SSM |
+| API, worker | Containers da mesma imagem (arm64), `--restart unless-stopped`, log no CloudWatch | O deploy troca a API, confere `/v1/health` e volta para a anterior se falhar |
+| Banco e filas | Postgres 18 e Valkey 8 (AOF, `noeviction`) em containers, dados no disco do servidor | Sem porta publicada: só a rede do Docker alcança |
+| Backup | Snapshot diário do disco (DLM, 03:00 de Brasília), 7 guardados | Volta como de uma queda de energia; até 24 horas de perda |
+| HTTPS | O certificado do próprio CloudFront | Com o domínio, entra um certificado do ACM no CloudFront |
+| Configuração | Parameter Store do SSM: `/mony/staging/config` (Terraform) e `/mony/staging/app` (chaves, cifrado) | Sem custo, ao contrário do Secrets Manager |
+| Recuperação | Alarmes do EC2: falha de sistema → `recover`; falha da instância → `reboot` | Mais os alarmes do worker (T-142) |
+
+Custo em São Paulo (preços sob demanda de outubro de 2026): EC2 US$ 19,56, disco US$ 3,04, IPv4 US$ 3,65, snapshots ~US$ 0,50, e o resto (CloudFront, CloudWatch, SSM, ECR, S3) dentro do nível sempre gratuito ou em centavos. **Total: ~US$ 27 por mês.** Um Savings Plan de 1 ano tira ~30% do EC2.
 
 Alternativa equivalente em Google Cloud (Cloud Run + Cloud SQL + Memorystore + GCS) aceita pelo PDF; o desenho não muda.
 
@@ -46,7 +77,7 @@ Alternativa equivalente em Google Cloud (Cloud Run + Cloud SQL + Memorystore + G
 | Gatilho | Jobs |
 |---|---|
 | PR | `lint`, `typecheck`, testes unitários e de integração (Testcontainers), checagem de migração Prisma, geração do cliente OpenAPI sem diff, avaliação da Mony se `modulos/mony/**` mudou, Kotlin e testes JUnit dos módulos nativos se `modules/**` mudou (`modulos-nativos.yml`, T-022) |
-| Merge em `main` | Build da imagem Docker → ECR (tag do commit e tag `staging`) → tarefa avulsa com `prisma migrate deploy && prisma db seed` → deploy dos serviços `api` e `worker` com circuit breaker (`deploy-staging.yml`); build do admin → bucket → invalidação do CloudFront quando o admin muda (`deploy-admin-staging.yml`); EAS Update no canal `staging` quando o app muda (`eas-update-staging.yml`, T-016) |
+| Merge em `main` | Build da imagem Docker arm64 num runner ARM → ECR (tag do commit e tag `staging`) → `infra/servidor/atualizar.sh` no servidor pelo SSM Run Command: `prisma migrate deploy && prisma db seed`, troca da API com health check e volta para a anterior, troca do worker (`deploy-staging.yml`, T-156); build do admin → bucket → invalidação do CloudFront quando o admin muda (`deploy-admin-staging.yml`); EAS Update no canal `staging` quando o app muda (`eas-update-staging.yml`, T-016) |
 | Tag `api-vX.Y.Z` | Deploy da API em produção com aprovação manual |
 | Tag `mobile-vX.Y.Z` | `eas build --profile production` + `eas submit` (App Store Connect e Play Console) |
 | Correção só de JS | `eas update --channel production` (respeitando `runtimeVersion` por fingerprint) |
