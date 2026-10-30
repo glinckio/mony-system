@@ -78,6 +78,9 @@ resource "aws_cloudfront_distribution" "principal" {
   # Só a classe completa tem pontos de presença na América do Sul. O nível sempre gratuito (1 TB e
   # 10 milhões de requisições por mês) vale para todas.
   price_class = "PriceClass_All"
+  # O apply não espera a distribuição chegar a todos os pontos de presença (uns 5 minutos): ela
+  # fica pronta sozinha logo depois, e o primeiro deploy demora mais que isso.
+  wait_for_deployment = false
 
   origin {
     origin_id                = "painel"
