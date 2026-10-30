@@ -117,3 +117,11 @@ Tudo que é "dia" ou "mês" para o usuário (limites diários, competência, ven
 ### ADR-009 — Idioma
 
 Domínio em português (tabelas, rotas, entidades, DTOs: `transacoes`, `TransacoesService`), termos técnicos de framework em inglês (`Controller`, `Module`, `Guard`). Ver [03](03-monorepo-e-convencoes.md#idioma-e-nomes).
+
+### ADR-010 — Staging num servidor só
+
+Enquanto o uso é pequeno, o staging roda num EC2 só (`t4g.small`, ARM) com a API, o worker, o Postgres e o Valkey em containers, e o CloudFront na frente (HTTPS sem domínio e o painel admin no mesmo endereço). Custa cerca de US$ 27 por mês, contra uns US$ 205 do desenho completo (ALB, NAT, ECS, RDS e ElastiCache) em São Paulo. O cliente pediu para gastar o mínimo (T-156).
+
+**Consequências.** Sem alta disponibilidade: um deploy derruba a API por alguns segundos, e uma falha do servidor derruba tudo até o EC2 se recuperar sozinho (alarme com `recover`). O backup é o snapshot diário do disco (até 24 horas de perda), sem recuperação para um instante (PITR). A API e o worker não escalam separados: os dois *entrypoints* do ADR-002 continuam, num servidor só. A produção usa o módulo completo (`infra/modulos/ambiente`), e o código não muda entre os dois.
+
+**Alternativas descartadas.** ECS com Fargate Spot e RDS micro (~US$ 105–130 por mês, ainda com ALB e NAT); Lightsail (mais barato, mas fora do Terraform e do papel OIDC que o deploy já usa).

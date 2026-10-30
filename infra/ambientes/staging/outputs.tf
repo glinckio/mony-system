@@ -1,34 +1,29 @@
-output "endereco_api" {
-  description = "Endereço público da API de staging."
-  value       = module.ambiente.endereco_api
+output "endereco" {
+  description = "Endereço de staging: o painel admin na raiz e a API em /v1."
+  value       = module.servidor.endereco
 }
 
-output "endereco_admin" {
-  description = "Endereço do painel admin de staging."
-  value       = module.ambiente.endereco_admin
-}
-
-output "servidores_dns" {
-  description = "Servidores de nome da zona de staging (delegar a partir do domínio pai)."
-  value       = module.ambiente.servidores_dns
+output "servidor" {
+  description = "ID do servidor (acesso: aws ssm start-session --target <id>)."
+  value       = module.servidor.servidor
 }
 
 output "repositorio_imagem" {
   description = "Repositório ECR da imagem da API."
-  value       = module.ambiente.repositorio_imagem
+  value       = module.servidor.repositorio_imagem
 }
 
 output "bucket_arquivos" {
   description = "Bucket dos arquivos dos usuários."
-  value       = module.ambiente.bucket_arquivos
+  value       = module.servidor.bucket_arquivos
 }
 
-output "segredo_app" {
-  description = "Segredo onde entram as chaves da aplicação."
-  value       = module.ambiente.segredo_app
+output "parametro_app" {
+  description = "Parâmetro do SSM onde entram as chaves da aplicação."
+  value       = module.servidor.parametro_app
 }
 
 output "comandos_github" {
   description = "Comandos para gravar as variáveis do deploy no GitHub."
-  value       = module.ambiente.comandos_github
+  value       = module.servidor.comandos_github
 }

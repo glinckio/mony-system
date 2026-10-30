@@ -407,6 +407,9 @@ Recursos que o cliente tirou do lançamento para cortar custos e que voltam quan
   - dep: — · visto no rebase do #109 em 2026-10-17
 - [x] **T-155** Roteiro no README para testar o sistema inteiro no computador (emulador Android, API, worker e painel, com os provedores de teste): `adb reverse` para a API e o S3 local, compilação dos pacotes antes do `dev`, contas, promover admin com 2FA e o que cada provedor de teste faz; tira do README o atalho de login e o "painel sem login", que não existem mais (PR #129)
   - dep: — · pedido do humano em 2026-10-17
+- [x] **T-156** 👤 Staging num servidor só para gastar o mínimo: EC2 `t4g.small` com a API, o worker, o Postgres e o Valkey em containers, CloudFront na frente (HTTPS sem domínio, painel e `/v1/*`), snapshot diário, deploy pelo SSM (PR #146)
+  - dep: T-013 · docs: 02 (ADR-010), 12 · pedido do humano em 2026-10-29 ("o cliente quer gastar o mínimo possível")
+  - Aceite: módulo `infra/modulos/servidor-unico` com teste; staging usando ele; deploy da API (imagem arm64, migração, health check e volta para a anterior) e do admin; docs e README; plano e custo mostrados ao humano antes de aplicar.
 - [x] **T-157** Mony com o Claude Haiku 5.5 como modelo padrão (`IA_MODELO`), no lugar do Sonnet 5.5, para gastar o mínimo (PR #148)
   - dep: T-020 · docs: 02 (ADR-005), 08 · decisão do humano em 2026-10-30 ("a gente vai usar o haiku mesmo")
 - [x] **T-158** Open Finance fora do lançamento: as tarefas dele (T-025, T-120, T-140f) foram para o Futuro; o app tira o "Bancos conectados" do plano pago e o "Conectar banco" do onboarding, e o painel esconde o cartão de conexões quando não há nenhuma; docs com o recurso marcado como futuro (PR #149)

@@ -188,11 +188,17 @@ jobs:
           exit $falhou
 
       - name: Testes do Terraform
-        # Plano do módulo do ambiente com a AWS simulada (mock_provider), com e sem domínio. Nada
-        # é criado na AWS.
+        # Plano dos módulos com a AWS simulada (mock_provider): o do ambiente completo (produção),
+        # com e sem domínio, e o do servidor único (staging, T-156). Nada é criado na AWS.
         run: |
-          terraform -chdir=infra/modulos/ambiente init -backend=false -input=false -no-color > /dev/null
-          terraform -chdir=infra/modulos/ambiente test -no-color
+          for modulo in ambiente servidor-unico; do
+            terraform -chdir="infra/modulos/$modulo" init -backend=false -input=false -no-color > /dev/null
+            terraform -chdir="infra/modulos/$modulo" test -no-color
+          done
+
+      - name: Script do servidor (shellcheck)
+        # O deploy de staging roda este script no servidor pelo SSM (T-156).
+        run: shellcheck infra/servidor/atualizar.sh
 
       - name: Imagem da API compila
         run: |

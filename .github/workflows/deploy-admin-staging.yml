@@ -32,7 +32,7 @@ jobs:
     if: vars.STAGING_ADMIN_BUCKET != ''
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # O papel da AWS só aceita jobs deste ambiente (infra/modulos/ambiente/deploy.tf).
+    # O papel da AWS só aceita jobs deste ambiente (infra/modulos/servidor-unico/deploy.tf).
     environment: staging
     env:
       HUSKY: '0'
@@ -61,7 +61,7 @@ jobs:
 
       - name: Build do painel
         # VITE_API_URL vazio: o painel chama /v1 no próprio domínio, e o CloudFront repassa para a
-        # API (infra/modulos/ambiente/admin.tf).
+        # API (infra/modulos/servidor-unico/admin.tf).
         env:
           VITE_API_URL: ''
           # Sem o DSN, o Sentry fica desligado no painel (T-142c).
