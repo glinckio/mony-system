@@ -401,5 +401,5 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: — · visto no rebase do #109 em 2026-10-17
 - [x] **T-155** Roteiro no README para testar o sistema inteiro no computador (emulador Android, API, worker e painel, com os provedores de teste): `adb reverse` para a API e o S3 local, compilação dos pacotes antes do `dev`, contas, promover admin com 2FA e o que cada provedor de teste faz; tira do README o atalho de login e o "painel sem login", que não existem mais (PR #129)
   - dep: — · pedido do humano em 2026-10-17
-- [x] **T-157** Mony com o Claude Haiku 5.5 como modelo padrão (`IA_MODELO`), no lugar do Sonnet 5.5, para gastar o mínimo (PR #<n>)
+- [x] **T-157** Mony com o Claude Haiku 5.5 como modelo padrão (`IA_MODELO`), no lugar do Sonnet 5.5, para gastar o mínimo (PR #148)
   - dep: T-020 · docs: 02 (ADR-005), 08 · decisão do humano em 2026-10-30 ("a gente vai usar o haiku mesmo")
