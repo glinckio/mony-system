@@ -414,5 +414,5 @@ Recursos que o cliente tirou do lançamento para cortar custos e que voltam quan
   - dep: T-020 · docs: 02 (ADR-005), 08 · decisão do humano em 2026-10-30 ("a gente vai usar o haiku mesmo")
 - [x] **T-158** Open Finance fora do lançamento: as tarefas dele (T-025, T-120, T-140f) foram para o Futuro; o app tira o "Bancos conectados" do plano pago e o "Conectar banco" do onboarding, e o painel esconde o cartão de conexões quando não há nenhuma; docs com o recurso marcado como futuro (PR #149)
   - dep: — · decisão do cliente em 2026-10-30 ("tirar o open finance das funcionalidades para cortar custos e adicionar no futuro")
-- [x] **T-159** Papel de deploy aceita o sujeito imutável do GitHub no OIDC (`repo:<dono>@<id>/<nome>@<id>:environment:<ambiente>`), com a variável `ids_github` nos dois módulos (PR #150)
+- [x] **T-159** Papel de deploy aceita o sujeito imutável do GitHub no OIDC (`repo:<dono>@<id>/<nome>@<id>:environment:<ambiente>`), com a variável `ids_github` nos dois módulos; e a imagem do Valkey no ECR público do projeto (`public.ecr.aws/valkey/valkey`), que não está no espelho da biblioteca do Docker (PR #150)
   - dep: T-156 · visto no primeiro deploy de staging em 2026-10-30 ("Not authorized to perform sts:AssumeRoleWithWebIdentity")
