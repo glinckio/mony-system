@@ -416,5 +416,5 @@ Recursos que o cliente tirou do lançamento para cortar custos e que voltam quan
   - dep: — · decisão do cliente em 2026-10-30 ("tirar o open finance das funcionalidades para cortar custos e adicionar no futuro")
 - [x] **T-159** Papel de deploy aceita o sujeito imutável do GitHub no OIDC (`repo:<dono>@<id>/<nome>@<id>:environment:<ambiente>`), com a variável `ids_github` nos dois módulos; e a imagem do Valkey no ECR público do projeto (`public.ecr.aws/valkey/valkey`), que não está no espelho da biblioteca do Docker (PR #150)
   - dep: T-156 · visto no primeiro deploy de staging em 2026-10-30 ("Not authorized to perform sts:AssumeRoleWithWebIdentity")
-- [x] **T-160** Servidor de staging: a pasta do Postgres é do uid 70 da imagem Alpine, e o Postgres ou o Valkey que estiverem reiniciando sem parar são recriados no deploy (PR #<n>)
+- [x] **T-160** Servidor de staging: a pasta do Postgres é do uid 70 da imagem Alpine, e o Postgres ou o Valkey que estiverem reiniciando sem parar são recriados no deploy (PR #151)
   - dep: T-156 · visto no primeiro deploy de staging em 2026-10-30 ("mkdir: can't create directory '/var/lib/postgresql/18/': Permission denied")
