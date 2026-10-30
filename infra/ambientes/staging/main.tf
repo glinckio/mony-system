@@ -39,7 +39,9 @@ module "servidor" {
 
   ambiente           = "staging"
   repositorio_github = "glinckio/mony-system"
-  cidr_vpc           = "10.20.0.0/16"
+  # O repositório usa o sujeito imutável do GitHub no token do deploy (T-159).
+  ids_github = { dono = 45143271, repositorio = 1410985306 }
+  cidr_vpc   = "10.20.0.0/16"
 
   # 2 vCPU ARM e 2 GB para a API, o worker, o Postgres e o Valkey (mais 2 GB de swap).
   tipo_instancia = "t4g.small"

@@ -12,7 +12,8 @@ set -euo pipefail
 DADOS=/var/lib/mony
 REDE=mony
 POSTGRES=public.ecr.aws/docker/library/postgres:18-alpine
-VALKEY=public.ecr.aws/docker/library/valkey:8-alpine
+# O Valkey não está no espelho da biblioteca oficial do Docker: o projeto publica no próprio ECR público.
+VALKEY=public.ecr.aws/valkey/valkey:8-alpine
 
 log() { echo "[$(date -u +%H:%M:%S)] $*"; }
 

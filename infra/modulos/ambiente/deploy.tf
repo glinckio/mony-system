@@ -1,6 +1,19 @@
 # Papel que o workflow de deploy do GitHub assume por OIDC (sem chave de acesso guardada no GitHub).
 # Só o job com `environment: <ambiente>` do repositório configurado consegue assumir.
 
+locals {
+  # Quem pode assumir o papel: o job do ambiente, no formato com os nomes e, com `ids_github`, no
+  # formato imutável do GitHub (com os IDs, que não mudam se o nome do dono ou do repositório for
+  # reaproveitado por outra pessoa).
+  partes_repositorio = split("/", var.repositorio_github)
+  sujeitos_deploy = concat(
+    ["repo:${var.repositorio_github}:environment:${var.ambiente}"],
+    var.ids_github == null ? [] : [
+      "repo:${local.partes_repositorio[0]}@${var.ids_github.dono}/${local.partes_repositorio[1]}@${var.ids_github.repositorio}:environment:${var.ambiente}",
+    ],
+  )
+}
+
 data "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 }
@@ -23,7 +36,7 @@ data "aws_iam_policy_document" "assumir_deploy" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.repositorio_github}:environment:${var.ambiente}"]
+      values   = local.sujeitos_deploy
     }
   }
 }

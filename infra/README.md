@@ -65,6 +65,8 @@ Commite os arquivos `.terraform.lock.hcl` que o `init` criar em `infra/bootstrap
 
 ### 3. Variáveis do deploy no GitHub
 
+Se o repositório usa o sujeito imutável do GitHub no OIDC (`gh api repos/<dono>/<nome>/actions/oidc/customization/sub` responde `use_immutable_subject: true`), preencha `ids_github` em `ambientes/staging/main.tf` com o `sub_claim_prefix` dessa resposta (`repo:<dono>@<id>/<nome>@<id>`). Sem isso, o deploy para em "Entrar na AWS" com `Not authorized to perform sts:AssumeRoleWithWebIdentity`.
+
 Na raiz do repositório:
 
 ```bash
