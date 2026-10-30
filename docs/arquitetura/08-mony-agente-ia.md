@@ -204,7 +204,7 @@ Mídias pesadas são processadas na fila; o chat mostra "lendo seu documento…"
 ## Provedor de IA
 
 - Interface `LlmProvider { modelo; conversar({ sistema, mensagens, ferramentas, sinal }): AsyncIterable<EventoLlm> }` (eventos `texto`, `ferramenta` e `fim` com tokens e motivo da parada) e `TranscricaoProvider { modelo; transcrever({ url, tipoConteudo, sinal }): Promise<{ texto, duracaoSegundos }> }` (recebe a URL de leitura assinada do S3). O `LlmFake` e o `TranscricaoFake` respondem um roteiro, para os testes.
-- Recomendação inicial **(confirmar com cliente)**: Anthropic Claude, `claude-sonnet-5-5` para conversa, visão e PDF, e `claude-haiku-5-5` para tarefas simples (classificação de intenção, sugestão de categoria). Transcrição num provedor de fala dedicado: Deepgram (`nova-3`, pt-BR, pontuação), por `TRANSCRICAO_PROVEDOR` **(confirmar com cliente)**.
+- **Modelo: Anthropic Claude `claude-haiku-5-5` para tudo** (conversa, ferramentas, visão e PDF), decidido pelo humano em 30/10/2026 pelo custo (T-157): US$ 0,10 por milhão de tokens de entrada e US$ 0,50 de saída, ~20 vezes menos que o `claude-sonnet-5-5`. É o padrão de `IA_MODELO`; uma versão do prompt pode fixar outro modelo pelo painel. O Gemini foi descartado: os modelos baratos dele custam de 2 a 7 vezes o Haiku, e o plano grátis usa os dados para treino (contra a regra abaixo). Transcrição num provedor de fala dedicado: Deepgram (`nova-3`, pt-BR, pontuação), por `TRANSCRICAO_PROVEDOR` **(confirmar com cliente)**.
 - Contrato com o provedor deve garantir que os dados não são usados para treino (exigência LGPD do PDF).
 - Timeout por chamada, até 2 retentativas com backoff em erro transitório, e mensagem de erro amigável com [Tentar de novo] (RN-087).
 

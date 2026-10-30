@@ -407,14 +407,14 @@ describe('IA_PROVEDOR', () => {
     REDIS_URL: 'redis://localhost:6379',
   };
 
-  it('anthropic exige a chave; o padrão é o fake', () => {
+  it('anthropic exige a chave; o padrão é o fake; o modelo padrão é o Haiku 5.5', () => {
     expect(validarAmbiente(banco).IA_PROVEDOR).toBe('fake');
     expect(() => validarAmbiente({ ...banco, IA_PROVEDOR: 'anthropic' })).toThrow(
       /ANTHROPIC_CHAVE_API/,
     );
     expect(
       validarAmbiente({ ...banco, IA_PROVEDOR: 'anthropic', ANTHROPIC_CHAVE_API: 'k' }).IA_MODELO,
-    ).toBe('claude-sonnet-5-5');
+    ).toBe('claude-haiku-5-5');
   });
 
   it('escolhe o provedor pela configuração', () => {

@@ -1195,3 +1195,6 @@ Contexto: a T-088 fez os botões abrirem o app, porque o JS só recebia o botão
 - **Sincronização dos alarmes fora do hook** (`sincronizarAlarmesDoServidor`), com os textos tirados da instância do i18n, para a tarefa usar sem a tela.
 
 Reversível: sim, `features/notificacoes/push-segundo-plano.ts`, `tarefa-push.ts` e o `options` das categorias em `lib/push.ts`.
+
+## 2026-10-30 — T-157 — Haiku 5.5 como modelo da Mony
+Contexto: o doc 08 recomendava o `claude-sonnet-5-5` para a conversa, "a confirmar com o cliente". No relatório de custos (30/10), o Sonnet dava de R$ 970 a R$ 2.430 por mês num lançamento com ~200 usuários ativos, contra R$ 50 a R$ 125 com o Haiku 5.5 (US$ 0,10 e US$ 0,50 por milhão de tokens). O humano decidiu: "a gente vai usar o haiku mesmo, não vamos usar outra". Decisão: o padrão de `IA_MODELO` passa a ser `claude-haiku-5-5`, para a conversa, as ferramentas e a leitura de foto e PDF. O Gemini foi descartado: os modelos baratos dele custam de 2 a 7 vezes o Haiku por token, e o plano grátis do AI Studio usa os dados para treino, o que a LGPD do projeto proíbe. Antes de ligar para os usuários, rodar a avaliação da Mony com o Haiku (T-068) e gravar o preço dele no painel (`precos_ia`: 10 e 50 centavos de dólar por milhão). Reversível: sim, `IA_MODELO` ou o modelo de uma versão do prompt.

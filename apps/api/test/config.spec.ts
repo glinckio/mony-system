@@ -24,7 +24,7 @@ describe('variáveis de ambiente', () => {
       EMAIL_PROVEDOR: 'fake',
       PUSH_PROVEDOR: 'fake',
       IA_PROVEDOR: 'fake',
-      IA_MODELO: 'claude-sonnet-5-5',
+      IA_MODELO: 'claude-haiku-5-5',
       TRANSCRICAO_PROVEDOR: 'fake',
       TRANSCRICAO_MODELO: 'nova-3',
       NFCE_PROVEDOR: 'fake',

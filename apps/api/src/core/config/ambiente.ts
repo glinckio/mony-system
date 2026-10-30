@@ -94,7 +94,7 @@ export const esquemaAmbiente = z
      */
     IA_PROVEDOR: z.enum(['fake', 'anthropic']).default('fake'),
     ANTHROPIC_CHAVE_API: z.preprocess(vazioComoAusente, z.string().optional()),
-    IA_MODELO: z.string().min(1).default('claude-sonnet-5-5'),
+    IA_MODELO: z.string().min(1).default('claude-haiku-5-5'),
     /**
      * Transcrição das mensagens de voz da Mony (doc 08, T-064): `deepgram` em nuvem, com
      * `DEEPGRAM_CHAVE_API`; `fake` devolve um texto fixo (desenvolvimento e testes).
