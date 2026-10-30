@@ -33,7 +33,11 @@ if [ ! -f /swapfile ]; then
 fi
 swapon --show | grep -q /swapfile || swapon /swapfile
 
-install -d -m 700 "$DADOS" "$DADOS/postgres" "$DADOS/valkey"
+install -d -m 700 "$DADOS" "$DADOS/valkey"
+# A pasta do banco é do usuário `postgres` da imagem Alpine (uid 70): o Postgres roda com ele e
+# precisa entrar na pasta montada. Com ela de root e 700, o container reinicia sem parar.
+install -d -m 700 -o 70 -g 70 "$DADOS/postgres"
+chown -R 70:70 "$DADOS/postgres"
 if [ ! -s "$DADOS/senha-banco" ]; then
   # A senha só vale dentro da rede do Docker (o Postgres não abre porta no servidor).
   (umask 077 && openssl rand -hex 24 > "$DADOS/senha-banco")
@@ -76,7 +80,9 @@ docker network inspect "$REDE" > /dev/null 2>&1 || docker network create "$REDE"
 # Postgres e Valkey: só sobem se não estiverem rodando. Os dados ficam no disco do servidor (que o
 # snapshot diário copia). Sem porta publicada: só a rede do Docker alcança.
 log_local=(--log-driver json-file --log-opt max-size=10m --log-opt max-file=3)
-if [ -z "$(docker ps -q --filter name=^postgres$)" ]; then
+# `running`, `restarting`, `exited`... ou vazio. Um container reiniciando sem parar é recriado.
+estado() { docker inspect -f '{{.State.Status}}' "$1" 2> /dev/null || true; }
+if [ "$(estado postgres)" != running ]; then
   log "subindo o Postgres"
   docker rm -f postgres > /dev/null 2>&1 || true
   docker run -d --name postgres --network "$REDE" --restart unless-stopped "${log_local[@]}" \
@@ -84,7 +90,7 @@ if [ -z "$(docker ps -q --filter name=^postgres$)" ]; then
     -v "$DADOS/postgres:/var/lib/postgresql" "$POSTGRES" \
     -c shared_buffers=128MB -c max_connections=50 > /dev/null
 fi
-if [ -z "$(docker ps -q --filter name=^valkey$)" ]; then
+if [ "$(estado valkey)" != running ]; then
   log "subindo o Valkey"
   docker rm -f valkey > /dev/null 2>&1 || true
   # Filas do BullMQ: gravadas em disco (appendonly) e nunca descartadas por falta de memória.
@@ -92,7 +98,7 @@ if [ -z "$(docker ps -q --filter name=^valkey$)" ]; then
     -v "$DADOS/valkey:/data" "$VALKEY" \
     valkey-server --appendonly yes --maxmemory 128mb --maxmemory-policy noeviction > /dev/null
 fi
-for _ in $(seq 1 60); do
+for _ in $(seq 1 90); do
   docker exec postgres pg_isready -U mony -d mony > /dev/null 2>&1 && break
   sleep 1
 done
