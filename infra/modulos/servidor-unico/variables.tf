@@ -13,6 +13,15 @@ variable "repositorio_github" {
   type        = string
 }
 
+variable "ids_github" {
+  description = "IDs numéricos do dono e do repositório no GitHub. Com o \"sujeito imutável\" ligado no repositório (`gh api repos/<dono>/<nome>/actions/oidc/customization/sub`), o token do deploy traz `repo:<dono>@<id>/<nome>@<id>:...` em vez de `repo:<dono>/<nome>:...`. Com os IDs, o papel aceita os dois formatos."
+  type = object({
+    dono        = number
+    repositorio = number
+  })
+  default = null
+}
+
 variable "cidr_vpc" {
   description = "Faixa de IPs da VPC (uma sub-rede pública só)."
   type        = string

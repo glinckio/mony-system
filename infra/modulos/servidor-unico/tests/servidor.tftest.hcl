@@ -125,6 +125,22 @@ run "servidor_unico" {
   }
 }
 
+run "sujeito_imutavel" {
+  command = plan
+
+  variables {
+    ids_github = { dono = 45143271, repositorio = 1410985306 }
+  }
+
+  assert {
+    condition = local.sujeitos_deploy == [
+      "repo:glinckio/mony-system:environment:staging",
+      "repo:glinckio@45143271/mony-system@1410985306:environment:staging",
+    ]
+    error_message = "Com os IDs, o papel de deploy aceita também o sujeito imutável do GitHub."
+  }
+}
+
 run "so_arm" {
   command = plan
 
