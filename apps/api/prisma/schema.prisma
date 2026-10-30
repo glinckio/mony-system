@@ -524,6 +524,9 @@ model Sessao {
   usuarioId        String    @map("usuario_id") @db.Uuid
   dispositivoId    String?   @map("dispositivo_id") @db.Uuid
   refreshTokenHash String    @unique @map("refresh_token_hash")
+  /// A família (RN-004): o login abre uma; cada renovação passa a mesma para a sessão nova. O token
+  /// de segundo plano do aparelho (T-088b) vale enquanto a família tiver uma sessão ativa.
+  familiaId        String    @default(uuid(7)) @map("familia_id") @db.Uuid
   expiraEm         DateTime  @map("expira_em") @db.Timestamptz(6)
   revogadaEm       DateTime? @map("revogada_em") @db.Timestamptz(6)
   criadoEm         DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
@@ -534,6 +537,7 @@ model Sessao {
 
   @@index([usuarioId])
   @@index([dispositivoId])
+  @@index([familiaId])
   @@map("sessoes")
 }
 

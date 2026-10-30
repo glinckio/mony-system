@@ -15,7 +15,15 @@ import { Alert } from 'react-native';
 
 import { useSincronizarAlarmes } from '@/features/lembretes/hooks/use-alarmes-locais';
 import { invalidarDadosFinanceiros } from '@/lib/api/invalidar';
-import { acaoDoPush, prepararPush, registrarTokenDePush } from '@/lib/push';
+import {
+  acaoDoPush,
+  estadoDaPermissaoDePush,
+  prepararPush,
+  registrarTokenDePush,
+} from '@/lib/push';
+import { chaveDoToque, reservarToque } from '@/lib/toques-push';
+
+import { renovarTokenSegundoPlano } from '../push-segundo-plano';
 
 /** As consultas que um toque no push pode deixar velhas: lembretes, notificações e o Início. */
 function ehDoPush(chave: readonly unknown[]): boolean {
@@ -28,13 +36,15 @@ function ehDoPush(chave: readonly unknown[]): boolean {
 
 /**
  * O push com a sessão aberta (doc 04, doc 09; T-088). Fica no layout das abas:
- * - **Abertura:** prepara os canais e os botões, e registra o token (`POST /me/dispositivos`), de
- *   novo quando o sistema troca o token.
+ * - **Abertura:** prepara os canais e os botões, registra o token (`POST /me/dispositivos`), de
+ *   novo quando o sistema troca o token, e pede o token de segundo plano para a tarefa do push com
+ *   o app fechado (T-088b). Os dois só com a permissão liberada.
  * - **Toque:** abre o `linkInterno`. [Feito] e [Adiar] mexem no lembrete; [Paguei] paga a fatura.
- *   Cada toque marca a notificação como lida. Sem permissão (403), mostra a mensagem da API. O toque que abriu o app fechado vem pela última
- *   resposta.
+ *   Cada toque marca a notificação como lida. Sem permissão (403), mostra a mensagem da API. O
+ *   toque que abriu o app fechado vem pela última resposta. O toque que a tarefa de segundo plano
+ *   já tratou (Android, T-088b) não faz nada aqui.
  * - **Push silencioso** (`sincronizar_alarmes`, T-084a): com o app aberto, busca os alarmes de novo.
- *   Com o app fechado, a próxima abertura sincroniza.
+ *   Com o app fechado, quem busca é a tarefa de segundo plano (`push-segundo-plano.ts`, T-088b).
  */
 export function usePushNoApp(): void {
   const { t } = useTranslation();
@@ -49,15 +59,12 @@ export function usePushNoApp(): void {
 
   useEffect(() => {
     let ativo = true;
-    const tratadas = new Set<string>();
 
     async function tratar(resposta: Notifications.NotificationResponse) {
       const { router: navegador, cliente: consultas, sincronizar: agenda } = atuais.current;
       const { identifier, content } = resposta.notification.request;
-      const chave = `${identifier}:${resposta.actionIdentifier}`;
-      if (tratadas.has(chave)) return;
-      tratadas.add(chave);
       Notifications.clearLastNotificationResponse();
+      if (!(await reservarToque(chaveDoToque(identifier, resposta.actionIdentifier)))) return;
       const dados = content.data ?? {};
       if (typeof dados.notificacaoId === 'string') {
         void marcarLidaNotificacoes(dados.notificacaoId).catch(() => undefined);
@@ -80,7 +87,11 @@ export function usePushNoApp(): void {
         // recebido com `ver`, RN-074) diz por que o botão não fez nada.
         if (erro instanceof ErroApi && erro.status === 403) Alert.alert(erro.message);
       }
-      if (acao.tipo === 'feito' || acao.tipo === 'adiar') void agenda();
+      if (acao.tipo === 'feito' || acao.tipo === 'adiar') {
+        // No Android o botão não abre o app nem tira a notificação da barra (T-088b).
+        void Notifications.dismissNotificationAsync(identifier).catch(() => undefined);
+        void agenda();
+      }
       void consultas.invalidateQueries({ predicate: ({ queryKey }) => ehDoPush(queryKey) });
       if (acao.tipo !== 'nada' && ativo) navegador.push(acao.rota);
     }
@@ -97,7 +108,12 @@ export function usePushNoApp(): void {
       paguei: traduzir('notificacoes.push.paguei'),
     })
       .catch(() => undefined)
-      .then(() => registrarTokenDePush());
+      .then(async () => {
+        // O token de segundo plano só serve quando o push pode chegar: com a permissão liberada,
+        // que é também quando o aparelho fica registrado para receber push.
+        if ((await estadoDaPermissaoDePush()) !== 'liberada') return;
+        await Promise.all([registrarTokenDePush(), renovarTokenSegundoPlano()]);
+      });
 
     const respostas = Notifications.addNotificationResponseReceivedListener((resposta) => {
       void tratar(resposta);

@@ -34,8 +34,9 @@ const IMPORTANCIA: Record<Exclude<CanalAndroid, 'alarmes'>, Notifications.Androi
 /**
  * Na abertura: o push aparece também com o app aberto; os canais do Android existem antes do
  * primeiro push (o Android não mostra push de canal que o app não criou); e as categorias com os
- * botões. Os botões abrem o app, que faz a ação: com o app fechado, um botão que não abre não é
- * entregue ao JS.
+ * botões. No Android, [Feito] e [Adiar] não abrem o app: o sistema entrega o toque à tarefa de
+ * segundo plano (T-088b). No iOS, a tarefa não recebe toques, então os botões abrem o app, que faz
+ * a ação. [Paguei] abre o app nos dois, para a pessoa ver a fatura paga.
  */
 export async function prepararPush(textos: TextosPush): Promise<void> {
   Notifications.setNotificationHandler({
@@ -56,9 +57,11 @@ export async function prepararPush(textos: TextosPush): Promise<void> {
       });
     }
   }
+  // Sem `options`, o botão abre o app (o padrão do expo-notifications).
+  const semAbrir = Platform.OS === 'android' ? { options: { opensAppToForeground: false } } : {};
   await Notifications.setNotificationCategoryAsync('lembrete', [
-    { identifier: ACOES_PUSH.feito, buttonTitle: textos.feito },
-    { identifier: ACOES_PUSH.adiar, buttonTitle: textos.adiar },
+    { identifier: ACOES_PUSH.feito, buttonTitle: textos.feito, ...semAbrir },
+    { identifier: ACOES_PUSH.adiar, buttonTitle: textos.adiar, ...semAbrir },
   ]);
   await Notifications.setNotificationCategoryAsync('fatura_atrasada', [
     { identifier: ACOES_PUSH.paguei, buttonTitle: textos.paguei },

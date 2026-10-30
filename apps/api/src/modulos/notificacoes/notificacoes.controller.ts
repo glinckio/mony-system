@@ -25,6 +25,7 @@ import { esquemaResultadoLote, type ResultadoLote } from '@mony/shared/transacoe
 
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { criarDto } from '../../core/openapi/dto';
+import { SegundoPlano } from '../../core/auth/segundo-plano.decorator';
 import { NotificacoesService } from './notificacoes.service';
 
 class NotificacaoDto extends criarDto(esquemaNotificacao) {}
@@ -58,6 +59,7 @@ export class NotificacoesController {
   }
 
   @Post(':id/lida')
+  @SegundoPlano()
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: NotificacaoDto })
   marcarLida(

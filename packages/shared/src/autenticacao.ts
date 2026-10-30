@@ -150,6 +150,20 @@ export const esquemaSessao = z.object({
   aceitesPendentes: z.array(z.enum(DOCUMENTOS_ACEITE)),
 });
 
+/**
+ * Token de segundo plano do aparelho (T-088b, RN-004): a tarefa que trata o push com o app fechado
+ * usa este token, e não a sessão, para não renovar junto com o app (dois usos do mesmo token de
+ * renovação derrubam a sessão). Vale só nas rotas do push (alarmes, [Feito], [Adiar], marcar como
+ * lida), até 30 dias e nunca além da sessão; sair, sair de todos e a exclusão da conta o derrubam.
+ * Guardar no `expo-secure-store`, sem biometria: a tarefa roda sem a tela.
+ */
+export const esquemaTokenSegundoPlano = z.object({
+  token: z.string(),
+  expiraEm: z.iso.datetime(),
+});
+
+export type TokenSegundoPlano = z.infer<typeof esquemaTokenSegundoPlano>;
+
 export type DadosDispositivo = z.infer<typeof esquemaDispositivo>;
 export type DadosCadastro = z.infer<typeof esquemaCadastro>;
 export type DadosLogin = z.infer<typeof esquemaLogin>;
