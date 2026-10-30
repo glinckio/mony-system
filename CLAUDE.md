@@ -40,7 +40,7 @@ gh pr list --state open --json number,title,headRefName,isDraft,labels,updatedAt
 
 1. **Existe PR aberto com CI vermelho, conflito ou comentário de revisão sem resposta?** Conserte esse PR primeiro.
 2. **Existe PR aberto sem o rótulo `bloqueado`?** Retome-o (seção 4). Se houver mais de um, pegue o de menor ID de tarefa.
-3. **Senão**, pegue a **primeira tarefa `[ ]` do BACKLOG** cujas dependências estão todas `[x]` e que não tem PR aberto nem rótulo de bloqueio. Comece-a (seção 3).
+3. **Senão**, pegue a **primeira tarefa `[ ]` do BACKLOG** cujas dependências estão todas `[x]` e que não tem PR aberto nem rótulo de bloqueio. Comece-a (seção 3). As tarefas da seção "Futuro" do BACKLOG ficam de fora: só entram quando o humano trouxer de volta.
 4. Se nenhuma tarefa estiver disponível porque todas dependem de algo bloqueado, diga ao humano exatamente o que está em `BLOQUEIOS.md` e pare.
 
 Diga ao humano, em uma frase, qual tarefa você pegou e por quê. Depois trabalhe sem pedir permissão para os passos deste protocolo.

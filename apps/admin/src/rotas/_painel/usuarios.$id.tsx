@@ -159,16 +159,15 @@ function Conta({ usuario }: { usuario: UsuarioAdmin }) {
           )}
         </CardContent>
       </Card>
-      <Card className="max-w-3xl">
-        <CardHeader>
-          <CardTitle>
-            <h2>{t('usuarios.conexoes')}</h2>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {usuario.conexoes.length === 0 ? (
-            <p className="text-muted-foreground">{t('usuarios.semConexoes')}</p>
-          ) : (
+      {/* O Open Finance saiu do lançamento (T-158): o cartão só aparece quando houver conexão. */}
+      {usuario.conexoes.length > 0 ? (
+        <Card className="max-w-3xl">
+          <CardHeader>
+            <CardTitle>
+              <h2>{t('usuarios.conexoes')}</h2>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <ul className="flex flex-col gap-1 text-sm">
               {usuario.conexoes.map((conexao) => (
                 <li key={conexao.id}>
@@ -177,9 +176,9 @@ function Conta({ usuario }: { usuario: UsuarioAdmin }) {
                 </li>
               ))}
             </ul>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : null}
     </>
   );
 }

@@ -2,23 +2,20 @@ import { useTranslation } from 'react-i18next';
 import { Switch, View } from 'react-native';
 
 import { type EstadoPermissao, type Permissao, PERMISSOES, usePermissoes } from '@/lib/permissoes';
-import { Botao, Card, Etiqueta, Icone, type NomeIcone, Texto } from '@/ui';
+import { Card, Etiqueta, Icone, type NomeIcone, Texto } from '@/ui';
 import { type Cor, cores } from '@/ui/tokens';
 
 const VISUAL: Record<Permissao, { icone: NomeIcone; cor: Cor; fundo: string }> = {
   notificacoes: { icone: 'bell', cor: 'link', fundo: 'bg-primaria-suave' },
   agenda: { icone: 'calendar', cor: 'ciano', fundo: 'bg-vidro' },
   'apps-de-compra': { icone: 'shopping-bag', cor: 'atencao', fundo: 'bg-atencao-suave' },
-  banco: { icone: 'landmark', cor: 'texto-suave', fundo: 'bg-vidro' },
 };
 
 function Acao({
-  permissao,
   estado,
   titulo,
   aoPedir,
 }: {
-  permissao: Permissao;
   estado: EstadoPermissao;
   titulo: string;
   aoPedir: () => void;
@@ -26,17 +23,6 @@ function Acao({
   const { t } = useTranslation();
   if (estado === 'indisponivel') {
     return <Etiqueta texto={t('onboarding.permissoes.emBreve')} />;
-  }
-  if (permissao === 'banco') {
-    return estado === 'liberada' ? (
-      <Icone nome="circle-check" cor={cores.receita} />
-    ) : (
-      <Botao
-        variante="secundaria"
-        titulo={t('onboarding.permissoes.conectar')}
-        aoPressionar={aoPedir}
-      />
-    );
   }
   return (
     <Switch
@@ -82,12 +68,7 @@ export function ListaPermissoes() {
                   : t(`onboarding.permissoes.itens.${permissao}.texto`)}
               </Texto>
             </View>
-            <Acao
-              permissao={permissao}
-              estado={estado}
-              titulo={titulo}
-              aoPedir={() => void pedir(permissao)}
-            />
+            <Acao estado={estado} titulo={titulo} aoPedir={() => void pedir(permissao)} />
           </Card>
         );
       })}

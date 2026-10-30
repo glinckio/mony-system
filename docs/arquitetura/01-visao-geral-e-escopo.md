@@ -11,7 +11,7 @@ O sistema anterior (WhatsApp + Evolution API + n8n) **sai por completo**. Não h
 - Uma única visão financeira por usuário. Não existe perfil empresarial.
 - Usuário final usa só o app. Existe um painel web administrativo de uso interno.
 - Teste grátis de 3 dias sem cartão. Depois: plano mensal, anual (Stripe, cartão e Pix) ou gratuito com limites. O status é controlado pelo servidor.
-- Open Finance importa contas e cartões. Sem conexão, tudo funciona no modo manual e por envio de fatura no chat.
+- Open Finance importa contas e cartões **(fora do lançamento, T-158: volta quando o sistema já estiver rendendo)**. Sem conexão, tudo funciona no modo manual e por envio de fatura no chat.
 
 ## Fora do escopo
 
@@ -32,7 +32,7 @@ Perfil empresarial, módulo de veículos, importação manual por CSV, seção U
 | Listas de compras | Listas por categoria, compartilhamento em tempo real, gerar despesa | [07](07-regras-de-negocio.md#listas-de-compras) |
 | Lembretes e agenda | Lembretes, alarmes, ligação, agendas externas | [09](09-notificacoes-e-rotinas.md), [10](10-integracoes.md) |
 | Notificações | Central de alertas e novidades | [09](09-notificacoes-e-rotinas.md) |
-| Contas bancárias | Conexões de Open Finance | [10](10-integracoes.md#open-finance) |
+| Contas bancárias | Conexões de Open Finance (futuro, T-158) | [10](10-integracoes.md#open-finance) |
 | Categorias | Categorias de receita e despesa | [07](07-regras-de-negocio.md#categorias) |
 | Perfil e configurações | Dados, assinatura, preferências, permissões, LGPD | [04](04-app-mobile.md), [11](11-seguranca-e-lgpd.md) |
 

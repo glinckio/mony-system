@@ -154,7 +154,6 @@ export const textosPtBr = {
     pushAtivo: 'Ativo',
     pushInativo: 'Desligado',
     conexoes: 'Conexões Open Finance',
-    semConexoes: 'Nenhuma conexão.',
     bloquear: 'Bloquear',
     confirmarBloqueio: 'Bloquear impede o login e encerra as sessões. Nenhum dado é apagado.',
     cancelar: 'Cancelar',

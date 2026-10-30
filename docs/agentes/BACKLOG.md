@@ -88,8 +88,6 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Mesmas funções do Android (`permissoes`, `sincronizar`, `estado`…), para o JS e a tela de teste não mudarem; relatório em `docs/agentes/poc/T-023b.md`.
 - [x] **T-024** 👤 PoC Stripe: assinatura com cartão e Pix em conta BR, checkout externo com retorno por deep link (feita no teste da T-102, PR #92: cartão ok; Pix recorrente não existe na Stripe, ver doc 10)
   - dep: T-008, T-010 · docs: 10 (Stripe)
-- [ ] **T-025** 👤 PoC Open Finance: widget do agregador no Expo, ida ao app do banco e volta
-  - dep: T-010 · docs: 10 (Open Finance) · requer sandbox do agregador
 - [x] **T-026** PoC NFC-e: avaliar API de terceiros nas UFs prioritárias (PR #13)
   - dep: T-006 · docs: 10 (NFC-e)
 
@@ -285,8 +283,6 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 
 ## Fase 5 — Recursos pagos e colaboração
 
-- [ ] **T-120** 👤 Open Finance: `OpenFinanceProvider`, conexão, webhooks, importação, dedupe, conflito manual, categoria, consentimento; na exclusão da conta, revogar também no provedor (`ExclusaoContaService.excluir`, RN-161, T-140b)
-  - dep: T-025, T-102 · RN-121, RN-140 a RN-144
 - [ ] **T-121** 👤 Detecção de apps de compra (iOS e Android) com endpoint e alerta
   - dep: T-021, T-022, T-081 · RN-104, RN-121
   - O intervalo por app (RN-104) vem do painel: `ParametrosService.obter()` → `alertas.intervaloAppCompraHoras` (T-141g).
@@ -334,17 +330,16 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 
 ## Fase 6 — Lançamento
 
-- [ ] **T-140** LGPD: aceites de termos, consentimentos, exportar dados, excluir conta, retenção de arquivos
-  - dep: T-120, T-102 · docs: 11 · RN-160 a RN-162
+- [x] **T-140** LGPD: aceites de termos, consentimentos, exportar dados, excluir conta, retenção de arquivos (T-140a a T-140e; o consentimento do Open Finance foi para o Futuro com ele, T-158)
+  - dep: T-102 · docs: 11 · RN-160 a RN-162
   - No app, "Exportar meus dados" e "Excluir conta" entram na seção Privacidade do Perfil (T-057).
   - Excluir conta mantém os resumos da `controle_teste` (RN-125, T-101): sem eles, excluir e cadastrar de novo daria outro teste grátis.
-  - Dividida em T-140a a T-140d; só a T-140d depende da T-120 (os aceites de termos já existem desde a T-030, RN-007).
+  - Dividida em T-140a a T-140e (os aceites de termos já existem desde a T-030, RN-007).
   - [x] **T-140a** Exportar meus dados: pedido no Perfil (Privacidade), job no worker com JSON e XLSX de todas as tabelas do usuário, links assinados de 24 h no app e por e-mail · RN-160 (PR #114)
   - [x] **T-140b** Excluir conta: confirmação com senha ou código, 7 dias de arrependimento, depois cancela a Stripe, revoga conexões, apaga arquivos e apaga ou anonimiza os dados (mantém a `controle_teste`) · RN-161 (PR #115)
   - [x] **T-140c** Retenção de fotos e áudios: limpeza diária apaga o arquivo depois do prazo (padrão 90 dias, no painel) e o lançamento fica · RN-162 (PR #116)
   - [x] **T-140d** Consentimentos no servidor (tabela `consentimentos`) para agenda, apps de compra e ligações: registrados ao ligar o recurso, `GET /consentimentos` e `DELETE /consentimentos/:finalidade`, e revogar desliga o recurso · docs: 05, 11 (PR #137)
   - [x] **T-140e** No app: os consentimentos na tela de Permissões, com "Revogar" (dep: T-140d) · docs: 04 (PR #140)
-  - [ ] **T-140f** Consentimento do Open Finance, com o provedor (dep: T-120, T-140d)
 - [x] **T-141** Admin completo: usuários, assinaturas, métricas, novidades, Mony (prompt e custos), auditoria, filas. Dividida em T-141a a T-141g, uma seção do painel por vez.
   - dep: T-104b, T-104c, T-104d, T-068 · docs: 13
 - [x] **T-141a** Admin: usuários (busca, dados da conta, aparelhos e conexões, bloquear e reativar, estender teste grátis, auditoria das visualizações) (PR #98)
@@ -372,7 +367,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - [x] **T-143a** Fluxos do Maestro (cadastro → onboarding → primeiro lançamento na Mony; cartão → compra parcelada → pagar fatura; limite do gratuito → Ver planos) e o workflow que os roda num emulador Android com a API local (fakes), manual e quando os fluxos mudam (PR #113)
   - [ ] **T-143b** 👤 Rodar os mesmos fluxos no build de preview contra a API de staging antes de cada release (depende da T-013 aplicada e do EAS)
 - [ ] **T-144** Hardening de segurança (checklist de 11) e teste de carga, dividida em:
-  - dep: T-140 (só a T-140d espera a T-120; as partes abaixo não dependem dela) · docs: 11
+  - dep: T-140 · docs: 11
   - [x] **T-144a** Proteção da API: limite geral de requisições por IP (Redis), cabeçalhos de segurança (nosniff, frame, referrer, CSP, HSTS em produção), redação de dados sensíveis nos logs, `pnpm audit` no CI e Dependabot; fastify 5.12.2 (PR #117)
   - [x] **T-144b** Tipo real do arquivo no upload (magic bytes) e tamanho máximo por tipo (20 MB PDF, 10 MB imagem, 10 min de áudio), conferidos depois do envio ao S3 (PR #123)
   - [ ] **T-144c** 👤 Teste de carga contra staging (depende da T-013 aplicada)
@@ -383,6 +378,17 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-143, T-144, T-145
 
 ---
+
+## Futuro (fora do lançamento)
+
+Recursos que o cliente tirou do lançamento para cortar custos e que voltam quando o sistema já estiver rendendo. Não entram na regra de prioridade: só quando o humano trouxer de volta. O modelo de dados deles já existe e fica sem uso até lá.
+
+- **Open Finance** (decisão do cliente em 2026-10-30, T-158; o agregador custa a partir de R$ 2.500 por mês, doc 10):
+  - [ ] **T-025** 👤 PoC Open Finance: widget do agregador no Expo, ida ao app do banco e volta
+    - dep: T-010 · docs: 10 (Open Finance) · requer sandbox do agregador
+  - [ ] **T-120** 👤 Open Finance: `OpenFinanceProvider`, conexão, webhooks, importação, dedupe, conflito manual, categoria, consentimento; na exclusão da conta, revogar também no provedor (`ExclusaoContaService.excluir`, RN-161, T-140b)
+    - dep: T-025, T-102 · RN-121, RN-140 a RN-144
+  - [ ] **T-140f** Consentimento do Open Finance, com o provedor (dep: T-120, T-140d)
 
 ## Tarefas adicionadas durante o trabalho
 
@@ -403,3 +409,5 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: — · pedido do humano em 2026-10-17
 - [x] **T-157** Mony com o Claude Haiku 5.5 como modelo padrão (`IA_MODELO`), no lugar do Sonnet 5.5, para gastar o mínimo (PR #148)
   - dep: T-020 · docs: 02 (ADR-005), 08 · decisão do humano em 2026-10-30 ("a gente vai usar o haiku mesmo")
+- [x] **T-158** Open Finance fora do lançamento: as tarefas dele (T-025, T-120, T-140f) foram para o Futuro; o app tira o "Bancos conectados" do plano pago e o "Conectar banco" do onboarding, e o painel esconde o cartão de conexões quando não há nenhuma; docs com o recurso marcado como futuro (PR #<n>)
+  - dep: — · decisão do cliente em 2026-10-30 ("tirar o open finance das funcionalidades para cortar custos e adicionar no futuro")

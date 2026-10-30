@@ -137,6 +137,8 @@ describe('Usuários (T-141a)', () => {
     expect(
       within(screen.getByRole('table', { name: 'Aparelhos' })).getAllByRole('row')[1],
     ).toHaveTextContent('AndroidMoto G15/10/2026, 13:00Ativo');
+    // Sem Open Finance no lançamento (T-158), o cartão das conexões só aparece com uma.
+    expect(screen.queryByRole('heading', { name: 'Conexões Open Finance' })).toBeNull();
   });
 
   it('bloquear pede confirmação; depois mostra reativar', async () => {
