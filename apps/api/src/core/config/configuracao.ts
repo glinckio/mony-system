@@ -152,6 +152,13 @@ export class Configuracao {
     return this.config.get('GOOGLE_CLIENT_IDS', { infer: true });
   }
 
+  /** O cliente OAuth da agenda do Google (T-085g); `undefined`, a agenda falsa. */
+  get oauthGoogle(): { idCliente: string; segredo: string } | undefined {
+    const idCliente = this.config.get('GOOGLE_OAUTH_ID_CLIENTE', { infer: true });
+    const segredo = this.config.get('GOOGLE_OAUTH_SEGREDO', { infer: true });
+    return idCliente === undefined || segredo === undefined ? undefined : { idCliente, segredo };
+  }
+
   /** Bundle id e Services ID aceitos no `id_token` da Apple (vazio: desligado). */
   get clientesApple(): string[] {
     return this.config.get('APPLE_CLIENT_IDS', { infer: true });

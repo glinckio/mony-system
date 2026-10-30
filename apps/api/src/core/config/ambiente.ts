@@ -140,6 +140,13 @@ export const esquemaAmbiente = z
      * Services ID, se houver login pela web). Vazio desliga o provedor.
      */
     GOOGLE_CLIENT_IDS: listaPorVirgula,
+    /**
+     * Agenda do Google (T-085g, doc 10): o cliente OAuth "Aplicativo da Web" do projeto no Google
+     * Cloud, com o endereço `<API_URL_PUBLICA>/v1/agendas/oauth/callback` autorizado. Os dois
+     * juntos; sem eles, a agenda do Google é a falsa (e, em produção, conectar responde 503).
+     */
+    GOOGLE_OAUTH_ID_CLIENTE: z.preprocess(vazioComoAusente, z.string().optional()),
+    GOOGLE_OAUTH_SEGREDO: z.preprocess(vazioComoAusente, z.string().optional()),
     APPLE_CLIENT_IDS: listaPorVirgula,
     /**
      * Quem recebe os alertas técnicos do worker (T-142a, doc 12), separados por vírgula: fila
@@ -215,6 +222,20 @@ export const esquemaAmbiente = z
           });
         }
       }
+    }
+    if (
+      (variaveis.GOOGLE_OAUTH_ID_CLIENTE === undefined) !==
+      (variaveis.GOOGLE_OAUTH_SEGREDO === undefined)
+    ) {
+      const falta =
+        variaveis.GOOGLE_OAUTH_ID_CLIENTE === undefined
+          ? 'GOOGLE_OAUTH_ID_CLIENTE'
+          : 'GOOGLE_OAUTH_SEGREDO';
+      contexto.addIssue({
+        code: 'custom',
+        path: [falta],
+        message: 'GOOGLE_OAUTH_ID_CLIENTE e GOOGLE_OAUTH_SEGREDO vão juntos',
+      });
     }
     if (variaveis.IA_PROVEDOR === 'anthropic' && variaveis.ANTHROPIC_CHAVE_API === undefined) {
       contexto.addIssue({

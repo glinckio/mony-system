@@ -3,7 +3,8 @@
 Uma linha por bloqueio: `- <ID> — <o que falta> — <quem resolve> — <data>`. Quem resolver apaga a linha.
 
 - T-021 — Pedir à Apple o entitlement Family Controls (demora; pedir já) — humano/cliente — 2026-10-08
-- T-085 — Iniciar a verificação do app no Google para escopos de agenda (demora; pedir já) — humano/cliente — 2026-10-08
+- T-085j — Verificação do app no Google para o escopo de agenda (`calendar.events`): antes, a tela de consentimento precisa do e-mail de suporte do cliente (uma conta Google com o `suporte@monitorizze.com.br`), do domínio e da política de privacidade publicada. Até lá, só os usuários de teste do projeto conectam, e a conexão vence em 7 dias — humano/cliente — 2026-10-30
+- T-085h — Registro do app no Entra ID do cliente (ID do aplicativo e segredo, para o Outlook), passo a passo dado ao humano em 30/10 — humano — 2026-10-30
 - Geral — Respostas do cliente às perguntas de docs/arquitetura/15-roadmap-e-pendencias.md — cliente — 2026-10-08
 - T-031 — Conta Brevo do cliente: domínio do remetente verificado (SPF e DKIM) e chave da API. Com isso, gravar `BREVO_CHAVE_API`, `EMAIL_PROVEDOR=brevo` e `EMAIL_REMETENTE` no parâmetro `/mony/staging/app` (infra/README.md, passo 4) e rodar um deploy. Até lá, staging não envia e-mails (avisa no log) — humano/cliente — 2026-10-09
 - T-081 — Push de verdade: chave do FCM (Android) e do APNs (iOS) no projeto do EAS (junto com a T-010) e `PUSH_PROVEDOR=expo` no parâmetro `/mony/staging/app` (com `EXPO_ACCESS_TOKEN`, se ligar a segurança de push no EAS). Até lá, o worker não envia push (avisa no log) — humano — 2026-10-10

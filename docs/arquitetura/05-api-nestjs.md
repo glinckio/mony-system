@@ -462,7 +462,7 @@ Implementado na T-084a (RN-075 a RN-077), em `modulos/lembretes`; a regra da rep
 
 ## Agenda
 
-Como está (T-085a, RN-079), com o provedor falso; o Google e o Outlook de verdade entram na T-085b.
+Como está (T-085a, RN-079): o Google é o de verdade com `GOOGLE_OAUTH_ID_CLIENTE` e `GOOGLE_OAUTH_SEGREDO` (T-085g); sem eles, e para o Outlook, o provedor falso (o Outlook de verdade entra na T-085h).
 
 - **Conectar:** `POST /agendas/conectar` (`provedor`: `google` ou `outlook`) devolve a `url` do consentimento, que o app abre no navegador. O `state` vai cifrado (`core/cripto`) com quem pediu e vale 10 minutos. A volta (`GET /agendas/oauth/callback`, pública) troca o `code`, grava os tokens cifrados e redireciona para `mony://agenda?conexao=sucesso`, `cancelado` (a pessoa recusou) ou `erro` (estado inválido ou vencido, código recusado). Uma conexão por provedor (`@@unique([usuarioId, provedor])`): conectar de novo troca os tokens e tira o `reconectar`. Em produção com o provedor falso, ou sem `CRIPTO_CHAVE_MESTRA`, responde 503.
 - **Agenda padrão:** a primeira conexão vira a padrão; as outras entram sem ser. `PUT /agendas/padrao` com `agendaId` (ou `null`, para os compromissos novos ficarem só no Mony). `GET /agendas` traz `padrao`, `situacao` (`conectada` ou `reconectar`, quando o provedor recusou os tokens) e `sincronizadaEm`.
