@@ -409,5 +409,5 @@ Recursos que o cliente tirou do lançamento para cortar custos e que voltam quan
   - dep: — · pedido do humano em 2026-10-17
 - [x] **T-157** Mony com o Claude Haiku 5.5 como modelo padrão (`IA_MODELO`), no lugar do Sonnet 5.5, para gastar o mínimo (PR #148)
   - dep: T-020 · docs: 02 (ADR-005), 08 · decisão do humano em 2026-10-30 ("a gente vai usar o haiku mesmo")
-- [x] **T-158** Open Finance fora do lançamento: as tarefas dele (T-025, T-120, T-140f) foram para o Futuro; o app tira o "Bancos conectados" do plano pago e o "Conectar banco" do onboarding, e o painel esconde o cartão de conexões quando não há nenhuma; docs com o recurso marcado como futuro (PR #<n>)
+- [x] **T-158** Open Finance fora do lançamento: as tarefas dele (T-025, T-120, T-140f) foram para o Futuro; o app tira o "Bancos conectados" do plano pago e o "Conectar banco" do onboarding, e o painel esconde o cartão de conexões quando não há nenhuma; docs com o recurso marcado como futuro (PR #149)
   - dep: — · decisão do cliente em 2026-10-30 ("tirar o open finance das funcionalidades para cortar custos e adicionar no futuro")
