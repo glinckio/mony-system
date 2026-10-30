@@ -6,7 +6,8 @@ import { estadoDaPermissaoDePush, pedirPermissaoDePush } from './push';
  * Permissões do aparelho que a Mony usa (doc 04, "Permissões"), pedidas uma por vez com a tela
  * explicativa antes do diálogo do sistema. Recusa nunca bloqueia o app.
  */
-export const PERMISSOES = ['notificacoes', 'agenda', 'apps-de-compra', 'banco'] as const;
+/** O Open Finance ("Conectar banco") saiu do lançamento e volta com a T-120 (T-158). */
+export const PERMISSOES = ['notificacoes', 'agenda', 'apps-de-compra'] as const;
 export type Permissao = (typeof PERMISSOES)[number];
 
 /** `indisponivel`: este build ainda não tem o módulo que pede a permissão. */
@@ -21,7 +22,7 @@ export interface PedidoDePermissao {
 /**
  * Quem sabe pedir cada permissão. Cada tarefa que traz o módulo nativo entra aqui: notificações na
  * T-088 (`expo-notifications`; liberada, o token vai para a API), agenda na T-085, apps de compra
- * na T-121 e banco na T-120. Sem pedido, a tela mostra "Em breve".
+ * na T-121. Sem pedido, a tela mostra "Em breve".
  */
 export const PEDIDOS_DE_PERMISSAO: Partial<Record<Permissao, PedidoDePermissao>> = {
   notificacoes: { estado: estadoDaPermissaoDePush, pedir: pedirPermissaoDePush },

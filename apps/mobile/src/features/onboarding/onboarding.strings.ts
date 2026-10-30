@@ -42,7 +42,6 @@ export const textosOnboarding = {
     depois: 'Configurar depois',
     pronto: 'Pronto',
     emBreve: 'Em breve',
-    conectar: 'Conectar',
     negada: 'Para liberar, abra as configurações do aparelho.',
     itens: {
       notificacoes: {
@@ -56,10 +55,6 @@ export const textosOnboarding = {
       'apps-de-compra': {
         titulo: 'Apps de compra',
         texto: 'Aviso do seu orçamento ao abrir Shopee, Mercado Livre e outros',
-      },
-      banco: {
-        titulo: 'Conectar banco',
-        texto: 'Opcional. Gastos do cartão entram sozinhos via Open Finance',
       },
     },
   },

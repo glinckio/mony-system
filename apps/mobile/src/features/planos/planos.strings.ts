@@ -62,7 +62,6 @@ export const textosPlanos = {
     beneficios: [
       'Lançamentos ilimitados com a Mony',
       'Leitura de notas fiscais e faturas',
-      'Bancos conectados via Open Finance',
       'Cartões, alertas e orçamentos sem limite',
       'Aviso ao abrir apps de compra',
     ],

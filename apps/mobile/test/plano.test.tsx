@@ -288,6 +288,8 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
       expect(screen.getByText('equivale a R$ 16,58 por mês')).toBeOnTheScreen();
       expect(screen.getByText('Seu teste termina em 3 dias')).toBeOnTheScreen();
       expect(screen.getByText('Lançamentos ilimitados com a Mony')).toBeOnTheScreen();
+      // O Open Finance saiu do lançamento (T-158).
+      expect(screen.queryByText('Bancos conectados via Open Finance')).toBeNull();
       // A Stripe não aceita Pix em assinatura (T-102): o rodapé fala só do cartão.
       expect(
         screen.getByText('Cartão · renovação automática · cancele quando quiser'),

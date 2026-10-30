@@ -120,7 +120,7 @@ Base do PDF, com os complementos marcados **(proposta)**.
 | Lembretes e agenda | `GET /lembretes` · `POST /lembretes` · `PATCH /lembretes/:id` · `DELETE /lembretes/:id` · `POST /lembretes/:id/concluir` · `POST /lembretes/:id/adiar` · `GET /lembretes/alarmes` (prontas: T-084a) · `GET /agenda?inicio=&fim=` · `GET /agendas` · `POST /agendas/conectar` · `GET /agendas/oauth/callback` · `PUT /agendas/padrao` · `DELETE /agendas/:id` · `GET /compromissos/:id` · `POST /compromissos` · `PATCH /compromissos/:id` · `DELETE /compromissos/:id` (prontas: T-085a) |
 | Notificações | `GET /notificacoes` · `POST /notificacoes/:id/lida` · `GET /preferencias-alerta` · `PUT /preferencias-alerta` |
 | Apps de compra | `GET /apps-monitorados` · `PUT /apps-monitorados` · `POST /apps-monitorados/token-evento` · `DELETE /apps-monitorados/token-evento` · `POST /eventos/app-compra-aberto` (prontas: T-121a) |
-| Open Finance | `POST /open-finance/token-conexao` · `GET /open-finance/conexoes` · `POST /open-finance/conexoes/:id/sincronizar` · `DELETE /open-finance/conexoes/:id` · `POST /webhooks/open-finance` |
+| Open Finance (futuro, T-158) | `POST /open-finance/token-conexao` · `GET /open-finance/conexoes` · `POST /open-finance/conexoes/:id/sincronizar` · `DELETE /open-finance/conexoes/:id` · `POST /webhooks/open-finance` |
 | Mony | `POST /mony/mensagens` (SSE) · `POST /mony/acoes` · `GET /mony/conversa` · `POST /mony/nfce` (prontas: T-020, T-060 e T-066a; SSE fora do OpenAPI, contrato em `@mony/shared/mony`) |
 | Arquivos | `POST /arquivos` (retorna URL assinada de upload) · `GET /arquivos/:id` (retorna URL assinada de leitura) |
 | Novidades | `GET /novidades` · `POST /novidades/:id/lida` (T-150) |

@@ -38,7 +38,9 @@ Teste de 3 dias, plano gratuito com cotas, Stripe (checkout, webhooks, portal), 
 
 ## Fase 5 — Recursos de plano pago e colaboração
 
-Open Finance (conexão, importação, conflitos, consentimento), detecção de apps de compra, lembrete por ligação, listas de compras com compartilhamento em tempo real, lembretes compartilhados, relatórios completos e exportação.
+Detecção de apps de compra, lembrete por ligação, listas de compras com compartilhamento em tempo real, lembretes compartilhados, relatórios completos e exportação.
+
+**Futuro, depois do lançamento:** Open Finance (conexão, importação, conflitos, consentimento). O cliente tirou do lançamento em 30/10/2026 para cortar custos e traz de volta quando o sistema já estiver rendendo (T-158).
 
 ## Fase 6 — Lançamento
 
@@ -51,7 +53,7 @@ LGPD completa (exportar, excluir conta, consentimentos, retenção), painel admi
 | Apple negar o entitlement de Family Controls | Sem detecção de apps no iOS | Pedir cedo; recurso desenhado para ser opcional |
 | Google Play recusar uso de UsageStats ou foreground service | Sem detecção no Android | Declaração bem justificada; recurso opcional |
 | Pix recorrente indisponível na Stripe | Pix só parcial | Alternativas em [10](10-integracoes.md#stripe) |
-| Custo do agregador (a partir de R$ 2.500/mês, segundo o PDF) | Custo fixo antes de ter receita | Recurso só no pago; lançar Open Finance quando houver base pagante |
+| Custo do agregador (a partir de R$ 2.500/mês, segundo o PDF) | Custo fixo antes de ter receita | Decidido (T-158): fora do lançamento, entra quando houver base pagante |
 | Custo de IA por usuário | Margem | Regras sem modelo, cache de prompt, modelo menor para tarefas simples, cotas |
 | Regras das lojas sobre pagamento externo mudarem | Fluxo de pagamento | `BillingProvider` com "loja" prevista; revalidar antes de publicar |
 | Formato das NFC-e variar por UF | Leitura falha | API de terceiros + fallback por foto |
@@ -74,7 +76,7 @@ Respostas necessárias antes da fase indicada.
 | 9 | Pix na assinatura: aceitar só no anual se a Stripe não suportar recorrente? | 4 | Sim, como pagamento único anual |
 | 10 | Valores dos planos mensal e anual | 4 | Definidos pelo cliente no admin |
 | 11 | No gratuito, o que acontece com itens acima do limite (ex.: 3 cartões)? | 4 | Ficam visíveis e editáveis, sem criar novos (RN-127) |
-| 12 | Qual agregador de Open Finance (Pluggy, Belvo, Klavi)? | 5 | Decidir após cotação |
+| 12 | Qual agregador de Open Finance (Pluggy, Belvo, Klavi)? | 5 | Adiada: o Open Finance saiu do lançamento (T-158); decidir após cotação, quando ele voltar |
 | 13 | Quais UFs priorizar para NFC-e? | 2 | As do público principal |
 | 14 | Prazo de arrependimento antes da exclusão definitiva da conta | 6 | 7 dias (RN-161) |
 | 15 | Vídeo das novidades: link externo ou upload? | 6 | Link externo |

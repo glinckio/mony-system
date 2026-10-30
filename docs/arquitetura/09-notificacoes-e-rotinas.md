@@ -101,7 +101,7 @@ Todas no processo `worker`, com chave de job idempotente e processamento em lote
 | Alertas de vencimento e projeção (`alertas-diarios`) | De hora em hora, no minuto 5, para quem está às 09:00 | `fatura_vencimento`, `vencimento_pendente`, `projecao_mes`. Implementada na T-082 |
 | Resumo semanal e mensal | Segunda e dia 1, 09:00 (na `alertas-diarios`) | Mensagem da Mony no chat + push. Implementada na T-083 |
 | Repetir orçamentos | Dia 1, 00:15 | Copia do mês anterior os orçamentos com `repetir_mensal` (RN-060); o mês é o de São Paulo (T-043) |
-| Sincronização Open Finance | A cada 6 h | Além dos webhooks |
+| Sincronização Open Finance (futuro, T-158) | A cada 6 h | Além dos webhooks |
 | Aviso de consentimento | Diária | 7 dias antes de vencer (RN-144) |
 | Disparo de lembretes e ligações (`disparar-lembretes`) | A cada minuto | Lembretes com `data_hora` (ou `adiado_ate`) vencidos e ainda não tocados: push urgente com [Feito] [Adiar], também para quem aceitou o convite do lembrete (T-124c); a repetição passa para a próxima ocorrência. Implementada na T-084a (doc 05, "Lembretes"); com o canal ligação, um job por aviso na fila `lembretes` (T-122a) |
 | Aviso dos compromissos (`avisar-compromissos`) | A cada minuto | Os compromissos que começam dentro da antecedência de cada pessoa e ainda não foram avisados para esse início: push urgente pelo motor (tipo `compromisso`), em lotes de 500. Implementada na T-085d |

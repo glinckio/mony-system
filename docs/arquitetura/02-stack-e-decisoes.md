@@ -102,6 +102,8 @@ A Mony usa uma interface `LlmProvider` (chat com ferramentas, visão, PDF, strea
 
 ### ADR-006 — Open Finance via agregador, atrás de interface
 
+**Fora do lançamento (T-158):** o cliente tirou o Open Finance do lançamento em 30/10/2026 para cortar custos (o agregador custa a partir de R$ 2.500 por mês). Ele volta quando o sistema já estiver rendendo; as tarefas estão em "Futuro" no BACKLOG, e o modelo de dados fica pronto e sem uso.
+
 `OpenFinanceProvider` com implementação inicial para o agregador escolhido. A escolha entre Pluggy, Belvo e Klavi depende de cotação **(confirmar com cliente)**. Ver [10](10-integracoes.md#open-finance).
 
 ### ADR-007 — Pagamentos pela Stripe, cobrança das lojas prevista mas não implementada

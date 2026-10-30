@@ -16,6 +16,8 @@ Regra geral (do PDF): cada integração fica num módulo isolado em `apps/api/sr
 
 ## Open Finance
 
+**Fora do lançamento (T-158):** o cliente tirou o Open Finance do lançamento em 30/10/2026 para cortar custos (o agregador custa a partir de R$ 2.500 por mês). Ele volta quando o sistema já estiver rendendo; as tarefas estão em "Futuro" no BACKLOG, e o modelo de dados fica pronto e sem uso.
+
 Fluxo (do PDF):
 
 ```mermaid

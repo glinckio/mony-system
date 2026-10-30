@@ -116,9 +116,10 @@ describe('onboarding (T-046)', () => {
         await screen.findByRole('header', { name: 'Deixe a Mony te avisar na hora certa' }, ESPERA),
       ).toBeOnTheScreen();
       expect(screen.getByText('Etapa 3 de 3')).toBeOnTheScreen();
-      // Só as notificações têm o pedido (T-088); agenda, apps de compra e banco vêm depois
-      // (T-085, T-121, T-120).
-      expect(screen.getAllByText('Em breve')).toHaveLength(3);
+      // Só as notificações têm o pedido (T-088); agenda e apps de compra vêm depois (T-085,
+      // T-121). O banco (Open Finance) saiu do lançamento (T-158).
+      expect(screen.getAllByText('Em breve')).toHaveLength(2);
+      expect(screen.queryByText('Conectar banco')).toBeNull();
 
       fireEvent.press(screen.getByRole('button', { name: 'Concluir' }));
       expect(await screen.findByRole('header', { name: 'Início' }, ESPERA)).toBeOnTheScreen();
@@ -197,7 +198,7 @@ describe('onboarding (T-046)', () => {
       expect(
         await screen.findByText('Para liberar, abra as configurações do aparelho.', {}, ESPERA),
       ).toBeOnTheScreen();
-      expect(screen.getAllByText('Em breve')).toHaveLength(2);
+      expect(screen.getAllByText('Em breve')).toHaveLength(1);
     },
     TEMPO_LIMITE_MS,
   );
