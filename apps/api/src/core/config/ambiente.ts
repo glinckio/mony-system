@@ -147,6 +147,13 @@ export const esquemaAmbiente = z
      */
     GOOGLE_OAUTH_ID_CLIENTE: z.preprocess(vazioComoAusente, z.string().optional()),
     GOOGLE_OAUTH_SEGREDO: z.preprocess(vazioComoAusente, z.string().optional()),
+    /**
+     * Agenda do Outlook (T-085h, doc 10): o app registrado no Entra ID do cliente (contas de
+     * qualquer organização e pessoais), com `<API_URL_PUBLICA>/v1/agendas/oauth/callback` na
+     * plataforma Web. Os dois juntos; sem eles, a agenda do Outlook é a falsa.
+     */
+    MICROSOFT_OAUTH_ID_CLIENTE: z.preprocess(vazioComoAusente, z.string().optional()),
+    MICROSOFT_OAUTH_SEGREDO: z.preprocess(vazioComoAusente, z.string().optional()),
     APPLE_CLIENT_IDS: listaPorVirgula,
     /**
      * Quem recebe os alertas técnicos do worker (T-142a, doc 12), separados por vírgula: fila
@@ -223,19 +230,19 @@ export const esquemaAmbiente = z
         }
       }
     }
-    if (
-      (variaveis.GOOGLE_OAUTH_ID_CLIENTE === undefined) !==
-      (variaveis.GOOGLE_OAUTH_SEGREDO === undefined)
-    ) {
-      const falta =
-        variaveis.GOOGLE_OAUTH_ID_CLIENTE === undefined
-          ? 'GOOGLE_OAUTH_ID_CLIENTE'
-          : 'GOOGLE_OAUTH_SEGREDO';
-      contexto.addIssue({
-        code: 'custom',
-        path: [falta],
-        message: 'GOOGLE_OAUTH_ID_CLIENTE e GOOGLE_OAUTH_SEGREDO vão juntos',
-      });
+    // Os clientes OAuth das agendas (T-085g e T-085h): o id e o segredo vão juntos.
+    const paresOauth = [
+      ['GOOGLE_OAUTH_ID_CLIENTE', 'GOOGLE_OAUTH_SEGREDO'],
+      ['MICROSOFT_OAUTH_ID_CLIENTE', 'MICROSOFT_OAUTH_SEGREDO'],
+    ] as const;
+    for (const [id, segredo] of paresOauth) {
+      if ((variaveis[id] === undefined) !== (variaveis[segredo] === undefined)) {
+        contexto.addIssue({
+          code: 'custom',
+          path: [variaveis[id] === undefined ? id : segredo],
+          message: `${id} e ${segredo} vão juntos`,
+        });
+      }
     }
     if (variaveis.IA_PROVEDOR === 'anthropic' && variaveis.ANTHROPIC_CHAVE_API === undefined) {
       contexto.addIssue({

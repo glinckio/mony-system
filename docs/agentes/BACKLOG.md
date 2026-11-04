@@ -230,7 +230,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - [ ] **T-085b** 👤 Provedores de verdade: Google Calendar e Microsoft Graph, clientes OAuth do cliente, chave mestra na KMS e verificação do app no Google. Dividida em:
     - dep: T-085a · requer as contas do cliente
     - [x] **T-085g** Google Calendar de verdade (`CalendarGoogle`, OAuth no servidor com `calendar.events`, renovação e revogação), ligado por `GOOGLE_OAUTH_ID_CLIENTE` e `GOOGLE_OAUTH_SEGREDO` (PR #153)
-    - [ ] **T-085h** 👤 Outlook de verdade (`CalendarOutlook`, Microsoft Graph), com o app registrado no Entra ID do cliente (dep: T-085g; requer o ID e o segredo do app)
+    - [x] **T-085h** 👤 Outlook de verdade (`CalendarOutlook`, Microsoft Graph), com o app registrado no Entra ID do cliente, ligado por `MICROSOFT_OAUTH_ID_CLIENTE` e `MICROSOFT_OAUTH_SEGREDO` (PR #<n>)
     - [ ] **T-085i** Chave mestra da cifra na KMS no lugar da `CRIPTO_CHAVE_MESTRA` do ambiente (doc 11) (dep: T-085g)
     - [ ] **T-085j** 👤 Verificação do app no Google para o escopo `calendar.events` (tela de consentimento com o domínio, a política de privacidade e o e-mail de suporte do cliente); até lá, só os usuários de teste conectam (dep: T-085g)
   - [x] **T-085c** Tela Agenda no app (calendário do design) com os compromissos do servidor: semana, dia, filtros por agenda, novo, editar e excluir; o link `mony://agenda`, o atalho em Mais e o [Ver agenda] na resposta do `criar_compromisso` da Mony; e, em Alertas da Mony, a chave e a antecedência do aviso do compromisso (`antecedenciaMinutos`, T-085d) (PR #141)
