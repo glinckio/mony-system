@@ -10,9 +10,7 @@ import type { ListarNotificacoesTipo } from './listarNotificacoesTipo';
 export type ListarNotificacoesParams = {
   tipo?: ListarNotificacoesTipo;
   naoLidas?: string;
-  /**
-   * @maxLength 200
-   */
+  /** @maxLength 200 */
   cursor?: string;
   /**
    * @minimum 1

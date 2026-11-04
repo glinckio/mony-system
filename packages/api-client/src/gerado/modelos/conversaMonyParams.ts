@@ -12,9 +12,7 @@ export type ConversaMonyParams = {
    * @maxLength 100
    */
   texto?: string;
-  /**
-   * @maxLength 200
-   */
+  /** @maxLength 200 */
   cursor?: string;
   /**
    * @minimum 1
