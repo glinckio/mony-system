@@ -159,6 +159,13 @@ export class Configuracao {
     return idCliente === undefined || segredo === undefined ? undefined : { idCliente, segredo };
   }
 
+  /** O app registrado no Entra ID para a agenda do Outlook (T-085h); `undefined`, a falsa. */
+  get oauthMicrosoft(): { idCliente: string; segredo: string } | undefined {
+    const idCliente = this.config.get('MICROSOFT_OAUTH_ID_CLIENTE', { infer: true });
+    const segredo = this.config.get('MICROSOFT_OAUTH_SEGREDO', { infer: true });
+    return idCliente === undefined || segredo === undefined ? undefined : { idCliente, segredo };
+  }
+
   /** Bundle id e Services ID aceitos no `id_token` da Apple (vazio: desligado). */
   get clientesApple(): string[] {
     return this.config.get('APPLE_CLIENT_IDS', { infer: true });
