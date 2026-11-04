@@ -42,6 +42,21 @@ export const textosAuth = {
     reenviar: 'Mandar outro código',
     voltar: 'Voltar para o login',
   },
+  google: {
+    ou: 'ou',
+    entrar: 'Entrar com Google',
+    erro: 'Não deu para entrar com o Google. Tente de novo.',
+    vinculo:
+      'O e-mail {{email}} já tem conta no Mony. Entre com a senha uma vez para ligar o Google a ela.',
+  },
+  completar: {
+    titulo: 'Complete seu cadastro',
+    explicacao:
+      'Falta pouco: confira seu nome e informe o celular para criar a conta com o Google.',
+    criar: 'Criar conta',
+    expirou: 'O login do Google expirou. Entre de novo.',
+    voltar: 'Voltar para o login',
+  },
   bloqueio: {
     titulo: 'Mony bloqueado',
     explicacao: 'Use a biometria do aparelho para continuar.',

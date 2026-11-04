@@ -17,7 +17,10 @@ export function lerConfigPublica(extra: unknown): ConfigPublica {
   if (typeof extra !== 'object' || extra === null) {
     throw new Error('Configuração do app ausente: confira o app.config.ts.');
   }
-  const { ambiente, urlApi, sentryDsn, urlLoja } = extra as Record<string, unknown>;
+  const { ambiente, urlApi, sentryDsn, urlLoja, googleIdClienteWeb } = extra as Record<
+    string,
+    unknown
+  >;
   if (!ehAmbiente(ambiente)) {
     throw new Error(`Ambiente do app inválido: ${String(ambiente)}.`);
   }
@@ -36,5 +39,9 @@ export function lerConfigPublica(extra: unknown): ConfigPublica {
     urlApi,
     sentryDsn: typeof sentryDsn === 'string' && sentryDsn !== '' ? sentryDsn : undefined,
     urlLoja: { ios: lojas.ios, android: lojas.android },
+    googleIdClienteWeb:
+      typeof googleIdClienteWeb === 'string' && googleIdClienteWeb !== ''
+        ? googleIdClienteWeb
+        : undefined,
   };
 }
