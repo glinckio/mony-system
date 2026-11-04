@@ -23,14 +23,15 @@ overrides:
   # Tirar quando o Prisma subir as dele.
   mysql2: 3.24.6
   deepmerge-ts: 8.0.2
+  # O node-forge ≤ 1.4.0 tem falhas altas (GHSA-7wch-p9px-956x, GHSA-jc66-7q78-782g e outras,
+  # T-HOTFIX de 2026-11-04), corrigidas no 1.4.1. A CLI do Expo pede `^1.3.3`. Tirar quando o Expo
+  # subir a dele.
+  node-forge: 1.4.2
 # Falhas altas sem versão corrigida publicada em 17/10/2026 (`pnpm audit`, T-144d). As duas estão
 # em ferramentas que rodam só no desenvolvimento e no build, não no app nem na API. Rever a cada SDK
 # do Expo e tirar daqui quando sair a correção.
 auditConfig:
   ignoreGhsas:
-    # node-forge ≤ 1.4.0, na CLI do Expo (certificado do `expo start --https` e assinatura de código
-    # dos updates, que o projeto não usa): a verificação de assinatura RSA aceita dados a mais.
-    - GHSA-86w9-cpqp-85rv
     # braces ≤ 3.0.3, no micromatch do Metro: estouro de pilha com padrão de chaves muito aninhado.
     # Os padrões vêm da configuração do projeto, não de quem usa o app.
     - GHSA-vfj7-8cjw-p6xm
