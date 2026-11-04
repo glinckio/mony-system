@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { estadoDaPermissaoDaAgenda, pedirPermissaoDaAgenda } from './agenda-aparelho';
 import { estadoDaPermissaoDePush, pedirPermissaoDePush } from './push';
 
 /**
@@ -21,11 +22,13 @@ export interface PedidoDePermissao {
 
 /**
  * Quem sabe pedir cada permissão. Cada tarefa que traz o módulo nativo entra aqui: notificações na
- * T-088 (`expo-notifications`; liberada, o token vai para a API), agenda na T-085, apps de compra
- * na T-121. Sem pedido, a tela mostra "Em breve".
+ * T-088 (`expo-notifications`; liberada, o token vai para a API), agenda na T-085f (`expo-calendar`,
+ * a agenda do aparelho na tela Agenda), apps de compra na T-121. Sem pedido, a tela mostra
+ * "Em breve".
  */
 export const PEDIDOS_DE_PERMISSAO: Partial<Record<Permissao, PedidoDePermissao>> = {
   notificacoes: { estado: estadoDaPermissaoDePush, pedir: pedirPermissaoDePush },
+  agenda: { estado: estadoDaPermissaoDaAgenda, pedir: pedirPermissaoDaAgenda },
 };
 
 /** O estado de todas as permissões e a função que pede uma delas. */

@@ -216,3 +216,33 @@ jest.mock('expo-task-manager', () => {
     __tarefas: tarefas,
   };
 });
+
+// Agenda do aparelho (T-085f): sem permissão por padrão; o teste libera e põe agendas e eventos em
+// `__aparelho`.
+jest.mock('expo-calendar', () => {
+  const mockAparelho = {
+    liberada: false,
+    podePedir: true,
+    agendas: [] as unknown[],
+    eventos: [] as unknown[],
+  };
+  return {
+    EntityTypes: { EVENT: 'event', REMINDER: 'reminder' },
+    EventStatus: {
+      NONE: 'none',
+      CONFIRMED: 'confirmed',
+      TENTATIVE: 'tentative',
+      CANCELED: 'canceled',
+    },
+    getCalendarPermissions: jest.fn(() =>
+      Promise.resolve({ granted: mockAparelho.liberada, canAskAgain: mockAparelho.podePedir }),
+    ),
+    requestCalendarPermissions: jest.fn(() => {
+      mockAparelho.liberada = true;
+      return Promise.resolve({ granted: true, canAskAgain: true });
+    }),
+    getCalendars: jest.fn(() => Promise.resolve(mockAparelho.agendas)),
+    listEvents: jest.fn(() => Promise.resolve(mockAparelho.eventos)),
+    __aparelho: mockAparelho,
+  };
+});

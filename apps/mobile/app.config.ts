@@ -152,6 +152,8 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
         monochromeImage: './assets/images/icone-android-mono.png',
         backgroundColor: '#FFFFFF',
       },
+      // A agenda do aparelho é só lida (T-085f): o plugin do expo-calendar também pede a escrita.
+      blockedPermissions: ['android.permission.WRITE_CALENDAR'],
     },
     plugins: [
       'expo-router',
@@ -186,6 +188,16 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
           microphonePermission: PEDIDO_MICROFONE,
           enableBackgroundPlayback: false,
           enableBackgroundRecording: false,
+        },
+      ],
+      // Agenda do aparelho (T-085f): só a leitura dos compromissos, que ficam no aparelho. Sem os
+      // Lembretes do iOS.
+      [
+        'expo-calendar',
+        {
+          calendarPermission:
+            'O Mony mostra os compromissos da agenda do seu celular junto com os do app.',
+          remindersPermission: false,
         },
       ],
       // Push (T-088): a cor do ícone na barra do Android e o push silencioso no iOS

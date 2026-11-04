@@ -399,3 +399,144 @@ describe('agenda no app (T-085c)', () => {
     TEMPO_LIMITE_MS,
   );
 });
+
+describe('agenda do aparelho (T-085f)', () => {
+  const fetchOriginal = globalThis.fetch;
+  const calendario = jest.requireMock<{
+    __aparelho: { liberada: boolean; podePedir: boolean; agendas: unknown[]; eventos: unknown[] };
+  }>('expo-calendar');
+  const aparelho = calendario.__aparelho;
+
+  const agendaDoCelular = (id: string, tipo: string, nome: string, extra: object = {}) => ({
+    id,
+    title: nome,
+    isVisible: true,
+    source: { type: tipo, name: nome },
+    ...extra,
+  });
+  const evento = (id: string, titulo: string, inicio: string, fim: string, extra: object = {}) => ({
+    id,
+    title: titulo,
+    location: null,
+    startDate: inicio,
+    endDate: fim,
+    allDay: false,
+    status: 'confirmed',
+    ...extra,
+  });
+
+  beforeEach(() => {
+    jest.spyOn(relogio, 'agora').mockReturnValue(AGORA);
+    useSessao.getState().encerrar();
+    useSessao.getState().iniciar({ id: 'u1', nome: 'Ana', onboardingConcluido: true }, 'acesso');
+    aparelho.liberada = true;
+    aparelho.podePedir = true;
+    aparelho.agendas = [
+      agendaDoCelular('local', 'LOCAL', 'Telefone'),
+      agendaDoCelular('google', 'com.google', 'ana@gmail.com'),
+      agendaDoCelular('escondida', 'LOCAL', 'Feriados', { isVisible: false }),
+    ];
+    aparelho.eventos = [
+      evento('e1', 'Aniversário da Bia', '2026-10-15T00:00:00.000Z', '2026-10-16T00:00:00.000Z', {
+        allDay: true,
+      }),
+      evento('e2', 'Pilates', '2026-10-15T22:00:00.000Z', '2026-10-15T23:00:00.000Z', {
+        location: 'Estúdio',
+      }),
+      evento('e3', 'Cancelado', '2026-10-15T20:00:00.000Z', '2026-10-15T21:00:00.000Z', {
+        status: 'canceled',
+      }),
+    ];
+  });
+
+  afterEach(() => {
+    globalThis.fetch = fetchOriginal;
+    aparelho.liberada = false;
+    aparelho.agendas = [];
+    aparelho.eventos = [];
+    jest.restoreAllMocks();
+  });
+
+  it('o de dia inteiro vale pela data, no fuso; o cancelado fica de fora', () => {
+    const { paraCompromisso, vemDoProvedor } =
+      jest.requireActual<typeof import('@/lib/agenda-aparelho')>('@/lib/agenda-aparelho');
+    expect(
+      paraCompromisso(
+        evento('x', 'Feriado', '2026-10-12T00:00:00.000Z', '2026-10-13T00:00:00.000Z', {
+          allDay: true,
+        }),
+        FUSO,
+      ),
+    ).toMatchObject({
+      inicio: '2026-10-12T03:00:00.000Z',
+      fim: '2026-10-13T03:00:00.000Z',
+      origem: 'externo',
+      editavel: false,
+      agenda: { provedor: 'aparelho' },
+    });
+    expect(
+      paraCompromisso(
+        evento('y', 'X', AGORA.toISOString(), AGORA.toISOString(), { status: 'canceled' }),
+        FUSO,
+      ),
+    ).toBeNull();
+    // As contas já conectadas no app chegam pelo servidor.
+    expect(
+      vemDoProvedor(agendaDoCelular('g', 'com.google', 'ana@gmail.com') as never, 'google'),
+    ).toBe(true);
+    expect(
+      vemDoProvedor(
+        agendaDoCelular('o', 'com.microsoft.office.outlook', 'ana@outlook.com') as never,
+        'outlook',
+      ),
+    ).toBe(true);
+    expect(vemDoProvedor(agendaDoCelular('l', 'LOCAL', 'Telefone') as never, 'google')).toBe(false);
+  });
+
+  it(
+    'RN-079 os do celular aparecem junto, com o filtro Aparelho, sem repetir o Google conectado',
+    async () => {
+      api();
+      const app = renderRouter(ROTAS, { initialUrl: '/agenda' });
+
+      const dia = within(await screen.findByTestId('agenda-dia', {}, ESPERA));
+      expect(await dia.findByText('Pilates', {}, ESPERA)).toBeOnTheScreen();
+      expect(dia.getByText('até 20:00 · Estúdio · Aparelho')).toBeOnTheScreen();
+      expect(dia.getByText('Aniversário da Bia')).toBeOnTheScreen();
+      expect(dia.queryByText('Cancelado')).toBeNull();
+      // O do servidor continua: os dois juntos, do mais cedo ao mais tarde.
+      expect(dia.getByText('Reunião de equipe')).toBeOnTheScreen();
+
+      // A agenda do Google sincronizada no celular ficou de fora (o Google está conectado no app),
+      // e a escondida no aparelho também.
+      const { listEvents } = jest.requireMock<{ listEvents: jest.Mock }>('expo-calendar');
+      expect(listEvents).toHaveBeenLastCalledWith(
+        ['local'],
+        new Date('2026-10-12T03:00:00.000Z'),
+        new Date('2026-10-19T03:00:00.000Z'),
+      );
+
+      // O filtro Aparelho esconde e mostra; tocar no do celular não abre nada.
+      fireEvent.press(screen.getByRole('button', { name: 'Aparelho' }));
+      expect(screen.queryByText('Pilates')).toBeNull();
+      fireEvent.press(screen.getByRole('button', { name: 'Aparelho' }));
+      fireEvent.press(await screen.findByText('Pilates', {}, ESPERA));
+      expect(app.getPathname()).toBe('/agenda');
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'sem a permissão, a agenda segue só com os do servidor',
+    async () => {
+      aparelho.liberada = false;
+      api();
+      renderRouter(ROTAS, { initialUrl: '/agenda' });
+      const dia = within(await screen.findByTestId('agenda-dia', {}, ESPERA));
+      expect(dia.getByText('Reunião de equipe')).toBeOnTheScreen();
+      expect(dia.queryByText('Pilates')).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Aparelho' })).toBeNull();
+    },
+    TEMPO_LIMITE_MS,
+  );
+});
