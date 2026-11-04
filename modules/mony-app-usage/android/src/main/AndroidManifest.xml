@@ -9,9 +9,6 @@
     android:name="android.permission.PACKAGE_USAGE_STATS"
     tools:ignore="ProtectedPermissions" />
 
-  <!-- Aviso de teste da PoC (Android 13 ou mais novo). O push de verdade vem do servidor (T-121). -->
-  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
   <!--
     Visibilidade dos apps que abrem pela tela inicial (Android 11 ou mais novo), para a pessoa escolher
     o que monitorar. Não usa QUERY_ALL_PACKAGES, que a Play restringe.

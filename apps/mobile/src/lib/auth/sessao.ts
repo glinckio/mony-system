@@ -2,6 +2,7 @@ import { ErroApi, renovarAutenticacao, sairAutenticacao } from '@mony/api-client
 import type { Sessao } from '@mony/shared/autenticacao';
 import * as Sentry from '@sentry/react-native';
 
+import { usoDeApps } from '@/lib/uso-de-apps';
 import { useSessao } from '@/stores/sessao';
 
 import { prepararAparelho } from './aparelho';
@@ -15,12 +16,14 @@ export async function comecarSessao(sessao: Sessao): Promise<void> {
 }
 
 /**
- * Esquece a sessão neste aparelho (sem falar com a API), com o token de segundo plano (T-088b):
- * a API também o derruba junto com a sessão, mas sem rede ele ficaria no cofre.
+ * Esquece a sessão neste aparelho (sem falar com a API), com o token de segundo plano (T-088b) e
+ * o de evento dos apps de compra (T-121b): a API também os derruba junto com a sessão, mas sem rede
+ * eles ficariam no aparelho.
  */
 export async function encerrarSessaoLocal(): Promise<void> {
   await cofre.apagarRenovacao();
   await cofre.apagarSegundoPlano().catch(() => undefined);
+  await usoDeApps?.desligar().catch(() => undefined);
   useSessao.getState().encerrar();
 }
 

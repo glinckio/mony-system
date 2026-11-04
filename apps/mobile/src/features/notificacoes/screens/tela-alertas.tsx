@@ -21,7 +21,8 @@ import { cores } from '@/ui/tokens';
 
 /**
  * Os alertas que o app já manda, na ordem da tela; os de recursos que ainda não existem (lembretes,
- * apps de compra, banco) entram com eles. O do compromisso entrou com a tela Agenda (T-085c).
+ * banco) entram com eles. O do compromisso entrou com a tela Agenda (T-085c); o dos apps de compra,
+ * com a detecção do Android (T-121b).
  */
 const TIPOS_NA_TELA: readonly TipoAlerta[] = [
   'limite_cartao',
@@ -34,6 +35,7 @@ const TIPOS_NA_TELA: readonly TipoAlerta[] = [
   'projecao_mes',
   'resumo_periodo',
   'compromisso',
+  'app_compra',
   'assinatura',
 ];
 

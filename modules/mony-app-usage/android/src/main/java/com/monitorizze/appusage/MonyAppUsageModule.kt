@@ -3,9 +3,6 @@ package com.monitorizze.appusage
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import android.provider.Settings
-import androidx.core.app.NotificationManagerCompat
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.functions.Queues
@@ -35,72 +32,50 @@ class MonyAppUsageModule : Module() {
       promise.resolve(null)
     }.runOnQueue(Queues.MAIN)
 
-    AsyncFunction("notificacoesLigadas") { NotificationManagerCompat.from(contexto).areNotificationsEnabled() }
-
-    AsyncFunction("abrirConfiguracaoDeNotificacoes") { promise: Promise ->
-      val intencao =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-          Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-            .putExtra(Settings.EXTRA_APP_PACKAGE, contexto.packageName)
-        } else {
-          Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-            .setData(android.net.Uri.fromParts("package", contexto.packageName, null))
-        }
-      abrir(intencao)
-      promise.resolve(null)
-    }.runOnQueue(Queues.MAIN)
-
     AsyncFunction("listarApps") {
       AppsInstalados.listar(contexto).map { mapOf("pacote" to it.pacote, "nome" to it.nome) }
     }
 
-    AsyncFunction("iniciar") { pacotes: List<String> ->
+    /**
+     * Liga o recurso: guarda o token de evento (`POST /apps-monitorados/token-evento`) cifrado, com a
+     * URL da API, e começa a verificação periódica com os apps escolhidos.
+     */
+    AsyncFunction("ligar") { token: String, urlApi: String, pacotes: List<String> ->
+      CofreToken(contexto).gravar(Credencial(token, urlApi))
       RegistroUso(contexto).iniciar(pacotes.toSet(), System.currentTimeMillis())
       Agendamento.iniciar(contexto)
     }
 
-    AsyncFunction("parar") {
-      RegistroUso(contexto).parar()
+    /** Troca os apps verificados sem adiar a próxima verificação. Desligado, não faz nada. */
+    AsyncFunction("trocarApps") { pacotes: List<String> ->
+      val registro = RegistroUso(contexto)
+      if (registro.config().monitorando) registro.iniciar(pacotes.toSet(), System.currentTimeMillis())
+    }
+
+    /** Desliga neste aparelho (a tela também revoga o token no servidor) e esquece a fila. */
+    AsyncFunction("desligar") {
+      CofreToken(contexto).apagar(recusado = false)
+      val registro = RegistroUso(contexto)
+      registro.parar()
+      registro.trocarFila { emptyList() }
       Agendamento.parar(contexto)
     }
 
-    AsyncFunction("verificarAgora") { Agendamento.verificarAgora(contexto) }
-
-    AsyncFunction("limparHistorico") { RegistroUso(contexto).limparHistorico() }
-
     AsyncFunction("estado") {
-      val registro = RegistroUso(contexto)
-      val config = registro.config()
+      val config = RegistroUso(contexto).config()
+      val cofre = CofreToken(contexto)
+      val envio =
+        when {
+          config.monitorando && cofre.ler() != null -> "ligado"
+          cofre.recusado() -> "recusado"
+          else -> "desligado"
+        }
       mapOf(
-        "monitorando" to config.monitorando,
+        "envio" to envio,
         "pacotes" to config.pacotes.sorted(),
+        "pendentes" to RegistroUso(contexto).fila().size,
         "ultimaVerificacaoEm" to config.ultimaVerificacaoMs?.toDouble(),
-        "proximaVerificacaoEm" to
-          (if (config.monitorando) Agendamento.proximaExecucaoMs(contexto)?.toDouble() else null),
         "intervaloMinutos" to Agendamento.INTERVALO_MINUTOS.toInt(),
-        "execucoes" to
-          registro.execucoes().map {
-            mapOf(
-              "inicioEm" to it.inicioMs.toDouble(),
-              "origem" to it.origem,
-              "acessoAoUso" to it.permissao,
-              "desde" to it.desdeMs.toDouble(),
-              "ate" to it.ateMs.toDouble(),
-              "eventos" to it.eventos,
-              "aberturas" to it.aberturas,
-              "duracaoMs" to it.duracaoMs.toDouble(),
-              "erro" to it.erro,
-            )
-          },
-        "deteccoes" to
-          registro.deteccoes().map {
-            mapOf(
-              "pacote" to it.pacote,
-              "nome" to AppsInstalados.nome(contexto, it.pacote),
-              "abertoEm" to it.abertoEmMs.toDouble(),
-              "detectadoEm" to it.detectadoEmMs.toDouble(),
-            )
-          },
       )
     }
   }

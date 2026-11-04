@@ -109,7 +109,7 @@ pnpm --filter mobile build      # empacota o JS de iOS e Android em apps/mobile/
 - **URL da API:** no emulador Android, deixe `http://localhost:3000` e rode `adb reverse tcp:3000 tcp:3000` e `adb reverse tcp:8333 tcp:8333` (veja [Testar o sistema inteiro no computador](#testar-o-sistema-inteiro-no-computador)). Em aparelho, o IP do computador na rede (`http://192.168.x.x:3000`), com `S3_ENDPOINT` no mesmo IP no `apps/api/.env` para os uploads funcionarem. No simulador iOS, `localhost` já serve.
 - **Ambientes:** `APP_ENV` = `development`, `preview` ou `production` (perfis do [`eas.json`](apps/mobile/eas.json)). Cada um tem nome, identificador e esquema de link próprios (`mony-dev://`, `mony-preview://`, `mony://`), então os três convivem no mesmo aparelho. Tudo em [`app.config.ts`](apps/mobile/app.config.ts).
 - **Rotas** ficam em `app/` (finas: só importam a tela de `src/features/<feature>/screens`); textos em `src/features/<feature>/<feature>.strings.ts`, via i18next (`t('cartoes.titulo')`, chave conferida pelo TypeScript). Detalhes em [`docs/arquitetura/04`](docs/arquitetura/04-app-mobile.md).
-- **Telas de teste** das provas de conceito, só no build de desenvolvimento: "Teste do alarme" (T-023a) e "Teste da detecção de apps" (T-022), no Perfil.
+- **Tela de teste** da prova de conceito do alarme (T-023a), só no build de desenvolvimento, no Perfil. A detecção de apps de compra (T-022) já está na tela do produto: Perfil → "Apps de compra" (T-121b).
 - **Pastas `ios/` e `android/`** são geradas pelo `expo prebuild` e ficam fora do Git: nada nativo é editado à mão.
 
 ### EAS (builds e updates)

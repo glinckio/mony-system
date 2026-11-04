@@ -1,17 +1,17 @@
 import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import type { AppMonitorado } from '@mony/shared/apps-compra';
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 
-import { horaDoAparelho } from '@/lib/datas-texto';
+import { encerrarSessaoLocal } from '@/lib/auth/sessao';
+import { configApp } from '@/lib/config';
 import {
-  atrasoEmMinutos,
-  type DeteccaoApp,
+  appsParaEscolher,
   type EstadoUsoDeApps,
-  type ExecucaoVerificacao,
-  intervalosEntreVerificacoes,
+  listaParaSalvar,
   type ModuloUsoDeApps,
-  resumoDosAtrasos,
+  pacotesAtivos,
 } from '@/lib/uso-de-apps';
 import { useSessao } from '@/stores/sessao';
 
@@ -29,99 +29,125 @@ jest.mock('@/lib/uso-de-apps', () => {
 const ROTAS = path.resolve(__dirname, '../app');
 const ESPERA = { timeout: 10_000 };
 const TEMPO_LIMITE_MS = 60_000;
-const MINUTO = 60_000;
-/** 13/10/2026 14:00 no fuso do processo de teste. */
-const BASE = new Date(2026, 9, 13, 14, 0).getTime();
 
-function deteccao(abertoMin: number, detectadoMin: number): DeteccaoApp {
-  return {
-    pacote: 'com.shopee.br',
-    nome: 'Shopee',
-    abertoEm: BASE + abertoMin * MINUTO,
-    detectadoEm: BASE + detectadoMin * MINUTO,
-  };
+const app = (identificadorApp: string, nome: string, ativo = true): AppMonitorado => ({
+  identificadorApp,
+  nome,
+  ativo,
+  ultimoAlerta: null,
+});
+const SHOPEE = app('com.shopee.br', 'Shopee');
+const AMAZON = app('com.amazon.mShop.android.shopping', 'Amazon');
+const INSTALADOS = [
+  { pacote: 'com.android.chrome', nome: 'Chrome' },
+  { pacote: 'com.zzkko', nome: 'Shein' },
+  { pacote: 'com.shopee.br', nome: 'Shopee' },
+];
+
+describe('apps de compra: a lista (T-121b)', () => {
+  it('os da lista do servidor primeiro, marcados quando ligados; os não instalados ficam de fora', () => {
+    const lista = [SHOPEE, app('com.zzkko', 'Shein', false), AMAZON];
+    expect(appsParaEscolher(lista, INSTALADOS)).toEqual([
+      { pacote: 'com.zzkko', nome: 'Shein', marcado: false, naLista: true },
+      { pacote: 'com.shopee.br', nome: 'Shopee', marcado: true, naLista: true },
+      { pacote: 'com.android.chrome', nome: 'Chrome', marcado: false, naLista: false },
+    ]);
+    expect(pacotesAtivos(lista)).toEqual(['com.shopee.br', AMAZON.identificadorApp]);
+  });
+
+  it('salvar desliga o desmarcado, liga o novo e mantém o que não está neste aparelho', () => {
+    const lista = [SHOPEE, AMAZON];
+    expect(listaParaSalvar(lista, INSTALADOS, new Set(['com.android.chrome']))).toEqual({
+      itens: [
+        { identificadorApp: 'com.shopee.br', nome: 'Shopee', ativo: false },
+        { identificadorApp: AMAZON.identificadorApp, nome: 'Amazon', ativo: true },
+        { identificadorApp: 'com.android.chrome', nome: 'Chrome', ativo: true },
+      ],
+    });
+  });
+});
+
+interface Pedido {
+  metodo: string;
+  rota: string;
+  corpo: unknown;
 }
 
-function execucao(
-  inicioMin: number,
-  extra: Partial<ExecucaoVerificacao> = {},
-): ExecucaoVerificacao {
-  return {
-    inicioEm: BASE + inicioMin * MINUTO,
-    origem: 'periodica',
-    acessoAoUso: true,
-    desde: BASE,
-    ate: BASE + inicioMin * MINUTO,
-    eventos: 12,
-    aberturas: 0,
-    duracaoMs: 40,
-    erro: null,
-    ...extra,
-  };
+function api(lista: { itens: AppMonitorado[]; disponivel: boolean }) {
+  const pedidos: Pedido[] = [];
+  globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
+    const endereco = new URL(
+      typeof url === 'string' ? url : url instanceof URL ? url.href : url.url,
+    );
+    const metodo = opcoes?.method ?? 'GET';
+    const corpo: unknown = typeof opcoes?.body === 'string' ? JSON.parse(opcoes.body) : null;
+    pedidos.push({ metodo, rota: endereco.pathname, corpo });
+    const chave = `${metodo} ${endereco.pathname}`;
+    if (chave === 'GET /v1/apps-monitorados') {
+      return Promise.resolve(new Response(JSON.stringify(lista), { status: 200 }));
+    }
+    if (chave === 'PUT /v1/apps-monitorados') {
+      const { itens } = corpo as { itens: Omit<AppMonitorado, 'ultimoAlerta'>[] };
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            itens: itens.map((item) => ({ ...item, ultimoAlerta: null })),
+            disponivel: lista.disponivel,
+          }),
+          { status: 200 },
+        ),
+      );
+    }
+    if (chave === 'POST /v1/apps-monitorados/token-evento') {
+      return Promise.resolve(new Response(JSON.stringify({ token: 'mte_teste' }), { status: 201 }));
+    }
+    if (chave === 'DELETE /v1/apps-monitorados/token-evento') {
+      return Promise.resolve(new Response(null, { status: 204 }));
+    }
+    return Promise.resolve(
+      new Response(
+        JSON.stringify({
+          erro: { codigo: 'NAO_ENCONTRADO', mensagem: 'Não encontrado.', detalhes: null },
+        }),
+        { status: 404 },
+      ),
+    );
+  });
+  return pedidos;
 }
 
 function moduloFalso(estado: Partial<EstadoUsoDeApps> = {}, acesso = true) {
   const atual: EstadoUsoDeApps = {
-    monitorando: false,
+    envio: 'desligado',
     pacotes: [],
+    pendentes: 0,
     ultimaVerificacaoEm: null,
-    proximaVerificacaoEm: null,
     intervaloMinutos: 15,
-    execucoes: [],
-    deteccoes: [],
     ...estado,
   };
   const modulo = {
     acessoAoUsoLiberado: jest.fn(() => Promise.resolve(acesso)),
     abrirConfiguracaoDoAcesso: jest.fn(() => Promise.resolve()),
-    notificacoesLigadas: jest.fn(() => Promise.resolve(true)),
-    abrirConfiguracaoDeNotificacoes: jest.fn(() => Promise.resolve()),
-    listarApps: jest.fn(() =>
-      Promise.resolve([
-        { pacote: 'com.android.chrome', nome: 'Chrome' },
-        { pacote: 'com.shopee.br', nome: 'Shopee' },
-      ]),
-    ),
-    iniciar: jest.fn((pacotes: string[]) => {
-      Object.assign(atual, { monitorando: true, pacotes });
+    listarApps: jest.fn(() => Promise.resolve(INSTALADOS)),
+    ligar: jest.fn((_token: string, _url: string, pacotes: string[]) => {
+      Object.assign(atual, { envio: 'ligado', pacotes });
       return Promise.resolve();
     }),
-    parar: jest.fn(() => Promise.resolve()),
-    verificarAgora: jest.fn(() => Promise.resolve()),
-    limparHistorico: jest.fn(() => Promise.resolve()),
+    trocarApps: jest.fn((pacotes: string[]) => {
+      if (atual.envio === 'ligado') atual.pacotes = pacotes;
+      return Promise.resolve();
+    }),
+    desligar: jest.fn(() => {
+      Object.assign(atual, { envio: 'desligado' });
+      return Promise.resolve();
+    }),
     estado: jest.fn(() => Promise.resolve({ ...atual })),
   } satisfies ModuloUsoDeApps;
   mockNativo.modulo = modulo;
   return modulo;
 }
 
-describe('detecção de apps de compra: contas da PoC (T-022)', () => {
-  it('atraso, mediana e maior em minutos', () => {
-    expect(atrasoEmMinutos(deteccao(0, 7))).toBe(7);
-    // Relógio que voltou não dá atraso negativo.
-    expect(atrasoEmMinutos(deteccao(5, 4))).toBe(0);
-    expect(resumoDosAtrasos([])).toBeNull();
-    expect(resumoDosAtrasos([deteccao(0, 14), deteccao(0, 2), deteccao(0, 9)])).toEqual({
-      quantidade: 3,
-      medianaMin: 9,
-      maiorMin: 14,
-    });
-    expect(resumoDosAtrasos([deteccao(0, 2), deteccao(0, 9)])?.medianaMin).toBe(6);
-  });
-
-  it('intervalo entre as verificações periódicas, sem contar as pedidas', () => {
-    const lista = [execucao(30), execucao(0), execucao(20, { origem: 'manual' }), execucao(52)];
-    expect(intervalosEntreVerificacoes(lista)).toEqual([30, 22]);
-    expect(intervalosEntreVerificacoes([execucao(0)])).toEqual([]);
-  });
-
-  it('hora no fuso do aparelho', () => {
-    expect(horaDoAparelho(BASE + 3 * MINUTO)).toBe('14:03');
-    expect(horaDoAparelho(new Date(2026, 9, 13, 9, 5).getTime())).toBe('09:05');
-  });
-});
-
-describe('tela de teste da detecção (T-022)', () => {
+describe('tela Apps de compra (T-121b)', () => {
   const fetchOriginal = globalThis.fetch;
 
   beforeEach(() => {
@@ -129,10 +155,6 @@ describe('tela de teste da detecção (T-022)', () => {
     useSessao
       .getState()
       .iniciar({ id: 'u1', nome: 'Ana Souza', onboardingConcluido: true }, 'acesso');
-    // A tela não chama a API; o Perfil chama e pode receber 404.
-    globalThis.fetch = jest.fn<typeof fetch>(() =>
-      Promise.resolve(new Response(null, { status: 404 })),
-    );
   });
 
   afterEach(() => {
@@ -142,90 +164,162 @@ describe('tela de teste da detecção (T-022)', () => {
   });
 
   it(
-    'sem o módulo (iOS ou build sem ele) explica e não quebra',
+    'sem o módulo (iPhone ou build sem ele) explica, e o Perfil não mostra a linha',
     async () => {
-      renderRouter(ROTAS, { initialUrl: '/poc-uso-de-apps' });
-      expect(await screen.findByText(/não tem o módulo de detecção/, {}, ESPERA)).toBeTruthy();
+      api({ itens: [SHOPEE], disponivel: true });
+      renderRouter(ROTAS, { initialUrl: '/mais/apps-de-compra' });
+      expect(await screen.findByText(/ainda não está disponível/, {}, ESPERA)).toBeTruthy();
+
+      renderRouter(ROTAS, { initialUrl: '/mais/perfil' });
+      expect(await screen.findByText('Rever tutorial', {}, ESPERA)).toBeTruthy();
+      expect(screen.queryByText('Apps de compra')).toBeNull();
     },
     TEMPO_LIMITE_MS,
   );
 
   it(
-    'sem acesso ao uso, leva às configurações; escolhe os apps e inicia',
+    'sem acesso ao uso, o aviso fica travado e o botão leva às configurações',
     async () => {
+      api({ itens: [SHOPEE], disponivel: true });
       const modulo = moduloFalso({}, false);
-      renderRouter(ROTAS, { initialUrl: '/poc-uso-de-apps' });
+      renderRouter(ROTAS, { initialUrl: '/mais/apps-de-compra' });
 
       fireEvent.press(await screen.findByRole('button', { name: 'Abrir configurações' }, ESPERA));
       await waitFor(() => {
         expect(modulo.abrirConfiguracaoDoAcesso).toHaveBeenCalledTimes(1);
       });
-
-      fireEvent.press(await screen.findByRole('checkbox', { name: 'Shopee' }, ESPERA));
-      expect(screen.getByText('1 app selecionado')).toBeTruthy();
-      fireEvent.press(screen.getByRole('button', { name: 'Iniciar monitoramento' }));
-      await waitFor(() => {
-        expect(modulo.iniciar).toHaveBeenCalledWith(['com.shopee.br']);
-      });
-      expect(await screen.findByText('Monitorando', {}, ESPERA)).toBeTruthy();
-      expect(screen.getByRole('button', { name: 'Salvar a lista' })).toBeTruthy();
+      expect(
+        screen.getByRole('switch', { name: 'Avisar quando eu abrir um app de compra' }),
+      ).toBeDisabled();
     },
     TEMPO_LIMITE_MS,
   );
 
   it(
-    'mostra as detecções com o atraso e as verificações',
+    'ligar pede o token de evento e o entrega ao aparelho com os apps da lista',
     async () => {
-      const modulo = moduloFalso({
-        monitorando: true,
-        pacotes: ['com.shopee.br'],
-        deteccoes: [deteccao(3, 10), deteccao(60, 64)],
-        execucoes: [
-          execucao(10, { aberturas: 1 }),
-          execucao(40, { acessoAoUso: false, eventos: 0 }),
-          execucao(64, { origem: 'manual', aberturas: 1 }),
+      const pedidos = api({ itens: [SHOPEE, AMAZON], disponivel: true });
+      const modulo = moduloFalso();
+      renderRouter(ROTAS, { initialUrl: '/mais/apps-de-compra' });
+
+      // Os sugeridos do cadastro que estão instalados já vêm marcados.
+      expect(await screen.findByText('1 app marcado', {}, ESPERA)).toBeTruthy();
+      fireEvent(
+        screen.getByRole('switch', { name: 'Avisar quando eu abrir um app de compra' }),
+        'valueChange',
+        true,
+      );
+      await waitFor(() => {
+        expect(modulo.ligar).toHaveBeenCalledWith('mte_teste', configApp.urlApi, [
+          'com.shopee.br',
+          AMAZON.identificadorApp,
+        ]);
+      });
+      expect(pedidos.some((p) => p.metodo === 'POST' && p.rota.endsWith('/token-evento'))).toBe(
+        true,
+      );
+      expect(await screen.findByText(/a Mony avisa quando você abrir/, {}, ESPERA)).toBeTruthy();
+      expect(await screen.findByText(/confere a cada 15 min/, {}, ESPERA)).toBeTruthy();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'trocar os apps salva a lista no servidor e no aparelho',
+    async () => {
+      const pedidos = api({ itens: [SHOPEE, AMAZON], disponivel: true });
+      const modulo = moduloFalso({ envio: 'ligado', pacotes: ['com.shopee.br'] });
+      renderRouter(ROTAS, { initialUrl: '/mais/apps-de-compra' });
+
+      fireEvent.press(await screen.findByRole('checkbox', { name: 'Chrome' }, ESPERA));
+      fireEvent.press(screen.getByRole('checkbox', { name: 'Shopee' }));
+      expect(screen.getByText('1 app marcado')).toBeTruthy();
+      fireEvent.press(screen.getByRole('button', { name: 'Salvar a lista' }));
+
+      await waitFor(() => {
+        expect(modulo.trocarApps).toHaveBeenCalledWith([
+          AMAZON.identificadorApp,
+          'com.android.chrome',
+        ]);
+      });
+      const troca = pedidos.find((p) => p.metodo === 'PUT');
+      expect(troca?.corpo).toEqual({
+        itens: [
+          { identificadorApp: 'com.shopee.br', nome: 'Shopee', ativo: false },
+          { identificadorApp: AMAZON.identificadorApp, nome: 'Amazon', ativo: true },
+          { identificadorApp: 'com.android.chrome', nome: 'Chrome', ativo: true },
         ],
       });
-      renderRouter(ROTAS, { initialUrl: '/poc-uso-de-apps' });
+      expect(await screen.findByText('Lista salva.', {}, ESPERA)).toBeTruthy();
+    },
+    TEMPO_LIMITE_MS,
+  );
 
-      expect(
-        await screen.findByText(
-          '2 detecções · atraso mediano de 6 min · maior de 7 min',
-          {},
-          ESPERA,
-        ),
-      ).toBeTruthy();
-      expect(screen.getByText('Aberto às 14:03 · visto às 14:10 (7 min depois)')).toBeTruthy();
-      expect(screen.getByText('14:40 · periódica · sem acesso ao uso')).toBeTruthy();
-      expect(screen.getByText('15:04 · pedida · eventos: 12 · aberturas: 1')).toBeTruthy();
-      expect(screen.getByText('Intervalo entre as periódicas (min): 30')).toBeTruthy();
+  it(
+    'desligar para o aparelho e revoga o token no servidor',
+    async () => {
+      const pedidos = api({ itens: [SHOPEE], disponivel: true });
+      const modulo = moduloFalso({ envio: 'ligado', pacotes: ['com.shopee.br'] });
+      renderRouter(ROTAS, { initialUrl: '/mais/apps-de-compra' });
 
-      fireEvent.press(screen.getByRole('button', { name: 'Verificar agora' }));
+      const chave = await screen.findByRole(
+        'switch',
+        { name: 'Avisar quando eu abrir um app de compra' },
+        ESPERA,
+      );
+      fireEvent(chave, 'valueChange', false);
       await waitFor(() => {
-        expect(modulo.verificarAgora).toHaveBeenCalledTimes(1);
+        expect(modulo.desligar).toHaveBeenCalledTimes(1);
+      });
+      await waitFor(() => {
+        expect(pedidos.some((p) => p.metodo === 'DELETE')).toBe(true);
       });
     },
     TEMPO_LIMITE_MS,
   );
 
   it(
-    'o Perfil só mostra o atalho do teste quando o módulo existe',
+    'token recusado pelo servidor: avisa que parou',
     async () => {
-      renderRouter(ROTAS, { initialUrl: '/mais/perfil' });
-      expect(await screen.findByText('Rever tutorial', {}, ESPERA)).toBeTruthy();
-      expect(screen.queryByText('Teste da detecção de apps')).toBeNull();
+      api({ itens: [SHOPEE], disponivel: true });
+      moduloFalso({ envio: 'recusado' });
+      renderRouter(ROTAS, { initialUrl: '/mais/apps-de-compra' });
+      expect(await screen.findByText(/Os avisos pararam neste aparelho/, {}, ESPERA)).toBeTruthy();
     },
     TEMPO_LIMITE_MS,
   );
 
   it(
-    'com o módulo, o atalho do Perfil abre a tela de teste',
+    'RN-121 no gratuito, leva aos planos em vez de ligar',
     async () => {
+      api({ itens: [SHOPEE], disponivel: false });
       moduloFalso();
-      renderRouter(ROTAS, { initialUrl: '/mais/perfil' });
-      fireEvent.press(await screen.findByText('Teste da detecção de apps', {}, ESPERA));
-      expect(await screen.findByText('Detecção de apps (teste)', {}, ESPERA)).toBeTruthy();
+      renderRouter(ROTAS, { initialUrl: '/mais/apps-de-compra' });
+      expect(await screen.findByText('Ver planos', {}, ESPERA)).toBeTruthy();
+      expect(
+        screen.queryByRole('switch', { name: 'Avisar quando eu abrir um app de compra' }),
+      ).toBeNull();
     },
     TEMPO_LIMITE_MS,
   );
+
+  it(
+    'com o módulo, a linha do Perfil abre a tela',
+    async () => {
+      api({ itens: [SHOPEE], disponivel: true });
+      moduloFalso();
+      renderRouter(ROTAS, { initialUrl: '/mais/perfil' });
+      fireEvent.press(await screen.findByText('Apps de compra', {}, ESPERA));
+      expect(
+        await screen.findByText('Avisar quando eu abrir um app de compra', {}, ESPERA),
+      ).toBeTruthy();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it('sair do aparelho também desliga o envio das aberturas', async () => {
+    const modulo = moduloFalso({ envio: 'ligado' });
+    await encerrarSessaoLocal();
+    expect(modulo.desligar).toHaveBeenCalledTimes(1);
+  });
 });

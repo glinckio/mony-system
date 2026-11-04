@@ -10,9 +10,9 @@ internal data class ConfigUso(
 )
 
 /**
- * Estado do módulo nas preferências do app, lido pelo worker (sem o JS rodando) e pela tela de
- * teste. Toda leitura e escrita passa por [TRAVA]: o worker e as funções do módulo rodam em threads
- * diferentes do mesmo processo.
+ * Estado do módulo nas preferências do app, lido pelo worker (sem o JS rodando) e pela tela de apps
+ * de compra. Toda leitura e escrita passa por [TRAVA]: o worker e as funções do módulo rodam em
+ * threads diferentes do mesmo processo.
  */
 internal class RegistroUso(context: Context) {
   private val preferencias = context.getSharedPreferences(ARQUIVO, Context.MODE_PRIVATE)
@@ -27,13 +27,10 @@ internal class RegistroUso(context: Context) {
       )
     }
 
-  fun execucoes(): List<Execucao> =
-    synchronized(TRAVA) { Historico.lerExecucoes(preferencias.getString(EXECUCOES, null)) }
-
-  fun deteccoes(): List<Deteccao> =
-    synchronized(TRAVA) { Historico.lerDeteccoes(preferencias.getString(DETECCOES, null)) }
-
-  /** Liga com a lista de apps. A primeira janela começa agora: o que foi aberto antes não conta. */
+  /**
+   * Liga com a lista de apps, ou troca a lista. A primeira janela começa agora: o que foi aberto
+   * antes não conta.
+   */
   fun iniciar(pacotes: Set<String>, agoraMs: Long) =
     synchronized(TRAVA) {
       val jaMonitorando = preferencias.getBoolean(MONITORANDO, false)
@@ -47,34 +44,25 @@ internal class RegistroUso(context: Context) {
 
   fun parar() = synchronized(TRAVA) { preferencias.edit().putBoolean(MONITORANDO, false).commit() }
 
-  fun limparHistorico() =
-    synchronized(TRAVA) { preferencias.edit().remove(EXECUCOES).remove(DETECCOES).commit() }
-
-  /** Grava o resultado de uma verificação. */
-  fun anotar(execucao: Execucao, deteccoes: List<Deteccao>, ultimoUso: Map<String, Long>?) =
+  /** Grava o fim de uma leitura: até onde leu e o último uso de cada app. */
+  fun anotar(ateMs: Long, ultimoUso: Map<String, Long>) =
     synchronized(TRAVA) {
-      val editor =
-        preferencias
-          .edit()
-          .putString(
-            EXECUCOES,
-            Historico.codificarExecucoes(
-              Historico.acrescentar(execucoes(), listOf(execucao), Historico.MAX_EXECUCOES),
-            ),
-          )
-      if (deteccoes.isNotEmpty()) {
-        editor.putString(
-          DETECCOES,
-          Historico.codificarDeteccoes(
-            Historico.acrescentar(deteccoes(), deteccoes, Historico.MAX_DETECCOES),
-          ),
-        )
-      }
-      if (ultimoUso != null) {
-        editor.putLong(ULTIMA_VERIFICACAO, execucao.ateMs)
-        editor.putString(ULTIMO_USO, Historico.codificarUltimoUso(ultimoUso))
-      }
-      editor.commit()
+      preferencias
+        .edit()
+        .putLong(ULTIMA_VERIFICACAO, ateMs)
+        .putString(ULTIMO_USO, Historico.codificarUltimoUso(ultimoUso))
+        .commit()
+    }
+
+  fun fila(): List<Abertura> =
+    synchronized(TRAVA) { Historico.lerFila(preferencias.getString(FILA, null)) }
+
+  /** Troca a fila de envio pelo resultado de [mudar] e devolve a nova. */
+  fun trocarFila(mudar: (List<Abertura>) -> List<Abertura>): List<Abertura> =
+    synchronized(TRAVA) {
+      val nova = mudar(fila())
+      preferencias.edit().putString(FILA, Historico.codificarFila(nova)).commit()
+      nova
     }
 
   companion object {
@@ -86,7 +74,6 @@ internal class RegistroUso(context: Context) {
     private const val PACOTES = "pacotes"
     private const val ULTIMA_VERIFICACAO = "ultima_verificacao"
     private const val ULTIMO_USO = "ultimo_uso"
-    private const val EXECUCOES = "execucoes"
-    private const val DETECCOES = "deteccoes"
+    private const val FILA = "fila_envio"
   }
 }

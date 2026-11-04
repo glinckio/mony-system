@@ -47,10 +47,8 @@ export default function TelaPerfil() {
   const perfil = usePerfil();
   // O selo "Teste grátis" na linha do plano (T-101).
   const emTeste = usePlano().data?.plano === 'teste';
-  // Telas de teste das PoCs nativas (T-022, T-023a): só no build de desenvolvimento do Android.
-  const desenvolvimento = configApp.ambiente === 'development';
-  const testeDaDeteccao = desenvolvimento && usoDeApps !== null;
-  const testeDoAlarme = desenvolvimento && alarmes !== null;
+  // Tela de teste da PoC do alarme (T-023a): só no build de desenvolvimento do Android.
+  const testeDoAlarme = configApp.ambiente === 'development' && alarmes !== null;
   const [disponivel, definirDisponivel] = useState(false);
   const [ligada, definirLigada] = useState(false);
   const [saindo, definirSaindo] = useState(false);
@@ -159,21 +157,21 @@ export default function TelaPerfil() {
               router.push('/mais/permissoes');
             }}
           />
+          {usoDeApps ? (
+            <Linha
+              titulo={t('appsDeCompra.atalho')}
+              ajuda={t('appsDeCompra.atalhoAjuda')}
+              aoPressionar={() => {
+                router.push('/mais/apps-de-compra');
+              }}
+            />
+          ) : null}
           <Linha
             titulo={t('mais.perfilTela.tutorial')}
             aoPressionar={() => {
               router.push('/tutorial');
             }}
           />
-          {testeDaDeteccao ? (
-            <Linha
-              titulo={t('appsDeCompra.poc.atalho')}
-              ajuda={t('appsDeCompra.poc.atalhoAjuda')}
-              aoPressionar={() => {
-                router.push('/poc-uso-de-apps');
-              }}
-            />
-          ) : null}
           {testeDoAlarme ? (
             <Linha
               titulo={t('alarmes.poc.atalho')}
