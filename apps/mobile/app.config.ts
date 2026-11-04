@@ -5,7 +5,8 @@ import pacote from './package.json';
 /*
  * Configuração do app por ambiente. O perfil do `eas.json` define `APP_ENV`; localmente o padrão é
  * `development`. Valores públicos podem ser trocados por variável (`.env` local ou variáveis do
- * EAS): `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_APP_STORE_ID`.
+ * EAS): `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_APP_STORE_ID`,
+ * `EXPO_PUBLIC_GOOGLE_ID_CLIENTE_WEB`.
  *
  * Este arquivo só importa pacotes: o Expo compila o app.config.ts, mas não os arquivos locais que
  * ele importaria.
@@ -25,6 +26,11 @@ export interface ConfigPublica {
   sentryDsn: string | undefined;
   /** Onde o app é atualizado, na atualização obrigatória (T-056). */
   urlLoja: { ios: string; android: string };
+  /**
+   * Entrar com Google (T-055a): o ID do cliente OAuth "Aplicativo da Web" do Google Cloud, que vira
+   * a audiência do `id_token` (o servidor confere em `GOOGLE_CLIENT_IDS`). Sem ele, o botão some.
+   */
+  googleIdClienteWeb: string | undefined;
 }
 
 /**
@@ -119,6 +125,7 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
     urlApi: urlApi.replace(/\/+$/, ''),
     sentryDsn: texto(variaveis.EXPO_PUBLIC_SENTRY_DSN),
     urlLoja: urlsDaLoja(dados.identificador, texto(variaveis.EXPO_PUBLIC_APP_STORE_ID)),
+    googleIdClienteWeb: texto(variaveis.EXPO_PUBLIC_GOOGLE_ID_CLIENTE_WEB),
   };
   if (idProjeto) extra.eas = { projectId: idProjeto };
 

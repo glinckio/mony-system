@@ -1240,3 +1240,10 @@ Contexto: o BACKLOG pede o token "no armazenamento nativo cifrado" e parar com 4
 - **A tela de teste da PoC, o aviso local e o histórico de verificações saíram**; a medição da T-022 passa a usar a tela do produto e o push (BLOQUEIOS e `docs/agentes/poc/T-022.md`). O tipo `app_compra` entrou na tela Alertas da Mony.
 - A tela só aparece no Perfil com o módulo (Android); no iPhone, o item de Permissões continua "Em breve" até a T-121c.
 
+## 2026-11-04 — T-055a — Entrar com Google no Android
+Contexto: o humano criou o cliente OAuth "Android" (`com.monitorizze.app.dev`, SHA-1 da chave de depuração do Expo SDK 57, conferido no `expo-template-bare-minimum`) no mesmo projeto do cliente web da agenda. Decisão:
+- **`@react-native-google-signin/google-signin` 17 (versão gratuita)**, com o `webClientId` do cliente web: o `id_token` sai com a audiência dele, e o staging aceita os dois em `GOOGLE_CLIENT_IDS`. Sem o plugin de configuração por enquanto (ele só cuida do iOS e exige o `iosUrlScheme`, T-055b). Alternativa: `expo-auth-session` pelo navegador, pior para quem usa e com redirecionamento a configurar.
+- **O módulo nativo carrega só no toque**, para o app abrir em build sem ele; o botão aparece no Android com o `EXPO_PUBLIC_GOOGLE_ID_CLIENTE_WEB`.
+- **`VINCULO_SOCIAL_PENDENTE`:** o login pede a senha uma vez e liga o Google à conta depois de entrar (o token pendente fica só em memória). Falhar no vínculo não impede a entrada.
+- A T-055 foi dividida: T-055a (Android) e T-055b (iPhone e Apple).
+

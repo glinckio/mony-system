@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { entrarAutenticacao } from '@mony/api-client';
 import { esquemaLogin } from '@mony/shared/autenticacao';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
@@ -12,25 +12,48 @@ import { comecarSessao } from '@/lib/auth/sessao';
 import { CampoControlado, mensagemDeErro } from '@/lib/formularios';
 import { Botao, Texto } from '@/ui';
 
+import { BotaoGoogle } from '../components/botao-google';
+import { loginGooglePendente, vincularGooglePendente } from '../login-google';
 import { ErroDoFormulario, TelaFormulario } from './tela-formulario';
 
 const esquemaFormulario = esquemaLogin.pick({ email: true, senha: true });
 
-/** Login com e-mail e senha (RN-002). Google e Apple entram na T-055. */
+/**
+ * Login com e-mail e senha ou com o Google (RN-002, T-055a; a Apple entra na T-055b). Quando o
+ * e-mail do Google já tem conta, a pessoa entra com a senha uma vez e o Google é ligado à conta.
+ */
 export default function TelaLogin() {
   const { t } = useTranslation();
   const router = useRouter();
   const [erro, definirErro] = useState<string | null>(null);
+  const [vinculo, definirVinculo] = useState<string | null>(null);
   const formulario = useForm({
     resolver: zodResolver(esquemaFormulario),
     defaultValues: { email: '', senha: '' },
   });
+
+  const pedirSenha = useCallback(
+    (email: string | null) => {
+      if (email) formulario.setValue('email', email);
+      definirVinculo(t('auth.google.vinculo', { email: email ?? '' }));
+    },
+    [formulario, t],
+  );
+
+  // O Google pode ter pedido a senha na tela de cadastro, que volta para cá.
+  useFocusEffect(
+    useCallback(() => {
+      const pendente = loginGooglePendente();
+      if (pendente?.motivo === 'vinculo') pedirSenha(pendente.email);
+    }, [pedirSenha]),
+  );
 
   const entrar = formulario.handleSubmit(async (dados) => {
     definirErro(null);
     try {
       const sessao = await entrarAutenticacao({ ...dados, dispositivo: await dadosDoAparelho() });
       await comecarSessao(sessao);
+      await vincularGooglePendente();
     } catch (falha) {
       definirErro(mensagemDeErro(falha, t('auth.semConexao')));
     }
@@ -54,6 +77,7 @@ export default function TelaLogin() {
         </View>
       }
     >
+      {vinculo ? <Texto cor="atencao">{vinculo}</Texto> : null}
       <CampoControlado
         controle={formulario.control}
         nome="email"
@@ -89,6 +113,7 @@ export default function TelaLogin() {
           router.push('/recuperar-senha');
         }}
       />
+      <BotaoGoogle aoPedirSenha={pedirSenha} />
     </TelaFormulario>
   );
 }

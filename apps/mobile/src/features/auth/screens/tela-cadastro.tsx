@@ -11,6 +11,7 @@ import { comecarSessao } from '@/lib/auth/sessao';
 import { CampoControlado, mensagemDeErro } from '@/lib/formularios';
 import { Botao, CaixaDeSelecao, Texto } from '@/ui';
 
+import { BotaoGoogle } from '../components/botao-google';
 import { ErroDoFormulario, TelaFormulario } from './tela-formulario';
 
 const esquemaFormulario = esquemaCadastro.pick({
@@ -112,6 +113,12 @@ export default function TelaCadastro() {
         variante="fantasma"
         titulo={t('auth.cadastro.jaTenho')}
         aoPressionar={() => {
+          router.back();
+        }}
+      />
+      {/* O e-mail do Google já tem conta: o login pede a senha uma vez. */}
+      <BotaoGoogle
+        aoPedirSenha={() => {
           router.back();
         }}
       />
