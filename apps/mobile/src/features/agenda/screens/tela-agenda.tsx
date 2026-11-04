@@ -23,7 +23,12 @@ import {
 import { cores } from '@/ui/tokens';
 
 import { FolhaAgendas } from '../components/folha-agendas';
-import { resultadoDaConexao, useAgendaDoPeriodo, useAgendas } from '../hooks/use-agenda';
+import {
+  resultadoDaConexao,
+  useAgendaDoAparelho,
+  useAgendaDoPeriodo,
+  useAgendas,
+} from '../hooks/use-agenda';
 import {
   compromissosDoDia,
   type CompromissoDoDia,
@@ -108,7 +113,14 @@ function FaixaDaSemana({
   );
 }
 
-function LinhaCompromisso({ item, aoAbrir }: { item: CompromissoDoDia; aoAbrir: () => void }) {
+function LinhaCompromisso({
+  item,
+  aoAbrir,
+}: {
+  item: CompromissoDoDia;
+  /** `undefined` nos do aparelho: eles não têm detalhe no servidor. */
+  aoAbrir: (() => void) | undefined;
+}) {
   const { t } = useTranslation();
   const { compromisso, hora, ate } = item;
   const fonte = fonteDoCompromisso(compromisso);
@@ -120,8 +132,9 @@ function LinhaCompromisso({ item, aoAbrir }: { item: CompromissoDoDia; aoAbrir: 
   ].filter((parte): parte is string => parte !== null && parte !== '');
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole={aoAbrir ? 'button' : 'text'}
       onPress={aoAbrir}
+      disabled={!aoAbrir}
       className="min-h-toque flex-row gap-3 py-2 active:opacity-80"
       testID={`compromisso-${compromisso.id}`}
     >
@@ -145,7 +158,8 @@ function LinhaCompromisso({ item, aoAbrir }: { item: CompromissoDoDia; aoAbrir: 
 
 /**
  * Agenda (`/agenda`, design, página 7; RN-079): a semana de segunda a domingo, os compromissos do
- * dia escolhido (os do app, os da Mony e os do Google e do Outlook) e os filtros por agenda. O "+"
+ * dia escolhido (os do app, os da Mony, os do Google e do Outlook e os do aparelho, T-085f) e os
+ * filtros por agenda. O "+"
  * marca um novo; tocar abre (os do app e da Mony editam, os de fora só mostram). Aberta pela grade
  * de Mais, pelo aviso do compromisso e pelo [Ver agenda] da Mony (`mony://agenda`). O calendário
  * do topo abre Suas agendas (T-085e).
@@ -167,10 +181,18 @@ export default function TelaAgenda() {
     resultadoDaConexao(`?conexao=${parametros.conexao ?? ''}`),
   );
   const segunda = inicioDaSemana(escolhido);
-  const consulta = useAgendaDoPeriodo(periodoDaSemana(segunda, fuso));
+  const periodo = periodoDaSemana(segunda, fuso);
+  const consulta = useAgendaDoPeriodo(periodo);
   const agendas = useAgendas();
+  // T-085f: a agenda do celular, menos as contas já conectadas (que chegam pelo servidor).
+  const conectadas = (agendas.data?.itens ?? [])
+    .filter(({ situacao }) => situacao === 'conectada')
+    .flatMap(({ provedor }) => (provedor === 'aparelho' ? [] : [provedor]));
+  const doAparelho = useAgendaDoAparelho(periodo, conectadas, fuso);
 
-  const itens = consulta.data?.itens ?? [];
+  const itens = [...(consulta.data?.itens ?? []), ...(doAparelho.data ?? [])].sort((a, b) =>
+    a.inicio.localeCompare(b.inicio),
+  );
   const fontes = FONTES.filter(
     (fonte) =>
       fonte === 'monitorizze' ||
@@ -227,7 +249,11 @@ export default function TelaAgenda() {
           <LinhaCompromisso
             key={item.compromisso.id}
             item={item}
-            aoAbrir={abrir(item.compromisso)}
+            aoAbrir={
+              fonteDoCompromisso(item.compromisso) === 'aparelho'
+                ? undefined
+                : abrir(item.compromisso)
+            }
           />
         ))}
       </Card>
@@ -312,6 +338,7 @@ export default function TelaAgenda() {
             onRefresh={() => {
               void consulta.refetch();
               void agendas.refetch();
+              void doAparelho.refetch();
             }}
           />
         }

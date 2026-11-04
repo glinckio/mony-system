@@ -231,13 +231,13 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
     - dep: T-085a · requer as contas do cliente
     - [x] **T-085g** Google Calendar de verdade (`CalendarGoogle`, OAuth no servidor com `calendar.events`, renovação e revogação), ligado por `GOOGLE_OAUTH_ID_CLIENTE` e `GOOGLE_OAUTH_SEGREDO` (PR #153)
     - [x] **T-085h** 👤 Outlook de verdade (`CalendarOutlook`, Microsoft Graph), com o app registrado no Entra ID do cliente, ligado por `MICROSOFT_OAUTH_ID_CLIENTE` e `MICROSOFT_OAUTH_SEGREDO` (PR #155)
-    - [ ] **T-085i** Chave mestra da cifra na KMS no lugar da `CRIPTO_CHAVE_MESTRA` do ambiente (doc 11) (dep: T-085g)
+    - [ ] **T-085i** Chave mestra da cifra na KMS no lugar da `CRIPTO_CHAVE_MESTRA` do ambiente (doc 11) (dep: T-085g, T-145; decisão do humano em 2026-11-04: entra com a produção, para o staging não pagar a chave da KMS)
     - [ ] **T-085j** 👤 Verificação do app no Google para o escopo `calendar.events` (tela de consentimento com o domínio, a política de privacidade e o e-mail de suporte do cliente); até lá, só os usuários de teste conectam (dep: T-085g)
   - [x] **T-085c** Tela Agenda no app (calendário do design) com os compromissos do servidor: semana, dia, filtros por agenda, novo, editar e excluir; o link `mony://agenda`, o atalho em Mais e o [Ver agenda] na resposta do `criar_compromisso` da Mony; e, em Alertas da Mony, a chave e a antecedência do aviso do compromisso (`antecedenciaMinutos`, T-085d) (PR #141)
     - dep: T-085a · docs: 04
   - [x] **T-085e** Conectar o Google e o Outlook pelo app: a lista de agendas na tela Agenda (conectar no navegador do app, volta em `mony://agenda?conexao=`, "reconectar", escolher a padrão, desconectar); anda com o provedor falso e fica de verdade com a T-085b (PR #142)
     - dep: T-085c · docs: 04, 05
-  - [ ] **T-085f** Agenda do aparelho (`expo-calendar`, pacote novo: aguarda o dono) nos compromissos da tela Agenda e na permissão do onboarding
+  - [x] **T-085f** Agenda do aparelho (`expo-calendar`, aprovado pelo dono em 2026-11-04) nos compromissos da tela Agenda e na permissão do onboarding (PR #<n>)
     - dep: T-085c · docs: 04 · testar em aparelho
   - [x] **T-085d** Aviso do compromisso com antecedência (tipo `compromisso` do doc 09, `compromisso:<id>:<início>`): a antecedência nas preferências e a rotina que avisa (PR #138)
     - dep: T-085a, T-080 · docs: 09

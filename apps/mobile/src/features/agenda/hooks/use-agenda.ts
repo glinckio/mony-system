@@ -22,11 +22,42 @@ import { LINKS_INTERNOS } from '@mony/shared/alertas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 
+import { compromissosDoAparelho } from '@/lib/agenda-aparelho';
+
 /** `GET /agenda`: os compromissos que cruzam o período (a semana da tela). */
 export function useAgendaDoPeriodo(periodo: { inicio: string; fim: string }) {
   return useQuery({
     queryKey: getPeriodoAgendaQueryKey(periodo),
     queryFn: async ({ signal }) => await periodoAgenda(periodo, { signal }),
+  });
+}
+
+/**
+ * A agenda do aparelho no período (T-085f), lida no próprio aparelho e sem passar pelo servidor. As
+ * contas já conectadas no app ficam de fora. Sem a permissão, ou se o aparelho falhar, nenhum: a
+ * tela segue com os do servidor.
+ */
+export function useAgendaDoAparelho(
+  periodo: { inicio: string; fim: string },
+  conectadas: readonly ProvedorAgendaExterna[],
+  fuso: string,
+) {
+  return useQuery({
+    queryKey: [
+      'agenda-aparelho',
+      periodo.inicio,
+      periodo.fim,
+      [...conectadas].sort().join(','),
+      fuso,
+    ],
+    queryFn: async () => {
+      try {
+        return await compromissosDoAparelho(periodo, conectadas, fuso);
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 60_000,
   });
 }
 

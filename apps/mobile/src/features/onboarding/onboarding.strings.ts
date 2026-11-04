@@ -50,7 +50,7 @@ export const textosOnboarding = {
       },
       agenda: {
         titulo: 'Agenda',
-        texto: 'A Mony marca compromissos para você',
+        texto: 'Os compromissos do celular aparecem na Agenda do app',
       },
       'apps-de-compra': {
         titulo: 'Apps de compra',

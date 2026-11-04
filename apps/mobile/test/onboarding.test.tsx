@@ -85,13 +85,15 @@ describe('onboarding (T-046)', () => {
     useSessao.getState().encerrar();
   });
 
-  // As notificações já têm o pedido de verdade (T-088); os testes que trocam voltam a ele.
+  // As notificações (T-088) e a agenda (T-085f) já têm o pedido de verdade; os testes que trocam
+  // voltam a ele.
   const pedidoDeNotificacoes = PEDIDOS_DE_PERMISSAO.notificacoes;
+  const pedidoDaAgenda = PEDIDOS_DE_PERMISSAO.agenda;
 
   afterEach(() => {
     globalThis.fetch = fetchOriginal;
     PEDIDOS_DE_PERMISSAO.notificacoes = pedidoDeNotificacoes;
-    delete PEDIDOS_DE_PERMISSAO.agenda;
+    PEDIDOS_DE_PERMISSAO.agenda = pedidoDaAgenda;
   });
 
   it(
@@ -116,9 +118,9 @@ describe('onboarding (T-046)', () => {
         await screen.findByRole('header', { name: 'Deixe a Mony te avisar na hora certa' }, ESPERA),
       ).toBeOnTheScreen();
       expect(screen.getByText('Etapa 3 de 3')).toBeOnTheScreen();
-      // Só as notificações têm o pedido (T-088); agenda e apps de compra vêm depois (T-085,
-      // T-121). O banco (Open Finance) saiu do lançamento (T-158).
-      expect(screen.getAllByText('Em breve')).toHaveLength(2);
+      // Notificações (T-088) e agenda (T-085f) têm o pedido; os apps de compra vêm depois
+      // (T-121). O banco (Open Finance) saiu do lançamento (T-158).
+      expect(screen.getAllByText('Em breve')).toHaveLength(1);
       expect(screen.queryByText('Conectar banco')).toBeNull();
 
       fireEvent.press(screen.getByRole('button', { name: 'Concluir' }));
