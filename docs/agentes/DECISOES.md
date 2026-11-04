@@ -1230,3 +1230,13 @@ Contexto: o humano registrou o app "Monitorizze" no Entra ID do cliente (para co
 
 ## 2026-11-04 — T-085f — Agenda do aparelho só na tela; KMS na produção
 Contexto: o doc 10 deixava em aberto se a agenda do aparelho ia para o servidor ou só aparecia na tela; o dono aprovou o `expo-calendar` (pacote nativo novo, pede um build de desenvolvimento novo) em 04/11. Decisão: só leitura, mesclada na tela, sem nada no servidor. É o menor dado pessoal fora do aparelho (LGPD, doc 11); em troca, a Mony não vê esses compromissos e a agenda do aparelho não vira a padrão. As agendas das contas já conectadas no app (o Android e o iPhone sincronizam o Google e o Outlook no calendário do celular) ficam de fora, pelo tipo e pelo nome da origem, para não repetir. No Android, a permissão de escrever na agenda fica bloqueada (o plugin pede as duas). Na mesma conversa, o humano decidiu que a chave mestra na KMS (T-085i) entra com a produção: no staging, a `CRIPTO_CHAVE_MESTRA` fica no Parameter Store cifrado, sem pagar a chave da KMS. Reversível: sim.
+
+## 2026-11-04 — T-121b — Token de evento e fila no Android
+Contexto: o BACKLOG pede o token "no armazenamento nativo cifrado" e parar com 401 ou 403. Decisão:
+- **Chave AES-GCM própria no Android Keystore**, com o texto cifrado nas preferências do módulo, em vez do `EncryptedSharedPreferences` (a `androidx.security:security-crypto` foi descontinuada) e do cofre do app (o `expo-secure-store` tem formato próprio, que o worker não deve ler). Chave perdida → o token é esquecido e a pessoa liga de novo. Reversível: sim, `CofreToken`.
+- **Fila só da última hora** (igual a `IDADE_MAXIMA_ABERTURA_MINUTOS`, que o servidor já ignora), até 50, mandada na própria verificação; sem rede espera a próxima, sem `WorkManager` de rede à parte. 400 e outros 4xx descartam a abertura; 408, 429 e 5xx esperam.
+- **401 ou 403 param tudo** (token esquecido, verificação parada, fila limpa) e a tela mostra "os avisos pararam"; ligar de novo pede outro token.
+- **Desligar para o aparelho primeiro** e só depois revoga o token no servidor (sem rede, nada mais sai do aparelho). Sair da conta também desliga no aparelho.
+- **A tela de teste da PoC, o aviso local e o histórico de verificações saíram**; a medição da T-022 passa a usar a tela do produto e o push (BLOQUEIOS e `docs/agentes/poc/T-022.md`). O tipo `app_compra` entrou na tela Alertas da Mony.
+- A tela só aparece no Perfil com o módulo (Android); no iPhone, o item de Permissões continua "Em breve" até a T-121c.
+

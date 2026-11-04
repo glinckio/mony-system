@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 
 import { estadoDaPermissaoDaAgenda, pedirPermissaoDaAgenda } from './agenda-aparelho';
 import { estadoDaPermissaoDePush, pedirPermissaoDePush } from './push';
+import {
+  estadoDoAcessoAoUso,
+  type ModuloUsoDeApps,
+  pedirAcessoAoUso,
+  usoDeApps,
+} from './uso-de-apps';
 
 /**
  * Permissões do aparelho que a Mony usa (doc 04, "Permissões"), pedidas uma por vez com a tela
@@ -20,15 +26,29 @@ export interface PedidoDePermissao {
   pedir: () => Promise<boolean>;
 }
 
+function pedidoDosAppsDeCompra(
+  modulo: ModuloUsoDeApps | null,
+): Partial<Record<Permissao, PedidoDePermissao>> {
+  if (modulo === null) return {};
+  return {
+    'apps-de-compra': {
+      estado: () => estadoDoAcessoAoUso(modulo),
+      pedir: () => pedirAcessoAoUso(modulo),
+    },
+  };
+}
+
 /**
  * Quem sabe pedir cada permissão. Cada tarefa que traz o módulo nativo entra aqui: notificações na
  * T-088 (`expo-notifications`; liberada, o token vai para a API), agenda na T-085f (`expo-calendar`,
- * a agenda do aparelho na tela Agenda), apps de compra na T-121. Sem pedido, a tela mostra
- * "Em breve".
+ * a agenda do aparelho na tela Agenda) e apps de compra na T-121b (o acesso ao uso do Android, que
+ * abre a configuração do sistema; ligar o aviso é na tela Apps de compra). Sem pedido (no iPhone,
+ * até a T-121c), a tela mostra "Em breve".
  */
 export const PEDIDOS_DE_PERMISSAO: Partial<Record<Permissao, PedidoDePermissao>> = {
   notificacoes: { estado: estadoDaPermissaoDePush, pedir: pedirPermissaoDePush },
   agenda: { estado: estadoDaPermissaoDaAgenda, pedir: pedirPermissaoDaAgenda },
+  ...pedidoDosAppsDeCompra(usoDeApps),
 };
 
 /** O estado de todas as permissões e a função que pede uma delas. */
