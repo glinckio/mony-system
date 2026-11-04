@@ -237,7 +237,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
     - dep: T-085a · docs: 04
   - [x] **T-085e** Conectar o Google e o Outlook pelo app: a lista de agendas na tela Agenda (conectar no navegador do app, volta em `mony://agenda?conexao=`, "reconectar", escolher a padrão, desconectar); anda com o provedor falso e fica de verdade com a T-085b (PR #142)
     - dep: T-085c · docs: 04, 05
-  - [x] **T-085f** Agenda do aparelho (`expo-calendar`, aprovado pelo dono em 2026-11-04) nos compromissos da tela Agenda e na permissão do onboarding (PR #<n>)
+  - [x] **T-085f** Agenda do aparelho (`expo-calendar`, aprovado pelo dono em 2026-11-04) nos compromissos da tela Agenda e na permissão do onboarding (PR #158)
     - dep: T-085c · docs: 04 · testar em aparelho
   - [x] **T-085d** Aviso do compromisso com antecedência (tipo `compromisso` do doc 09, `compromisso:<id>:<início>`): a antecedência nas preferências e a rotina que avisa (PR #138)
     - dep: T-085a, T-080 · docs: 09
