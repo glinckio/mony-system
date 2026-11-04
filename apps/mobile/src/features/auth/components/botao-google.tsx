@@ -18,11 +18,11 @@ export function BotaoGoogle({ aoPedirSenha }: { aoPedirSenha: (email: string | n
   return (
     <View className="gap-3">
       <View className="flex-row items-center gap-3">
-        <View className="h-px flex-1 bg-vidro-forte" />
+        <View className="flex-1 border-t border-vidro-forte" />
         <Texto variante="legenda" cor="suave">
           {t('auth.google.ou')}
         </Texto>
-        <View className="h-px flex-1 bg-vidro-forte" />
+        <View className="flex-1 border-t border-vidro-forte" />
       </View>
       <Botao
         variante="secundaria"
