@@ -1250,3 +1250,6 @@ Contexto: o humano criou o cliente OAuth "Android" (`com.monitorizze.app.dev`, S
 
 ## 2026-11-04 — T-102 — Stripe de teste no staging
 Contexto: o dono mandou as chaves do modo de teste da Stripe; a conta de teste é compartilhada com outros projetos dele (outros produtos e webhooks na mesma conta). Decisão: `configurar-stripe` rodou dentro do container da API do staging (a chave lida do SSM na hora, fora do histórico do comando), reaproveitou o produto "Monitorizze", os preços (R$ 19,90 e R$ 199,00) e o portal, e criou o webhook `https://<cloudfront>/v1/webhooks/stripe`; o segredo dele (não o `whsec_` que veio junto, de outro endpoint) está em `STRIPE_SEGREDO_WEBHOOK`, com `COBRANCA_PROVEDOR=stripe`. Eventos dos outros projetos chegam ao webhook e são ignorados (cliente sem assinatura gravada, `aplicar` em `assinaturas.service.ts`). Reversível: sim, `COBRANCA_PROVEDOR=fake` no parâmetro e deploy.
+
+## 2026-11-05 — T-HOTFIX — Patches do SDK 57 de 05/11
+Contexto: a Expo publicou novos patches do SDK 57 (expo 57.0.32 e afins) na manhã de 05/11, e o `expo install --check` do CI passou a reprovar todo PR. Decisão: a mesma da T-HOTFIX de 2026-10-12: `expo install --fix` e as versões exatas publicadas pela Expo nesse dia em `minimumReleaseAgeExclude`. Reversível: sim; as exceções podem sair depois de um dia.
