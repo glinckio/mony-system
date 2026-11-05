@@ -15,6 +15,29 @@ jest.mock('expo-image-picker', () => ({
   launchImageLibraryAsync: jest.fn(),
 }));
 jest.mock('expo-document-picker', () => ({ getDocumentAsync: jest.fn() }));
+// O envio sai do arquivo no aparelho (T-058a): o falso lê o tamanho do mapa e manda o `PUT` pelo
+// `fetch` dos testes, para os pedidos ficarem na mesma lista.
+jest.mock('expo-file-system', () => ({
+  File: class {
+    mockUri: string;
+    constructor(mockCaminho: string) {
+      this.mockUri = mockCaminho;
+    }
+    get size(): number {
+      return mockTamanhos[this.mockUri] ?? 0;
+    }
+    async upload(
+      mockUrl: string,
+      mockOpcoes: { httpMethod: string; headers: Record<string, string> },
+    ) {
+      const resposta = await fetch(mockUrl, {
+        method: mockOpcoes.httpMethod,
+        headers: mockOpcoes.headers,
+      });
+      return { status: resposta.status, body: '', headers: {} };
+    }
+  },
+}));
 jest.mock('expo-image-manipulator', () => {
   const salvar = jest.fn(() => Promise.resolve({ uri: 'file:///cache/reduzida.jpg' }));
   const contexto = {
@@ -64,8 +87,8 @@ const LANCHE = {
   atualizadoEm: '2026-10-09T12:00:00.000Z',
 };
 
-/** O tamanho de cada arquivo "no aparelho", lido pelo `fetch(uri).blob()`. */
-const ARQUIVOS: Record<string, number> = {
+/** O tamanho de cada arquivo "no aparelho", lido pelo `File` do `expo-file-system`. */
+const mockTamanhos: Record<string, number> = {
   'file:///cache/reduzida.jpg': 300_000,
   'file:///cache/enorme.jpg': 11 * 1024 * 1024,
   'file:///docs/boleto.pdf': 50_000,
@@ -84,10 +107,6 @@ function api() {
   let envios = 0;
   globalThis.fetch = jest.fn<typeof fetch>((url, opcoes) => {
     const endereco = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
-    const tamanho = ARQUIVOS[endereco];
-    if (tamanho !== undefined) {
-      return Promise.resolve(new Response(new Uint8Array(tamanho), { status: 200 }));
-    }
     const corpo =
       typeof opcoes?.body === 'string' ? (JSON.parse(opcoes.body) as unknown) : opcoes?.body;
     const pedido = {

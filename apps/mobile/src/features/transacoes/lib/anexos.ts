@@ -3,6 +3,7 @@ import { TIPOS_CONTEUDO_ANEXO, tamanhoMaximoDoConteudo } from '@mony/shared/arqu
 import type { TipoAnexo } from '@mony/shared/enums';
 import type { Transacao } from '@mony/shared/transacoes';
 import * as DocumentPicker from 'expo-document-picker';
+import { File } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -74,25 +75,37 @@ export async function escolherPdf(): Promise<ArquivoEscolhido | null> {
  * Envia direto ao S3 (doc 05): pede a URL assinada (`POST /arquivos`) com o tipo e o tamanho e faz
  * o `PUT` com os cabeçalhos que ela exige. O anexo só fica no lançamento quando ele é salvo com o
  * id (`anexoIds`).
+ *
+ * O `PUT` sai pelo `expo-file-system`, direto do arquivo no aparelho e com o tamanho no cabeçalho
+ * (T-058a): pelo `fetch` com o `Blob`, o envio falhava no Android.
  */
 export async function enviarAnexo(arquivo: ArquivoEscolhido): Promise<AnexoNaTela> {
-  const conteudo = await (await fetch(arquivo.uri)).blob();
-  if (conteudo.size > tamanhoMaximoDoConteudo(arquivo.tipoConteudo)) throw new FalhaAnexo('grande');
+  const local = new File(arquivo.uri);
+  const tamanho = local.size;
+  if (tamanho > tamanhoMaximoDoConteudo(arquivo.tipoConteudo)) throw new FalhaAnexo('grande');
   const envio = await prepararArquivos({
     tipo: arquivo.tipo,
     tipoConteudo: arquivo.tipoConteudo,
-    tamanho: conteudo.size,
+    tamanho,
   });
-  const resposta = await fetch(envio.url, {
-    method: envio.metodo,
-    headers: envio.cabecalhos,
-    body: conteudo,
-  });
-  if (!resposta.ok) throw new FalhaAnexo('envio');
+  let status: number;
+  try {
+    ({ status } = await local.upload(envio.url, {
+      httpMethod: envio.metodo,
+      headers: envio.cabecalhos,
+    }));
+  } catch (erro) {
+    if (__DEV__) console.warn('[anexo] o envio ao armazenamento falhou', erro);
+    throw new FalhaAnexo('envio');
+  }
+  if (status < 200 || status >= 300) {
+    if (__DEV__) console.warn(`[anexo] o armazenamento respondeu ${String(status)}`);
+    throw new FalhaAnexo('envio');
+  }
   return {
     id: envio.id,
     tipo: arquivo.tipo,
-    tamanho: conteudo.size,
+    tamanho,
     ...(arquivo.tipo === 'foto' ? { uriLocal: arquivo.uri } : {}),
   };
 }
