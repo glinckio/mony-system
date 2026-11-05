@@ -19,6 +19,27 @@ import { configurarApi } from '@/lib/api/cliente';
 import { cofre } from '@/lib/auth/cofre';
 import { useSessao } from '@/stores/sessao';
 
+// O anexo sai do arquivo no aparelho pelo `expo-file-system` (T-058a): o tamanho vem daqui e o
+// `PUT` vai pelo `fetch` dos testes.
+const mockArquivo = { tamanho: 0 };
+jest.mock('expo-file-system', () => ({
+  File: class {
+    get size(): number {
+      return mockArquivo.tamanho;
+    }
+    async upload(
+      mockUrl: string,
+      mockOpcoes: { httpMethod: string; headers: Record<string, string> },
+    ) {
+      const resposta = await fetch(mockUrl, {
+        method: mockOpcoes.httpMethod,
+        headers: mockOpcoes.headers,
+      });
+      return { status: resposta.status, body: '', headers: {} };
+    }
+  },
+}));
+
 jest.mock('expo/fetch', () => ({ fetch: jest.fn() }));
 jest.mock('expo-image-picker', () => ({
   requestCameraPermissionsAsync: jest.fn(),
@@ -464,12 +485,10 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
 
     /** `POST /arquivos`, o arquivo gravado no aparelho e o envio ao S3. */
     function api() {
+      mockArquivo.tamanho = 48_000;
       const pedidos: { metodo: string; url: string; corpo: unknown }[] = [];
       globalThis.fetch = comHistorico((url, opcoes) => {
         const endereco = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
-        if (endereco.startsWith('file://')) {
-          return Promise.resolve(new Response(new Uint8Array(48_000), { status: 200 }));
-        }
         pedidos.push({
           metodo: opcoes?.method ?? 'GET',
           url: endereco,
@@ -630,12 +649,10 @@ describe('chat da Mony (PoC T-020, rascunho da T-061)', () => {
 
     /** `POST /arquivos`, a foto no aparelho, o S3 e as ações da Mony. */
     function api() {
+      mockArquivo.tamanho = 250_000;
       const pedidos: { metodo: string; url: string; corpo: unknown }[] = [];
       globalThis.fetch = comHistorico((url, opcoes) => {
         const endereco = typeof url === 'string' ? url : url instanceof URL ? url.href : url.url;
-        if (endereco.startsWith('file://')) {
-          return Promise.resolve(new Response(new Uint8Array(250_000), { status: 200 }));
-        }
         const corpo: unknown =
           typeof opcoes?.body === 'string' ? JSON.parse(opcoes.body) : opcoes?.body;
         pedidos.push({ metodo: opcoes?.method ?? 'GET', url: endereco, corpo });
