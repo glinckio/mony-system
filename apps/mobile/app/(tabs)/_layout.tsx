@@ -20,7 +20,12 @@ export default function LayoutAbas() {
     tabBarAccessibilityLabel: titulo,
   });
   return (
-    <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <BarraAbas {...props} />}>
+    <Tabs
+      // Sair de uma aba volta a pilha dela para o começo: tocar em Mais de novo abre o Mais, e não
+      // a última tela aberta lá dentro (T-010a).
+      screenOptions={{ headerShown: false, popToTopOnBlur: true }}
+      tabBar={(props) => <BarraAbas {...props} />}
+    >
       <Tabs.Screen name="index" options={aba(t('inicio.titulo'))} />
       <Tabs.Screen name="transacoes" options={aba(t('transacoes.titulo'))} />
       <Tabs.Screen name="mony" options={aba(t('mony.titulo'))} />

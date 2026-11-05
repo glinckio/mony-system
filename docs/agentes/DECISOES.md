@@ -1259,3 +1259,6 @@ Contexto: no teste do dono no emulador, a chave da Agenda nas permissões voltav
 
 ## 2026-11-05 — T-058a — Envio do anexo pelo expo-file-system
 Contexto: no teste do dono no emulador Android, o anexo dava "Não foi possível enviar": o `POST /arquivos` respondia 201, mas o `PUT` ao S3 não chegava a completar, sem log no servidor. A URL assinada funciona (`PUT` de teste pelo servidor deu 200), e o S3 recusa envio sem tamanho (`Transfer-Encoding: chunked` dá 501). Decisão: o `PUT` sai pelo `File.upload` do `expo-file-system` (já no build, é dependência do `expo`), direto do arquivo e com o tamanho, e o tamanho vem do `File.size` em vez de ler o arquivo inteiro num `Blob`. Em desenvolvimento, a falha vai para o console do Metro com o status. Reversível: sim, `enviarAnexo` em `features/transacoes/lib/anexos.ts`.
+
+## 2026-11-05 — T-010a — Trocar de aba volta a aba anterior ao começo
+Contexto: o dono pediu que, ao sair de uma aba (ex.: Mais → Categorias → Início) e voltar a ela, o app abra o começo da aba, e não a última tela aberta lá dentro. Decisão: `popToTopOnBlur` nas abas (`app/(tabs)/_layout.tsx`); vale para todas as abas com pilha (Transações, Cartões, Mais). As telas de `(telas)`, por cima das abas, não mudam. Reversível: sim, a opção no layout das abas.
