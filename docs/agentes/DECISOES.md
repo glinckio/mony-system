@@ -1253,3 +1253,6 @@ Contexto: o dono mandou as chaves do modo de teste da Stripe; a conta de teste �
 
 ## 2026-11-05 — T-HOTFIX — Patches do SDK 57 de 05/11
 Contexto: a Expo publicou novos patches do SDK 57 (expo 57.0.32 e afins) na manhã de 05/11, e o `expo install --check` do CI passou a reprovar todo PR. Decisão: a mesma da T-HOTFIX de 2026-10-12: `expo install --fix` e as versões exatas publicadas pela Expo nesse dia em `minimumReleaseAgeExclude`. Reversível: sim; as exceções podem sair depois de um dia.
+
+## 2026-11-05 — T-085k — WRITE_CALENDAR volta ao manifesto do Android
+Contexto: no teste do dono no emulador, a chave da Agenda nas permissões voltava para desligada. No Android, o `requestCalendarPermissions` do `expo-calendar` 57 pede `READ_CALENDAR` e `WRITE_CALENDAR` juntos e só responde liberado com os dois; com o `WRITE_CALENDAR` em `blockedPermissions` (T-085f), o sistema nega a escrita sem mostrar nada. Decisão: tirar o bloqueio. O app continua só lendo a agenda do aparelho; o diálogo do Android é um só ("acessar a agenda"). Alternativa: pedir só a leitura pelo `PermissionsAndroid`, mas o módulo novo do `expo-calendar` também confere as duas em parte das funções. Reversível: sim, `android.blockedPermissions` no `app.config.ts`.

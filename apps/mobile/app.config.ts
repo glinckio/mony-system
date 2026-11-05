@@ -159,8 +159,8 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
         monochromeImage: './assets/images/icone-android-mono.png',
         backgroundColor: '#FFFFFF',
       },
-      // A agenda do aparelho é só lida (T-085f): o plugin do expo-calendar também pede a escrita.
-      blockedPermissions: ['android.permission.WRITE_CALENDAR'],
+      // A agenda do aparelho é só lida (T-085f), mas o WRITE_CALENDAR fica: no Android, o
+      // expo-calendar pede leitura e escrita juntas e só libera com as duas (T-085k).
     },
     plugins: [
       'expo-router',
