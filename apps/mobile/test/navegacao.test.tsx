@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { beforeEach, describe, expect, it } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { act, fireEvent, renderRouter, screen } from 'expo-router/testing-library';
 
 import { useSessao } from '@/stores/sessao';
@@ -56,6 +56,24 @@ describe('navegação pela sessão', () => {
     });
     expect(await screen.findByRole('button', { name: 'Configurações' })).toBeOnTheScreen();
   });
+
+  it('voltar a uma aba abre o começo dela, e não a última tela aberta lá dentro (T-010a)', async () => {
+    entrar(true);
+    const app = renderRouter(ROTAS, { initialUrl: '/' });
+    fireEvent.press(screen.getByRole('tab', { name: 'Mais' }));
+    fireEvent.press(await screen.findByRole('button', { name: 'Categorias' }));
+    expect(app.getPathname()).toBe('/mais/categorias');
+
+    fireEvent.press(screen.getByRole('tab', { name: 'Início' }));
+    expect(app.getPathname()).toBe('/');
+    // A pilha da aba que saiu volta ao começo no fim da troca de aba.
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+    fireEvent.press(screen.getByRole('tab', { name: 'Mais' }));
+    expect(app.getPathname()).toBe('/mais');
+    expect(screen.getByRole('header', { name: 'Mais' })).toBeOnTheScreen();
+  }, 30_000);
 
   it('ao sair, volta para o login', () => {
     entrar(true);
