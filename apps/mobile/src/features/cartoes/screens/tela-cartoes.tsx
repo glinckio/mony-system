@@ -172,7 +172,9 @@ export default function TelaCartoes() {
 
   const cartao = cartoes.find((item) => item.id === escolhido) ?? cartoes[0];
   const faturas = useFaturasDoCartao(cartao?.id);
-  const larguraCartao = Math.min(360, width - 64);
+  // Menor que a tela e no centro (T-050a): os vizinhos aparecem nas pontas quando há mais de um.
+  const larguraCartao = Math.min(300, width - 96);
+  const margemCartoes = (width - larguraCartao) / 2;
 
   function novo() {
     router.push('/cartoes/novo');
@@ -211,7 +213,10 @@ export default function TelaCartoes() {
               showsHorizontalScrollIndicator={false}
               snapToInterval={larguraCartao + ESPACO_ENTRE_CARTOES}
               decelerationRate="fast"
-              contentContainerStyle={{ paddingHorizontal: 16, gap: ESPACO_ENTRE_CARTOES }}
+              contentContainerStyle={{
+                paddingHorizontal: margemCartoes,
+                gap: ESPACO_ENTRE_CARTOES,
+              }}
               onMomentumScrollEnd={(evento) => {
                 const indice = Math.round(
                   evento.nativeEvent.contentOffset.x / (larguraCartao + ESPACO_ENTRE_CARTOES),

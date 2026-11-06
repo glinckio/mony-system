@@ -142,6 +142,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-050** Telas de cartões e faturas no app (lista com limite, cadastro e edição, fatura atual, lista de faturas, detalhe da fatura com as compras) (PR #44)
   - dep: T-040, T-011, T-034 · docs: 04 · RN-030 a RN-034
   - Separada da T-040 pelo mesmo motivo da T-049.
+  - [x] **T-050a** Cartão menor e no centro da tela Cartões, com o chip de contato desenhado em SVG (pedido do dono no teste do emulador) (PR #167)
 - [x] **T-051** Recorrência no cartão de crédito (assinaturas): ocorrências entram nas faturas e editar ou excluir a recorrência refaz as faturas (PR #30)
   - dep: T-040 · RN-043, RN-031
 - [x] **T-052** Telas de orçamentos e metas no app (barras por faixa, projeção, definir orçamento, metas com aportes e sugestão de concluir) (PR #45)
