@@ -329,7 +329,13 @@ export const esquemaPedidoAcaoMony = z.object({ acao: esquemaAcaoMony });
 /** Resposta de `POST /mony/acoes`: o texto da Mony e, se houver, a próxima pergunta. */
 export const esquemaRespostaAcaoMony = z.object({
   texto: z.string(),
+  /** O último componente (a próxima pergunta, quando há). */
   componente: esquemaComponenteMony.nullable(),
+  /**
+   * Todos os componentes, em ordem (RN-086): o resumo do lançamento que terminou e a pergunta do
+   * próximo da fila. Ausente, vale só o `componente`.
+   */
+  componentes: z.array(esquemaComponenteMony).optional(),
   /** Lançamento gravado no fim do fluxo. */
   transacaoId: z.uuid().nullable(),
 });

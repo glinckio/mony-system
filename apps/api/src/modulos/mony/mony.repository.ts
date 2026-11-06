@@ -101,11 +101,18 @@ const CAMPOS_CONFIG = {
 export interface RascunhoSalvo {
   id: string;
   dados: unknown;
+  fila: unknown;
   campoPendente: string | null;
   expiraEm: Date;
 }
 
-const CAMPOS_RASCUNHO = { id: true, dados: true, campoPendente: true, expiraEm: true } as const;
+const CAMPOS_RASCUNHO = {
+  id: true,
+  dados: true,
+  fila: true,
+  campoPendente: true,
+  expiraEm: true,
+} as const;
 
 /** Estabelecimento → categoria, cartão e forma de pagamento (RN-090). */
 export interface Combinacao {
@@ -283,11 +290,14 @@ export class MonyRepository {
     usuarioId: string;
     conversaId: string;
     dados: object;
+    /** Sem ela, o rascunho que já existe guarda a fila que tinha (RN-086). */
+    fila?: object[];
     campoPendente: string | null;
     expiraEm: Date;
   }): Promise<RascunhoSalvo> {
     const campos = {
       dados: dados.dados as Prisma.InputJsonObject,
+      ...(dados.fila === undefined ? {} : { fila: dados.fila as Prisma.InputJsonArray }),
       campoPendente: dados.campoPendente,
       expiraEm: dados.expiraEm,
     };
@@ -296,6 +306,14 @@ export class MonyRepository {
       create: { usuarioId: dados.usuarioId, conversaId: dados.conversaId, ...campos },
       update: campos,
       select: CAMPOS_RASCUNHO,
+    });
+  }
+
+  /** RN-086: troca a fila do rascunho (os lançamentos que esperam). */
+  async salvarFilaDoRascunho(id: string, fila: object[]): Promise<void> {
+    await this.prisma.cliente.rascunhoLancamento.updateMany({
+      where: { id },
+      data: { fila: fila as Prisma.InputJsonArray },
     });
   }
 

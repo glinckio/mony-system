@@ -12,6 +12,7 @@ import {
   parcelasDoTexto,
   preferidosPrimeiro,
   proximoCampo,
+  temVariosValores,
   valorDoGasto,
 } from './rascunhos.js';
 
@@ -166,5 +167,14 @@ describe('preferências aprendidas (RN-081, RN-090)', () => {
       { id: 'c2' },
       { id: 'c1' },
     ]);
+  });
+});
+
+describe('temVariosValores', () => {
+  it('RN-086 dois valores na mesma mensagem; parcelas e percentual não contam', () => {
+    expect(temVariosValores('gastei 23 no uber e 40 no cinema')).toBe(true);
+    expect(temVariosValores('paguei R$ 32,90 no mercado e 15 na padaria')).toBe(true);
+    expect(temVariosValores('comprei um fone de 600 em 3x')).toBe(false);
+    expect(temVariosValores('gastei 10')).toBe(false);
   });
 });

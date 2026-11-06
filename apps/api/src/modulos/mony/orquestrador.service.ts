@@ -208,9 +208,13 @@ export class MonyOrquestrador {
     } else if (roteado.tipo === 'resposta') {
       texto = roteado.resposta.texto;
       yield { tipo: 'texto.delta', texto };
-      if (roteado.resposta.componente) {
-        componentes.push(roteado.resposta.componente);
-        yield { tipo: 'componente', componente: roteado.resposta.componente };
+      // RN-086: com a fila, o resumo do que terminou e a pergunta do próximo.
+      const daRegra =
+        roteado.resposta.componentes ??
+        (roteado.resposta.componente ? [roteado.resposta.componente] : []);
+      for (const componente of daRegra) {
+        componentes.push(componente);
+        yield { tipo: 'componente', componente };
       }
     } else {
       for await (const evento of this.conversarComModelo(

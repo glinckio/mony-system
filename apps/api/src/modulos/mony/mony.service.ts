@@ -99,7 +99,7 @@ export class MonyService {
       autor: 'mony',
       tipo: 'texto',
       conteudo: resposta.texto,
-      componentes: resposta.componente ? [resposta.componente] : [],
+      componentes: resposta.componentes ?? (resposta.componente ? [resposta.componente] : []),
       idempotencyKey: chave === undefined ? undefined : `${chave}:resposta`,
     });
     return resposta;

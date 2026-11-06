@@ -209,7 +209,7 @@ export function useChatMony(historico: readonly Mensagem[]) {
       atualizar(respostaId, (atual) => ({
         ...atual,
         texto: resposta.texto,
-        componentes: resposta.componente ? [resposta.componente] : [],
+        componentes: resposta.componentes ?? (resposta.componente ? [resposta.componente] : []),
       }));
     });
   }
@@ -226,7 +226,7 @@ export function useChatMony(historico: readonly Mensagem[]) {
       atualizar(respostaId, (atual) => ({
         ...atual,
         texto: resposta.texto,
-        componentes: resposta.componente ? [resposta.componente] : [],
+        componentes: resposta.componentes ?? (resposta.componente ? [resposta.componente] : []),
       }));
     });
   }

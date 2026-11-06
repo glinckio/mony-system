@@ -127,6 +127,22 @@ export function valorDoGasto(texto: string): number | null {
   return centavos !== null && centavos >= 1 && centavos <= VALOR_MAXIMO_CENTAVOS ? centavos : null;
 }
 
+/**
+ * RN-086 (T-061a): a mensagem fala de mais de um valor ("23 no uber e 40 no cinema"). As parcelas
+ * ("em 3x") e o que `NAO_E_VALOR` descarta não contam.
+ */
+export function temVariosValores(texto: string): boolean {
+  const normalizado = normalizar(texto);
+  let valores = 0;
+  for (const achado of normalizado.matchAll(new RegExp(NUMERO, 'g'))) {
+    const depois = normalizado.slice(achado.index + achado[0].length);
+    if (NAO_E_VALOR.test(depois)) continue;
+    valores += 1;
+    if (valores > 1) return true;
+  }
+  return false;
+}
+
 /** A forma de pagamento dita no texto ("no pix", "no débito", "no crédito", "em dinheiro"). */
 export function formaDoTexto(texto: string): FormaPagamento | null {
   const normalizado = normalizar(texto);

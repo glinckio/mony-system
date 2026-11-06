@@ -906,6 +906,141 @@ describe.runIf(ativo)('integração: Mony', () => {
     ]);
   });
 
+  it('RN-086 dois gastos na mesma mensagem: um de cada vez, o próximo só depois que o primeiro grava', async () => {
+    const usuario = await usuarioNovo();
+    const lazer = await categoriaDo(usuario, 'Lazer', 'despesa');
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'criar_transacao',
+            entrada: { tipo: 'despesa', descricao: 'Uber', valorCentavos: 2_300 },
+          },
+          {
+            nome: 'criar_transacao',
+            entrada: {
+              tipo: 'despesa',
+              descricao: 'Cinema',
+              valorCentavos: 4_000,
+              categoriaId: lazer,
+            },
+          },
+        ],
+      },
+      { texto: 'Vamos um de cada vez. Em qual categoria fica o Uber?' },
+    );
+    // Dois valores: a regra não pega só o primeiro, o modelo separa os lançamentos.
+    const { eventos } = await conversar(usuario, 'gastei 23 no uber e 40 no cinema');
+    expect(modelo.pedidos).toHaveLength(2);
+    expect(resultadosDaFerramenta(1)).toMatchObject([
+      {
+        erro: false,
+        dados: {
+          gravado: false,
+          pergunta: 'Em qual categoria?',
+        },
+      },
+      { erro: false, dados: { gravado: false, naFila: true } },
+    ]);
+    // Só a pergunta do primeiro aparece.
+    const componentes = eventos.filter(({ tipo }) => tipo === 'componente');
+    expect(componentes).toHaveLength(1);
+    const categoria = botoes(componentes[0])[0];
+    if (!categoria) throw new Error('sem botão de categoria');
+    const [rascunho] = await prisma.rascunhoLancamento.findMany({
+      where: { usuarioId: usuario.usuarioId },
+    });
+    expect(rascunho).toMatchObject({
+      dados: { descricao: 'Uber', valorCentavos: 2_300 },
+      fila: [{ descricao: 'Cinema', valorCentavos: 4_000, categoriaId: lazer }],
+    });
+
+    // A forma do primeiro ainda é dele: a fila continua esperando.
+    const forma = (await tocar(usuario, categoria)).json<RespostaAcaoMony>();
+    expect(forma.texto).toBe('Como você pagou?');
+    const pix = botoes(forma.componente).find(({ rotulo }) => rotulo === 'Pix');
+    if (!pix) throw new Error('sem o botão Pix');
+
+    // Gravou o Uber; o Cinema começa, com a pergunta dele.
+    const fim = (await tocar(usuario, pix)).json<RespostaAcaoMony>();
+    expect(fim.texto).toBe(
+      `Pronto! Anotei ${formatarCentavos(2_300)} de Uber em ${categoria.rotulo}, no Pix. Agora o próximo: ${formatarCentavos(4_000)} de Cinema. Como você pagou?`,
+    );
+    expect(fim.componentes?.map(({ tipo }) => tipo)).toEqual(['resumo', 'botoes']);
+    expect(fim.componente).toEqual(fim.componentes?.[1]);
+    expect(await rascunhoDo(usuario.usuarioId)).toMatchObject([
+      { campoPendente: 'forma_pagamento', dados: { descricao: 'Cinema' } },
+    ]);
+    // O histórico guarda os dois componentes da resposta.
+    const [ultima] = (await historico(usuario)).json<PaginaConversa>().itens;
+    expect(ultima?.componentes.map(({ tipo }) => tipo)).toEqual(['resumo', 'botoes']);
+
+    const debito = botoes(fim.componente).find(({ rotulo }) => rotulo === 'Débito');
+    if (!debito) throw new Error('sem o botão Débito');
+    const segundo = (await tocar(usuario, debito)).json<RespostaAcaoMony>();
+    expect(segundo.texto).toBe(
+      `Pronto! Anotei ${formatarCentavos(4_000)} de Cinema em Lazer, no débito.`,
+    );
+    expect(await rascunhoDo(usuario.usuarioId)).toEqual([]);
+    expect(
+      await prisma.transacao.findMany({
+        where: { usuarioId: usuario.usuarioId, origem: 'mony' },
+        orderBy: { valor: 'asc' },
+        select: { descricao: true, valor: true, formaPagamento: true },
+      }),
+    ).toEqual([
+      { descricao: 'Uber', valor: 2_300n, formaPagamento: 'pix' },
+      { descricao: 'Cinema', valor: 4_000n, formaPagamento: 'debito' },
+    ]);
+  });
+
+  it('RN-086 deixar um de lado passa ao próximo; o próximo completo grava e segue a fila', async () => {
+    const usuario = await usuarioNovo();
+    const lazer = await categoriaDo(usuario, 'Lazer', 'despesa');
+    modelo.roteirizar(
+      {
+        ferramentas: [
+          {
+            nome: 'criar_transacao',
+            entrada: { tipo: 'despesa', descricao: 'Uber', valorCentavos: 2_300 },
+          },
+          {
+            nome: 'criar_transacao',
+            entrada: {
+              tipo: 'despesa',
+              descricao: 'Pipoca',
+              valorCentavos: 1_500,
+              categoriaId: lazer,
+              formaPagamento: 'pix',
+            },
+          },
+          {
+            nome: 'criar_transacao',
+            entrada: { tipo: 'despesa', descricao: 'Cinema', valorCentavos: 4_000 },
+          },
+        ],
+      },
+      { texto: 'Em qual categoria fica o Uber?' },
+    );
+    await conversar(usuario, 'gastei 23 no uber, 15 de pipoca no pix e 40 no cinema');
+    const { texto, eventos } = await conversar(usuario, 'cancela');
+    expect(texto).toBe(
+      `Tudo bem, deixei de lado o lançamento de ${formatarCentavos(2_300)}. Agora o próximo: ${formatarCentavos(1_500)} de Pipoca. Pronto! Anotei ${formatarCentavos(1_500)} de Pipoca em Lazer, no Pix. Agora o próximo: ${formatarCentavos(4_000)} de Cinema. Em qual categoria?`,
+    );
+    expect(
+      eventos.flatMap((evento) => (evento.tipo === 'componente' ? [evento.componente.tipo] : [])),
+    ).toEqual(['resumo', 'botoes']);
+    expect(await rascunhoDo(usuario.usuarioId)).toMatchObject([
+      { campoPendente: 'categoria', dados: { descricao: 'Cinema' } },
+    ]);
+    expect(
+      await prisma.rascunhoLancamento.findFirst({
+        where: { usuarioId: usuario.usuarioId },
+        select: { fila: true },
+      }),
+    ).toEqual({ fila: [] });
+  });
+
   it('RN-092 criar_transacao com categoria de outra pessoa falha e não grava nada', async () => {
     const usuario = await usuarioNovo();
     const outro = await usuarioNovo();

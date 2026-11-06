@@ -6,9 +6,11 @@
  * OpenAPI spec version: 1
  */
 import type { RespostaAcaoMonyDtoComponente } from './respostaAcaoMonyDtoComponente';
+import type { RespostaAcaoMonyDtoComponentesItem } from './respostaAcaoMonyDtoComponentesItem';
 
 export interface RespostaAcaoMonyDto {
   texto: string;
   componente: RespostaAcaoMonyDtoComponente;
+  componentes?: RespostaAcaoMonyDtoComponentesItem[];
   transacaoId: string | null;
 }
