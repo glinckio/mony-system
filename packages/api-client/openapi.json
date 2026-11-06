@@ -10571,6 +10571,317 @@
               }
             ]
           },
+          "componentes": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "tipo": {
+                      "type": "string",
+                      "const": "botoes"
+                    },
+                    "opcoes": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "rotulo": {
+                            "type": "string"
+                          },
+                          "acao": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "rotulo",
+                          "acao"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "tipo",
+                    "opcoes"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "tipo": {
+                      "type": "string",
+                      "const": "resumo"
+                    },
+                    "lancamento": {
+                      "type": "object",
+                      "properties": {
+                        "transacaoId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "parcelamentoId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "uuid",
+                              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "tipo": {
+                          "type": "string",
+                          "enum": [
+                            "receita",
+                            "despesa"
+                          ]
+                        },
+                        "descricao": {
+                          "type": "string"
+                        },
+                        "valorCentavos": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "data": {
+                          "type": "string"
+                        },
+                        "categoria": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "formaPagamento": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "cartao_credito",
+                                "pix",
+                                "debito",
+                                "dinheiro",
+                                "boleto"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "cartao": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "parcelas": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "valorParcelaCentavos": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "impacto": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "orcamento": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "categoria": {
+                                          "type": "string"
+                                        },
+                                        "competencia": {
+                                          "type": "string"
+                                        },
+                                        "percentualUsado": {
+                                          "type": "integer",
+                                          "minimum": -9007199254740991,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "restanteCentavos": {
+                                          "type": "integer",
+                                          "minimum": -9007199254740991,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "faixa": {
+                                          "type": "string",
+                                          "enum": [
+                                            "normal",
+                                            "atencao",
+                                            "estourado"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "categoria",
+                                        "competencia",
+                                        "percentualUsado",
+                                        "restanteCentavos",
+                                        "faixa"
+                                      ]
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "cartao": {
+                                  "anyOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "cartao": {
+                                          "type": "string"
+                                        },
+                                        "percentualUsado": {
+                                          "type": "integer",
+                                          "minimum": -9007199254740991,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "disponivelCentavos": {
+                                          "type": "integer",
+                                          "minimum": -9007199254740991,
+                                          "maximum": 9007199254740991
+                                        },
+                                        "faixa": {
+                                          "type": "string",
+                                          "enum": [
+                                            "normal",
+                                            "atencao",
+                                            "estourado"
+                                          ]
+                                        }
+                                      },
+                                      "required": [
+                                        "cartao",
+                                        "percentualUsado",
+                                        "disponivelCentavos",
+                                        "faixa"
+                                      ]
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "comentario": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "orcamento",
+                                "cartao",
+                                "comentario"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "aviso": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "transacaoId",
+                        "parcelamentoId",
+                        "tipo",
+                        "descricao",
+                        "valorCentavos",
+                        "data",
+                        "categoria",
+                        "formaPagamento",
+                        "cartao",
+                        "parcelas",
+                        "valorParcelaCentavos"
+                      ]
+                    },
+                    "opcoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "rotulo": {
+                            "type": "string"
+                          },
+                          "acao": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "rotulo",
+                          "acao"
+                        ]
+                      }
+                    },
+                    "aConfirmar": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "tipo",
+                    "lancamento",
+                    "opcoes"
+                  ]
+                }
+              ]
+            }
+          },
           "transacaoId": {
             "anyOf": [
               {

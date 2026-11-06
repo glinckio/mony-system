@@ -187,6 +187,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-020, T-037 · docs: 08
 - [x] **T-061** Rascunhos e roteador por regra (próximo campo, botões, `/mony/acoes` sem modelo) (PR #56)
   - dep: T-060 · RN-080, RN-081, RN-084, RN-085, RN-088
+  - [x] **T-061a** Vários lançamentos numa mensagem de texto, um de cada vez: os seguintes esperam na fila do rascunho e começam quando o anterior termina; mensagem com mais de um valor vai ao modelo (pedido do dono no teste do emulador) (PR #168)
 - [x] **T-062a** Ferramentas de lançamento da Mony: `listar_cartoes`, `criar_categoria`, `criar_transacao`, `criar_parcelamento`, `editar_transacao`, `excluir_transacao` (confirmação por botão), `consultar_transacoes`; cartão de resumo com [Desfazer] (PR #57)
   - dep: T-061, T-042, T-043 · RN-082, RN-086, RN-087, RN-092
   - A T-062 (ferramentas de finanças) foi dividida em T-062a e T-062b por tamanho.

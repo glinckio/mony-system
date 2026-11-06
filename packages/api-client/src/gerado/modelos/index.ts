@@ -471,6 +471,7 @@ export * from './renovacaoDto';
 export * from './reprocessadosAdminDto';
 export * from './respostaAcaoMonyDto';
 export * from './respostaAcaoMonyDtoComponente';
+export * from './respostaAcaoMonyDtoComponentesItem';
 export * from './respostaAporteDto';
 export * from './respostaAporteDtoAporte';
 export * from './respostaAporteDtoMeta';

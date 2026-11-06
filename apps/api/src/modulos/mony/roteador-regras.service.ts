@@ -22,6 +22,7 @@ import {
   parcelasDoTexto,
   preferidosPrimeiro,
   proximoCampo,
+  temVariosValores,
   valorDoGasto,
 } from '@mony/shared/rascunhos';
 import { somarDias } from '@mony/shared/recorrencias';
@@ -96,7 +97,13 @@ export type AcaoRascunho = Extract<AcaoMony, { tipo: 'rascunho' }>;
 /** Resposta sem o modelo: o texto da Mony, a próxima pergunta e o lançamento gravado. */
 export interface RespostaRegra {
   texto: string;
+  /** O último componente (a próxima pergunta, quando há): o que o app antigo mostra. */
   componente: ComponenteMony | null;
+  /**
+   * Todos os componentes da resposta, em ordem: com a fila (RN-086), o resumo do lançamento que
+   * terminou e a pergunta do seguinte. Sem ele, só o `componente`.
+   */
+  componentes?: ComponenteMony[];
   transacaoId: string | null;
   /** RN-123: não gravou porque o gratuito chegou ao limite; o componente é o [Ver planos]. */
   limiteAtingido?: true;
@@ -141,6 +148,11 @@ export class RoteadorRegras {
   async responder(contexto: Contexto, conversaId: string, texto: string): Promise<ResultadoRegras> {
     const atual = await this.rascunhos.ativo(conversaId);
     const valor = valorDoGasto(texto);
+    // RN-086: com mais de um valor ("23 no uber e 40 no cinema"), o modelo separa os lançamentos.
+    if (valor !== null && temVariosValores(texto)) {
+      if (atual) await this.rascunhos.descartar(atual.id);
+      return { tipo: 'modelo', rascunho: null };
+    }
     if (valor !== null) {
       if (atual) await this.rascunhos.descartar(atual.id);
       const catalogo = await this.catalogo(contexto);
@@ -169,13 +181,14 @@ export class RoteadorRegras {
     const normalizado = normalizar(texto.trim());
     if (CANCELAR.test(normalizado)) {
       await this.rascunhos.descartar(atual.id);
+      const cancelado: RespostaRegra = {
+        texto: `Tudo bem, deixei de lado o lançamento de ${reais(atual.dados.valorCentavos)}.`,
+        componente: null,
+        transacaoId: null,
+      };
       return {
         tipo: 'resposta',
-        resposta: {
-          texto: `Tudo bem, deixei de lado o lançamento de ${reais(atual.dados.valorCentavos)}.`,
-          componente: null,
-          transacaoId: null,
-        },
+        resposta: await this.seguirFila(contexto, conversaId, atual, cancelado),
       };
     }
     const catalogo = await this.catalogo(contexto);
@@ -188,11 +201,12 @@ export class RoteadorRegras {
     // RN-085: a resposta completa o rascunho em andamento.
     const dados = this.aplicarTexto(atual.dados, texto, catalogo);
     if (atual.campoPendente && proximoCampo(dados) !== atual.campoPendente) {
+      const resposta = await this.avancar(contexto, conversaId, dados, catalogo, {
+        rascunhoId: atual.id,
+      });
       return {
         tipo: 'resposta',
-        resposta: await this.avancar(contexto, conversaId, dados, catalogo, {
-          rascunhoId: atual.id,
-        }),
+        resposta: await this.seguirFila(contexto, conversaId, atual, resposta, catalogo),
       };
     }
     return {
@@ -206,14 +220,23 @@ export class RoteadorRegras {
 
   /**
    * Lançamento de despesa pedido pelo modelo (ferramenta `criar_transacao`): segue o mesmo caminho
-   * do rascunho. Completo, grava e devolve o resumo (RN-082); senão, guarda o rascunho (trocando o
-   * que houver) e devolve a pergunta do que falta, com botões (RN-080).
+   * do rascunho. Completo, grava e devolve o resumo (RN-082); senão, guarda o rascunho e devolve a
+   * pergunta do que falta, com botões (RN-080). Com `fila`, um rascunho em andamento não é trocado:
+   * este espera na fila dele (RN-086). Sem ela (os documentos), troca, como antes.
    */
   async iniciar(
     contexto: Contexto,
     conversaId: string,
     dados: DadosRascunho,
-  ): Promise<RespostaRegra & { pendente: CampoRascunho | null }> {
+    opcoes: { fila?: boolean } = {},
+  ): Promise<RespostaRegra & { pendente: CampoRascunho | null; naFila?: true }> {
+    // RN-086 (T-061a): um de cada vez. Com outro em andamento (o anterior da mesma mensagem), este
+    // espera na fila e as perguntas dele só vêm quando o anterior terminar.
+    const atual = opcoes.fila ? await this.rascunhos.ativo(conversaId) : null;
+    if (atual) {
+      await this.rascunhos.enfileirar(atual, dados);
+      return { texto: '', componente: null, transacaoId: null, pendente: null, naFila: true };
+    }
     const catalogo = await this.catalogo(contexto);
     const resposta = await this.avancar(contexto, conversaId, dados, catalogo);
     if (resposta.componente?.tipo === 'resumo') return { ...resposta, pendente: null };
@@ -277,9 +300,60 @@ export class RoteadorRegras {
         break;
       }
     }
+    const resposta = await this.avancar(contexto, conversaId, dados, catalogo, {
+      rascunhoId: atual.id,
+    });
     return {
       toque,
-      resposta: await this.avancar(contexto, conversaId, dados, catalogo, { rascunhoId: atual.id }),
+      resposta: await this.seguirFila(contexto, conversaId, atual, resposta, catalogo),
+    };
+  }
+
+  /**
+   * RN-086 (T-061a): depois que o lançamento em andamento termina (gravado, deixado de lado ou
+   * barrado pelo limite), o próximo da fila começa: grava se estiver completo e segue para o
+   * seguinte, ou faz a pergunta dele. A resposta junta o fim de um com o começo do outro.
+   */
+  private async seguirFila(
+    contexto: Contexto,
+    conversaId: string,
+    anterior: Rascunho,
+    resposta: RespostaRegra,
+    catalogoJa?: Catalogo,
+  ): Promise<RespostaRegra> {
+    if (anterior.fila.length === 0) return resposta;
+    // Ainda perguntando o mesmo lançamento: a fila continua esperando.
+    const ainda = await this.rascunhos.ativo(conversaId);
+    if (ainda?.id === anterior.id) return resposta;
+    const catalogo = catalogoJa ?? (await this.catalogo(contexto));
+    const textos = [resposta.texto];
+    const componentes = resposta.componentes ?? (resposta.componente ? [resposta.componente] : []);
+    let transacaoId = resposta.transacaoId;
+    let restante = anterior.fila;
+    // O limite do gratuito barrou o anterior: os da fila também não cabem hoje (RN-123).
+    if (resposta.limiteAtingido) restante = [];
+    while (restante.length > 0) {
+      const [proximo, ...depois] = restante as [DadosRascunho, ...DadosRascunho[]];
+      restante = depois;
+      const passo = await this.avancar(contexto, conversaId, proximo, catalogo, {
+        antes: `Agora o próximo: ${reais(proximo.valorCentavos)}${proximo.descricao ? ` de ${proximo.descricao}` : ''}.`,
+      });
+      textos.push(passo.texto);
+      if (passo.componente) componentes.push(passo.componente);
+      transacaoId = passo.transacaoId ?? transacaoId;
+      if (passo.limiteAtingido) break;
+      const novo = await this.rascunhos.ativo(conversaId);
+      if (novo) {
+        // O próximo ficou perguntando: os outros esperam na fila dele.
+        if (restante.length > 0) await this.rascunhos.salvarFila(novo, restante);
+        break;
+      }
+    }
+    return {
+      texto: juntar(textos),
+      componente: componentes.at(-1) ?? null,
+      componentes,
+      transacaoId,
     };
   }
 
@@ -386,11 +460,13 @@ export class RoteadorRegras {
     }
     // Um lançamento novo que não daria para gravar hoje: avisa antes das perguntas (RN-123).
     if (!opcoes.rascunhoId) await this.cotas.conferir(contexto, 'lancamento');
+    // Um lançamento novo começa sem fila; o que continua (rascunhoId) guarda a dele (RN-086).
     const rascunho = await this.rascunhos.salvar(
       usuarioDoContexto(contexto),
       conversaId,
       completo,
       campo,
+      opcoes.rascunhoId ? undefined : [],
     );
     const pergunta = await this.pergunta(contexto, rascunho, catalogo);
     return {

@@ -121,7 +121,7 @@ Legenda: **(PDF)** está na especificação · **(decisão técnica)** definido 
 - **RN-083 (PDF)** Lançamento vindo de foto ou PDF sempre passa por confirmação antes de gravar.
 - **RN-084 (PDF)** Toque em botão é tratado por regra no servidor, sem passar texto livre ao modelo.
 - **RN-085 (PDF)** Resposta a uma pergunta da Mony completa o rascunho em andamento, nunca inicia um novo.
-- **RN-086 (PDF)** Várias transações na mesma mensagem geram um cartão de resumo por transação, com [Confirmar todos].
+- **RN-086 (PDF, ajustada em T-061a)** Várias transações na mesma mensagem de texto são anotadas **uma de cada vez**, na ordem em que a pessoa disse: a Mony pergunta o que falta da primeira (categoria, forma de pagamento) e grava, e só então passa à próxima ("Agora o próximo: …"), cada uma com o seu cartão de resumo. Deixar uma de lado passa à seguinte. Em foto ou PDF com vários lançamentos continua um cartão por lançamento, com [Confirmar todos].
 - **RN-087 (PDF)** A Mony só diz que registrou depois que a ferramenta retornou sucesso. Em erro, informa o erro e oferece [Tentar de novo].
 - **RN-088 (PDF)** Rascunho incompleto fica salvo por 24 horas. Um rascunho ativo por conversa **(decisão técnica)**.
 - **RN-089 (PDF)** Após cada lançamento, a Mony comenta o impacto: situação do orçamento da categoria e do limite do cartão.

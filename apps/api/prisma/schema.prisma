@@ -1393,6 +1393,8 @@ model RascunhoLancamento {
   usuarioId     String   @map("usuario_id") @db.Uuid
   conversaId    String   @unique @map("conversa_id") @db.Uuid
   dados         Json
+  /// RN-086 (T-061a): os lançamentos da mesma mensagem que esperam este terminar, na ordem.
+  fila          Json     @default("[]")
   campoPendente String?  @map("campo_pendente")
   expiraEm      DateTime @map("expira_em") @db.Timestamptz(6)
   criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)

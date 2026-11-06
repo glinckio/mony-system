@@ -110,7 +110,20 @@ export class CriarTransacaoTool implements Ferramenta<typeof esquema> {
       ...(entrada.parcelas === undefined ? {} : { parcelas: entrada.parcelas }),
     };
     if (dados.cartaoId !== undefined) dados.formaPagamento ??= 'cartao_credito';
-    const resposta = await this.regras.iniciar(contexto, contexto.conversaId, dados);
+    const resposta = await this.regras.iniciar(contexto, contexto.conversaId, dados, {
+      fila: true,
+    });
+    if (resposta.naFila) {
+      return {
+        dados: {
+          gravado: false,
+          naFila: true,
+          orientacao:
+            'Ainda não gravou: a Mony anota um lançamento de cada vez e este fica para depois do que está em andamento. Não pergunte nada sobre ele agora; diga só que vê os outros em seguida.',
+        },
+        componentes: [],
+      };
+    }
     const componentes = resposta.componente ? [resposta.componente] : [];
     if (resposta.limiteAtingido) {
       return {
