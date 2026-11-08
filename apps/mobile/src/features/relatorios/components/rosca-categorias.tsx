@@ -37,7 +37,11 @@ function montarFatias(relatorio: RelatorioCategorias, outras: string): Fatia[] {
       nome: outras,
       cor: cores['texto-fraco'],
       totalCentavos: totalResto,
-      percentual: Math.floor((totalResto * 100) / Math.max(1, relatorio.totalCentavos)),
+      // Os da API somam 100: as demais ficam com o que falta, e a legenda fecha em 100%.
+      percentual:
+        relatorio.totalCentavos > 0
+          ? 100 - principais.reduce((soma, fatia) => soma + fatia.percentual, 0)
+          : 0,
     },
   ];
 }

@@ -32,7 +32,8 @@ export const textosRelatorios = {
   },
   categorias: {
     titulo: 'Despesas por categoria',
-    outras: 'Outras',
+    // "Outras" se confundia com a categoria padrão "Outros" (T-054a).
+    outras: 'Demais',
     vazio: 'Nenhuma despesa no período.',
     centroMes: '{{mes}}',
     centroPeriodo: 'No período',

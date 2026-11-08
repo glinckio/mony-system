@@ -208,7 +208,8 @@ describe.runIf(ativo)('integração: relatórios', () => {
       expect.objectContaining({
         categoriaId: usuario.outraDespesa?.id,
         totalCentavos: 5_000,
-        percentual: 6,
+        // Maiores restos: 93,2% e 6,8% viram 93 e 7, que somam 100 (T-054a).
+        percentual: 7,
       }),
     ]);
     const receitas = await corpo<{ itens: object[] }>(usuario, 'categorias?tipo=receita');

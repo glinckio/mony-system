@@ -342,7 +342,7 @@ Implementado na T-048 (RN-150); a exportação (RN-151) na T-125 (ver abaixo). `
 |---|---|
 | `GET /relatorios/mensal` | Receitas × despesas por mês, com saldo e saldo acumulado; todos os meses do período |
 | `GET /relatorios/anual` | Evolução anual: receitas × despesas por ano |
-| `GET /relatorios/categorias?tipo=despesa\|receita` | Por categoria (nome, cor e ícone), com percentual e quantidade, da maior para a menor |
+| `GET /relatorios/categorias?tipo=despesa\|receita` | Por categoria (nome, cor e ícone), com percentual (inteiros que somam 100, pelos maiores restos) e quantidade, da maior para a menor |
 | `GET /relatorios/dias-da-semana` | Despesas por dia da semana (0 = domingo), sempre os sete |
 | `GET /relatorios/cartoes` | Despesas no cartão por cartão, parcelas incluídas |
 | `GET /relatorios/formas-pagamento` | Despesas por forma de pagamento |

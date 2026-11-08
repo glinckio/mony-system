@@ -154,6 +154,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-054** Telas de relatórios no app (mensal, anual, por categoria, dia da semana, cartão e forma de pagamento) (PR #48)
   - dep: T-048, T-011, T-034 · docs: 04 · RN-150
   - Separada da T-048 pelo mesmo motivo da T-049.
+  - [x] **T-054a** Percentuais por categoria somam 100 (maiores restos) e a fatia agrupada vira "Demais", para não se confundir com a categoria Outros (achado do dono no teste do emulador) (PR #169)
 - [ ] **T-055** 👤 Botões de entrar com Google e com Apple no app (`POST /v1/auth/social` com o `id_token`)
   - dep: T-032, T-034 · docs: 04 · RN-002 · requer os clientes OAuth (BLOQUEIOS, T-032) e build de desenvolvimento no aparelho
   - Separada da T-034: sem os clientes OAuth do cliente, não há como testar o login social de ponta a ponta.
