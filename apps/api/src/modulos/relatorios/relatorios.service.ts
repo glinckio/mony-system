@@ -111,21 +111,24 @@ export class RelatoriosService {
       ).map((categoria) => [categoria.id, categoria]),
     );
     const totalCentavos = grupos.reduce((soma, grupo) => soma + Number(grupo._sum.valor ?? 0n), 0);
-    const itens = grupos
+    const ordenados = grupos
       .map((grupo) => {
         const categoria = categorias.get(grupo.categoriaId);
-        const total = Number(grupo._sum.valor ?? 0n);
         return {
           categoriaId: grupo.categoriaId,
           nome: categoria?.nome ?? '',
           cor: categoria?.cor ?? '',
           icone: categoria?.icone ?? '',
-          totalCentavos: total,
-          percentual: totalCentavos > 0 ? Math.floor((total * 100) / totalCentavos) : 0,
+          totalCentavos: Number(grupo._sum.valor ?? 0n),
           quantidade: grupo._count._all,
         };
       })
       .sort((a, b) => b.totalCentavos - a.totalCentavos || a.nome.localeCompare(b.nome));
+    const percentuais = percentuaisInteiros(ordenados.map(({ totalCentavos }) => totalCentavos));
+    const itens = ordenados.map((item, indice) => ({
+      ...item,
+      percentual: percentuais[indice] ?? 0,
+    }));
     return { inicio, fim, tipo: consulta.tipo, totalCentavos, itens };
   }
 
@@ -252,4 +255,26 @@ export class RelatoriosService {
     }
     return { usuarioId, ...(await this.cotas.periodoDoRelatorio(contexto, periodo)) };
   }
+}
+
+/**
+ * T-054a: percentuais inteiros que somam 100 (maiores restos): cada um fica com a parte inteira, e
+ * os pontos que sobram vão para as maiores frações. Com o arredondamento para baixo, a legenda
+ * somava 97% e uma fatia de 9,7% aparecia como 9%.
+ */
+export function percentuaisInteiros(valores: readonly number[]): number[] {
+  const total = valores.reduce((soma, valor) => soma + valor, 0);
+  if (total <= 0) return valores.map(() => 0);
+  const partes = valores.map((valor, indice) => {
+    const exato = (valor * 100) / total;
+    return { indice, inteiro: Math.floor(exato), resto: exato - Math.floor(exato) };
+  });
+  let sobra = 100 - partes.reduce((soma, { inteiro }) => soma + inteiro, 0);
+  const resultado = partes.map(({ inteiro }) => inteiro);
+  for (const { indice } of [...partes].sort((a, b) => b.resto - a.resto || a.indice - b.indice)) {
+    if (sobra <= 0) break;
+    resultado[indice] = (resultado[indice] ?? 0) + 1;
+    sobra -= 1;
+  }
+  return resultado;
 }

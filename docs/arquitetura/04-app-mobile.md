@@ -287,7 +287,7 @@ Tela em `src/features/relatorios` (`/relatorios`, no grupo `(telas)`, pela grade
 
 - **Abas**: Mês (o de hoje), 6 meses e Ano (12 meses), sempre com o mês de hoje inteiro.
 - **Receitas × despesas** (`mensal`): quanto sobrou (ou faltou) no mês ou, com mais de um mês, em média por mês, as barras verde e azul de cada mês e os totais.
-- **Por categoria** (`categorias`, despesas): rosca com as quatro maiores e "Outras", nas cores das categorias, o total no meio e os percentuais da API.
+- **Por categoria** (`categorias`, despesas): rosca com as quatro maiores e "Demais", nas cores das categorias, o total no meio e os percentuais da API (inteiros que somam 100, pelos maiores restos; "Demais" fica com o que falta).
 - **Por dia da semana**: sete barras, o dia de mais gastos em destaque e a frase "Você gasta mais às sextas: 41% das despesas do período."
 - **Por cartão** e **por forma de pagamento**: barras horizontais, do maior para o menor, com quantos lançamentos.
 - **Evolução anual** (só na aba Ano): os últimos cinco anos, com receitas, despesas e saldo.

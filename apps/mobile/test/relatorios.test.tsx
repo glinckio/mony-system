@@ -202,10 +202,10 @@ describe('relatórios no app (T-054)', () => {
       ).toBeOnTheScreen();
       expect(screen.getByText('Out')).toBeOnTheScreen();
 
-      // As quatro maiores e "Outras" (13% + 10% = 23%).
+      // As quatro maiores e "Demais", com o que falta para 100% (T-054a).
       expect(await screen.findByText('Moradia', {}, ESPERA)).toBeOnTheScreen();
       expect(screen.getByText('39%')).toBeOnTheScreen();
-      expect(screen.getByText('Outras')).toBeOnTheScreen();
+      expect(screen.getByText('Demais')).toBeOnTheScreen();
       expect(screen.getByText('23%')).toBeOnTheScreen();
       expect(screen.queryByText('Saúde')).toBeNull();
       expect(screen.getByText('No período')).toBeOnTheScreen();
