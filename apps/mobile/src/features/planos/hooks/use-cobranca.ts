@@ -12,11 +12,16 @@ import { useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef, useState } from 'react';
 
+import { esquemaDoApp, linkDoApp } from '@/lib/config';
+
 /**
  * Para onde a Stripe devolve a pessoa: a API (`/v1/assinatura/retorno`) redireciona para
  * `mony://planos?checkout=…`, e o navegador do app fecha ao ver esse endereço (doc 10).
  */
 export const URL_RETORNO_COBRANCA = 'mony://planos';
+
+/** A volta no esquema deste build (T-085m): o de desenvolvimento é `mony-dev://planos`. */
+const retornoDoApp = () => linkDoApp(URL_RETORNO_COBRANCA);
 
 /** De quanto em quanto tempo o app pergunta se o plano já foi liberado, depois do pagamento. */
 export const INTERVALO_CONFIRMACAO_MS = 1_500;
@@ -74,8 +79,8 @@ export function useAssinar() {
     try {
       const pagoAteAntes = forma === 'pix' ? (await situacaoAssinaturas()).pagoAte : null;
       const liberou = () => liberado(pagoAteAntes);
-      const { url } = await checkoutAssinaturas({ plano, forma });
-      const resultado = await WebBrowser.openAuthSessionAsync(url, URL_RETORNO_COBRANCA);
+      const { url } = await checkoutAssinaturas({ plano, forma, esquema: esquemaDoApp() });
+      const resultado = await WebBrowser.openAuthSessionAsync(url, retornoDoApp());
       if (!ativo()) return;
       const pagou = resultado.type === 'success' && resultado.url.includes('checkout=sucesso');
       if (!pagou) {
@@ -122,8 +127,8 @@ export function usePortal() {
     definirErro(false);
     definirAbrindo(true);
     try {
-      const { url } = await portalAssinaturas();
-      await WebBrowser.openAuthSessionAsync(url, URL_RETORNO_COBRANCA);
+      const { url } = await portalAssinaturas({ esquema: esquemaDoApp() });
+      await WebBrowser.openAuthSessionAsync(url, retornoDoApp());
       await Promise.all([
         cliente.invalidateQueries({ queryKey: getSituacaoAssinaturasQueryKey() }),
         cliente.invalidateQueries({ queryKey: getUsoAssinaturaQueryKey() }),

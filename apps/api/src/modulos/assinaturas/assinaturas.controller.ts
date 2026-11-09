@@ -10,10 +10,18 @@ import {
   Redirect,
   Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiExcludeEndpoint, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { type EsquemaApp, ESQUEMAS_APP } from '@mony/shared/alertas';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiExcludeEndpoint,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   esquemaLinkCobranca,
   esquemaPedidoCheckout,
+  esquemaPedidoPortal,
   esquemaPlanosAVenda,
   esquemaSituacaoAssinatura,
   type LinkCobranca,
@@ -27,6 +35,7 @@ import type { FastifyRequest } from 'fastify';
 import { Publico } from '../../core/auth/publico.decorator';
 import { type Contexto, ContextoAtual } from '../../core/contexto/contexto';
 import { SemLimiteGeral } from '../../core/limites/limite-geral';
+import { ErroDominio } from '../../core/erros/erro-dominio';
 import { criarDto } from '../../core/openapi/dto';
 import { LiberadaParaVersaoAntiga } from '../../core/versao-app/versao-app';
 import { AssinaturasService, linkDoRetorno } from './assinaturas.service';
@@ -34,6 +43,7 @@ import { AssinaturasService, linkDoRetorno } from './assinaturas.service';
 class PlanosAVendaDto extends criarDto(esquemaPlanosAVenda) {}
 class SituacaoAssinaturaDto extends criarDto(esquemaSituacaoAssinatura) {}
 class PedidoCheckoutDto extends criarDto(esquemaPedidoCheckout) {}
+class PedidoPortalDto extends criarDto(esquemaPedidoPortal) {}
 class LinkCobrancaDto extends criarDto(esquemaLinkCobranca) {}
 
 const ehResultado = (valor: unknown): valor is ResultadoRetornoCobranca =>
@@ -80,7 +90,7 @@ export class AssinaturasController {
     @ContextoAtual() contexto: Contexto,
     @Body() dados: PedidoCheckoutDto,
   ): Promise<LinkCobranca> {
-    return this.assinaturas.checkout(contexto, dados.plano, dados.forma);
+    return this.assinaturas.checkout(contexto, dados.plano, dados.forma, dados.esquema);
   }
 
   @Post('portal')
@@ -89,8 +99,14 @@ export class AssinaturasController {
     type: LinkCobrancaDto,
     description: 'O portal da Stripe: trocar plano, forma de pagamento e cancelar.',
   })
-  portal(@ContextoAtual() contexto: Contexto): Promise<LinkCobranca> {
-    return this.assinaturas.portal(contexto);
+  // O corpo é opcional: o app de antes da T-085m pede o portal sem corpo.
+  @ApiBody({ type: PedidoPortalDto, required: false })
+  portal(@ContextoAtual() contexto: Contexto, @Body() corpo: unknown): Promise<LinkCobranca> {
+    const dados = esquemaPedidoPortal.safeParse(corpo ?? {});
+    if (!dados.success) {
+      throw new ErroDominio('REQUISICAO_INVALIDA', { mensagem: 'Esquema do app inválido.' });
+    }
+    return this.assinaturas.portal(contexto, dados.data.esquema);
   }
 
   /**
@@ -102,9 +118,18 @@ export class AssinaturasController {
   @LiberadaParaVersaoAntiga()
   @ApiExcludeEndpoint()
   @Redirect()
-  retorno(@Query('resultado') resultado: unknown): { url: string; statusCode: number } {
+  retorno(
+    @Query('resultado') resultado: unknown,
+    @Query('esquema') esquema: unknown,
+  ): { url: string; statusCode: number } {
     return {
-      url: linkDoRetorno(ehResultado(resultado) ? resultado : 'cancelado'),
+      // T-085m: só os esquemas do app; outro valor volta para o da loja (sem redirecionar para fora).
+      url: linkDoRetorno(
+        ehResultado(resultado) ? resultado : 'cancelado',
+        (ESQUEMAS_APP as readonly unknown[]).includes(esquema)
+          ? (esquema as EsquemaApp)
+          : undefined,
+      ),
       statusCode: HttpStatus.FOUND,
     };
   }

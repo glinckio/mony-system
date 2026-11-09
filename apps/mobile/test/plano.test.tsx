@@ -310,7 +310,7 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
         // Enquanto a página da Stripe está aberta, o webhook libera o plano.
         estado.uso = ANUAL;
         estado.situacao = SITUACAO_ANUAL;
-        return Promise.resolve({ type: 'success', url: 'mony://planos?checkout=sucesso' });
+        return Promise.resolve({ type: 'success', url: 'mony-dev://planos?checkout=sucesso' });
       });
       const app = renderRouter(ROTAS, { initialUrl: '/planos' });
       fireEvent.press(await screen.findByRole('button', { name: 'Assinar plano anual' }, ESPERA));
@@ -320,7 +320,8 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
       }, ESPERA);
       expect(WebBrowser.openAuthSessionAsync).toHaveBeenCalledWith(
         'https://checkout.stripe.com/c/pay/cs_test_1',
-        'mony://planos',
+        // T-085m: o build de desenvolvimento (o dos testes) volta no `mony-dev://`.
+        'mony-dev://planos',
       );
       expect(pedidos).toContain('POST /v1/assinatura/checkout');
       expect(await screen.findByText('Plano anual', {}, ESPERA)).toBeOnTheScreen();
@@ -369,7 +370,7 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
       await waitFor(() => {
         expect(WebBrowser.openAuthSessionAsync).toHaveBeenCalledWith(
           'https://billing.stripe.com/p/session/test_1',
-          'mony://planos',
+          'mony-dev://planos',
         );
       }, ESPERA);
       expect(pedidos).toContain('POST /v1/assinatura/portal');
@@ -416,7 +417,7 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
       jest.mocked(WebBrowser.openAuthSessionAsync).mockImplementation(() => {
         estado.uso = ANUAL;
         estado.situacao = SITUACAO_PIX;
-        return Promise.resolve({ type: 'success', url: 'mony://planos?checkout=sucesso' });
+        return Promise.resolve({ type: 'success', url: 'mony-dev://planos?checkout=sucesso' });
       });
       const app = renderRouter(ROTAS, { initialUrl: '/planos' });
       expect(
@@ -430,7 +431,7 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
       await waitFor(() => {
         expect(app.getPathname()).toBe('/mais/plano');
       }, ESPERA);
-      expect(checkouts).toEqual([{ plano: 'anual', forma: 'pix' }]);
+      expect(checkouts).toEqual([{ plano: 'anual', forma: 'pix', esquema: 'mony-dev' }]);
       expect(
         await screen.findByText('Pago com Pix. Vale até 15/out e não renova sozinho.', {}, ESPERA),
       ).toBeOnTheScreen();
@@ -449,7 +450,7 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
       expect(screen.queryByRole('button', { name: 'Pagar 12 meses com Pix' })).toBeNull();
       fireEvent.press(screen.getByRole('button', { name: 'Assinar plano mensal' }));
       await waitFor(() => {
-        expect(checkouts).toEqual([{ plano: 'mensal', forma: 'cartao' }]);
+        expect(checkouts).toEqual([{ plano: 'mensal', forma: 'cartao', esquema: 'mony-dev' }]);
       }, ESPERA);
     },
     TEMPO_LIMITE_MS,
@@ -462,7 +463,7 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
       api(ANUAL, estado);
       jest.mocked(WebBrowser.openAuthSessionAsync).mockImplementation(() => {
         estado.situacao = { ...SITUACAO_PIX, pagoAte: '2028-11-20T15:00:00.000Z' };
-        return Promise.resolve({ type: 'success', url: 'mony://planos?checkout=sucesso' });
+        return Promise.resolve({ type: 'success', url: 'mony-dev://planos?checkout=sucesso' });
       });
       renderRouter(ROTAS, { initialUrl: '/mais/plano' });
       fireEvent.press(
@@ -471,7 +472,7 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
       expect(
         await screen.findByText('Pago com Pix. Vale até 20/nov e não renova sozinho.', {}, ESPERA),
       ).toBeOnTheScreen();
-      expect(checkouts).toEqual([{ plano: 'anual', forma: 'pix' }]);
+      expect(checkouts).toEqual([{ plano: 'anual', forma: 'pix', esquema: 'mony-dev' }]);
     },
     TEMPO_LIMITE_MS,
   );

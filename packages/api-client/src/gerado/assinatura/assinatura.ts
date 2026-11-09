@@ -24,6 +24,7 @@ import type {
 import type {
   LinkCobrancaDto,
   PedidoCheckoutDto,
+  PedidoPortalDto,
   PlanosAVendaDto,
   SituacaoAssinaturaDto,
   UsoPlanoDto,
@@ -471,11 +472,33 @@ export const getPortalAssinaturasUrl = () => {
 };
 
 export const portalAssinaturas = async (
+  pedidoPortalDto?: PedidoPortalDto,
   options?: Parameters<typeof requisicao>[1],
 ): Promise<LinkCobrancaDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
   return requisicao<LinkCobrancaDto>(getPortalAssinaturasUrl(), {
     ...options,
     method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(pedidoPortalDto),
   });
 };
 
@@ -488,11 +511,16 @@ export const getPortalAssinaturasMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof portalAssinaturas>>,
     TError,
-    void,
+    PortalAssinaturasMutationVariables,
     TContext
   >;
   request?: SecondParameter<typeof requisicao>;
-}): UseMutationOptions<Awaited<ReturnType<typeof portalAssinaturas>>, TError, void, TContext> => {
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof portalAssinaturas>>,
+  TError,
+  PortalAssinaturasMutationVariables,
+  TContext
+> => {
   const mutationKey = getPortalAssinaturasMutationKey();
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
@@ -500,8 +528,13 @@ export const getPortalAssinaturasMutationOptions = <
       : { ...options, mutation: { ...options.mutation, mutationKey } }
     : { mutation: { mutationKey }, request: undefined };
 
-  const mutationFn: MutationFunction<Awaited<ReturnType<typeof portalAssinaturas>>, void> = () => {
-    return portalAssinaturas(requestOptions);
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof portalAssinaturas>>,
+    PortalAssinaturasMutationVariables
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return portalAssinaturas(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -510,20 +543,26 @@ export const getPortalAssinaturasMutationOptions = <
 export type PortalAssinaturasMutationResult = NonNullable<
   Awaited<ReturnType<typeof portalAssinaturas>>
 >;
-
+export type PortalAssinaturasMutationBody = PedidoPortalDto | undefined;
 export type PortalAssinaturasMutationError = unknown;
+export type PortalAssinaturasMutationVariables = { data?: PedidoPortalDto };
 
 export const usePortalAssinaturas = <TError = unknown, TContext = unknown>(
   options?: {
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof portalAssinaturas>>,
       TError,
-      void,
+      PortalAssinaturasMutationVariables,
       TContext
     >;
     request?: SecondParameter<typeof requisicao>;
   },
   queryClient?: QueryClient,
-): UseMutationResult<Awaited<ReturnType<typeof portalAssinaturas>>, TError, void, TContext> => {
+): UseMutationResult<
+  Awaited<ReturnType<typeof portalAssinaturas>>,
+  TError,
+  PortalAssinaturasMutationVariables,
+  TContext
+> => {
   return useMutation(getPortalAssinaturasMutationOptions(options), queryClient);
 };

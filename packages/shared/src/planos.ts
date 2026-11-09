@@ -4,6 +4,7 @@
  */
 import { z } from 'zod';
 
+import { ESQUEMAS_APP } from './alertas.js';
 import { PLANOS, PLANOS_PAGOS, RECURSOS_PLANO, STATUS_ASSINATURA } from './enums.js';
 
 /**
@@ -90,6 +91,8 @@ export const esquemaPedidoCheckout = z
   .object({
     plano: z.enum(PLANOS_PAGOS),
     forma: z.enum(FORMAS_PAGAMENTO_PLANO).default('cartao'),
+    /** O esquema do app que pede (T-085m): a volta da Stripe abre `<esquema>://planos`. */
+    esquema: z.enum(ESQUEMAS_APP).optional(),
   })
   .refine(({ plano, forma }) => forma === 'cartao' || plano === 'anual', {
     message: 'O Pix vale só no plano anual.',
@@ -110,6 +113,10 @@ export type PlanoAVenda = z.infer<typeof esquemaPlanoAVenda>;
 export type PlanosAVenda = z.infer<typeof esquemaPlanosAVenda>;
 export type SituacaoAssinaturaPaga = z.infer<typeof esquemaSituacaoAssinatura>;
 export type PedidoCheckout = z.infer<typeof esquemaPedidoCheckout>;
+
+/** `POST /assinatura/portal`: o esquema do app, para a volta (T-085m). */
+export const esquemaPedidoPortal = z.object({ esquema: z.enum(ESQUEMAS_APP).optional() });
+export type PedidoPortal = z.infer<typeof esquemaPedidoPortal>;
 export type LinkCobranca = z.infer<typeof esquemaLinkCobranca>;
 export type LimiteUso = z.infer<typeof esquemaLimiteUso>;
 export type UsoPlano = z.infer<typeof esquemaUsoPlano>;

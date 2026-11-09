@@ -5,8 +5,10 @@
  * API do app Monitorizze e da assistente Mony.
  * OpenAPI spec version: 1
  */
+import type { PedidoConexaoAgendaDtoEsquema } from './pedidoConexaoAgendaDtoEsquema';
 import type { PedidoConexaoAgendaDtoProvedor } from './pedidoConexaoAgendaDtoProvedor';
 
 export interface PedidoConexaoAgendaDto {
   provedor: PedidoConexaoAgendaDtoProvedor;
+  esquema?: PedidoConexaoAgendaDtoEsquema;
 }

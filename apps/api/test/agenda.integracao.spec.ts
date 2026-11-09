@@ -102,8 +102,12 @@ describe.runIf(ativo)('integração: agenda', () => {
   }
 
   /** Pede a conexão e segue o consentimento falso até o callback. */
-  async function conectar(usuario: Usuario, provedor: 'google' | 'outlook' = 'google') {
-    const pedido = await chamar(usuario, 'POST', '/agendas/conectar', { provedor });
+  async function conectar(
+    usuario: Usuario,
+    provedor: 'google' | 'outlook' = 'google',
+    extra: { esquema?: string } = {},
+  ) {
+    const pedido = await chamar(usuario, 'POST', '/agendas/conectar', { provedor, ...extra });
     expect(pedido.statusCode).toBe(200);
     const url = new URL(pedido.json<{ url: string }>().url);
     const volta = await app.inject({ method: 'GET', url: `${url.pathname}${url.search}` });
@@ -140,6 +144,18 @@ describe.runIf(ativo)('integração: agenda', () => {
     expect(resposta.statusCode).toBe(201);
     return resposta.json<Compromisso>();
   }
+
+  it('T-085m a volta do consentimento abre o app que pediu, no esquema dele', async () => {
+    const ana = await usuarioNovo();
+    const { volta } = await conectar(ana, 'google', { esquema: 'mony-dev' });
+    expect(volta.headers.location).toBe('mony-dev://agenda?conexao=sucesso');
+    const bia = await usuarioNovo();
+    const recusado = await chamar(bia, 'POST', '/agendas/conectar', {
+      provedor: 'google',
+      esquema: 'https',
+    });
+    expect(recusado.statusCode).toBe(400);
+  });
 
   it('conecta pelo OAuth, guarda os tokens só cifrados e pede a primeira sincronização', async () => {
     const ana = await usuarioNovo();

@@ -5407,7 +5407,7 @@
         },
         "responses": {
           "200": {
-            "description": "O consentimento no provedor, para abrir no navegador; volta em mony://agenda.",
+            "description": "O consentimento no provedor, para abrir no navegador; volta em <esquema>://agenda (mony, se não vier).",
             "content": {
               "application/json": {
                 "schema": {
@@ -6748,6 +6748,16 @@
       "post": {
         "operationId": "portalAssinaturas",
         "parameters": [],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PedidoPortalDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "O portal da Stripe: trocar plano, forma de pagamento e cancelar.",
@@ -18783,6 +18793,14 @@
               "google",
               "outlook"
             ]
+          },
+          "esquema": {
+            "type": "string",
+            "enum": [
+              "mony",
+              "mony-dev",
+              "mony-preview"
+            ]
           }
         },
         "required": [
@@ -20969,6 +20987,14 @@
               "cartao",
               "pix"
             ]
+          },
+          "esquema": {
+            "type": "string",
+            "enum": [
+              "mony",
+              "mony-dev",
+              "mony-preview"
+            ]
           }
         },
         "required": [
@@ -20986,6 +21012,19 @@
         "required": [
           "url"
         ]
+      },
+      "PedidoPortalDto": {
+        "type": "object",
+        "properties": {
+          "esquema": {
+            "type": "string",
+            "enum": [
+              "mony",
+              "mony-dev",
+              "mony-preview"
+            ]
+          }
+        }
       }
     }
   }

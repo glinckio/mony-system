@@ -326,7 +326,7 @@ describe('agenda no app (T-085c)', () => {
       const pedidos = api([]);
       jest.mocked(WebBrowser.openAuthSessionAsync).mockResolvedValue({
         type: 'success',
-        url: 'mony://agenda?conexao=sucesso',
+        url: 'mony-dev://agenda?conexao=sucesso',
       });
       renderRouter(ROTAS, { initialUrl: '/agenda' });
       fireEvent.press(await screen.findByRole('button', { name: 'Suas agendas' }, ESPERA));
@@ -339,12 +339,14 @@ describe('agenda no app (T-085c)', () => {
           ESPERA,
         ),
       ).toBeOnTheScreen();
+      // T-085m: o build de desenvolvimento (o dos testes) volta no `mony-dev://`.
       expect(doMetodo(pedidos, 'POST', '/v1/agendas/conectar')?.corpo).toEqual({
         provedor: 'google',
+        esquema: 'mony-dev',
       });
       expect(WebBrowser.openAuthSessionAsync).toHaveBeenCalledWith(
         'https://accounts.exemplo.test/consentimento',
-        'mony://agenda',
+        'mony-dev://agenda',
       );
 
       // Fechar o navegador sem voltar é cancelar.

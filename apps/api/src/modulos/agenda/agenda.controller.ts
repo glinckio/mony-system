@@ -71,13 +71,14 @@ export class AgendasController {
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     type: LinkConexaoAgendaDto,
-    description: 'O consentimento no provedor, para abrir no navegador; volta em mony://agenda.',
+    description:
+      'O consentimento no provedor, para abrir no navegador; volta em <esquema>://agenda (mony, se não vier).',
   })
   conectar(
     @ContextoAtual() contexto: Contexto,
     @Body() dados: PedidoConexaoAgendaDto,
   ): LinkConexaoAgenda {
-    return this.agenda.conectar(contexto, dados.provedor);
+    return this.agenda.conectar(contexto, dados.provedor, dados.esquema);
   }
 
   /** A volta do consentimento: grava a conexão e abre o app (`mony://agenda?conexao=`). */
