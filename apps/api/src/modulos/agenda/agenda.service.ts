@@ -184,7 +184,7 @@ export class AgendaService {
     } catch (erro) {
       if (!(erro instanceof ErroAgenda)) throw erro;
       this.log.warn(`Conexão da agenda ${estado.provedor} recusada: ${erro.message}`);
-      resultado = 'erro';
+      resultado = erro.motivo === 'sem_permissao' ? 'sem-permissao' : 'erro';
     }
     return link(resultado);
   }

@@ -121,6 +121,29 @@ describe('CalendarGoogle (T-085g, doc 10)', () => {
     });
   });
 
+  it('T-085n agenda desmarcada no consentimento: desfaz o acesso e avisa sem_permissao', async () => {
+    const { calendario, chamadas } = google([
+      json({
+        access_token: 'a',
+        refresh_token: 'r',
+        expires_in: 3600,
+        scope: 'openid https://www.googleapis.com/auth/userinfo.email',
+      }),
+      json({}),
+    ]);
+    await expect(calendario.trocarCodigo('codigo-1', RETORNO)).rejects.toMatchObject({
+      motivo: 'sem_permissao',
+    });
+    expect(chamadas[1]?.url).toBe(URL_REVOGAR_GOOGLE);
+    // Com a agenda marcada, segue normal.
+    const marcada = google([
+      json({ access_token: 'a', expires_in: 3600, scope: `openid ${ESCOPO_AGENDA_GOOGLE}` }),
+    ]);
+    await expect(marcada.calendario.trocarCodigo('codigo-2', RETORNO)).resolves.toMatchObject({
+      conta: { agendaPrincipal: 'primary' },
+    });
+  });
+
   it('lista os eventos do período em páginas: horário, dia inteiro no fuso e cancelado fora', async () => {
     const { valor } = sessao();
     const { calendario, chamadas } = google([

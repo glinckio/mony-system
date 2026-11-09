@@ -356,6 +356,21 @@ describe('agenda no app (T-085c)', () => {
       fireEvent.press(screen.getByRole('button', { name: 'Suas agendas' }));
       fireEvent.press(await screen.findByRole('button', { name: 'Conectar Outlook' }, ESPERA));
       expect(await screen.findByText('Conexão cancelada.', {}, ESPERA)).toBeOnTheScreen();
+
+      // T-085n: a agenda desmarcada na tela do Google diz o que faltou.
+      jest.mocked(WebBrowser.openAuthSessionAsync).mockResolvedValue({
+        type: 'success',
+        url: 'mony-dev://agenda?conexao=sem-permissao',
+      });
+      fireEvent.press(screen.getByRole('button', { name: 'Suas agendas' }));
+      fireEvent.press(await screen.findByRole('button', { name: 'Conectar Google' }, ESPERA));
+      expect(
+        await screen.findByText(
+          'Faltou liberar a agenda na tela do Google. Conecte de novo e marque a permissão da agenda.',
+          {},
+          ESPERA,
+        ),
+      ).toBeOnTheScreen();
     },
     TEMPO_LIMITE_MS,
   );

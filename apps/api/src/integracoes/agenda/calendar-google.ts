@@ -43,6 +43,8 @@ interface RespostaToken {
   access_token?: string;
   /** Com `openid`: o JWT da conta, que veio direto do Google por TLS (sem conferir a assinatura). */
   id_token?: string;
+  /** Os escopos que a pessoa liberou: com mais de um, o Google deixa desmarcar a agenda. */
+  scope?: string;
   refresh_token?: string;
   expires_in?: number;
 }
@@ -120,10 +122,14 @@ export class CalendarGoogle extends CalendarProvider {
       code: codigo,
       redirect_uri: redirecionamento,
     });
-    return {
-      conta: { tokens: this.tokensDe(resposta, null), agendaPrincipal: AGENDA_PRINCIPAL },
-      email: emailDoIdToken(resposta.id_token),
-    };
+    const conta = { tokens: this.tokensDe(resposta, null), agendaPrincipal: AGENDA_PRINCIPAL };
+    // T-085n: com o e-mail junto, o Google mostra a agenda como uma caixa que dá para deixar
+    // desmarcada. Sem ela, a conexão não serve: desfaz o acesso e avisa a pessoa.
+    if (resposta.scope !== undefined && !resposta.scope.split(' ').includes(ESCOPO_AGENDA_GOOGLE)) {
+      await this.revogar(conta).catch(() => undefined);
+      throw new ErroAgenda('A permissão da agenda ficou desmarcada.', 'sem_permissao');
+    }
+    return { conta, email: emailDoIdToken(resposta.id_token) };
   }
 
   async listarEventos(sessao: SessaoAgenda, inicio: Date, fim: Date): Promise<EventoAgenda[]> {

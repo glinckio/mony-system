@@ -43,9 +43,15 @@ export interface SessaoAgenda {
 /**
  * `acesso_revogado`: a pessoa tirou o acesso no provedor (ou o token de renovação venceu); só
  * conectar de novo resolve. `nao_encontrado`: o evento já não existe lá. `temporario`: falha de
- * rede ou do provedor; tentar de novo pode dar certo.
+ * rede ou do provedor; tentar de novo pode dar certo. `sem_permissao`: na conexão, a agenda ficou
+ * desmarcada no consentimento.
  */
-export type MotivoErroAgenda = 'acesso_revogado' | 'nao_encontrado' | 'temporario';
+export type MotivoErroAgenda =
+  | 'acesso_revogado'
+  | 'nao_encontrado'
+  | 'temporario'
+  /** T-085n: na conexão, a pessoa não marcou a permissão da agenda (o Google deixa escolher). */
+  | 'sem_permissao';
 
 export class ErroAgenda extends Error {
   constructor(

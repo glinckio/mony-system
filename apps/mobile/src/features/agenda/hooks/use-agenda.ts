@@ -61,7 +61,9 @@ export function useAgendaDoAparelho(
         return [];
       }
     },
-    staleTime: 60_000,
+    // Ler o calendário do celular é barato: lê de novo sempre que a tela volta a aparecer ou o app
+    // volta para a frente, e o que mudou no app de agenda aparece na hora (T-085n).
+    staleTime: 0,
   });
 }
 
@@ -139,7 +141,7 @@ export function useExcluirCompromisso() {
 
 /** O resultado que volta no `mony://agenda?conexao=`; outro endereço, ou nenhum, é `null`. */
 export function resultadoDaConexao(url: string | null | undefined): ResultadoConexaoAgenda | null {
-  const valor = /[?&]conexao=(sucesso|cancelado|erro)(?:&|$)/.exec(url ?? '')?.[1];
+  const valor = /[?&]conexao=(sucesso|cancelado|erro|sem-permissao)(?:&|$)/.exec(url ?? '')?.[1];
   return (valor as ResultadoConexaoAgenda | undefined) ?? null;
 }
 

@@ -19,7 +19,8 @@ export const TAMANHO_MAXIMO_LOCAL_COMPROMISSO = 200;
 export const PERIODO_MAXIMO_AGENDA_DIAS = 93;
 
 /** Como volta o consentimento no provedor: o app lê em `mony://agenda?conexao=`. */
-export const RESULTADOS_CONEXAO_AGENDA = ['sucesso', 'cancelado', 'erro'] as const;
+/** `sem-permissao` (T-085n): no consentimento do Google, a agenda ficou desmarcada. */
+export const RESULTADOS_CONEXAO_AGENDA = ['sucesso', 'cancelado', 'erro', 'sem-permissao'] as const;
 export type ResultadoConexaoAgenda = (typeof RESULTADOS_CONEXAO_AGENDA)[number];
 
 const esquemaInstante = z.iso.datetime({ offset: true });
