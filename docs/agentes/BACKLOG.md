@@ -169,6 +169,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
 - [x] **T-057** Telas Mais (grade de atalhos) e Perfil no app: dados pessoais, assinatura, biometria, alertas, permissões, rever tutorial, exportar dados, sair e excluir conta (PR #50; assinatura, alertas, exportar e excluir entram com a Fase 4, a T-087 e a T-140)
   - dep: T-033, T-034, T-017 · docs: 04, `docs/design` (página 9)
   - O design trouxe as duas telas, que não estavam em nenhuma tarefa. Exportar e excluir conta só abrem o fluxo da T-140, e as preferências de alerta são da T-087.
+  - [x] **T-057a** Blocos da aba Mais do mesmo tamanho na linha incompleta (Categorias e Contas ficavam mais largos) (PR #172)
 - [x] **T-058** Anexos no formulário do lançamento no app (foto, PDF ou comprovante: `POST /arquivos`, envio direto ao S3 e `anexoIds`) (PR #51)
   - dep: T-045 · docs: 04, 05 (Transações e arquivos) · RN-040
   - Separada da T-045: precisa do `expo-image-picker` e do `expo-document-picker`, módulos nativos que pedem novo build de desenvolvimento.
