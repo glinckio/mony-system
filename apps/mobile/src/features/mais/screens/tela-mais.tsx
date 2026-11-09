@@ -72,20 +72,23 @@ export default function TelaMais() {
         {linhas.map((linha) => (
           <View key={linha[0]?.chave} className="flex-row gap-3">
             {linha.map(({ chave, icone, cor, rota }) => (
-              <Pressable
-                key={chave}
-                accessibilityRole="button"
-                accessibilityLabel={t(`mais.atalhos.${chave}`)}
-                onPress={() => {
-                  router.push(rota);
-                }}
-                className="flex-1 items-center gap-2 rounded-lg bg-superficie px-2 py-4 active:opacity-70"
-              >
-                <Icone nome={icone} tamanho={22} cor={cor} />
-                <Texto variante="corpo-sm" className="font-forte" numberOfLines={1}>
-                  {t(`mais.atalhos.${chave}`)}
-                </Texto>
-              </Pressable>
+              // A caixa sem padding divide a linha: com o padding no próprio bloco, o Yoga soma o
+              // padding à base 0 do flex-1, e a linha incompleta ficava com blocos mais largos.
+              <View key={chave} className="flex-1">
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t(`mais.atalhos.${chave}`)}
+                  onPress={() => {
+                    router.push(rota);
+                  }}
+                  className="items-center gap-2 rounded-lg bg-superficie px-2 py-4 active:opacity-70"
+                >
+                  <Icone nome={icone} tamanho={22} cor={cor} />
+                  <Texto variante="corpo-sm" className="font-forte" numberOfLines={1}>
+                    {t(`mais.atalhos.${chave}`)}
+                  </Texto>
+                </Pressable>
+              </View>
             ))}
             {/* Linha incompleta: espaços vazios mantêm os blocos do mesmo tamanho. */}
             {Array.from({ length: POR_LINHA - linha.length }, (_, indice) => (
