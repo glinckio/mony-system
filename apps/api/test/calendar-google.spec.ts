@@ -7,6 +7,7 @@ import { ProvedoresAgenda } from '../src/integracoes/agenda/agenda.module';
 import { CalendarFake } from '../src/integracoes/agenda/calendar-fake';
 import {
   CalendarGoogle,
+  emailDoIdToken,
   ESCOPO_AGENDA_GOOGLE,
   URL_CALENDARIO_GOOGLE,
   URL_REVOGAR_GOOGLE,
@@ -77,7 +78,7 @@ describe('CalendarGoogle (T-085g, doc 10)', () => {
       client_id: 'id-cliente',
       redirect_uri: RETORNO,
       response_type: 'code',
-      scope: ESCOPO_AGENDA_GOOGLE,
+      scope: `openid email ${ESCOPO_AGENDA_GOOGLE}`,
       access_type: 'offline',
       prompt: 'consent',
       include_granted_scopes: 'true',
@@ -85,14 +86,23 @@ describe('CalendarGoogle (T-085g, doc 10)', () => {
     });
   });
 
-  it('troca o código pelos tokens, com a validade, na agenda principal', async () => {
+  it('troca o código pelos tokens, com a validade, na agenda principal e o e-mail (T-085l)', async () => {
+    const payload = Buffer.from(JSON.stringify({ email: 'Ana@Gmail.com' })).toString('base64url');
     const { calendario, chamadas } = google([
-      json({ access_token: 'a', refresh_token: 'r', expires_in: 3600 }),
+      json({
+        access_token: 'a',
+        refresh_token: 'r',
+        expires_in: 3600,
+        id_token: `cabecalho.${payload}.assinatura`,
+      }),
     ]);
     const conta = await calendario.trocarCodigo('codigo-1', RETORNO);
     expect(conta).toEqual({
-      tokens: { acesso: 'a', renovacao: 'r', expiraEm: '2026-10-30T13:00:00.000Z' },
-      agendaPrincipal: 'primary',
+      conta: {
+        tokens: { acesso: 'a', renovacao: 'r', expiraEm: '2026-10-30T13:00:00.000Z' },
+        agendaPrincipal: 'primary',
+      },
+      email: 'ana@gmail.com',
     });
     expect(chamadas[0]?.url).toBe(URL_TOKEN_GOOGLE);
     expect(Object.fromEntries(new URLSearchParams(chamadas[0]?.corpo))).toEqual({
@@ -324,5 +334,13 @@ describe('ProvedoresAgenda e configuração (T-085g)', () => {
       validarAmbiente({ ...banco, GOOGLE_OAUTH_ID_CLIENTE: 'i', GOOGLE_OAUTH_SEGREDO: 's' })
         .GOOGLE_OAUTH_ID_CLIENTE,
     ).toBe('i');
+  });
+
+  it('T-085l sem id_token, ou ilegível, o e-mail fica null', () => {
+    expect(emailDoIdToken(undefined)).toBeNull();
+    expect(emailDoIdToken('nao-e-jwt')).toBeNull();
+    expect(emailDoIdToken('a.!!!.c')).toBeNull();
+    const semEmail = Buffer.from(JSON.stringify({ sub: '1' })).toString('base64url');
+    expect(emailDoIdToken(`a.${semEmail}.c`)).toBeNull();
   });
 });

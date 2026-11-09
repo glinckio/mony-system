@@ -22,7 +22,7 @@ import { LINKS_INTERNOS } from '@mony/shared/alertas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 
-import { compromissosDoAparelho } from '@/lib/agenda-aparelho';
+import { compromissosDoAparelho, type ContaConectada } from '@/lib/agenda-aparelho';
 
 /** `GET /agenda`: os compromissos que cruzam o período (a semana da tela). */
 export function useAgendaDoPeriodo(periodo: { inicio: string; fim: string }) {
@@ -39,7 +39,7 @@ export function useAgendaDoPeriodo(periodo: { inicio: string; fim: string }) {
  */
 export function useAgendaDoAparelho(
   periodo: { inicio: string; fim: string },
-  conectadas: readonly ProvedorAgendaExterna[],
+  conectadas: readonly ContaConectada[],
   fuso: string,
 ) {
   return useQuery({
@@ -47,7 +47,10 @@ export function useAgendaDoAparelho(
       'agenda-aparelho',
       periodo.inicio,
       periodo.fim,
-      [...conectadas].sort().join(','),
+      conectadas
+        .map(({ provedor, email }) => `${provedor}:${email ?? ''}`)
+        .sort()
+        .join(','),
       fuso,
     ],
     queryFn: async () => {

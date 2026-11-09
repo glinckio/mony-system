@@ -11,6 +11,7 @@ const CAMPOS_AGENDA = {
   provedor: true,
   tokensCifrados: true,
   agendaPadrao: true,
+  emailConta: true,
   desconectadaEm: true,
   sincronizadaEm: true,
   criadoEm: true,
@@ -99,6 +100,7 @@ export class AgendaRepository {
     provedor: ProvedorAgendaExterna,
     tokensCifrados: string,
     agendaPrincipal: string,
+    emailConta: string | null,
   ): Promise<AgendaGravada> {
     return this.prisma.cliente.$transaction(async (tx) => {
       const outraPadrao = await tx.agendaConectada.findFirst({
@@ -113,8 +115,8 @@ export class AgendaRepository {
         outraPadrao !== null ? null : atual === null ? agendaPrincipal : atual.agendaPadrao;
       return tx.agendaConectada.upsert({
         where: { usuarioId_provedor: { usuarioId, provedor } },
-        create: { usuarioId, provedor, tokensCifrados, agendaPadrao },
-        update: { tokensCifrados, agendaPadrao, desconectadaEm: null },
+        create: { usuarioId, provedor, tokensCifrados, agendaPadrao, emailConta },
+        update: { tokensCifrados, agendaPadrao, emailConta, desconectadaEm: null },
         select: CAMPOS_AGENDA,
       });
     });

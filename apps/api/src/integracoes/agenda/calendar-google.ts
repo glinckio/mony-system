@@ -3,6 +3,7 @@ import { ehFusoValido, FUSO_PADRAO, inicioDoDiaNoFuso } from '@mony/shared/datas
 import {
   CalendarProvider,
   type ContaAgenda,
+  type ContaConectada,
   type DadosEventoAgenda,
   ErroAgenda,
   type EventoAgenda,
@@ -21,6 +22,11 @@ export const URL_CALENDARIO_GOOGLE = 'https://www.googleapis.com/calendar/v3';
  * app faz (doc 10) e o que a verificação do app no Google avalia.
  */
 export const ESCOPO_AGENDA_GOOGLE = 'https://www.googleapis.com/auth/calendar.events';
+/**
+ * O e-mail da conta (`openid email`, escopos não sensíveis), lido do `id_token` da troca do código:
+ * o app deixa de fora só a mesma conta na agenda do aparelho (T-085l).
+ */
+export const ESCOPOS_CONEXAO_GOOGLE = `openid email ${ESCOPO_AGENDA_GOOGLE}`;
 
 /** A agenda principal da conta, no vocabulário da API. */
 const AGENDA_PRINCIPAL = 'primary';
@@ -35,6 +41,8 @@ export type Buscar = (url: string, opcoes: RequestInit) => Promise<Response>;
 
 interface RespostaToken {
   access_token?: string;
+  /** Com `openid`: o JWT da conta, que veio direto do Google por TLS (sem conferir a assinatura). */
+  id_token?: string;
   refresh_token?: string;
   expires_in?: number;
 }
@@ -98,7 +106,7 @@ export class CalendarGoogle extends CalendarProvider {
     url.searchParams.set('client_id', this.idCliente);
     url.searchParams.set('redirect_uri', redirecionamento);
     url.searchParams.set('response_type', 'code');
-    url.searchParams.set('scope', ESCOPO_AGENDA_GOOGLE);
+    url.searchParams.set('scope', ESCOPOS_CONEXAO_GOOGLE);
     url.searchParams.set('access_type', 'offline');
     url.searchParams.set('prompt', 'consent');
     url.searchParams.set('include_granted_scopes', 'true');
@@ -106,13 +114,16 @@ export class CalendarGoogle extends CalendarProvider {
     return url.toString();
   }
 
-  async trocarCodigo(codigo: string, redirecionamento: string): Promise<ContaAgenda> {
+  async trocarCodigo(codigo: string, redirecionamento: string): Promise<ContaConectada> {
     const resposta = await this.token({
       grant_type: 'authorization_code',
       code: codigo,
       redirect_uri: redirecionamento,
     });
-    return { tokens: this.tokensDe(resposta, null), agendaPrincipal: AGENDA_PRINCIPAL };
+    return {
+      conta: { tokens: this.tokensDe(resposta, null), agendaPrincipal: AGENDA_PRINCIPAL },
+      email: emailDoIdToken(resposta.id_token),
+    };
   }
 
   async listarEventos(sessao: SessaoAgenda, inicio: Date, fim: Date): Promise<EventoAgenda[]> {
@@ -362,4 +373,17 @@ async function erroDaApi(resposta: Response): Promise<ErroAgenda> {
     );
   }
   return new ErroAgenda(mensagem, 'temporario');
+}
+
+/** O `email` do payload do `id_token`; `null` se faltar ou não for um JWT legível. */
+export function emailDoIdToken(idToken: string | undefined): string | null {
+  const payload = idToken?.split('.')[1];
+  if (!payload) return null;
+  try {
+    const dados = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as unknown;
+    const email = (dados as { email?: unknown }).email;
+    return typeof email === 'string' && email.includes('@') ? email.toLowerCase() : null;
+  } catch {
+    return null;
+  }
 }

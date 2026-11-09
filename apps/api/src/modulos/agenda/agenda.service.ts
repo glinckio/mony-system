@@ -79,6 +79,7 @@ function paraAgenda(linha: AgendaGravada): AgendaConectada {
     situacao: linha.desconectadaEm === null ? 'conectada' : 'reconectar',
     sincronizadaEm: linha.sincronizadaEm?.toISOString() ?? null,
     conectadaEm: linha.criadoEm.toISOString(),
+    email: linha.emailConta,
   };
 }
 
@@ -156,7 +157,7 @@ export class AgendaService {
     }
     let resultado: ResultadoConexaoAgenda = 'sucesso';
     try {
-      const conta = await this.provedores
+      const { conta, email } = await this.provedores
         .de(estado.provedor)
         .trocarCodigo(consulta.code, this.retorno());
       const agenda = await this.repositorio.gravarConexao(
@@ -164,6 +165,7 @@ export class AgendaService {
         estado.provedor,
         this.cifra.cifrar(JSON.stringify(conta)),
         conta.agendaPrincipal,
+        email,
       );
       // Conectar é o consentimento da finalidade agenda (doc 11, T-140d).
       await this.consentimentos.conceder(estado.usuarioId, 'agenda');

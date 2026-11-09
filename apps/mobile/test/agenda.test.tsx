@@ -66,6 +66,7 @@ const agenda = (padrao: boolean, dados: { id: string; provedor: string }, extra:
   situacao: 'conectada',
   sincronizadaEm: '2026-10-15T14:45:00.000Z',
   conectadaEm: '2026-10-01T12:00:00.000Z',
+  email: null,
   ...extra,
 });
 const CONECTADAS = [agenda(true, GOOGLE), agenda(false, OUTLOOK)];
@@ -481,16 +482,29 @@ describe('agenda do aparelho (T-085f)', () => {
       ),
     ).toBeNull();
     // As contas já conectadas no app chegam pelo servidor.
+    const google = { provedor: 'google', email: 'ana@gmail.com' } as const;
     expect(
-      vemDoProvedor(agendaDoCelular('g', 'com.google', 'ana@gmail.com') as never, 'google'),
+      vemDoProvedor(agendaDoCelular('g', 'com.google', 'Ana@Gmail.com') as never, google),
     ).toBe(true);
     expect(
       vemDoProvedor(
         agendaDoCelular('o', 'com.microsoft.office.outlook', 'ana@outlook.com') as never,
-        'outlook',
+        { provedor: 'outlook', email: null },
       ),
     ).toBe(true);
-    expect(vemDoProvedor(agendaDoCelular('l', 'LOCAL', 'Telefone') as never, 'google')).toBe(false);
+    expect(vemDoProvedor(agendaDoCelular('l', 'LOCAL', 'Telefone') as never, google)).toBe(false);
+    // T-085l: outra conta Google do celular continua como Aparelho; sem e-mail, sai como antes.
+    expect(
+      vemDoProvedor(agendaDoCelular('b', 'com.google', 'bia@gmail.com') as never, google),
+    ).toBe(false);
+    expect(
+      vemDoProvedor(agendaDoCelular('b', 'com.google', 'bia@gmail.com') as never, {
+        provedor: 'google',
+        email: null,
+      }),
+    ).toBe(true);
+    // O iPhone diz só "Gmail": sem como separar, sai.
+    expect(vemDoProvedor(agendaDoCelular('i', 'CalDAV', 'Gmail') as never, google)).toBe(true);
   });
 
   it(

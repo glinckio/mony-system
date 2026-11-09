@@ -33,21 +33,33 @@ export async function pedirPermissaoDaAgenda(): Promise<boolean> {
   return granted;
 }
 
+/** Uma agenda conectada no app: o provedor e o e-mail da conta (`null` se o servidor não sabe). */
+export interface ContaConectada {
+  provedor: ProvedorAgendaExterna;
+  email: string | null;
+}
+
 /**
  * Agendas do aparelho que já chegam pelo servidor: o Android e o iPhone também sincronizam as contas
- * do Google e do Outlook no calendário do aparelho. Com a conta conectada no app, elas ficam de fora
- * aqui, para o mesmo compromisso não aparecer duas vezes.
+ * do Google e do Outlook no calendário do aparelho. A conta conectada no app fica de fora aqui, para
+ * o mesmo compromisso não aparecer duas vezes. Com o e-mail dela (T-085l), só essa conta sai: outra
+ * conta Google do celular continua como "Aparelho". Sem o e-mail, ou quando o aparelho não diz a
+ * conta (o iPhone mostra "Gmail"), saem todas daquele provedor, como antes.
  */
 export function vemDoProvedor(
   agenda: Pick<ExpoCalendar, 'source'>,
-  provedor: ProvedorAgendaExterna,
+  conectada: ContaConectada,
 ): boolean {
   const tipo = agenda.source.type.toLowerCase();
   const nome = agenda.source.name.toLowerCase();
-  if (provedor === 'google') {
-    return tipo === 'com.google' || /google|gmail/.test(nome);
-  }
-  return /exchange|outlook|microsoft|hotmail|live\.com/.test(`${tipo} ${nome}`);
+  const doProvedor =
+    conectada.provedor === 'google'
+      ? tipo === 'com.google' || /google|gmail/.test(nome)
+      : /exchange|outlook|microsoft|hotmail|live\.com/.test(`${tipo} ${nome}`);
+  if (!doProvedor) return false;
+  const email = conectada.email?.toLowerCase();
+  if (!email || !nome.includes('@')) return true;
+  return nome === email;
 }
 
 interface EventoDoAparelho {
@@ -106,13 +118,14 @@ export function paraCompromisso(evento: EventoDoAparelho, fuso: string): Comprom
  */
 export async function compromissosDoAparelho(
   periodo: { inicio: string; fim: string },
-  conectadas: readonly ProvedorAgendaExterna[],
+  conectadas: readonly ContaConectada[],
   fuso: string,
 ): Promise<Compromisso[]> {
   if (!(await getCalendarPermissions()).granted) return [];
   const agendas = (await getCalendars(EntityTypes.EVENT)).filter(
     (agenda) =>
-      agenda.isVisible !== false && !conectadas.some((provedor) => vemDoProvedor(agenda, provedor)),
+      agenda.isVisible !== false &&
+      !conectadas.some((conectada) => vemDoProvedor(agenda, conectada)),
   );
   if (agendas.length === 0) return [];
   const eventos = await listEvents(

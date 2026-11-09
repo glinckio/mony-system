@@ -3,6 +3,7 @@ import { FUSO_PADRAO, inicioDoDiaNoFuso } from '@mony/shared/datas';
 import {
   CalendarProvider,
   type ContaAgenda,
+  type ContaConectada,
   type DadosEventoAgenda,
   ErroAgenda,
   type EventoAgenda,
@@ -101,13 +102,33 @@ export class CalendarOutlook extends CalendarProvider {
     return url.toString();
   }
 
-  async trocarCodigo(codigo: string, redirecionamento: string): Promise<ContaAgenda> {
+  async trocarCodigo(codigo: string, redirecionamento: string): Promise<ContaConectada> {
     const resposta = await this.token({
       grant_type: 'authorization_code',
       code: codigo,
       redirect_uri: redirecionamento,
     });
-    return { tokens: this.tokensDe(resposta, null), agendaPrincipal: AGENDA_PRINCIPAL };
+    const conta = { tokens: this.tokensDe(resposta, null), agendaPrincipal: AGENDA_PRINCIPAL };
+    return { conta, email: await this.emailDaConta(conta) };
+  }
+
+  /**
+   * T-085l: o dono da agenda padrão (`/me/calendar`, que o `Calendars.ReadWrite` já lê). Falha aqui
+   * não impede a conexão: sem o e-mail, o app só não consegue separar as contas do aparelho.
+   */
+  private async emailDaConta(conta: ContaAgenda): Promise<string | null> {
+    try {
+      const agenda = (await this.api(
+        { conta, aoRenovar: () => Promise.resolve() },
+        'GET',
+        `${URL_GRAPH}/me/calendar?$select=owner`,
+      )) as { owner?: { address?: string } } | null;
+      const email = agenda?.owner?.address;
+      return typeof email === 'string' && email.includes('@') ? email.toLowerCase() : null;
+    } catch (erro) {
+      if (!(erro instanceof ErroAgenda)) throw erro;
+      return null;
+    }
   }
 
   async listarEventos(sessao: SessaoAgenda, inicio: Date, fim: Date): Promise<EventoAgenda[]> {

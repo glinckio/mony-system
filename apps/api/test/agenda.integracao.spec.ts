@@ -149,7 +149,13 @@ describe.runIf(ativo)('integração: agenda', () => {
     expect(volta.headers.location).toBe('mony://agenda?conexao=sucesso');
 
     const [conectada] = await agendas(ana);
-    expect(conectada).toMatchObject({ provedor: 'google', padrao: true, situacao: 'conectada' });
+    expect(conectada).toMatchObject({
+      provedor: 'google',
+      padrao: true,
+      situacao: 'conectada',
+      // T-085l: o e-mail da conta, para o app separar as contas do aparelho.
+      email: 'conta-google@exemplo.com',
+    });
     const linha = await prisma.agendaConectada.findUniqueOrThrow({
       where: { id: conectada?.id ?? '' },
     });

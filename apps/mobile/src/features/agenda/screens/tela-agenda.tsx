@@ -184,10 +184,11 @@ export default function TelaAgenda() {
   const periodo = periodoDaSemana(segunda, fuso);
   const consulta = useAgendaDoPeriodo(periodo);
   const agendas = useAgendas();
-  // T-085f: a agenda do celular, menos as contas já conectadas (que chegam pelo servidor).
+  // T-085f: a agenda do celular, menos as contas já conectadas (que chegam pelo servidor); com o
+  // e-mail, só a mesma conta (T-085l).
   const conectadas = (agendas.data?.itens ?? [])
     .filter(({ situacao }) => situacao === 'conectada')
-    .flatMap(({ provedor }) => (provedor === 'aparelho' ? [] : [provedor]));
+    .flatMap(({ provedor, email }) => (provedor === 'aparelho' ? [] : [{ provedor, email }]));
   const doAparelho = useAgendaDoAparelho(periodo, conectadas, fuso);
 
   const itens = [...(consulta.data?.itens ?? []), ...(doAparelho.data ?? [])].sort((a, b) =>

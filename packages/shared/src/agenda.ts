@@ -40,6 +40,11 @@ export const esquemaAgendaConectada = z.object({
   situacao: z.enum(['conectada', 'reconectar']),
   sincronizadaEm: z.iso.datetime().nullable(),
   conectadaEm: z.iso.datetime(),
+  /**
+   * O e-mail da conta conectada (T-085l): na agenda do aparelho, o app deixa de fora só essa conta.
+   * `null` nas conexões anteriores a ele (conectar de novo preenche).
+   */
+  email: z.string().nullable(),
 });
 
 export const esquemaListaAgendas = z.object({ itens: z.array(esquemaAgendaConectada) });
