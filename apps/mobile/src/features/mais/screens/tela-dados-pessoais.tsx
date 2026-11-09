@@ -8,11 +8,11 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { type FieldErrors, type Resolver, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 import { CampoControlado, mensagemDeErro } from '@/lib/formularios';
 import { telefoneParaTexto } from '@/lib/nomes';
-import { Botao, Cabecalho, Campo, Erro, Skeleton, Tela, Texto } from '@/ui';
+import { Botao, Cabecalho, Campo, Erro, RolagemFormulario, Skeleton, Tela, Texto } from '@/ui';
 
 import { useAtualizarPerfil, usePerfil } from '../hooks/use-perfil';
 
@@ -74,11 +74,8 @@ function FormularioDados({ perfil }: { perfil: Perfil }) {
   });
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerClassName="gap-5 pb-8 pt-3" keyboardShouldPersistTaps="handled">
+    <View className="flex-1">
+      <RolagemFormulario contentContainerClassName="gap-5 pb-8 pt-3">
         <CampoControlado
           controle={formulario.control}
           nome="nome"
@@ -127,8 +124,8 @@ function FormularioDados({ perfil }: { perfil: Perfil }) {
           carregando={formulario.formState.isSubmitting}
           aoPressionar={() => void salvar()}
         />
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </RolagemFormulario>
+    </View>
   );
 }
 

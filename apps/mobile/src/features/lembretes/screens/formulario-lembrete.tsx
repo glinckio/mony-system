@@ -11,7 +11,7 @@ import { randomUUID } from 'expo-crypto';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 import { BotaoVerPlanos } from '@/features/planos/components/botao-ver-planos';
 import { dataParaTexto, mascararData, textoParaData } from '@/features/transacoes/lib/periodo';
@@ -24,7 +24,17 @@ import {
 import { useFusoDoUsuario } from '@/lib/fuso';
 import { mascararHora } from '@/lib/mascaras';
 import { relogio } from '@/lib/relogio';
-import { Botao, CaixaDeSelecao, Cabecalho, Campo, Chip, GrupoOpcoes, Tela, Texto } from '@/ui';
+import {
+  Botao,
+  Cabecalho,
+  CaixaDeSelecao,
+  Campo,
+  Chip,
+  GrupoOpcoes,
+  RolagemFormulario,
+  Tela,
+  Texto,
+} from '@/ui';
 
 import { FolhaPermissoesAlarme, permissoesParaPedir } from '../components/folha-permissoes-alarme';
 import { useAtualizarLembrete, useCriarLembrete } from '../hooks/use-lembretes';
@@ -198,15 +208,12 @@ export function FormularioLembrete({ original }: PropsFormularioLembrete) {
 
   return (
     <Tela degrade={false} className="px-4 pt-2">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View className="flex-1">
         <Cabecalho
           titulo={original === null ? t('lembretes.novo') : t('lembretes.editar')}
           aoVoltar={voltar}
         />
-        <ScrollView contentContainerClassName="gap-5 pb-8 pt-3" keyboardShouldPersistTaps="handled">
+        <RolagemFormulario contentContainerClassName="gap-5 pb-8 pt-3">
           <Campo
             rotulo={t('lembretes.formulario.titulo')}
             placeholder={t('lembretes.formulario.tituloExemplo')}
@@ -361,8 +368,8 @@ export function FormularioLembrete({ original }: PropsFormularioLembrete) {
             carregando={salvando}
             aoPressionar={() => void salvar()}
           />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </RolagemFormulario>
+      </View>
       <FolhaPermissoesAlarme
         faltam={permissoes}
         aoFechar={() => {

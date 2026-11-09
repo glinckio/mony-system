@@ -5,10 +5,19 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { CampoControlado, mensagemDeErro } from '@/lib/formularios';
-import { Botao, Cabecalho, Folha, GrupoOpcoes, juntarClasses, Tela, Texto } from '@/ui';
+import {
+  Botao,
+  Cabecalho,
+  Folha,
+  GrupoOpcoes,
+  juntarClasses,
+  RolagemFormulario,
+  Tela,
+  Texto,
+} from '@/ui';
 
 import {
   CHAVES_ICONE_CATEGORIA,
@@ -96,15 +105,12 @@ export function FormularioCategoria({
 
   return (
     <Tela degrade={false} className="px-4 pt-2">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View className="flex-1">
         <Cabecalho
           titulo={original === null ? t('categorias.nova') : t('categorias.editar')}
           aoVoltar={voltar}
         />
-        <ScrollView contentContainerClassName="gap-5 pb-8 pt-3" keyboardShouldPersistTaps="handled">
+        <RolagemFormulario contentContainerClassName="gap-5 pb-8 pt-3">
           <View className="flex-row items-center gap-3">
             <IconeCategoria icone={icone} cor={cor} tamanho={56} />
             <Texto variante="titulo" numberOfLines={1} className="flex-1">
@@ -234,8 +240,8 @@ export function FormularioCategoria({
               }}
             />
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </RolagemFormulario>
+      </View>
 
       {original === null ? null : (
         <Folha

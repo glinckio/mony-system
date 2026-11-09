@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
-import { Logo, Tela, Texto } from '@/ui';
+import { Logo, RolagemFormulario, Tela, Texto } from '@/ui';
 
 interface PropsTelaFormulario {
   titulo: string;
@@ -24,11 +24,8 @@ export function TelaFormulario({
 }: PropsTelaFormulario) {
   return (
     <Tela bordas={['top', 'bottom']}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView contentContainerClassName="grow gap-4 p-6" keyboardShouldPersistTaps="handled">
+      <View className="flex-1">
+        <RolagemFormulario contentContainerClassName="grow gap-4 p-6">
           <View className={chamada ? 'items-center gap-3 pb-4 pt-8' : 'gap-1'}>
             {chamada ? <Logo tamanho={64} /> : null}
             <Texto
@@ -46,8 +43,8 @@ export function TelaFormulario({
           </View>
           {children}
           {rodape ? <View className="mt-auto items-center gap-1 pt-6">{rodape}</View> : null}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </RolagemFormulario>
+      </View>
     </Tela>
   );
 }

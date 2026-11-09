@@ -42,3 +42,4 @@ export {
   VALOR_OCULTO,
 } from './valor';
 export { Vazio, type PropsVazio } from './vazio';
+export { EvitaTeclado, RolagemFormulario } from './teclado';

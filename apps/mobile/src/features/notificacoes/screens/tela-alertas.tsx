@@ -8,7 +8,7 @@ import {
 import { useRouter } from 'expo-router';
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, ScrollView, Switch, View } from 'react-native';
+import { Switch, View } from 'react-native';
 
 import {
   usePreferenciasAlerta,
@@ -16,7 +16,18 @@ import {
 } from '@/features/notificacoes/hooks/use-notificacoes';
 import { mascararHora } from '@/lib/mascaras';
 import { mensagemDeErro } from '@/lib/formularios';
-import { Botao, Cabecalho, Campo, Card, Chip, Erro, Skeleton, Tela, Texto } from '@/ui';
+import {
+  Botao,
+  Cabecalho,
+  Campo,
+  Card,
+  Chip,
+  Erro,
+  RolagemFormulario,
+  Skeleton,
+  Tela,
+  Texto,
+} from '@/ui';
 import { cores } from '@/ui/tokens';
 
 /**
@@ -125,11 +136,8 @@ function FormularioAlertas({ preferencias }: { preferencias: PreferenciasAlerta 
   }
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerClassName="gap-5 pb-8 pt-3" keyboardShouldPersistTaps="handled">
+    <View className="flex-1">
+      <RolagemFormulario contentContainerClassName="gap-5 pb-8 pt-3">
         <Secao titulo={t('notificacoes.alertas.silencio')}>
           <View className="flex-row items-center gap-3">
             <Texto variante="corpo-sm" cor="suave" className="flex-1">
@@ -267,8 +275,8 @@ function FormularioAlertas({ preferencias }: { preferencias: PreferenciasAlerta 
           desabilitado={horaInvalida || horasIguais}
           aoPressionar={() => void enviar()}
         />
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </RolagemFormulario>
+    </View>
   );
 }
 

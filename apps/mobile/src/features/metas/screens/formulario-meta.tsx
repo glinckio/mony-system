@@ -3,11 +3,11 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Controller, type FieldErrors, type Resolver, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View } from 'react-native';
 
 import { dataParaTexto, mascararData, textoParaData } from '@/features/transacoes/lib/periodo';
 import { CampoControlado, mensagemDeErro } from '@/lib/formularios';
-import { Botao, Cabecalho, Campo, CampoValor, Folha, Tela, Texto } from '@/ui';
+import { Botao, Cabecalho, Campo, CampoValor, Folha, RolagemFormulario, Tela, Texto } from '@/ui';
 
 import { useAtualizarMeta, useCriarMeta, useExcluirMeta } from '../hooks/use-metas';
 
@@ -104,15 +104,12 @@ export function FormularioMeta({ original }: PropsFormularioMeta) {
 
   return (
     <Tela degrade={false} className="px-4 pt-2">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View className="flex-1">
         <Cabecalho
           titulo={original === null ? t('metas.nova') : t('metas.editar')}
           aoVoltar={voltar}
         />
-        <ScrollView contentContainerClassName="gap-5 pb-8 pt-3" keyboardShouldPersistTaps="handled">
+        <RolagemFormulario contentContainerClassName="gap-5 pb-8 pt-3">
           <CampoControlado
             controle={control}
             nome="titulo"
@@ -174,8 +171,8 @@ export function FormularioMeta({ original }: PropsFormularioMeta) {
               }}
             />
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </RolagemFormulario>
+      </View>
 
       {original === null ? null : (
         <Folha

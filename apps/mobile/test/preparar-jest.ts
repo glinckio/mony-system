@@ -1,6 +1,11 @@
 import { jest } from '@jest/globals';
 
 // Nos testes o app roda com a configuração de desenvolvimento, a mesma do `expo start` sem `.env`.
+// O teclado (T-017a): o mock da própria biblioteca troca os componentes nativos pelos do RN.
+jest.mock('react-native-keyboard-controller', () =>
+  jest.requireActual<object>('react-native-keyboard-controller/jest'),
+);
+
 jest.mock('expo-constants', () => {
   const real = jest.requireActual<{ default: object }>('expo-constants');
   const { criarConfigApp } = jest.requireActual<typeof import('../app.config')>('../app.config');

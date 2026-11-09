@@ -1,6 +1,7 @@
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, ThemeProvider } from 'expo-router';
 import { type ReactNode, useState } from 'react';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 import { cores } from '@/ui/tokens';
 
@@ -26,12 +27,17 @@ interface PropsProvedores {
   clienteConsultas?: QueryClient;
 }
 
-/** Providers do app inteiro: consultas à API e o tema escuro da navegação (T-017). */
+/**
+ * Providers do app inteiro: consultas à API, o tema escuro da navegação (T-017) e o teclado medido
+ * igual no Android e no iPhone (T-017a).
+ */
 export function Provedores({ children, clienteConsultas }: PropsProvedores) {
   const [cliente] = useState(() => clienteConsultas ?? criarClienteConsultas());
   return (
-    <QueryClientProvider client={cliente}>
-      <ThemeProvider value={TEMA_NAVEGACAO}>{children}</ThemeProvider>
-    </QueryClientProvider>
+    <KeyboardProvider>
+      <QueryClientProvider client={cliente}>
+        <ThemeProvider value={TEMA_NAVEGACAO}>{children}</ThemeProvider>
+      </QueryClientProvider>
+    </KeyboardProvider>
   );
 }

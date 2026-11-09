@@ -2,7 +2,7 @@ import { linkDoBotao, type OpcaoBotao } from '@mony/shared/mony';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
+import { ActivityIndicator, FlatList, View } from 'react-native';
 
 import { Atalhos } from '@/features/mony/components/atalhos';
 import { Balao } from '@/features/mony/components/balao';
@@ -15,7 +15,7 @@ import { duracaoParaTexto, useGravador } from '@/features/mony/lib/gravador';
 import { daConversa, type Mensagem } from '@/features/mony/lib/mensagens';
 import { Dica } from '@/features/onboarding/components/dica';
 import { rotaDoLink } from '@/lib/links-internos';
-import { Botao, BotaoIcone, Campo, cores, Icone, Tela, Texto } from '@/ui';
+import { Botao, BotaoIcone, Campo, cores, EvitaTeclado, Icone, Tela, Texto } from '@/ui';
 
 /**
  * Chat da Mony (doc 04, T-069): abre com o histórico (`GET /mony/conversa`, mais antigas ao subir),
@@ -80,10 +80,7 @@ export default function TelaMony() {
 
   return (
     <Tela degrade={false}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <EvitaTeclado className="flex-1">
         <View className="flex-row items-center justify-between px-4 pt-4">
           <Texto variante="titulo-lg" accessibilityRole="header">
             {t('mony.titulo')}
@@ -208,7 +205,7 @@ export default function TelaMony() {
             )}
           </View>
         )}
-      </KeyboardAvoidingView>
+      </EvitaTeclado>
       <FolhaDocumento
         visivel={escolhendo}
         aoFechar={() => {

@@ -10,14 +10,14 @@ import { randomUUID } from 'expo-crypto';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 import { dataParaTexto, mascararData, textoParaData } from '@/features/transacoes/lib/periodo';
 import { mensagemDeErro } from '@/lib/formularios';
 import { useFusoDoUsuario } from '@/lib/fuso';
 import { mascararHora } from '@/lib/mascaras';
 import { relogio } from '@/lib/relogio';
-import { Botao, Cabecalho, Campo, Folha, Tela, Texto } from '@/ui';
+import { Botao, Cabecalho, Campo, Folha, RolagemFormulario, Tela, Texto } from '@/ui';
 
 import {
   useAgendas,
@@ -163,15 +163,12 @@ export function FormularioCompromisso({ original, dia = null }: PropsFormularioC
 
   return (
     <Tela degrade={false} className="px-4 pt-2">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View className="flex-1">
         <Cabecalho
           titulo={original === null ? t('agenda.novo') : t('agenda.editar')}
           aoVoltar={voltar}
         />
-        <ScrollView contentContainerClassName="gap-5 pb-8 pt-3" keyboardShouldPersistTaps="handled">
+        <RolagemFormulario contentContainerClassName="gap-5 pb-8 pt-3">
           <Campo
             rotulo={t('agenda.formulario.titulo')}
             placeholder={t('agenda.formulario.tituloExemplo')}
@@ -257,8 +254,8 @@ export function FormularioCompromisso({ original, dia = null }: PropsFormularioC
               }}
             />
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </RolagemFormulario>
+      </View>
       <Folha
         visivel={confirmarExclusao}
         titulo={t('agenda.excluir.titulo')}
