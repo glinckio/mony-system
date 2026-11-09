@@ -76,6 +76,8 @@ export const textosAgenda = {
       sucesso: 'Agenda conectada. Os compromissos chegam em instantes.',
       cancelado: 'Conexão cancelada.',
       erro: 'Não deu para conectar a agenda. Tente de novo.',
+      'sem-permissao':
+        'Faltou liberar a agenda na tela do Google. Conecte de novo e marque a permissão da agenda.',
     },
     erro: 'Não deu para mudar a agenda. Confira a conexão e tente de novo.',
   },

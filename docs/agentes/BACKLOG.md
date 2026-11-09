@@ -247,6 +247,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
     - [x] **T-085k** Permissão da agenda no Android: o `WRITE_CALENDAR` bloqueado no manifesto fazia o pedido do `expo-calendar` (leitura e escrita juntas) voltar sempre negado (PR #163)
     - [x] **T-085l** Agenda do aparelho deixa de fora só a conta conectada (e-mail da conta guardado na conexão), não todas as contas Google ou Outlook do celular (PR #173)
     - [x] **T-085m** A volta do navegador (conectar agenda, checkout e portal da Stripe) abre o app no esquema do build que pediu: o de desenvolvimento (`mony-dev://`) ficava carregando para sempre (PR #174)
+    - [x] **T-085n** Conexão do Google com a agenda desmarcada no consentimento: desfaz o acesso e avisa (`sem-permissao`); a agenda do aparelho é lida de novo sempre que o app volta (PR #175)
   - [x] **T-085c** Tela Agenda no app (calendário do design) com os compromissos do servidor: semana, dia, filtros por agenda, novo, editar e excluir; o link `mony://agenda`, o atalho em Mais e o [Ver agenda] na resposta do `criar_compromisso` da Mony; e, em Alertas da Mony, a chave e a antecedência do aviso do compromisso (`antecedenciaMinutos`, T-085d) (PR #141)
     - dep: T-085a · docs: 04
   - [x] **T-085e** Conectar o Google e o Outlook pelo app: a lista de agendas na tela Agenda (conectar no navegador do app, volta em `mony://agenda?conexao=`, "reconectar", escolher a padrão, desconectar); anda com o provedor falso e fica de verdade com a T-085b (PR #142)
