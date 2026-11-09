@@ -8,6 +8,7 @@ const mockNativo = {
   hasPlayServices: jest.fn(() => Promise.resolve(true)),
   signIn: jest.fn<() => Promise<unknown>>(),
   signOut: jest.fn(() => Promise.resolve(null)),
+  revokeAccess: jest.fn(() => Promise.resolve(null)),
 };
 jest.mock('@react-native-google-signin/google-signin', () => ({
   GoogleSignin: mockNativo,
@@ -21,7 +22,7 @@ describe('escolha da conta do Google (T-055a)', () => {
     jest.clearAllMocks();
   });
 
-  it('pede o id_token para o cliente web e encerra a sessão do Google depois', async () => {
+  it('pede o id_token para o cliente web e desfaz o acesso depois (T-055c: token novo a cada vez)', async () => {
     configApp.googleIdClienteWeb = 'cliente-web.apps.googleusercontent.com';
     mockNativo.signIn.mockResolvedValue({
       type: 'success',
@@ -31,12 +32,15 @@ describe('escolha da conta do Google (T-055a)', () => {
     expect(mockNativo.configure).toHaveBeenCalledWith({
       webClientId: 'cliente-web.apps.googleusercontent.com',
     });
+    expect(mockNativo.revokeAccess).toHaveBeenCalledTimes(1);
     expect(mockNativo.signOut).toHaveBeenCalledTimes(1);
   });
 
   it('desistir devolve null', async () => {
     mockNativo.signIn.mockResolvedValue({ type: 'cancelled', data: null });
     await expect(escolherContaGoogle()).resolves.toBeNull();
+    // Sem conta escolhida, não há acesso para desfazer.
+    expect(mockNativo.revokeAccess).not.toHaveBeenCalled();
     mockNativo.signIn.mockRejectedValue(
       Object.assign(new Error('x'), { code: 'SIGN_IN_CANCELLED' }),
     );
