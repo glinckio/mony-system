@@ -31,16 +31,21 @@ export interface ContaGoogle {
 }
 
 /**
- * Abre a escolha da conta do Google. `null` quando a pessoa desiste. A sessão do Google no app é
- * encerrada logo depois: o Mony usa o `id_token` uma vez, e a próxima vez mostra a escolha de novo.
+ * Abre a escolha da conta do Google. `null` quando a pessoa desiste. Depois, o acesso do app à conta
+ * é desfeito (`revokeAccess`) e a sessão do Google no app encerrada: o servidor aceita cada
+ * `id_token` uma vez só, e o Google Play devolvia o mesmo token guardado por até 1 hora. Sem o
+ * `revokeAccess`, entrar de novo logo depois (sair, excluir a conta e voltar) dava "Não
+ * conseguimos confirmar seu login com o Google" (T-055c). A próxima vez mostra a escolha de novo.
  */
 export async function escolherContaGoogle(): Promise<ContaGoogle | null> {
   const { GoogleSignin, isCancelledResponse, isErrorWithCode, statusCodes } = carregarModulo();
   GoogleSignin.configure({ webClientId: configApp.googleIdClienteWeb });
+  let entrou = false;
   try {
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
     const resposta = await GoogleSignin.signIn();
     if (isCancelledResponse(resposta)) return null;
+    entrou = true;
     const { idToken, user } = resposta.data;
     if (!idToken) throw new Error('O Google não devolveu o id_token.');
     return { idToken, nome: user.name };
@@ -48,6 +53,7 @@ export async function escolherContaGoogle(): Promise<ContaGoogle | null> {
     if (isErrorWithCode(erro) && erro.code === statusCodes.SIGN_IN_CANCELLED) return null;
     throw erro;
   } finally {
+    if (entrou) await GoogleSignin.revokeAccess().catch(() => undefined);
     await GoogleSignin.signOut().catch(() => undefined);
   }
 }
