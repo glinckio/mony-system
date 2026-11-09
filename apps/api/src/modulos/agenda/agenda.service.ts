@@ -13,7 +13,7 @@ import {
   type ProvedorAgendaExterna,
   type ResultadoConexaoAgenda,
 } from '@mony/shared/agenda';
-import { LINKS_INTERNOS } from '@mony/shared/alertas';
+import { type EsquemaApp, ESQUEMAS_APP, LINKS_INTERNOS, noEsquema } from '@mony/shared/alertas';
 import type { Queue } from 'bullmq';
 
 import { Clock } from '../../core/clock/clock';
@@ -54,6 +54,8 @@ interface EstadoConexao {
   usuarioId: string;
   provedor: ProvedorAgendaExterna;
   expiraEm: number;
+  /** O esquema do app que pediu (T-085m); sem ele, o da loja. */
+  esquema?: EsquemaApp;
 }
 
 const ehProvedorExterno = (valor: unknown): valor is ProvedorAgendaExterna =>
@@ -119,7 +121,11 @@ export class AgendaService {
   ) {}
 
   /** O endereço do consentimento; o `state` cifrado leva quem pediu e vale 10 minutos. */
-  conectar(contexto: Contexto, provedor: ProvedorAgendaExterna): LinkConexaoAgenda {
+  conectar(
+    contexto: Contexto,
+    provedor: ProvedorAgendaExterna,
+    esquema?: EsquemaApp,
+  ): LinkConexaoAgenda {
     const usuarioId = usuarioDoContexto(contexto);
     const calendario = this.provedores.de(provedor);
     if (!calendario.disponivel || !this.cifra.disponivel) {
@@ -131,6 +137,7 @@ export class AgendaService {
       usuarioId,
       provedor,
       expiraEm: this.clock.agora().getTime() + VALIDADE_ESTADO_MS,
+      ...(esquema === undefined ? {} : { esquema }),
     };
     return {
       url: calendario.urlConsentimento(this.cifra.cifrar(JSON.stringify(estado)), this.retorno()),
@@ -147,13 +154,16 @@ export class AgendaService {
     error?: unknown;
   }): Promise<string> {
     const estado = this.lerEstado(consulta.state);
-    if (estado === null) return LINKS_INTERNOS.agenda('erro');
-    if (consulta.error !== undefined) return LINKS_INTERNOS.agenda('cancelado');
+    // T-085m: volta para o app que pediu (o de desenvolvimento tem outro esquema).
+    const link = (resultado: ResultadoConexaoAgenda) =>
+      noEsquema(LINKS_INTERNOS.agenda(resultado), estado?.esquema);
+    if (estado === null) return link('erro');
+    if (consulta.error !== undefined) return link('cancelado');
     if (typeof consulta.code !== 'string' || consulta.code === '') {
-      return LINKS_INTERNOS.agenda('erro');
+      return link('erro');
     }
     if (!(await this.repositorio.usuarioAtivo(estado.usuarioId))) {
-      return LINKS_INTERNOS.agenda('erro');
+      return link('erro');
     }
     let resultado: ResultadoConexaoAgenda = 'sucesso';
     try {
@@ -176,7 +186,7 @@ export class AgendaService {
       this.log.warn(`Conexão da agenda ${estado.provedor} recusada: ${erro.message}`);
       resultado = 'erro';
     }
-    return LINKS_INTERNOS.agenda(resultado);
+    return link(resultado);
   }
 
   async listarAgendas(contexto: Contexto): Promise<ListaAgendas> {
@@ -471,7 +481,14 @@ export class AgendaService {
       ) {
         return null;
       }
-      return { usuarioId: estado.usuarioId, provedor: estado.provedor, expiraEm: estado.expiraEm };
+      return {
+        usuarioId: estado.usuarioId,
+        provedor: estado.provedor,
+        expiraEm: estado.expiraEm,
+        ...((ESQUEMAS_APP as readonly unknown[]).includes(estado.esquema)
+          ? { esquema: estado.esquema }
+          : {}),
+      };
     } catch {
       return null;
     }

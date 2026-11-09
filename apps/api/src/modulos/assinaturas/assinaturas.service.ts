@@ -1,6 +1,6 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
-import { LINKS_INTERNOS } from '@mony/shared/alertas';
+import { type EsquemaApp, LINKS_INTERNOS, noEsquema } from '@mony/shared/alertas';
 import type { PlanoPago } from '@mony/shared/enums';
 import type {
   FormaPagamentoPlano,
@@ -42,9 +42,12 @@ export interface JobWebhook {
   webhookEventoId: string;
 }
 
-/** Link do app que o retorno da Stripe abre (`mony://planos?checkout=sucesso`). */
-export function linkDoRetorno(resultado: ResultadoRetornoCobranca): string {
-  return `${LINKS_INTERNOS.planos()}?checkout=${resultado}`;
+/**
+ * Link do app que o retorno da Stripe abre (`mony://planos?checkout=sucesso`), no esquema do app
+ * que pediu (T-085m).
+ */
+export function linkDoRetorno(resultado: ResultadoRetornoCobranca, esquema?: EsquemaApp): string {
+  return noEsquema(`${LINKS_INTERNOS.planos()}?checkout=${resultado}`, esquema);
 }
 
 /**
@@ -98,6 +101,7 @@ export class AssinaturasService {
     contexto: Contexto,
     plano: PlanoPago,
     forma: FormaPagamentoPlano = 'cartao',
+    esquema?: EsquemaApp,
   ): Promise<LinkCobranca> {
     const usuarioId = usuarioDoContexto(contexto);
     const assinatura = await this.repositorio.doUsuario(usuarioId);
@@ -124,27 +128,27 @@ export class AssinaturasService {
           usuarioId,
           planoPrecoId: preco.id,
           valorCentavos: preco.valorCentavos,
-          urlSucesso: this.urlDoRetorno('sucesso'),
-          urlCancelado: this.urlDoRetorno('cancelado'),
+          urlSucesso: this.urlDoRetorno('sucesso', esquema),
+          urlCancelado: this.urlDoRetorno('cancelado', esquema),
         });
       }
       return this.cobranca.criarCheckout({
         clienteId,
         precoId: preco.stripePriceId,
         usuarioId,
-        urlSucesso: this.urlDoRetorno('sucesso'),
-        urlCancelado: this.urlDoRetorno('cancelado'),
+        urlSucesso: this.urlDoRetorno('sucesso', esquema),
+        urlCancelado: this.urlDoRetorno('cancelado', esquema),
       });
     });
   }
 
   /** `POST /assinatura/portal`: trocar plano, cartão e cancelar, na Stripe. */
-  async portal(contexto: Contexto): Promise<LinkCobranca> {
+  async portal(contexto: Contexto, esquema?: EsquemaApp): Promise<LinkCobranca> {
     const assinatura = await this.repositorio.doUsuario(usuarioDoContexto(contexto));
     const clienteId = assinatura?.stripeCustomerId;
     if (!clienteId) throw new ErroDominio('ASSINATURA_SEM_CLIENTE');
     return this.naCobranca(() =>
-      this.cobranca.criarPortal({ clienteId, urlRetorno: this.urlDoRetorno('portal') }),
+      this.cobranca.criarPortal({ clienteId, urlRetorno: this.urlDoRetorno('portal', esquema) }),
     );
   }
 
@@ -379,8 +383,9 @@ export class AssinaturasService {
     return (await this.repositorio.gravarCliente(usuarioId, criado)) ?? criado;
   }
 
-  private urlDoRetorno(resultado: ResultadoRetornoCobranca): string {
-    return `${this.config.urlPublicaApi}/v1/assinatura/retorno?resultado=${resultado}`;
+  private urlDoRetorno(resultado: ResultadoRetornoCobranca, esquema?: EsquemaApp): string {
+    const url = `${this.config.urlPublicaApi}/v1/assinatura/retorno?resultado=${resultado}`;
+    return esquema === undefined || esquema === 'mony' ? url : `${url}&esquema=${esquema}`;
   }
 
   /** A Stripe fora do ar vira 503, com uma frase para a tela. */

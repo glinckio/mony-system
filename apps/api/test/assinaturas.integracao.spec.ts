@@ -235,6 +235,33 @@ describe.runIf(ativo)('integração: assinaturas pela Stripe', () => {
     }
   });
 
+  it('T-085m o retorno da Stripe volta no esquema do app que pediu, só os do app', async () => {
+    const usuario = await usuarioNovo();
+    const checkout = await chamar(usuario, 'POST', '/assinatura/checkout', {
+      plano: 'anual',
+      esquema: 'mony-dev',
+    });
+    expect(checkout.json()).toEqual({
+      url: 'http://localhost:3000/v1/assinatura/retorno?resultado=sucesso&esquema=mony-dev',
+    });
+    for (const [esquema, link] of [
+      ['mony-dev', 'mony-dev://planos?checkout=sucesso'],
+      ['mony-preview', 'mony-preview://planos?checkout=sucesso'],
+      ['https', 'mony://planos?checkout=sucesso'],
+    ]) {
+      const resposta = await app.inject({
+        method: 'GET',
+        url: `/v1/assinatura/retorno?resultado=sucesso&esquema=${esquema ?? ''}`,
+      });
+      expect(resposta.headers.location).toBe(link);
+    }
+    await assinar(usuario);
+    const portal = await chamar(usuario, 'POST', '/assinatura/portal', { esquema: 'mony-dev' });
+    expect(portal.json()).toEqual({
+      url: 'http://localhost:3000/v1/assinatura/retorno?resultado=portal&esquema=mony-dev',
+    });
+  });
+
   it('o portal exige ter passado pelo checkout', async () => {
     const usuario = await usuarioNovo();
     const sem = await chamar(usuario, 'POST', '/assinatura/portal');

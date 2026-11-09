@@ -6,6 +6,7 @@
  */
 import { z } from 'zod';
 
+import { ESQUEMAS_APP } from './alertas.js';
 import { ORIGENS_COMPROMISSO, PROVEDORES_AGENDA } from './enums.js';
 
 /** As agendas que conectam pelo servidor (OAuth); a do aparelho fica no app (T-085c). */
@@ -26,6 +27,8 @@ const esquemaInstante = z.iso.datetime({ offset: true });
 /** `POST /agendas/conectar`. */
 export const esquemaPedidoConexaoAgenda = z.object({
   provedor: z.enum(PROVEDORES_AGENDA_EXTERNA),
+  /** O esquema do app que pede (T-085m): a volta do consentimento abre `<esquema>://agenda`. */
+  esquema: z.enum(ESQUEMAS_APP).optional(),
 });
 
 /** O endereço do consentimento no provedor, para o app abrir no navegador. */

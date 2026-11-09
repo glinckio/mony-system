@@ -23,6 +23,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
 
 import { compromissosDoAparelho, type ContaConectada } from '@/lib/agenda-aparelho';
+import { esquemaDoApp, linkDoApp } from '@/lib/config';
 
 /** `GET /agenda`: os compromissos que cruzam o período (a semana da tela). */
 export function useAgendaDoPeriodo(periodo: { inicio: string; fim: string }) {
@@ -151,8 +152,12 @@ export function useConectarAgenda() {
   const aoMudar = useAoMudar();
   return useMutation({
     mutationFn: async (provedor: ProvedorAgendaExterna): Promise<ResultadoConexaoAgenda> => {
-      const { url } = await conectarAgendas({ provedor });
-      const resultado = await WebBrowser.openAuthSessionAsync(url, LINKS_INTERNOS.agenda());
+      // T-085m: o servidor volta no esquema deste build (o de desenvolvimento é `mony-dev`).
+      const { url } = await conectarAgendas({ provedor, esquema: esquemaDoApp() });
+      const resultado = await WebBrowser.openAuthSessionAsync(
+        url,
+        linkDoApp(LINKS_INTERNOS.agenda()),
+      );
       return resultado.type === 'success'
         ? (resultadoDaConexao(resultado.url) ?? 'erro')
         : 'cancelado';

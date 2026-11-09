@@ -126,6 +126,21 @@ export function marcoDoVencimento(diasAteVencer: number, antecedencia: number): 
   return null;
 }
 
+/**
+ * T-085m: o esquema de link de cada build do app (`app.config.ts`): o da loja é `mony`, e o de
+ * desenvolvimento e o de teste têm o seu, para conviverem no mesmo celular. A volta do navegador
+ * (agenda, Stripe) usa o do app que pediu; senão o Android não abre o app e o navegador fica parado.
+ */
+export const ESQUEMAS_APP = ['mony', 'mony-dev', 'mony-preview'] as const;
+export type EsquemaApp = (typeof ESQUEMAS_APP)[number];
+
+/** Troca o `mony://` de um link interno pelo esquema do app (sem esquema, fica o da loja). */
+export function noEsquema(link: string, esquema: EsquemaApp | undefined): string {
+  return esquema === undefined || esquema === 'mony'
+    ? link
+    : link.replace(/^mony:\/\//, `${esquema}://`);
+}
+
 /** RN-105 e doc 04: os links internos que as notificações abrem. */
 export const LINKS_INTERNOS = {
   inicio: (): string => 'mony://inicio',
