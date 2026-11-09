@@ -90,15 +90,20 @@ describe('CalendarOutlook (T-085h, doc 10)', () => {
     });
   });
 
-  it('troca o código pelos tokens, com o escopo e a validade', async () => {
+  it('troca o código pelos tokens, com o escopo e a validade, e lê o e-mail da agenda (T-085l)', async () => {
     const { calendario, chamadas } = outlook([
       json({ access_token: 'a', refresh_token: 'r', expires_in: 3600 }),
+      json({ owner: { name: 'Ana', address: 'Ana@Outlook.com' } }),
     ]);
     const conta = await calendario.trocarCodigo('codigo-1', RETORNO);
     expect(conta).toEqual({
-      tokens: { acesso: 'a', renovacao: 'r', expiraEm: '2026-11-04T13:00:00.000Z' },
-      agendaPrincipal: 'principal',
+      conta: {
+        tokens: { acesso: 'a', renovacao: 'r', expiraEm: '2026-11-04T13:00:00.000Z' },
+        agendaPrincipal: 'principal',
+      },
+      email: 'ana@outlook.com',
     });
+    expect(chamadas[1]?.url).toBe('https://graph.microsoft.com/v1.0/me/calendar?$select=owner');
     expect(chamadas[0]?.url).toBe(URL_TOKEN_MICROSOFT);
     expect(Object.fromEntries(new URLSearchParams(chamadas[0]?.corpo))).toEqual({
       grant_type: 'authorization_code',

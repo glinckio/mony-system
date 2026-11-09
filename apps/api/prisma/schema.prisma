@@ -1196,6 +1196,8 @@ model AgendaConectada {
   tokensCifrados String?        @map("tokens_cifrados")
   /// Agenda onde o app cria compromissos (RN-079): o id da agenda no provedor; só uma conexão do usuário tem.
   agendaPadrao   String?        @map("agenda_padrao")
+  /// E-mail da conta conectada (T-085l): o app deixa de fora só essa conta na agenda do aparelho.
+  emailConta     String?        @map("email_conta")
   /// O provedor recusou os tokens (acesso revogado lá): a sincronização para até conectar de novo (T-085a).
   desconectadaEm DateTime?      @map("desconectada_em") @db.Timestamptz(6)
   /// Última sincronização que deu certo.

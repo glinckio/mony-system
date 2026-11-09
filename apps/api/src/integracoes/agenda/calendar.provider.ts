@@ -21,6 +21,15 @@ export interface EventoAgenda {
   local: string | null;
 }
 
+/**
+ * O que a conexão devolve: a conta (gravada cifrada) e o e-mail dela, que o app usa para deixar de
+ * fora só a mesma conta na agenda do aparelho (T-085l). `null` quando o provedor não disse.
+ */
+export interface ContaConectada {
+  conta: ContaAgenda;
+  email: string | null;
+}
+
 export type DadosEventoAgenda = Omit<EventoAgenda, 'idExterno'>;
 
 /**
@@ -57,7 +66,7 @@ export abstract class CalendarProvider {
   abstract readonly disponivel: boolean;
   /** O endereço do consentimento, que volta para `redirecionamento` com `code` e `state`. */
   abstract urlConsentimento(estado: string, redirecionamento: string): string;
-  abstract trocarCodigo(codigo: string, redirecionamento: string): Promise<ContaAgenda>;
+  abstract trocarCodigo(codigo: string, redirecionamento: string): Promise<ContaConectada>;
   /** Os eventos que cruzam o período, da agenda principal. */
   abstract listarEventos(sessao: SessaoAgenda, inicio: Date, fim: Date): Promise<EventoAgenda[]>;
   /** Cria na agenda principal e devolve o id do evento lá. */

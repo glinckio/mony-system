@@ -5,6 +5,7 @@ import type { ProvedorAgendaExterna } from '@mony/shared/agenda';
 import {
   CalendarProvider,
   type ContaAgenda,
+  type ContaConectada,
   type DadosEventoAgenda,
   ErroAgenda,
   type EventoAgenda,
@@ -39,15 +40,18 @@ export class CalendarFake extends CalendarProvider {
     return url.toString();
   }
 
-  trocarCodigo(codigo: string): Promise<ContaAgenda> {
+  trocarCodigo(codigo: string): Promise<ContaConectada> {
     if (!codigo.startsWith(PREFIXO_CODIGO_FALSO)) {
       return Promise.reject(new ErroAgenda('Código recusado.', 'acesso_revogado'));
     }
     const acesso = `fake-acesso-${randomUUID()}`;
     this.eventos.set(acesso, new Map());
     return Promise.resolve({
-      tokens: { acesso, renovacao: `fake-renovacao-${randomUUID()}`, expiraEm: null },
-      agendaPrincipal: 'principal',
+      conta: {
+        tokens: { acesso, renovacao: `fake-renovacao-${randomUUID()}`, expiraEm: null },
+        agendaPrincipal: 'principal',
+      },
+      email: `conta-${this.provedor}@exemplo.com`,
     });
   }
 
