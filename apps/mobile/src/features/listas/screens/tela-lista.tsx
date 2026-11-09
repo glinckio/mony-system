@@ -3,7 +3,7 @@ import type { ItemLista } from '@mony/shared/listas';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 import { BotaoSair } from '@/features/compartilhamentos/components/botao-sair';
 import { FolhaCompartilhar } from '@/features/compartilhamentos/components/folha-compartilhar';
@@ -15,7 +15,18 @@ import {
 } from '@/features/compartilhamentos/lib/compartilhamentos';
 import { mensagemDeErro } from '@/lib/formularios';
 import { useFusoDoUsuario } from '@/lib/fuso';
-import { Botao, BotaoIcone, Cabecalho, Campo, Card, Erro, Skeleton, Tela, Texto } from '@/ui';
+import {
+  Botao,
+  BotaoIcone,
+  Cabecalho,
+  Campo,
+  Card,
+  Erro,
+  RolagemFormulario,
+  Skeleton,
+  Tela,
+  Texto,
+} from '@/ui';
 
 import { FolhaFinalizar } from '../components/folha-finalizar';
 import { FolhaItem } from '../components/folha-item';
@@ -98,10 +109,7 @@ export default function TelaLista() {
 
   return (
     <Tela className="px-4 pt-2">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View className="flex-1">
         <Cabecalho
           titulo={t('listas.titulo')}
           aoVoltar={voltar}
@@ -126,7 +134,7 @@ export default function TelaLista() {
             ) : undefined
           }
         />
-        <ScrollView contentContainerClassName="gap-4 pb-8 pt-3" keyboardShouldPersistTaps="handled">
+        <RolagemFormulario contentContainerClassName="gap-4 pb-8 pt-3">
           <ResumoDaLista lista={lista} fuso={fuso} />
           <PessoasDoRecurso
             recurso="lista"
@@ -241,8 +249,8 @@ export default function TelaLista() {
               }}
             />
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </RolagemFormulario>
+      </View>
       <FolhaItem
         listaId={id}
         item={editando}

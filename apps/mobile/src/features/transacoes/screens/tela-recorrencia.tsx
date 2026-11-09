@@ -14,7 +14,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 import { mensagemDeErro } from '@/lib/formularios';
 import {
@@ -26,6 +26,7 @@ import {
   Erro,
   Folha,
   GrupoOpcoes,
+  RolagemFormulario,
   Skeleton,
   Tela,
   Texto,
@@ -143,11 +144,8 @@ function FormularioRecorrencia({ original }: { original: Recorrencia }) {
   );
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerClassName="gap-5 pb-8 pt-3" keyboardShouldPersistTaps="handled">
+    <View className="flex-1">
+      <RolagemFormulario contentContainerClassName="gap-5 pb-8 pt-3">
         <Card>
           <Texto cor="suave">
             {t('transacoes.recorrencia.comecou', { data: dataParaTexto(original.dataInicio) })}
@@ -271,7 +269,7 @@ function FormularioRecorrencia({ original }: { original: Recorrencia }) {
             definirParando(true);
           }}
         />
-      </ScrollView>
+      </RolagemFormulario>
 
       <Folha
         visivel={parando}
@@ -312,7 +310,7 @@ function FormularioRecorrencia({ original }: { original: Recorrencia }) {
           </Texto>
         ) : null}
       </Folha>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

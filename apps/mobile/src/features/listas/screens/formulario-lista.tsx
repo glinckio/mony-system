@@ -4,10 +4,10 @@ import type { DadosAtualizacaoLista, DetalheLista } from '@mony/shared/listas';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View } from 'react-native';
 
 import { mensagemDeErro } from '@/lib/formularios';
-import { Botao, Cabecalho, Campo, Folha, GrupoOpcoes, Tela, Texto } from '@/ui';
+import { Botao, Cabecalho, Campo, Folha, GrupoOpcoes, RolagemFormulario, Tela, Texto } from '@/ui';
 
 import { useAtualizarLista, useCriarLista, useExcluirLista } from '../hooks/use-listas';
 import { CATEGORIAS_NA_TELA } from '../lib/listas';
@@ -75,15 +75,12 @@ export function FormularioLista({ original }: PropsFormularioLista) {
 
   return (
     <Tela degrade={false} className="px-4 pt-2">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View className="flex-1">
         <Cabecalho
           titulo={original === null ? t('listas.nova') : t('listas.editar')}
           aoVoltar={voltar}
         />
-        <ScrollView contentContainerClassName="gap-5 pb-8 pt-3" keyboardShouldPersistTaps="handled">
+        <RolagemFormulario contentContainerClassName="gap-5 pb-8 pt-3">
           <Campo
             rotulo={t('listas.formulario.nome')}
             placeholder={t('listas.formulario.nomeExemplo')}
@@ -137,8 +134,8 @@ export function FormularioLista({ original }: PropsFormularioLista) {
               }}
             />
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </RolagemFormulario>
+      </View>
       <Folha
         visivel={confirmando}
         titulo={t('listas.excluir.titulo')}

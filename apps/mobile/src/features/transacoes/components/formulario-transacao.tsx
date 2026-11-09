@@ -18,7 +18,7 @@ import {
   useWatch,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, ScrollView, Switch, View } from 'react-native';
+import { Switch, View } from 'react-native';
 
 import { BotaoVerPlanos } from '@/features/planos/components/botao-ver-planos';
 import { CampoControlado, ehLimiteDoPlano, mensagemDeErro } from '@/lib/formularios';
@@ -32,6 +32,7 @@ import {
   Chip,
   Folha,
   GrupoOpcoes,
+  RolagemFormulario,
   Tela,
   Texto,
 } from '@/ui';
@@ -210,10 +211,7 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
     // Fundo sólido: o topo claro do degradê é só para títulos grandes, e o formulário tem rótulos
     // pequenos logo no começo (T-017).
     <Tela bordas={['top']} degrade={false}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View className="flex-1">
         <View className="min-h-botao flex-row items-center gap-1 px-2 pt-2">
           <BotaoIcone
             icone="chevron-left"
@@ -226,10 +224,7 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
               : t('transacoes.formulario.tituloEditar')}
           </Texto>
         </View>
-        <ScrollView
-          contentContainerClassName="gap-5 px-4 pb-8 pt-3"
-          keyboardShouldPersistTaps="handled"
-        >
+        <RolagemFormulario contentContainerClassName="gap-5 px-4 pb-8 pt-3">
           {trava === null ? null : (
             <Card>
               <Texto cor="suave">{t(`transacoes.formulario.travas.${trava}`)}</Texto>
@@ -495,8 +490,8 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
               }}
             />
           ) : null}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </RolagemFormulario>
+      </View>
 
       {original === null ? null : (
         <Folha

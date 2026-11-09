@@ -2,11 +2,11 @@ import { esquemaVerificacaoTelefone, type Perfil } from '@mony/shared/usuario';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 
 import { mensagemDeErro } from '@/lib/formularios';
 import { telefoneParaTexto } from '@/lib/nomes';
-import { Botao, Cabecalho, Campo, Erro, Skeleton, Tela, Texto } from '@/ui';
+import { Botao, Cabecalho, Campo, Erro, RolagemFormulario, Skeleton, Tela, Texto } from '@/ui';
 
 import { usePedirCodigoTelefone, usePerfil, useVerificarTelefone } from '../hooks/use-perfil';
 
@@ -68,7 +68,7 @@ function Verificacao({ perfil, aoTerminar }: { perfil: Perfil; aoTerminar: () =>
   }
 
   return (
-    <ScrollView contentContainerClassName="gap-5 pb-8 pt-3" keyboardShouldPersistTaps="handled">
+    <RolagemFormulario contentContainerClassName="gap-5 pb-8 pt-3">
       <Texto>
         {t('mais.verificarTelefone.texto', { telefone: telefoneParaTexto(perfil.telefone) })}
       </Texto>
@@ -120,7 +120,7 @@ function Verificacao({ perfil, aoTerminar }: { perfil: Perfil; aoTerminar: () =>
           aoPressionar={() => void enviar()}
         />
       )}
-    </ScrollView>
+    </RolagemFormulario>
   );
 }
 
@@ -141,10 +141,7 @@ export default function TelaVerificarTelefone() {
 
   return (
     <Tela degrade={false} className="px-4 pt-2">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View className="flex-1">
         <Cabecalho titulo={t('mais.verificarTelefone.titulo')} aoVoltar={voltar} />
         {perfil.data ? (
           <Verificacao perfil={perfil.data} aoTerminar={voltar} />
@@ -155,7 +152,7 @@ export default function TelaVerificarTelefone() {
             <Skeleton altura={50} />
           </View>
         )}
-      </KeyboardAvoidingView>
+      </View>
     </Tela>
   );
 }

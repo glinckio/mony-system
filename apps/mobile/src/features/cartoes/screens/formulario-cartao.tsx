@@ -17,7 +17,7 @@ import {
   useWatch,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { BotaoVerPlanos } from '@/features/planos/components/botao-ver-planos';
 import { useContas } from '@/features/contas/hooks/use-contas';
@@ -32,6 +32,7 @@ import {
   Folha,
   GrupoOpcoes,
   juntarClasses,
+  RolagemFormulario,
   Tela,
   Texto,
 } from '@/ui';
@@ -233,15 +234,12 @@ export function FormularioCartao({ original }: PropsFormularioCartao) {
 
   return (
     <Tela degrade={false} className="px-4 pt-2">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View className="flex-1">
         <Cabecalho
           titulo={original === null ? t('cartoes.novo') : t('cartoes.editar')}
           aoVoltar={voltar}
         />
-        <ScrollView contentContainerClassName="gap-5 pb-8 pt-3" keyboardShouldPersistTaps="handled">
+        <RolagemFormulario contentContainerClassName="gap-5 pb-8 pt-3">
           <View className="items-center">
             <CartaoVisual
               largura={280}
@@ -449,8 +447,8 @@ export function FormularioCartao({ original }: PropsFormularioCartao) {
               }}
             />
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </RolagemFormulario>
+      </View>
 
       {original === null ? null : (
         <Folha

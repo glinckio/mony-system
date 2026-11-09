@@ -212,6 +212,7 @@ Componente `Valor` concentra a formatação de dinheiro e o **modo privacidade**
 
   `Toast` entra com a primeira tela que precisar dele. O ícone da categoria (`IconeCategoria`, em `src/features/categorias`) liga a chave do ícone das categorias padrão a um ícone do Lucide; a cor é a da categoria, escolhida pelo usuário.
 - **Ícones:** Lucide (`lucide-react-native` com `react-native-svg`), importados um a um pelo caminho (`lucide-react-native/icons/<nome>`) para o bundle levar só os usados. A lista fica em `src/ui/icone.tsx`.
+- **Teclado (T-017a):** o teclado nunca cobre o campo nem o botão. O `react-native-keyboard-controller` (`KeyboardProvider` nos `Provedores`) mede o teclado igual nos dois sistemas: no Android o app vai até as bordas (edge-to-edge, obrigatório no SDK 57) e o sistema não encolhe a janela. Formulários rolam pelo `RolagemFormulario` (rola até o campo focado, com folga para o botão de baixo); a `Folha` e o chat da Mony sobem com o teclado pelo `EvitaTeclado`. Tela nova com campo usa um dos dois, nunca o `KeyboardAvoidingView` do React Native.
 - **Logo, ícone e splash** provisórios, tirados do PDF, em `assets/images/`. O cliente ainda vai mandar o arquivo original.
 - **Modo privacidade:** store `usePrivacidade`, guardado no AsyncStorage do aparelho.
 

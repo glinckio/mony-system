@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BotaoIcone } from './botao-icone';
+import { EvitaTeclado } from './teclado';
 import { Texto } from './texto';
 import { espacos } from './tokens';
 
@@ -32,7 +33,8 @@ export function Folha({ visivel, titulo, aoFechar, children, rodape, testID }: P
       onRequestClose={aoFechar}
       statusBarTranslucent
     >
-      <View className="flex-1 justify-end">
+      {/* T-017a: a folha sobe com o teclado, e o campo e o botão de baixo ficam à vista. */}
+      <EvitaTeclado className="flex-1 justify-end">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('ui.fechar')}
@@ -60,7 +62,7 @@ export function Folha({ visivel, titulo, aoFechar, children, rodape, testID }: P
           </ScrollView>
           {rodape ? <View className="gap-2 px-5 pt-2">{rodape}</View> : null}
         </View>
-      </View>
+      </EvitaTeclado>
     </Modal>
   );
 }

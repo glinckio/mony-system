@@ -9,10 +9,20 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Controller, type FieldErrors, type Resolver, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, ScrollView, Switch, View } from 'react-native';
+import { Switch, View } from 'react-native';
 
 import { CampoControlado, mensagemDeErro } from '@/lib/formularios';
-import { Botao, Cabecalho, CampoValor, Card, Folha, GrupoOpcoes, Tela, Texto } from '@/ui';
+import {
+  Botao,
+  Cabecalho,
+  CampoValor,
+  Card,
+  Folha,
+  GrupoOpcoes,
+  RolagemFormulario,
+  Tela,
+  Texto,
+} from '@/ui';
 import { cores } from '@/ui/tokens';
 
 import { useAtualizarConta, useCriarConta, useExcluirConta } from '../hooks/use-contas';
@@ -106,15 +116,12 @@ export function FormularioConta({ original }: PropsFormularioConta) {
 
   return (
     <Tela degrade={false} className="px-4 pt-2">
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View className="flex-1">
         <Cabecalho
           titulo={original === null ? t('contas.nova') : t('contas.editar')}
           aoVoltar={voltar}
         />
-        <ScrollView contentContainerClassName="gap-5 pb-8 pt-3" keyboardShouldPersistTaps="handled">
+        <RolagemFormulario contentContainerClassName="gap-5 pb-8 pt-3">
           {doBanco ? (
             <Card>
               <Texto cor="suave">{t('contas.bancoSoNome')}</Texto>
@@ -198,8 +205,8 @@ export function FormularioConta({ original }: PropsFormularioConta) {
               }}
             />
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </RolagemFormulario>
+      </View>
 
       {original === null ? null : (
         <Folha
