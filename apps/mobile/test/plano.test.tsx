@@ -2,7 +2,8 @@ import path from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { SituacaoAssinaturaPaga, UsoPlano } from '@mony/shared/planos';
-import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { router } from 'expo-router';
+import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import * as WebBrowser from 'expo-web-browser';
 
 import { rotaDoLink } from '@/lib/links-internos';
@@ -326,6 +327,13 @@ describe('seu plano e o [Ver planos] (T-100)', () => {
       expect(pedidos).toContain('POST /v1/assinatura/checkout');
       expect(await screen.findByText('Plano anual', {}, ESPERA)).toBeOnTheScreen();
       expect(await screen.findByText('R$ 199,00 por ano', {}, ESPERA)).toBeOnTheScreen();
+
+      // T-010b: o Mais fica embaixo do Seu plano; voltar leva à lista do Mais.
+      act(() => {
+        router.back();
+      });
+      expect(app.getPathname()).toBe('/mais');
+      expect(await screen.findByRole('header', { name: 'Mais' }, ESPERA)).toBeOnTheScreen();
     },
     TEMPO_LIMITE_MS,
   );

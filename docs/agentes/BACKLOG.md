@@ -48,6 +48,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
   - dep: T-003 · docs: 02, 04
   - Aceite: SDK estável mais recente travado; grupos `(auth)`, `(onboarding)`, `(tabs)` com cinco abas vazias; `app.config.ts` por ambiente; `eas.json` com perfis development/preview/production. 👤 Conta Expo/EAS do cliente.
   - [x] **T-010a** Trocar de aba volta a pilha da aba anterior para o começo (`popToTopOnBlur`): voltar ao Mais abria a última tela aberta lá dentro, achado do dono no emulador (PR #166)
+  - [x] **T-010b** Depois de assinar, o Seu plano abre com a lista do Mais embaixo (`withAnchor` e `initialRouteName` no Mais): voltar e tocar no Mais saíam dele (PR #178)
 - [x] **T-011** Design system base no app (tokens provisórios, componentes base, componente `Valor` com modo privacidade) (PR #34)
   - dep: T-010 · docs: 04 (Design system)
   - Aceite: tokens em um arquivo único, NativeWind configurado, componentes de `src/ui` com testes. Quando o design do cliente chegar, uma tarefa nova troca os tokens.

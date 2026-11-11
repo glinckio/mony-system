@@ -3,8 +3,8 @@ import { dataNoFuso } from '@mony/shared/datas';
 import type { PlanoPago } from '@mony/shared/enums';
 import type { PlanosAVenda, UsoPlano } from '@mony/shared/planos';
 import { usePlanosPlanos } from '@mony/api-client';
-import { Redirect, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 
@@ -125,7 +125,7 @@ function ConteudoPlanos({ precos, uso }: { precos: PlanosAVenda; uso: UsoPlano }
   const mensal = valor('mensal');
   const beneficios = t('planos.venda.beneficios', { returnObjects: true });
 
-  if (etapa === 'pago' || jaAssina) return <Redirect href="/mais/plano" />;
+  if (etapa === 'pago' || jaAssina) return <IrParaSeuPlano />;
 
   const fechar = () => {
     if (router.canGoBack()) router.back();
@@ -199,7 +199,7 @@ function ConteudoPlanos({ precos, uso }: { precos: PlanosAVenda; uso: UsoPlano }
               titulo={t('planos.venda.verSeuPlano')}
               larguraTotal
               aoPressionar={() => {
-                router.replace('/mais/plano');
+                irParaSeuPlano(router);
               }}
             />
           </View>
@@ -270,7 +270,7 @@ export default function TelaPlanos() {
   const precos = usePlanosPlanos();
   const uso = usePlano();
   const pago = uso.data?.plano === 'mensal' || uso.data?.plano === 'anual';
-  if (pago) return <Redirect href="/mais/plano" />;
+  if (pago) return <IrParaSeuPlano />;
   return (
     <Tela className="px-4 pt-2" bordas={['top', 'bottom']}>
       {precos.data && uso.data ? (
@@ -293,4 +293,21 @@ export default function TelaPlanos() {
       )}
     </Tela>
   );
+}
+
+/**
+ * Abre o Seu plano (`/mais/plano`) com a lista do Mais embaixo (T-010b). Ir direto da tela de
+ * planos (que fica fora das abas) deixava o Seu plano sozinho na pilha do Mais: o voltar não fazia
+ * nada e tocar no Mais não saía dele.
+ */
+function irParaSeuPlano(router: ReturnType<typeof useRouter>) {
+  router.replace('/mais/plano', { withAnchor: true });
+}
+
+function IrParaSeuPlano() {
+  const router = useRouter();
+  useEffect(() => {
+    irParaSeuPlano(router);
+  }, [router]);
+  return null;
 }
