@@ -40,6 +40,9 @@ jobs:
       APP_ENV: preview
       EAS_PROJECT_ID: ${{ vars.EAS_PROJECT_ID }}
       EXPO_OWNER: ${{ vars.EXPO_OWNER }}
+      # O eas-cli lê o app.config.ts antes de trazer as variáveis do EAS, e o preview exige a URL da
+      # API: a mesma do ambiente preview no EAS (T-016).
+      EXPO_PUBLIC_API_URL: ${{ vars.STAGING_URL_API }}
     steps:
       - name: Baixar o código
         uses: actions/checkout@v7

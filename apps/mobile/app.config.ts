@@ -71,10 +71,13 @@ const DADOS_POR_AMBIENTE: Record<Ambiente, DadosAmbiente> = {
 };
 
 /**
- * Conta e projeto do EAS. Preencher depois do `eas init` na conta Expo do cliente (ou usar as
- * variáveis `EXPO_OWNER` e `EAS_PROJECT_ID`). Sem projeto, o EAS Update fica desligado.
+ * Conta e projeto do EAS: a organização `monitorizze_app` do cliente (T-016, `eas init` em
+ * 2026-11-11). As variáveis `EXPO_OWNER` e `EAS_PROJECT_ID` ficam para quem quiser outro projeto.
  */
-const PROJETO_EAS: { dono?: string; id?: string } = {};
+const PROJETO_EAS: { dono?: string; id?: string } = {
+  dono: 'monitorizze_app',
+  id: '7a7575ca-f76d-4764-ae72-5301312d1e27',
+};
 
 type Variaveis = Record<string, string | undefined>;
 
@@ -118,8 +121,8 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
   if (urlApi === undefined) {
     throw new Error(`Defina EXPO_PUBLIC_API_URL para o ambiente ${ambiente}.`);
   }
-  const dono = PROJETO_EAS.dono ?? texto(variaveis.EXPO_OWNER);
-  const idProjeto = PROJETO_EAS.id ?? texto(variaveis.EAS_PROJECT_ID);
+  const dono = texto(variaveis.EXPO_OWNER) ?? PROJETO_EAS.dono;
+  const idProjeto = texto(variaveis.EAS_PROJECT_ID) ?? PROJETO_EAS.id;
   const extra: ConfigPublica & { eas?: { projectId: string } } = {
     ambiente,
     urlApi: urlApi.replace(/\/+$/, ''),
@@ -145,9 +148,11 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
     backgroundColor: COR_FUNDO,
     // O EAS Update só entrega JS compatível com o binário instalado (docs/arquitetura/03).
     runtimeVersion: { policy: 'fingerprint' },
-    updates: idProjeto
-      ? { url: `https://u.expo.dev/${idProjeto}`, enabled: true }
-      : { enabled: false },
+    // No build de desenvolvimento o JS vem do Metro: o EAS Update fica só no preview e na produção.
+    updates:
+      idProjeto && ambiente !== 'development'
+        ? { url: `https://u.expo.dev/${idProjeto}`, enabled: true }
+        : { enabled: false },
     ios: {
       bundleIdentifier: dados.identificador,
       supportsTablet: false,

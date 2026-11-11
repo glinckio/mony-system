@@ -114,24 +114,17 @@ pnpm --filter mobile build      # empacota o JS de iOS e Android em apps/mobile/
 
 ### EAS (builds e updates)
 
-Precisa da conta Expo do cliente. Uma vez, na pasta `apps/mobile`:
+O projeto é o `@monitorizze_app/monitorizze`, na organização Expo do cliente (`PROJETO_EAS` no `app.config.ts`). Para usar o `eas-cli`, entre com uma conta da organização (`eas login`) ou com o token de robô (`EXPO_TOKEN`), na pasta `apps/mobile`:
 
 ```bash
 npm install -g eas-cli
-eas login
-eas init                        # cria o projeto; copie o projectId para PROJETO_EAS no app.config.ts
+eas build --profile preview --platform android       # APK para instalar em qualquer Android
 eas build --profile development --platform android   # dev client para instalar no aparelho
 ```
 
-Antes do primeiro build de `preview` ou `production`: defina `EXPO_PUBLIC_API_URL` (e `EXPO_PUBLIC_SENTRY_DSN`, se houver) nas variáveis do ambiente correspondente no EAS, e `SENTRY_AUTH_TOKEN` como segredo para o envio de source maps (ou `SENTRY_DISABLE_AUTO_UPLOAD=true`).
+Variáveis no EAS: `preview` tem `EXPO_PUBLIC_API_URL` (a API de staging), `EXPO_PUBLIC_GOOGLE_ID_CLIENTE_WEB` e `SENTRY_DISABLE_AUTO_UPLOAD=true`; `production` só o `SENTRY_DISABLE_AUTO_UPLOAD`, até a API de produção existir (T-145) e o Sentry (T-142c). `eas env:list --environment <ambiente>` mostra o que está lá. O `eas-cli` lê o `app.config.ts` antes de trazer essas variáveis: para o build ou o update de `preview` na sua máquina, exporte antes `EXPO_PUBLIC_API_URL` com a mesma URL.
 
-**EAS Update em staging:** a cada merge na `main` que mexe no app, o workflow [EAS Update em staging](.github/workflows/eas-update-staging.yml) publica o JS novo no canal `staging`, e os builds de `preview` o recebem ao abrir. Para ligar, uma vez, na raiz do repositório:
-
-```bash
-gh variable set EAS_PROJECT_ID --body '<projectId do eas init>'
-gh variable set EXPO_OWNER --body '<conta Expo do cliente>'
-gh secret set EXPO_TOKEN        # token de robô criado em expo.dev → Account settings → Access tokens
-```
+**EAS Update em staging:** a cada merge na `main` que mexe no app, o workflow [EAS Update em staging](.github/workflows/eas-update-staging.yml) publica o JS novo no canal `staging`, e os builds de `preview` o recebem ao abrir. Já ligado (T-016): as variáveis `EAS_PROJECT_ID`, `EXPO_OWNER` e `STAGING_URL_API` e o segredo `EXPO_TOKEN` (robô `github-ci` da organização, papel Developer) estão no GitHub.
 
 O update só chega ao binário com a mesma `runtimeVersion` (fingerprint do que é nativo): mudança nativa pede um build novo de `preview`.
 

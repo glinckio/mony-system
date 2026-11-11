@@ -72,8 +72,24 @@ describe('app.config por ambiente', () => {
     });
   });
 
-  it('com projeto do EAS, liga o EAS Update no projeto', () => {
-    const config = criarConfigApp(base, { EAS_PROJECT_ID: 'projeto-1', EXPO_OWNER: 'cliente' });
+  it('T-016 o projeto do EAS da organização do cliente; o EAS Update só fora do desenvolvimento', () => {
+    expect(criarConfigApp(base, {})).toMatchObject({
+      owner: 'monitorizze_app',
+      updates: { enabled: false },
+      extra: { eas: { projectId: '7a7575ca-f76d-4764-ae72-5301312d1e27' } },
+    });
+    expect(
+      criarConfigApp(base, { APP_ENV: 'preview', EXPO_PUBLIC_API_URL: 'https://api.exemplo.test' }),
+    ).toMatchObject({
+      updates: { enabled: true, url: 'https://u.expo.dev/7a7575ca-f76d-4764-ae72-5301312d1e27' },
+    });
+    // As variáveis trocam o projeto (um fork, outra conta).
+    const config = criarConfigApp(base, {
+      APP_ENV: 'preview',
+      EXPO_PUBLIC_API_URL: 'https://api.exemplo.test',
+      EAS_PROJECT_ID: 'projeto-1',
+      EXPO_OWNER: 'cliente',
+    });
     expect(config).toMatchObject({
       owner: 'cliente',
       updates: { enabled: true, url: 'https://u.expo.dev/projeto-1' },
