@@ -64,6 +64,7 @@ Ordem: siga de cima para baixo. Uma tarefa só pode começar se as dependências
   - dep: T-013, T-012 · docs: 12, 13 · requer o domínio do cliente (doc 15, pergunta 16)
 - [x] **T-016** 👤 EAS Update no canal `staging` a cada merge na `main` (PR #37)
   - dep: T-010, T-013 · docs: 12 · requer o projeto no EAS e o `EXPO_TOKEN` no GitHub
+  - [x] **T-016a** Primeiro build de preview no EAS: compilar os pacotes do monorepo no servidor (`eas-build-post-install`) e o `expo-asset` que o `expo-audio` pede (`expo doctor`) (PR #180)
 - [x] **T-017** 👤 Tokens e ícones do design do cliente no lugar dos provisórios (e modo escuro, se o design trouxer) (PR #40; só escuro; logo provisório do PDF)
   - dep: T-011 · docs: 04 (Design system) · 👤 design do cliente
   - Só `src/ui/tokens.ts` e os ícones mudam: os componentes e as telas já usam só os tokens.

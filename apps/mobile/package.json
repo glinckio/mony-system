@@ -11,7 +11,8 @@
     "build": "expo export --platform android --platform ios --output-dir dist",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "jest"
+    "test": "jest",
+    "eas-build-post-install": "pnpm --dir ../.. --filter \"mobile^...\" run build"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.2",
@@ -22,6 +23,7 @@
     "@sentry/react-native": "7.11.0",
     "@tanstack/react-query": "catalog:",
     "expo": "~57.0.32",
+    "expo-asset": "~57.0.21",
     "expo-audio": "57.0.5",
     "expo-calendar": "57.0.6",
     "expo-camera": "57.0.6",
