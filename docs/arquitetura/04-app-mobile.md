@@ -15,7 +15,7 @@ apps/mobile/
 │  ├─ (auth)/                    # login, cadastro, recuperar-senha, codigo
 │  ├─ (onboarding)/              # boas-vindas, primeiro-lancamento, cartoes, orcamento, permissoes, tour
 │  ├─ (tabs)/
-│  │  ├─ _layout.tsx             # Barra inferior: Início, Transações, Mony, Cartões, Mais; sair de uma aba volta a pilha dela para o começo (T-010a)
+│  │  ├─ _layout.tsx             # Barra inferior: Início, Transações, Mony, Cartões, Mais; sair de uma aba volta a pilha dela para o começo (T-010a); o Mais tem `initialRouteName: 'index'`, e o Seu plano aberto da tela de planos vai com `withAnchor` (T-010b)
 │  │  ├─ index.tsx               # Início (rota `/`, a primeira tela de quem está logado)
 │  │  ├─ transacoes/
 │  │  ├─ mony.tsx
