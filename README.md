@@ -122,9 +122,9 @@ eas build --profile preview --platform android       # APK para instalar em qual
 eas build --profile development --platform android   # dev client para instalar no aparelho
 ```
 
-Variáveis no EAS: `preview` tem `EXPO_PUBLIC_API_URL` (a API de staging), `EXPO_PUBLIC_GOOGLE_ID_CLIENTE_WEB` e `SENTRY_DISABLE_AUTO_UPLOAD=true`; `production` só o `SENTRY_DISABLE_AUTO_UPLOAD`, até a API de produção existir (T-145) e o Sentry (T-142c). `eas env:list --environment <ambiente>` mostra o que está lá.
+Variáveis no EAS: `preview` tem `EXPO_PUBLIC_API_URL` (a API de staging), `EXPO_PUBLIC_GOOGLE_ID_CLIENTE_WEB` e `SENTRY_DISABLE_AUTO_UPLOAD=true`; `production` só o `SENTRY_DISABLE_AUTO_UPLOAD`, até a API de produção existir (T-145) e o Sentry (T-142c). `eas env:list --environment <ambiente>` mostra o que está lá. O `eas-cli` lê o `app.config.ts` antes de trazer essas variáveis: para o build ou o update de `preview` na sua máquina, exporte antes `EXPO_PUBLIC_API_URL` com a mesma URL.
 
-**EAS Update em staging:** a cada merge na `main` que mexe no app, o workflow [EAS Update em staging](.github/workflows/eas-update-staging.yml) publica o JS novo no canal `staging`, e os builds de `preview` o recebem ao abrir. Já ligado (T-016): as variáveis `EAS_PROJECT_ID` e `EXPO_OWNER` e o segredo `EXPO_TOKEN` (robô `github-ci` da organização, papel Developer) estão no GitHub.
+**EAS Update em staging:** a cada merge na `main` que mexe no app, o workflow [EAS Update em staging](.github/workflows/eas-update-staging.yml) publica o JS novo no canal `staging`, e os builds de `preview` o recebem ao abrir. Já ligado (T-016): as variáveis `EAS_PROJECT_ID`, `EXPO_OWNER` e `STAGING_URL_API` e o segredo `EXPO_TOKEN` (robô `github-ci` da organização, papel Developer) estão no GitHub.
 
 O update só chega ao binário com a mesma `runtimeVersion` (fingerprint do que é nativo): mudança nativa pede um build novo de `preview`.
 
