@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import { VERSOES_DOCUMENTOS } from '@mony/shared/autenticacao';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
-import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { AppState } from 'react-native';
 
 import { cofre } from '@/lib/auth/cofre';
 import { useAtualizacao } from '@/stores/atualizacao';
@@ -304,6 +305,41 @@ describe('autenticação no app (T-034)', () => {
       fireEvent.press(screen.getByRole('button', { name: 'Desbloquear' }));
       expect(await screen.findByRole('header', { name: 'Início' }, ESPERA)).toBeOnTheScreen();
       expect(rotasDeSessao(pedidos)).toEqual(['/v1/auth/renovar']);
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'T-034a no Perfil sem digital cadastrada: a linha diz o que falta e libera ao voltar',
+    async () => {
+      api({});
+      jest.mocked(LocalAuthentication.isEnrolledAsync).mockResolvedValue(false);
+      useSessao.getState().iniciar({ id: 'u1', nome: 'Ana', onboardingConcluido: true }, 'acesso');
+      renderRouter(ROTAS, { initialUrl: '/mais/perfil' });
+
+      expect(
+        await screen.findByText(
+          'Cadastre uma digital ou o rosto nas configurações do celular para ligar.',
+          {},
+          ESPERA,
+        ),
+      ).toBeOnTheScreen();
+      expect(screen.getByLabelText('Entrar com biometria')).toBeDisabled();
+
+      // A pessoa cadastra a digital no celular e volta ao app.
+      jest.mocked(LocalAuthentication.isEnrolledAsync).mockResolvedValue(true);
+      const aoMudar = jest
+        // eslint-disable-next-line @typescript-eslint/unbound-method -- só lê as chamadas do mock
+        .mocked(AppState.addEventListener)
+        .mock.calls.filter(([evento]) => evento === 'change')
+        .map(([, ouvinte]) => ouvinte);
+      act(() => {
+        for (const ouvinte of aoMudar) ouvinte('active');
+      });
+      expect(
+        await screen.findByText('Pede a digital ou o rosto ao abrir o app.', {}, ESPERA),
+      ).toBeOnTheScreen();
+      expect(screen.getByLabelText('Entrar com biometria')).toBeEnabled();
     },
     TEMPO_LIMITE_MS,
   );

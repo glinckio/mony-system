@@ -1,10 +1,14 @@
 import { useRouter } from 'expo-router';
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Switch, View } from 'react-native';
+import { AppState, ScrollView, Switch, View } from 'react-native';
 
 import { usePlano } from '@/features/planos/hooks/use-plano';
-import { biometriaDisponivel, confirmarBiometria } from '@/lib/auth/biometria';
+import {
+  confirmarBiometria,
+  situacaoBiometria,
+  type SituacaoBiometria,
+} from '@/lib/auth/biometria';
 import { cofre } from '@/lib/auth/cofre';
 import { alarmes } from '@/lib/alarmes';
 import { sair } from '@/lib/auth/sessao';
@@ -49,7 +53,7 @@ export default function TelaPerfil() {
   const emTeste = usePlano().data?.plano === 'teste';
   // Tela de teste da PoC do alarme (T-023a): só no build de desenvolvimento do Android.
   const testeDoAlarme = configApp.ambiente === 'development' && alarmes !== null;
-  const [disponivel, definirDisponivel] = useState(false);
+  const [biometria, definirBiometria] = useState<SituacaoBiometria>('sem-sensor');
   const [ligada, definirLigada] = useState(false);
   const [saindo, definirSaindo] = useState(false);
   const [exportando, definirExportando] = useState(false);
@@ -58,15 +62,24 @@ export default function TelaPerfil() {
   const dataCurta = useDataCurta();
   const fuso = perfil.data?.fusoHorario ?? 'America/Sao_Paulo';
 
+  // T-034a: confere de novo quando o app volta para a frente: a pessoa sai para cadastrar a digital
+  // nas configurações do celular e volta para ligar aqui.
   useEffect(() => {
-    void (async () => {
-      const [temBiometria, estaLigada] = await Promise.all([
-        biometriaDisponivel(),
+    async function conferir() {
+      const [situacao, estaLigada] = await Promise.all([
+        situacaoBiometria(),
         cofre.biometriaLigada(),
       ]);
-      definirDisponivel(temBiometria);
+      definirBiometria(situacao);
       definirLigada(estaLigada);
-    })();
+    }
+    void conferir();
+    const assinatura = AppState.addEventListener('change', (estado) => {
+      if (estado === 'active') void conferir();
+    });
+    return () => {
+      assinatura.remove();
+    };
   }, []);
 
   async function mudarBiometria(ligar: boolean) {
@@ -126,14 +139,21 @@ export default function TelaPerfil() {
               router.push('/mais/plano');
             }}
           />
-          {disponivel ? (
+          {/* Com sensor e sem digital cadastrada, a linha aparece e diz o que falta (T-034a). */}
+          {biometria !== 'sem-sensor' ? (
             <Linha
               titulo={t('mais.perfilTela.biometria')}
-              ajuda={t('mais.perfilTela.biometriaAjuda')}
+              ajuda={t(
+                biometria === 'pronta'
+                  ? 'mais.perfilTela.biometriaAjuda'
+                  : 'mais.perfilTela.biometriaSemCadastro',
+              )}
               direita={
                 <Switch
                   accessibilityLabel={t('mais.perfilTela.biometria')}
                   value={ligada}
+                  disabled={biometria !== 'pronta' && !ligada}
+                  accessibilityState={{ disabled: biometria !== 'pronta' && !ligada }}
                   onValueChange={(valor) => void mudarBiometria(valor)}
                   trackColor={{ true: cores.primaria, false: cores.borda }}
                 />

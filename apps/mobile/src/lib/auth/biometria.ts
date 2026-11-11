@@ -1,12 +1,18 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 
-/** Biometria pronta para uso: o aparelho tem o sensor e a pessoa cadastrou digital ou rosto. */
-export async function biometriaDisponivel(): Promise<boolean> {
+/**
+ * O aparelho sem sensor, com sensor sem digital ou rosto cadastrado, ou pronto para usar (a pessoa
+ * cadastrou digital ou rosto).
+ */
+export type SituacaoBiometria = 'sem-sensor' | 'sem-cadastro' | 'pronta';
+
+export async function situacaoBiometria(): Promise<SituacaoBiometria> {
   const [temSensor, cadastrada] = await Promise.all([
     LocalAuthentication.hasHardwareAsync(),
     LocalAuthentication.isEnrolledAsync(),
   ]);
-  return temSensor && cadastrada;
+  if (!temSensor) return 'sem-sensor';
+  return cadastrada ? 'pronta' : 'sem-cadastro';
 }
 
 /**
