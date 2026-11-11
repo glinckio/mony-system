@@ -97,6 +97,7 @@ Regras de cache:
 - **Cofre** (`src/lib/auth/cofre.ts`, `expo-secure-store` com `AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY`): token de renovação, identificador do aparelho (UUID gerado na primeira abertura) e a escolha da biometria. O plugin do `expo-secure-store` tira o cofre do backup do Android.
 - **Sessão** (`src/lib/auth/sessao.ts` e store `useSessao` com `estado`):
   - `iniciando`: na abertura, procura a renovação guardada. Sem renovação, vai para o login. Com biometria ligada, `bloqueada`. Senão, renova e fica `pronta`.
+  - No Perfil, "Entrar com biometria" some só sem sensor. Com sensor e sem digital ou rosto cadastrado, fica desligado com "Cadastre uma digital ou o rosto nas configurações do celular para ligar.", e a tela confere de novo quando o app volta para a frente (T-034a).
   - A renovação recusada (400, 401, 403) sai do aparelho. Sem rede, 5xx, 426 ou 429, o token fica para a próxima abertura.
   - A restauração roda uma vez só: duas renovações com o mesmo token seriam reuso (RN-004). Cofre ilegível vai para o login, e o erro vai para o Sentry.
   - "Sair da conta" (Perfil) revoga a renovação na API e apaga o cofre, mesmo sem rede.

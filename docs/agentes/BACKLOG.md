@@ -107,6 +107,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-030 · docs: 05
 - [x] **T-034** App: telas de auth, sessão segura, refresh único concorrente, biometria (PR #39; botões do Google e da Apple na T-055, atualização obrigatória na T-056)
   - dep: T-030, T-011 · docs: 04 · RN-005
+  - [x] **T-034a** "Entrar com biometria" no Perfil aparece com o sensor mesmo sem digital cadastrada (desligado, dizendo o que falta) e confere de novo quando o app volta para a frente (PR #177)
 - [x] **T-035** Categorias (API + app), incluindo exclusão com mover lançamentos (PR #18; telas na T-049)
   - dep: T-030 · RN-065, RN-066
 - [x] **T-036** Contas (API + app) (PR #19; telas na T-049)

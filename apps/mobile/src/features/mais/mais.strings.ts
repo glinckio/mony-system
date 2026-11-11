@@ -22,6 +22,8 @@ export const textosMais = {
     dadosPessoais: 'Dados pessoais',
     biometria: 'Entrar com biometria',
     biometriaAjuda: 'Pede a digital ou o rosto ao abrir o app.',
+    biometriaSemCadastro:
+      'Cadastre uma digital ou o rosto nas configurações do celular para ligar.',
     biometriaMotivo: 'Confirmar para ligar a biometria',
     cancelar: 'Cancelar',
     permissoes: 'Permissões e apps de compra',
