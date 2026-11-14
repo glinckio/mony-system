@@ -5,11 +5,15 @@ import { VERSOES_DOCUMENTOS } from '@mony/shared/autenticacao';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import * as WebBrowser from 'expo-web-browser';
 import { AppState } from 'react-native';
 
 import { cofre } from '@/lib/auth/cofre';
+import { configApp } from '@/lib/config';
 import { useAtualizacao } from '@/stores/atualizacao';
 import { useSessao } from '@/stores/sessao';
+
+jest.mock('expo-web-browser', () => ({ openBrowserAsync: jest.fn(() => Promise.resolve()) }));
 
 const ROTAS = path.resolve(__dirname, '../app');
 const ESPERA = { timeout: 10_000 };
@@ -148,6 +152,14 @@ describe('autenticação no app (T-034)', () => {
       renderRouter(ROTAS, { initialUrl: '/' });
       fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));
       expect(await screen.findByRole('header', { name: 'Criar conta' }, ESPERA)).toBeOnTheScreen();
+
+      // T-140g: os textos abrem no navegador antes do aceite.
+      fireEvent.press(screen.getByRole('link', { name: 'Ler os termos de uso' }));
+      fireEvent.press(screen.getByRole('link', { name: 'Ler a política de privacidade' }));
+      expect(jest.mocked(WebBrowser.openBrowserAsync).mock.calls.map(([url]) => url)).toEqual([
+        `${configApp.urlSite}/termos`,
+        `${configApp.urlSite}/privacidade`,
+      ]);
 
       fireEvent.changeText(screen.getByLabelText('Nome'), 'Ana Souza');
       fireEvent.changeText(screen.getByLabelText('E-mail'), 'ana@exemplo.com');

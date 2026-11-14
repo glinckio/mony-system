@@ -26,9 +26,14 @@ export const textosAuth = {
     novoPorAqui: 'Novo por aqui?',
     criarConta: 'Criar conta',
   },
+  documentos: {
+    termos: 'Ler os termos de uso',
+    privacidade: 'Ler a política de privacidade',
+  },
   cadastro: {
     titulo: 'Criar conta',
-    aceite: 'Li e aceito os termos de uso e a política de privacidade.',
+    aceite:
+      'Li e aceito os termos de uso e a política de privacidade, e declaro ter 18 anos ou mais.',
     criar: 'Criar conta',
     jaTenho: 'Já tenho conta',
   },

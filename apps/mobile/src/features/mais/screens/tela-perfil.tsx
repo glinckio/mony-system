@@ -1,3 +1,4 @@
+import * as WebBrowser from 'expo-web-browser';
 import { useRouter } from 'expo-router';
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +13,7 @@ import {
 import { cofre } from '@/lib/auth/cofre';
 import { alarmes } from '@/lib/alarmes';
 import { sair } from '@/lib/auth/sessao';
-import { configApp } from '@/lib/config';
+import { configApp, urlDocumento } from '@/lib/config';
 import { usoDeApps } from '@/lib/uso-de-apps';
 import { useSessao } from '@/stores/sessao';
 import { Avatar, Cabecalho, Card, Etiqueta, Icone, Tela, Texto } from '@/ui';
@@ -211,6 +212,15 @@ export default function TelaPerfil() {
             aoPressionar={() => {
               definirExportando(true);
             }}
+          />
+          {/* T-140g: os textos aceitos no cadastro, nas páginas públicas. */}
+          <Linha
+            titulo={t('mais.perfilTela.termos')}
+            aoPressionar={() => void WebBrowser.openBrowserAsync(urlDocumento('termos'))}
+          />
+          <Linha
+            titulo={t('mais.perfilTela.politica')}
+            aoPressionar={() => void WebBrowser.openBrowserAsync(urlDocumento('privacidade'))}
           />
           <Linha
             titulo={t('mais.perfilTela.sair')}

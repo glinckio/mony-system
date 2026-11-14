@@ -17,7 +17,7 @@ export function lerConfigPublica(extra: unknown): ConfigPublica {
   if (typeof extra !== 'object' || extra === null) {
     throw new Error('Configuração do app ausente: confira o app.config.ts.');
   }
-  const { ambiente, urlApi, sentryDsn, urlLoja, googleIdClienteWeb } = extra as Record<
+  const { ambiente, urlApi, urlSite, sentryDsn, urlLoja, googleIdClienteWeb } = extra as Record<
     string,
     unknown
   >;
@@ -37,6 +37,8 @@ export function lerConfigPublica(extra: unknown): ConfigPublica {
   return {
     ambiente,
     urlApi,
+    // Um build anterior à T-140g não traz o `urlSite`: vale a origem da API.
+    urlSite: typeof urlSite === 'string' && urlSite !== '' ? urlSite : new URL(urlApi).origin,
     sentryDsn: typeof sentryDsn === 'string' && sentryDsn !== '' ? sentryDsn : undefined,
     urlLoja: { ios: lojas.ios, android: lojas.android },
     googleIdClienteWeb:

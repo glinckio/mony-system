@@ -21,6 +21,7 @@ describe('app.config por ambiente', () => {
     expect(lerConfigPublica(config.extra)).toEqual({
       ambiente: 'development',
       urlApi: 'http://localhost:3000',
+      urlSite: 'http://localhost:3000',
       sentryDsn: undefined,
       urlLoja: {
         ios: 'https://apps.apple.com/br/search?term=Monitorizze',
@@ -60,10 +61,13 @@ describe('app.config por ambiente', () => {
       EXPO_PUBLIC_API_URL: 'http://192.168.0.10:3000/',
       EXPO_PUBLIC_SENTRY_DSN: 'https://chave@sentry.exemplo.test/1',
       EXPO_PUBLIC_APP_STORE_ID: '6700000000',
+      EXPO_PUBLIC_URL_SITE: 'https://admin.exemplo.test/',
     });
     expect(lerConfigPublica(config.extra)).toEqual({
       ambiente: 'development',
       urlApi: 'http://192.168.0.10:3000',
+      // T-140g: as páginas dos termos e da política.
+      urlSite: 'https://admin.exemplo.test',
       sentryDsn: 'https://chave@sentry.exemplo.test/1',
       urlLoja: {
         ios: 'https://apps.apple.com/br/app/id6700000000',

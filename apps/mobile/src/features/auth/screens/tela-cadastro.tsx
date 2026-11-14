@@ -12,6 +12,7 @@ import { CampoControlado, mensagemDeErro } from '@/lib/formularios';
 import { Botao, CaixaDeSelecao, Texto } from '@/ui';
 
 import { BotaoGoogle } from '../components/botao-google';
+import { LinksDocumentos } from '../components/links-documentos';
 import { ErroDoFormulario, TelaFormulario } from './tela-formulario';
 
 const esquemaFormulario = esquemaCadastro.pick({
@@ -101,6 +102,7 @@ export default function TelaCadastro() {
         erro={faltaAceite ? t('auth.validacao.aceite') : null}
         testID="cadastro-aceite"
       />
+      <LinksDocumentos />
       <ErroDoFormulario mensagem={erro} />
       <Botao
         titulo={t('auth.cadastro.criar')}

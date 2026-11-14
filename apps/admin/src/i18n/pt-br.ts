@@ -13,6 +13,13 @@ export const textosPtBr = {
   sessao: {
     sair: 'Sair',
   },
+  legal: {
+    produto: 'Monitorizze',
+    documentos: 'Documentos',
+    termos: 'Termos de Uso',
+    privacidade: 'Política de Privacidade',
+    versao: 'Versão {{versao}}',
+  },
   entrar: {
     descricao: 'Entre com o e-mail e a senha de administrador.',
     email: 'E-mail',

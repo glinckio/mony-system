@@ -19,6 +19,8 @@ export const textosMais = {
     planoAjuda: 'O plano e o uso dos limites.',
     preferencias: 'Preferências',
     privacidade: 'Privacidade',
+    termos: 'Termos de uso',
+    politica: 'Política de privacidade',
     dadosPessoais: 'Dados pessoais',
     biometria: 'Entrar com biometria',
     biometriaAjuda: 'Pede a digital ou o rosto ao abrir o app.',

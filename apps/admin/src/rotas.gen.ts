@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './rotas/__root';
 import { Route as PainelRouteImport } from './rotas/_painel';
 import { Route as EntrarRouteImport } from './rotas/entrar';
+import { Route as PrivacidadeRouteImport } from './rotas/privacidade';
+import { Route as TermosRouteImport } from './rotas/termos';
 import { Route as PainelIndexRouteImport } from './rotas/_painel/index';
 import { Route as PainelAssinaturasRouteImport } from './rotas/_painel/assinaturas';
 import { Route as PainelAuditoriaRouteImport } from './rotas/_painel/auditoria';
@@ -30,6 +32,16 @@ const PainelRoute = PainelRouteImport.update({
 const EntrarRoute = EntrarRouteImport.update({
   id: '/entrar',
   path: '/entrar',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any);
 const PainelIndexRoute = PainelIndexRouteImport.update({
@@ -91,6 +103,8 @@ const PainelUsuariosIdRoute = PainelUsuariosIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof PainelIndexRoute;
   '/entrar': typeof EntrarRoute;
+  '/privacidade': typeof PrivacidadeRoute;
+  '/termos': typeof TermosRoute;
   '/assinaturas': typeof PainelAssinaturasRoute;
   '/auditoria': typeof PainelAuditoriaRoute;
   '/configuracoes': typeof PainelConfiguracoesRoute;
@@ -104,6 +118,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/entrar': typeof EntrarRoute;
+  '/privacidade': typeof PrivacidadeRoute;
+  '/termos': typeof TermosRoute;
   '/assinaturas': typeof PainelAssinaturasRoute;
   '/auditoria': typeof PainelAuditoriaRoute;
   '/configuracoes': typeof PainelConfiguracoesRoute;
@@ -120,6 +136,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   '/_painel': typeof PainelRouteWithChildren;
   '/entrar': typeof EntrarRoute;
+  '/privacidade': typeof PrivacidadeRoute;
+  '/termos': typeof TermosRoute;
   '/_painel/assinaturas': typeof PainelAssinaturasRoute;
   '/_painel/auditoria': typeof PainelAuditoriaRoute;
   '/_painel/configuracoes': typeof PainelConfiguracoesRoute;
@@ -137,6 +155,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/entrar'
+    | '/privacidade'
+    | '/termos'
     | '/assinaturas'
     | '/auditoria'
     | '/configuracoes'
@@ -150,6 +170,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo;
   to:
     | '/entrar'
+    | '/privacidade'
+    | '/termos'
     | '/assinaturas'
     | '/auditoria'
     | '/configuracoes'
@@ -165,6 +187,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_painel'
     | '/entrar'
+    | '/privacidade'
+    | '/termos'
     | '/_painel/assinaturas'
     | '/_painel/auditoria'
     | '/_painel/configuracoes'
@@ -181,6 +205,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   PainelRoute: typeof PainelRouteWithChildren;
   EntrarRoute: typeof EntrarRoute;
+  PrivacidadeRoute: typeof PrivacidadeRoute;
+  TermosRoute: typeof TermosRoute;
 }
 
 declare module '@tanstack/react-router' {
@@ -197,6 +223,20 @@ declare module '@tanstack/react-router' {
       path: '/entrar';
       fullPath: '/entrar';
       preLoaderRoute: typeof EntrarRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/privacidade': {
+      id: '/privacidade';
+      path: '/privacidade';
+      fullPath: '/privacidade';
+      preLoaderRoute: typeof PrivacidadeRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/termos': {
+      id: '/termos';
+      path: '/termos';
+      fullPath: '/termos';
+      preLoaderRoute: typeof TermosRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     '/_painel/': {
@@ -313,6 +353,8 @@ const PainelRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   PainelRoute: PainelRouteWithChildren,
   EntrarRoute: EntrarRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
+  TermosRoute: TermosRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -363,6 +363,9 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - [x] **T-140c** Retenção de fotos e áudios: limpeza diária apaga o arquivo depois do prazo (padrão 90 dias, no painel) e o lançamento fica · RN-162 (PR #116)
   - [x] **T-140d** Consentimentos no servidor (tabela `consentimentos`) para agenda, apps de compra e ligações: registrados ao ligar o recurso, `GET /consentimentos` e `DELETE /consentimentos/:finalidade`, e revogar desliga o recurso · docs: 05, 11 (PR #137)
   - [x] **T-140e** No app: os consentimentos na tela de Permissões, com "Revogar" (dep: T-140d) · docs: 04 (PR #140)
+  - [x] **T-140g** Termos de uso e política de privacidade do cliente (versão 1.0): páginas públicas `/termos` e `/privacidade` no painel, campos em aberto em `src/legal/campos.ts`, links no cadastro e no Perfil, aceite com "declaro ter 18 anos ou mais" (PR #182)
+  - [ ] **T-140h** Novo aceite no app quando a versão dos termos ou da política mudar: a sessão já traz `aceitesPendentes` (RN-007), mas falta a rota para aceitar (ex.: `POST /me/aceites`) e a tela no app que bloqueia até aceitar · RN-007
+  - [ ] **T-140i** 👤 Preencher no lançamento os campos em aberto dos termos e da política (`apps/admin/src/legal/campos.ts`): data de publicação, aviso de mudança de limites ([30] dias), guarda do histórico de cobrança ([5] anos) e o país do serviço de telefonia (dep: T-122c)
 - [x] **T-141** Admin completo: usuários, assinaturas, métricas, novidades, Mony (prompt e custos), auditoria, filas. Dividida em T-141a a T-141g, uma seção do painel por vez.
   - dep: T-104b, T-104c, T-104d, T-068 · docs: 13
 - [x] **T-141a** Admin: usuários (busca, dados da conta, aparelhos e conexões, bloquear e reativar, estender teste grátis, auditoria das visualizações) (PR #98)
