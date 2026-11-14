@@ -6,7 +6,7 @@ import pacote from './package.json';
  * Configuração do app por ambiente. O perfil do `eas.json` define `APP_ENV`; localmente o padrão é
  * `development`. Valores públicos podem ser trocados por variável (`.env` local ou variáveis do
  * EAS): `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SENTRY_DSN`, `EXPO_PUBLIC_APP_STORE_ID`,
- * `EXPO_PUBLIC_GOOGLE_ID_CLIENTE_WEB`.
+ * `EXPO_PUBLIC_GOOGLE_ID_CLIENTE_WEB`, `EXPO_PUBLIC_URL_SITE`.
  *
  * Este arquivo só importa pacotes: o Expo compila o app.config.ts, mas não os arquivos locais que
  * ele importaria.
@@ -22,6 +22,12 @@ export interface ConfigPublica {
   ambiente: Ambiente;
   /** Endereço da API sem `/v1` e sem barra no fim, ex.: `https://api.exemplo.com.br`. */
   urlApi: string;
+  /**
+   * Onde ficam as páginas públicas do painel, como os termos e a política (`/termos`,
+   * `/privacidade`, T-140g), sem barra no fim. `EXPO_PUBLIC_URL_SITE`; sem ela, a origem da API
+   * (em staging o painel e a API dividem o endereço).
+   */
+  urlSite: string;
   /** DSN do Sentry. Sem ele, o Sentry fica desligado. */
   sentryDsn: string | undefined;
   /** Onde o app é atualizado, na atualização obrigatória (T-056). */
@@ -126,6 +132,7 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
   const extra: ConfigPublica & { eas?: { projectId: string } } = {
     ambiente,
     urlApi: urlApi.replace(/\/+$/, ''),
+    urlSite: (texto(variaveis.EXPO_PUBLIC_URL_SITE) ?? new URL(urlApi).origin).replace(/\/+$/, ''),
     sentryDsn: texto(variaveis.EXPO_PUBLIC_SENTRY_DSN),
     urlLoja: urlsDaLoja(dados.identificador, texto(variaveis.EXPO_PUBLIC_APP_STORE_ID)),
     googleIdClienteWeb: texto(variaveis.EXPO_PUBLIC_GOOGLE_ID_CLIENTE_WEB),

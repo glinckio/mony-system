@@ -148,7 +148,7 @@ describe('entrar com Google (T-055a, RN-002)', () => {
 
       fireEvent.press(
         screen.getByRole('checkbox', {
-          name: 'Li e aceito os termos de uso e a política de privacidade.',
+          name: 'Li e aceito os termos de uso e a política de privacidade, e declaro ter 18 anos ou mais.',
         }),
       );
       fireEvent.press(screen.getByRole('button', { name: 'Criar conta' }));

@@ -21,6 +21,12 @@ apps/admin/
 
 O painel é um site estático (`vite build`). Em desenvolvimento, o Vite repassa `/v1` para a API local. Na nuvem (T-015), o CloudFront do admin faz o mesmo: serve o build do bucket e repassa `/v1/*` para o ALB da API. Por isso o build usa `VITE_API_URL` vazio e a API não precisa de CORS. Deploy pelo workflow `deploy-admin-staging.yml`.
 
+## Páginas públicas (T-140g)
+
+- `/termos` e `/privacidade` ficam fora do `_painel`: abrem sem login e não chamam a API. São os links do app (cadastro e Perfil), das lojas e da tela de consentimento do Google.
+- O texto vem em `src/legal/termos.ts` e `src/legal/privacidade.ts`, como o cliente entregou, em blocos (parágrafo, lista e tabela; `**texto**` em negrito) desenhados por `PaginaDocumento`. A versão mostrada é a do `VERSOES_DOCUMENTOS` (`@mony/shared/autenticacao`), a mesma que o app grava no aceite.
+- Os campos que o cliente deixou em aberto (data de publicação, aviso de mudança de limites, guarda do histórico de cobrança, país da telefonia) e os dados da empresa ficam em `src/legal/campos.ts`: preencher no lançamento muda só esse arquivo e não muda a versão. Mudar o texto muda a versão, e quem aceitou a anterior precisa aceitar de novo (RN-007).
+
 ## Acesso
 
 - Login separado do app, 2FA TOTP obrigatório (do PDF). Feito na T-104a:

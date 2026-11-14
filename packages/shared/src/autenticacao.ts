@@ -9,11 +9,12 @@ import { DOCUMENTOS_ACEITE, PLATAFORMAS_DISPOSITIVO, PROVEDORES_LOGIN_SOCIAL } f
 /**
  * Versões vigentes dos documentos que o usuário aceita no cadastro (RN-007). Quando o texto mudar,
  * troque a versão aqui: quem aceitou uma versão anterior recebe o aviso para aceitar de novo.
- * Provisórias até o cliente entregar os textos dos termos e da política de privacidade.
+ * Os textos ficam nas páginas públicas do painel (`/termos` e `/privacidade`, T-140g); preencher
+ * os campos em aberto no lançamento não muda a versão.
  */
 export const VERSOES_DOCUMENTOS = {
-  termos: '2026-10-09',
-  privacidade: '2026-10-09',
+  termos: '1.0',
+  privacidade: '1.0',
 } as const satisfies Record<(typeof DOCUMENTOS_ACEITE)[number], string>;
 
 /** RN-001: no mínimo 8 caracteres. O máximo evita hash de textos enormes. */

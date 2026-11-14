@@ -22,3 +22,8 @@ export function esquemaDoApp(): EsquemaApp {
 export function linkDoApp(link: string): string {
   return noEsquema(link, esquemaDoApp());
 }
+
+/** As páginas públicas dos documentos que a pessoa aceita no cadastro (RN-007, T-140g). */
+export function urlDocumento(documento: 'termos' | 'privacidade'): string {
+  return `${configApp.urlSite}/${documento}`;
+}

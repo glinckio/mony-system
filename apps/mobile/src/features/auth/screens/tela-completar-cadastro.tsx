@@ -9,6 +9,7 @@ import { CampoControlado, mensagemDeErro } from '@/lib/formularios';
 import { Botao, CaixaDeSelecao, Texto } from '@/ui';
 
 import { entrarComGoogle, esquecerLoginGoogle, loginGooglePendente } from '../login-google';
+import { LinksDocumentos } from '../components/links-documentos';
 import { ErroDoFormulario, TelaFormulario } from './tela-formulario';
 
 const esquemaFormulario = esquemaCadastro.pick({ nome: true, telefone: true });
@@ -87,6 +88,7 @@ export default function TelaCompletarCadastro() {
         }}
         erro={faltaAceite ? t('auth.validacao.aceite') : null}
       />
+      <LinksDocumentos />
       <ErroDoFormulario mensagem={erro} />
       <Botao
         titulo={t('auth.completar.criar')}
