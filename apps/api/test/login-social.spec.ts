@@ -137,10 +137,11 @@ describe('nonce', () => {
     expect(nonceConfere({ provedor: 'apple', nonce: null }, bruto)).toBe(false);
   });
 
-  it('Google: confere quando o token traz nonce', () => {
+  it('Google: confere quando o app manda nonce; o do SDK do iPhone, que o app não vê, passa (T-055g)', () => {
     expect(nonceConfere({ provedor: 'google', nonce: null }, undefined)).toBe(true);
     expect(nonceConfere({ provedor: 'google', nonce: 'valor-123' }, 'valor-123')).toBe(true);
-    expect(nonceConfere({ provedor: 'google', nonce: 'valor-123' }, undefined)).toBe(false);
+    expect(nonceConfere({ provedor: 'google', nonce: 'valor-123' }, 'outro')).toBe(false);
+    expect(nonceConfere({ provedor: 'google', nonce: 'valor-123' }, undefined)).toBe(true);
   });
 });
 

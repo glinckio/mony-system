@@ -165,6 +165,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Dividida para andar sem o iPhone:
   - [x] **T-055a** Entrar com Google no Android (`@react-native-google-signin/google-signin`), completar o cadastro (`CADASTRO_INCOMPLETO`) e ligar à conta que já existe (`VINCULO_SOCIAL_PENDENTE`) (PR #161)
   - [x] **T-055c** Entrar com Google de novo logo depois de sair: o app desfaz o acesso (`revokeAccess`) para o Google Play não devolver o mesmo `id_token`, que o servidor aceita uma vez só (PR #176)
+  - [x] **T-055g** Entrar com Google no iPhone: o token do Google traz o nonce que o SDK gera sozinho (AppAuth) e o app não vê; sem nonce enviado pelo app, o servidor aceita o do Google (a Apple continua exigindo) (PR #192)
   - [x] **T-055d** Conta nova pelo Google com termos de versão antiga: o servidor confere os aceites e o telefone antes de gastar o `id_token` (antes, a nova tentativa dava "login não confirmado"), e o erro pede para atualizar o app (achado do cliente com o APK antigo) (PR #186)
   - [ ] **T-055b** 👤 Entrar com Google no iPhone (cliente OAuth do iOS e `iosUrlScheme` no plugin) e com a Apple (`expo-apple-authentication`, com nonce)
     - dep: T-055a, T-032 · requer Mac e iPhone

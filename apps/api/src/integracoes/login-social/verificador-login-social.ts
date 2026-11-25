@@ -120,7 +120,9 @@ export function nonceConfere(
   enviado: string | undefined,
 ): boolean {
   if (identidade.nonce === null) return identidade.provedor === 'google';
-  if (enviado === undefined) return false;
+  // O SDK do Google no iPhone gera um nonce sozinho (AppAuth) e não o devolve ao app: sem nonce
+  // enviado, o token do Google vale (cada `id_token` já só entra uma vez, `gastarToken`). T-055g.
+  if (enviado === undefined) return identidade.provedor === 'google';
   const resumo = createHash('sha256').update(enviado).digest('hex');
   return identidade.nonce === enviado || identidade.nonce === resumo;
 }
