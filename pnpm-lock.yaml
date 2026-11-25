@@ -183,6 +183,7 @@ overrides:
   mysql2: 3.24.6
   deepmerge-ts: 8.0.2
   node-forge: 1.4.2
+  effect: 3.22.1
 
 importers:
 
@@ -471,7 +472,7 @@ importers:
     dependencies:
       '@hookform/resolvers':
         specifier: 5.9.2
-        version: 5.9.2(@sinclair/typebox@0.34.52)(@standard-schema/spec@1.1.0)(ajv@8.20.0)(effect@3.20.0)(react-hook-form@7.91.0(@types/react@19.2.18)(react@19.2.3))(valibot@1.4.2(typescript@6.0.3))(zod@4.6.7)
+        version: 5.9.2(@sinclair/typebox@0.34.52)(@standard-schema/spec@1.1.0)(ajv@8.20.0)(effect@3.22.1)(react-hook-form@7.91.0(@types/react@19.2.18)(react@19.2.3))(valibot@1.4.2(typescript@6.0.3))(zod@4.6.7)
       '@mony/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
@@ -690,7 +691,7 @@ importers:
         version: 10.14.0(jiti@2.7.0)(supports-color@8.1.1)
       orval:
         specifier: ^8.46.0
-        version: 8.46.0(@tanstack/react-query@5.105.1(@types/react@19.2.18)(react@19.2.3))(effect@3.20.0)(prettier@3.9.10)(zod@4.6.7)
+        version: 8.46.0(@tanstack/react-query@5.105.1(@types/react@19.2.18)(react@19.2.3))(effect@3.22.1)(prettier@3.9.10)(zod@4.6.7)
       react:
         specifier: 'catalog:'
         version: 19.2.3
@@ -5880,8 +5881,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  effect@3.20.0:
-    resolution: {integrity: sha512-qMLfDJscrNG8p/aw+IkT9W7fgj50Z4wG5bLBy0Txsxz8iUHjDIkOgO3SV0WZfnQbNG2VJYb0b+rDLMrhM4+Krw==}
+  effect@3.22.1:
+    resolution: {integrity: sha512-TNoXushmPOBAjJlthF5d2QwnX2xBPEtcNJr5XKNKbRLbDvBcOYkXlYDfvGfSA0zriwLFuCll5MDtNMAdZL17PQ==}
 
   electron-to-chromium@1.5.451:
     resolution: {integrity: sha512-vUNKPrUzw8ByEMOxloq0a71iD/mPuPxVkbDm3G5YhnxTzOw/I6qAg2MUS0cYj/c267lWmw26yW4Vv7foxTxPLg==}
@@ -11430,7 +11431,7 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@hookform/resolvers@5.9.2(@sinclair/typebox@0.34.52)(@standard-schema/spec@1.1.0)(ajv@8.20.0)(effect@3.20.0)(react-hook-form@7.91.0(@types/react@19.2.18)(react@19.2.3))(valibot@1.4.2(typescript@6.0.3))(zod@4.6.7)':
+  '@hookform/resolvers@5.9.2(@sinclair/typebox@0.34.52)(@standard-schema/spec@1.1.0)(ajv@8.20.0)(effect@3.22.1)(react-hook-form@7.91.0(@types/react@19.2.18)(react@19.2.3))(valibot@1.4.2(typescript@6.0.3))(zod@4.6.7)':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.91.0(@types/react@19.2.18)(react@19.2.3)
@@ -11438,7 +11439,7 @@ snapshots:
       '@sinclair/typebox': 0.34.52
       '@standard-schema/spec': 1.1.0
       ajv: 8.20.0
-      effect: 3.20.0
+      effect: 3.22.1
       valibot: 1.4.2(typescript@6.0.3)
       zod: 4.6.7
 
@@ -12105,11 +12106,11 @@ snapshots:
       jsesc: 3.1.0
       tinyglobby: 0.2.17
 
-  '@orval/effect@8.46.0(effect@3.20.0)':
+  '@orval/effect@8.46.0(effect@3.22.1)':
     dependencies:
       '@orval/core': 8.46.0
     optionalDependencies:
-      effect: 3.20.0
+      effect: 3.22.1
     transitivePeerDependencies:
       - '@faker-js/faker'
       - '@modelcontextprotocol/server'
@@ -12277,7 +12278,7 @@ snapshots:
     dependencies:
       c12: 3.3.4
       deepmerge-ts: 8.0.2
-      effect: 3.20.0
+      effect: 3.22.1
       empathic: 2.0.0
     transitivePeerDependencies:
       - magicast
@@ -15494,7 +15495,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  effect@3.20.0:
+  effect@3.22.1:
     dependencies:
       '@standard-schema/spec': 1.1.0
       fast-check: 3.23.2
@@ -18144,13 +18145,13 @@ snapshots:
       strip-ansi: 6.0.1
       wcwidth: 1.0.1
 
-  orval@8.46.0(@tanstack/react-query@5.105.1(@types/react@19.2.18)(react@19.2.3))(effect@3.20.0)(prettier@3.9.10)(zod@4.6.7):
+  orval@8.46.0(@tanstack/react-query@5.105.1(@types/react@19.2.18)(react@19.2.3))(effect@3.22.1)(prettier@3.9.10)(zod@4.6.7):
     dependencies:
       '@commander-js/extra-typings': 15.0.0(commander@15.0.0)
       '@orval/angular': 8.46.0
       '@orval/axios': 8.46.0
       '@orval/core': 8.46.0
-      '@orval/effect': 8.46.0(effect@3.20.0)
+      '@orval/effect': 8.46.0(effect@3.22.1)
       '@orval/fetch': 8.46.0
       '@orval/hono': 8.46.0(zod@4.6.7)
       '@orval/mcp': 8.46.0(zod@4.6.7)
