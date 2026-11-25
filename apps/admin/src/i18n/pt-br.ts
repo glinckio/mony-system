@@ -18,6 +18,7 @@ export const textosPtBr = {
     documentos: 'Documentos',
     termos: 'Termos de Uso',
     privacidade: 'Política de Privacidade',
+    excluirConta: 'Excluir conta',
     versao: 'Versão {{versao}}',
   },
   entrar: {

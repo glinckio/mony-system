@@ -11,8 +11,8 @@ export interface SecaoDocumento {
 
 export interface DocumentoLegal {
   titulo: string;
-  /** A versão que o app grava no aceite (`VERSOES_DOCUMENTOS`, RN-007). */
-  versao: string;
+  /** A versão que o app grava no aceite (`VERSOES_DOCUMENTOS`, RN-007); páginas sem aceite não têm. */
+  versao?: string;
   secoes: SecaoDocumento[];
 }
 

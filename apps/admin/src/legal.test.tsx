@@ -56,4 +56,19 @@ describe('termos e privacidade (T-140g)', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Termos de Uso' })).toBeVisible();
     expect(roteador.state.location.pathname).toBe('/termos');
   });
+
+  it('T-146b a exclusão de conta abre sem login, com o caminho no app e o pedido por e-mail', async () => {
+    const buscar = vi.fn();
+    vi.stubGlobal('fetch', buscar);
+    abrir('/excluir-conta');
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Excluir sua conta do Monitorizze' }),
+    ).toBeVisible();
+    expect(screen.queryByText(/^Versão/)).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Sem o app' })).toBeVisible();
+    expect(screen.getByText(/suporte@monitorizze\.com\.br/)).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Excluir conta' })).toBeVisible();
+    expect(buscar).not.toHaveBeenCalled();
+  });
 });

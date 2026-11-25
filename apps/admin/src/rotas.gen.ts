@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './rotas/__root';
 import { Route as PainelRouteImport } from './rotas/_painel';
 import { Route as EntrarRouteImport } from './rotas/entrar';
+import { Route as ExcluirContaRouteImport } from './rotas/excluir-conta';
 import { Route as PrivacidadeRouteImport } from './rotas/privacidade';
 import { Route as TermosRouteImport } from './rotas/termos';
 import { Route as PainelIndexRouteImport } from './rotas/_painel/index';
@@ -32,6 +33,11 @@ const PainelRoute = PainelRouteImport.update({
 const EntrarRoute = EntrarRouteImport.update({
   id: '/entrar',
   path: '/entrar',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ExcluirContaRoute = ExcluirContaRouteImport.update({
+  id: '/excluir-conta',
+  path: '/excluir-conta',
   getParentRoute: () => rootRouteImport,
 } as any);
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
@@ -103,6 +109,7 @@ const PainelUsuariosIdRoute = PainelUsuariosIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof PainelIndexRoute;
   '/entrar': typeof EntrarRoute;
+  '/excluir-conta': typeof ExcluirContaRoute;
   '/privacidade': typeof PrivacidadeRoute;
   '/termos': typeof TermosRoute;
   '/assinaturas': typeof PainelAssinaturasRoute;
@@ -118,6 +125,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/entrar': typeof EntrarRoute;
+  '/excluir-conta': typeof ExcluirContaRoute;
   '/privacidade': typeof PrivacidadeRoute;
   '/termos': typeof TermosRoute;
   '/assinaturas': typeof PainelAssinaturasRoute;
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   '/_painel': typeof PainelRouteWithChildren;
   '/entrar': typeof EntrarRoute;
+  '/excluir-conta': typeof ExcluirContaRoute;
   '/privacidade': typeof PrivacidadeRoute;
   '/termos': typeof TermosRoute;
   '/_painel/assinaturas': typeof PainelAssinaturasRoute;
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/entrar'
+    | '/excluir-conta'
     | '/privacidade'
     | '/termos'
     | '/assinaturas'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo;
   to:
     | '/entrar'
+    | '/excluir-conta'
     | '/privacidade'
     | '/termos'
     | '/assinaturas'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_painel'
     | '/entrar'
+    | '/excluir-conta'
     | '/privacidade'
     | '/termos'
     | '/_painel/assinaturas'
@@ -205,6 +217,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   PainelRoute: typeof PainelRouteWithChildren;
   EntrarRoute: typeof EntrarRoute;
+  ExcluirContaRoute: typeof ExcluirContaRoute;
   PrivacidadeRoute: typeof PrivacidadeRoute;
   TermosRoute: typeof TermosRoute;
 }
@@ -223,6 +236,13 @@ declare module '@tanstack/react-router' {
       path: '/entrar';
       fullPath: '/entrar';
       preLoaderRoute: typeof EntrarRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/excluir-conta': {
+      id: '/excluir-conta';
+      path: '/excluir-conta';
+      fullPath: '/excluir-conta';
+      preLoaderRoute: typeof ExcluirContaRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     '/privacidade': {
@@ -353,6 +373,7 @@ const PainelRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   PainelRoute: PainelRouteWithChildren,
   EntrarRoute: EntrarRoute,
+  ExcluirContaRoute: ExcluirContaRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   TermosRoute: TermosRoute,
 };
