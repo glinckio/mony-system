@@ -163,6 +163,9 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
     ios: {
       bundleIdentifier: dados.identificador,
       supportsTablet: false,
+      // Só HTTPS e a criptografia do próprio sistema: sem a pergunta de exportação a cada build no
+      // App Store Connect (T-146a).
+      config: { usesNonExemptEncryption: false },
     },
     android: {
       package: dados.identificador,
