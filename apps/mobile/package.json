@@ -72,6 +72,7 @@
     "@mony/config": "workspace:*",
     "@react-native/jest-preset": "0.86.3",
     "@react-native/metro-config": "0.86.3",
+    "@sentry/cli": "2.58.4",
     "@testing-library/react-native": "13.3.3",
     "@types/react": "catalog:",
     "babel-preset-expo": "57.0.16",
