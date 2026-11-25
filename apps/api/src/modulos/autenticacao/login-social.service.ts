@@ -76,6 +76,7 @@ export class LoginSocialService {
       throw new ErroDominio('CADASTRO_INCOMPLETO', { detalhes: { faltando, email, nome } });
     }
 
+    this.autenticacao.conferirDadosDaConta({ telefone: dados.telefone, aceites: dados.aceites });
     await this.gastarToken(dados.idToken, identidade);
     return this.autenticacao.cadastrarPorLoginSocial(
       {

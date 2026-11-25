@@ -1292,3 +1292,6 @@ Contexto: o cliente entregou os termos e a política (minutas com campos entre c
 
 ## 2026-11-14 — T-140g — Patch do SDK 57 junto no PR
 Contexto: o CI do PR da T-140g caiu no `expo install --check` (o Expo publicou patches do SDK 57: expo 57.0.33, expo-router 57.0.31, expo-updates 57.0.28 e outros). Decisão: o `expo install --fix` entrou no mesmo PR, em commit separado, em vez de um `T-HOTFIX` à parte, porque nada mais estava aberto e a correção é só a versão. Os módulos nativos mudaram: o build de desenvolvimento local precisa ser refeito. Reversível: sim.
+
+## 2026-11-24 — T-055d — Aceites conferidos antes de gastar o token do Google
+Contexto: o cliente criou a conta pelo Google num APK anterior à T-140g, que manda os termos na versão `2026-10-09`. O servidor gastava o `id_token` e só depois recusava os aceites (403 `TERMOS_PENDENTES`); as tentativas seguintes com o mesmo token davam 401 "Não conseguimos confirmar seu login com o Google", e o motivo real sumia. Decisão: `LoginSocialService.entrar` chama `conferirDadosDaConta` antes de `gastarToken`, e o `TERMOS_PENDENTES` do cadastro diz "Os termos de uso mudaram. Atualize o app para criar sua conta." (a mensagem vem do servidor, então vale também para os apps já instalados). Alternativa: aceitar versões antigas no cadastro, que gravaria aceite de um texto que a pessoa não viu. Reversível: sim.

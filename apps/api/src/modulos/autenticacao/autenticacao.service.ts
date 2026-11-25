@@ -87,16 +87,20 @@ export class AutenticacaoService {
     );
   }
 
-  /** RN-007: aceites nas versões vigentes. RN-001: telefone válido. Devolve o telefone em E.164. */
-  private conferirDadosDaConta(dados: {
-    telefone: string;
-    aceites: DadosCadastro['aceites'];
-  }): string {
+  /**
+   * RN-007: aceites nas versões vigentes. RN-001: telefone válido. Devolve o telefone em E.164. O
+   * login social confere antes de gastar o `id_token`, para o erro não virar "login não confirmado"
+   * na tentativa seguinte.
+   */
+  conferirDadosDaConta(dados: { telefone: string; aceites: DadosCadastro['aceites'] }): string {
     const versoesVelhas = DOCUMENTOS_ACEITE.filter(
       (documento) => dados.aceites[documento] !== VERSOES_DOCUMENTOS[documento],
     );
     if (versoesVelhas.length > 0) {
+      // Só um app desatualizado manda versão antiga no cadastro: a tela não tem como mostrar o texto
+      // novo, então a saída é atualizar.
       throw new ErroDominio('TERMOS_PENDENTES', {
+        mensagem: 'Os termos de uso mudaram. Atualize o app para criar sua conta.',
         detalhes: { documentos: versoesVelhas, versoesVigentes: VERSOES_DOCUMENTOS },
       });
     }
