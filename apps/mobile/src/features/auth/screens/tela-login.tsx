@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { entrarAutenticacao } from '@mony/api-client';
 import { esquemaLogin } from '@mony/shared/autenticacao';
+import type { ProvedorLoginSocial } from '@mony/shared/enums';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -33,9 +34,14 @@ export default function TelaLogin() {
   });
 
   const pedirSenha = useCallback(
-    (email: string | null) => {
+    (email: string | null, provedor: ProvedorLoginSocial = 'google') => {
       if (email) formulario.setValue('email', email);
-      definirVinculo(t('auth.google.vinculo', { email: email ?? '' }));
+      definirVinculo(
+        t('auth.google.vinculo', {
+          email: email ?? '',
+          provedor: provedor === 'apple' ? 'a Apple' : 'o Google',
+        }),
+      );
     },
     [formulario, t],
   );
@@ -44,7 +50,7 @@ export default function TelaLogin() {
   useFocusEffect(
     useCallback(() => {
       const pendente = loginGooglePendente();
-      if (pendente?.motivo === 'vinculo') pedirSenha(pendente.email);
+      if (pendente?.motivo === 'vinculo') pedirSenha(pendente.email, pendente.provedor);
     }, [pedirSenha]),
   );
 

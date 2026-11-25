@@ -37,6 +37,11 @@ export interface ConfigPublica {
    * a audiência do `id_token` (o servidor confere em `GOOGLE_CLIENT_IDS`). Sem ele, o botão some.
    */
   googleIdClienteWeb: string | undefined;
+  /**
+   * Entrar com Google no iPhone (T-055b): o ID do cliente OAuth "iOS" do Google Cloud. Sem ele, o
+   * botão do Google some no iPhone (e o plugin fica sem o esquema de URL).
+   */
+  googleIdClienteIos: string | undefined;
 }
 
 /**
@@ -136,6 +141,7 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
     sentryDsn: texto(variaveis.EXPO_PUBLIC_SENTRY_DSN),
     urlLoja: urlsDaLoja(dados.identificador, texto(variaveis.EXPO_PUBLIC_APP_STORE_ID)),
     googleIdClienteWeb: texto(variaveis.EXPO_PUBLIC_GOOGLE_ID_CLIENTE_WEB),
+    googleIdClienteIos: texto(variaveis.EXPO_PUBLIC_GOOGLE_ID_CLIENTE_IOS),
   };
   if (idProjeto) extra.eas = { projectId: idProjeto };
 
@@ -166,6 +172,8 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
       // Só HTTPS e a criptografia do próprio sistema: sem a pergunta de exportação a cada build no
       // App Store Connect (T-146a).
       config: { usesNonExemptEncryption: false },
+      // Entrar com a Apple (T-055b): a App Store exige junto com o Google.
+      usesAppleSignIn: true,
     },
     android: {
       package: dados.identificador,
@@ -179,6 +187,16 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
     },
     plugins: [
       'expo-router',
+      'expo-apple-authentication',
+      // Entrar com Google no iPhone (T-055b): o esquema de URL é o ID do cliente iOS ao contrário.
+      ...(extra.googleIdClienteIos
+        ? [
+            [
+              '@react-native-google-signin/google-signin',
+              { iosUrlScheme: esquemaUrlGoogle(extra.googleIdClienteIos) },
+            ] as [string, object],
+          ]
+        : []),
       [
         'expo-splash-screen',
         { image: './assets/images/logo-bloco.png', imageWidth: 96, backgroundColor: COR_FUNDO },
@@ -241,6 +259,11 @@ export function criarConfigApp(base: ConfigContext['config'], variaveis: Variave
     },
     extra,
   };
+}
+
+/** `123-abc.apps.googleusercontent.com` → `com.googleusercontent.apps.123-abc`. */
+export function esquemaUrlGoogle(idCliente: string): string {
+  return `com.googleusercontent.apps.${idCliente.replace('.apps.googleusercontent.com', '')}`;
 }
 
 export default ({ config }: ConfigContext): ExpoConfig => criarConfigApp(config, process.env);

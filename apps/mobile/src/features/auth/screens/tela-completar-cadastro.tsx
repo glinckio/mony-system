@@ -15,7 +15,7 @@ import { ErroDoFormulario, TelaFormulario } from './tela-formulario';
 const esquemaFormulario = esquemaCadastro.pick({ nome: true, telefone: true });
 
 /**
- * Conta nova pelo Google (RN-002, T-055a): o servidor respondeu `CADASTRO_INCOMPLETO`, então falta o
+ * Conta nova pelo Google ou pela Apple (RN-002, T-055a, T-055b): o servidor respondeu `CADASTRO_INCOMPLETO`, então falta o
  * celular e o aceite dos termos (RN-007), e o nome quando o Google não mandou. O mesmo `id_token`
  * volta com eles.
  */
@@ -44,7 +44,7 @@ export default function TelaCompletarCadastro() {
       return;
     }
     try {
-      await entrarComGoogle(pendente.idToken, { ...dados, aceites: { ...VERSOES_DOCUMENTOS } });
+      await entrarComGoogle(pendente, { ...dados, aceites: { ...VERSOES_DOCUMENTOS } });
     } catch (falha) {
       definirErro(mensagemDeErro(falha, t('auth.semConexao')));
     }
@@ -60,7 +60,12 @@ export default function TelaCompletarCadastro() {
   }
 
   return (
-    <TelaFormulario titulo={t('auth.completar.titulo')} subtitulo={t('auth.completar.explicacao')}>
+    <TelaFormulario
+      titulo={t('auth.completar.titulo')}
+      subtitulo={t('auth.completar.explicacao', {
+        provedor: pendente.provedor === 'apple' ? 'a Apple' : 'o Google',
+      })}
+    >
       {pendente.email ? <Texto cor="suave">{pendente.email}</Texto> : null}
       <CampoControlado
         controle={formulario.control}

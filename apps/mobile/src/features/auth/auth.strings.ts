@@ -52,14 +52,18 @@ export const textosAuth = {
     entrar: 'Entrar com Google',
     erro: 'Não deu para entrar com o Google. Tente de novo.',
     vinculo:
-      'O e-mail {{email}} já tem conta no Mony. Entre com a senha uma vez para ligar o Google a ela.',
+      'O e-mail {{email}} já tem conta no Mony. Entre com a senha uma vez para ligar {{provedor}} a ela.',
+  },
+  apple: {
+    entrar: 'Entrar com a Apple',
+    erro: 'Não deu para entrar com a Apple. Tente de novo.',
   },
   completar: {
     titulo: 'Complete seu cadastro',
     explicacao:
-      'Falta pouco: confira seu nome e informe o celular para criar a conta com o Google.',
+      'Falta pouco: confira seu nome e informe o celular para criar a conta com {{provedor}}.',
     criar: 'Criar conta',
-    expirou: 'O login do Google expirou. Entre de novo.',
+    expirou: 'O login expirou. Entre de novo.',
     voltar: 'Voltar para o login',
   },
   bloqueio: {
