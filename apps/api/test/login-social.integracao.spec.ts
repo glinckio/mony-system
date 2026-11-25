@@ -224,6 +224,10 @@ describe.runIf(ativo)('integração: login social', () => {
     });
     expect(resposta.statusCode).toBe(403);
     expect(resposta.json()).toMatchObject({ erro: { codigo: 'TERMOS_PENDENTES' } });
+
+    // O token não foi gasto: com os aceites certos, o mesmo token cria a conta.
+    const deNovo = await social({ provedor: 'google', idToken, ...dadosDaConta });
+    expect(deNovo.statusCode).toBe(200);
   });
 
   it('conta bloqueada não entra pelo login social', async () => {
