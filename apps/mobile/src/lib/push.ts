@@ -91,20 +91,21 @@ function idDoProjeto(): string | null {
 /**
  * Doc 09: grava o token do Expo neste aparelho (`POST /me/dispositivos`), ao abrir o app e quando
  * o token do sistema troca. Só com a permissão liberada. O projeto do EAS vai junto quando existe
- * (no build do EAS, o Expo exige).
+ * (no build do EAS, o Expo exige). Devolve o token gravado; com `anterior` igual ao token atual, não
+ * chama a API (T-088c). `null` quando não deu.
  */
-export async function registrarTokenDePush(): Promise<boolean> {
+export async function registrarTokenDePush(anterior: string | null = null): Promise<string | null> {
   try {
-    if ((await estadoDaPermissaoDePush()) !== 'liberada') return false;
+    if ((await estadoDaPermissaoDePush()) !== 'liberada') return null;
     const projectId = idDoProjeto();
     const { data: tokenPush } = await Notifications.getExpoPushTokenAsync(
       projectId === null ? undefined : { projectId },
     );
-    await registrarDispositivoUsuarios({ tokenPush });
-    return true;
+    if (tokenPush !== anterior) await registrarDispositivoUsuarios({ tokenPush });
+    return tokenPush;
   } catch {
     // Sem rede, sem o serviço do Google ou sem o projeto: a próxima abertura tenta de novo.
-    return false;
+    return null;
   }
 }
 
