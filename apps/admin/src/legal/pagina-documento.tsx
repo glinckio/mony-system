@@ -87,14 +87,23 @@ export function PaginaDocumento({ documento }: { documento: DocumentoLegal }) {
           >
             {t('legal.privacidade')}
           </Link>
+          <Link
+            to="/excluir-conta"
+            className="text-sm text-muted-foreground hover:text-foreground"
+            activeProps={{ className: 'font-medium text-foreground' }}
+          >
+            {t('legal.excluirConta')}
+          </Link>
         </nav>
       </header>
       <main className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-8">
         <div className="flex flex-col gap-1">
           <h1 className="text-3xl font-semibold">{documento.titulo}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t('legal.versao', { versao: documento.versao })}
-          </p>
+          {documento.versao === undefined ? null : (
+            <p className="text-sm text-muted-foreground">
+              {t('legal.versao', { versao: documento.versao })}
+            </p>
+          )}
         </div>
         {documento.secoes.map((secao) => (
           <section key={secao.titulo} className="flex flex-col gap-3">
