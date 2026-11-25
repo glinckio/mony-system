@@ -128,6 +128,10 @@ describe('app.config por ambiente', () => {
     });
   });
 
+  it('T-146a iOS sem a pergunta de criptografia de exportação no App Store Connect', () => {
+    expect(criarConfigApp(base, {}).ios?.config?.usesNonExemptEncryption).toBe(false);
+  });
+
   it('câmera para o QR Code do cupom (T-066b): o mesmo texto nos dois plugins', () => {
     const plugins = criarConfigApp(base, {}).plugins ?? [];
     const opcoes = (nome: string) =>

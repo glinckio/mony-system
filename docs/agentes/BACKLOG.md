@@ -403,6 +403,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-142 · docs: 12
 - [ ] **T-146** 👤 Publicação: fichas das lojas, declarações de permissão, TestFlight e teste interno, envio para revisão
   - dep: T-143, T-144, T-145
+  - [ ] **T-146a** 👤 Primeiro build de iPhone no TestFlight: sem a pergunta de criptografia (`usesNonExemptEncryption: false`), `ascAppId` no `eas.json`, certificados pela chave de API do App Store Connect do cliente, e o `@sentry/cli` no app para a fase de símbolos do Xcode (PR #187)
   - [x] **T-146b** Página pública de exclusão de conta no painel (`/excluir-conta`), exigida pelo Google Play na Segurança dos dados: o caminho no app, o pedido por e-mail sem o app e o que é apagado e o que fica (PR #188)
 
 ---
