@@ -29,10 +29,10 @@
     "@mony/config": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "@types/react": "catalog:",
-    "eslint": "^10.14.0",
-    "orval": "^8.46.0",
+    "eslint": "^10.15.0",
+    "orval": "^8.49.0",
     "react": "catalog:",
     "typescript": "~6.0.3",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.1"
   }
 }
