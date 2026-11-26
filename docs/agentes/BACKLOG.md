@@ -278,6 +278,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - Lembretes (T-084a): o [Feito] chama `POST /lembretes/:id/concluir` com a `ocorrencia` do link (`?ocorrencia=<ms>`, em ISO) e o [Adiar], `POST /lembretes/:id/adiar` (10 min); o push silencioso (`dados.tipo = sincronizar_alarmes`) busca `GET /lembretes/alarmes` e chama o `sincronizar` do `mony-alarm` em segundo plano.
   - Feito no PR #81: os botões abrem o app e o silencioso funciona com o app aberto. O resto ficou na T-088b.
 - [x] **T-088b** Push com o app fechado: o silencioso dos alarmes e os botões [Feito] e [Adiar] sem abrir o app, por uma tarefa de segundo plano (`expo-task-manager` e `Notifications.registerTaskAsync`) (PR #131; no iOS, os botões continuam abrindo o app; validar nos aparelhos, ver BLOQUEIOS)
+  - [x] **T-088c** No iPhone, o registro do token de push entrava em laço: pedir o token ao sistema avisa o ouvinte de token de novo, com o mesmo valor. O app guarda o último token do sistema e o último gravado, e só chama `POST /me/dispositivos` quando o token do Expo muda (PR #193)
   - dep: T-088 · docs: 04, 09 · testar em aparelho Android e iPhone
   - A tarefa roda sem a tela: precisa de acesso à API sem renovar a sessão junto com o app aberto (dois usos do mesmo token de renovação derrubam a sessão, RN-004). Uma saída é um token só de leitura dos alarmes por aparelho.
 

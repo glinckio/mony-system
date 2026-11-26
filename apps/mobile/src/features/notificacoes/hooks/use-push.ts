@@ -59,6 +59,21 @@ export function usePushNoApp(): void {
 
   useEffect(() => {
     let ativo = true;
+    // T-088c: no iPhone, pedir o token ao sistema (dentro do `getExpoPushTokenAsync`) dispara o
+    // ouvinte de token de novo, com o mesmo valor. Sem guardar o último, o app ficava em laço e
+    // mandava milhares de `POST /me/dispositivos` por minuto, até o limite da API barrar o resto.
+    let tokenGravado: string | null = null;
+    let tokenDoSistema: unknown = null;
+    let gravando = false;
+    async function gravarToken() {
+      if (gravando) return;
+      gravando = true;
+      try {
+        tokenGravado = (await registrarTokenDePush(tokenGravado)) ?? tokenGravado;
+      } finally {
+        gravando = false;
+      }
+    }
 
     async function tratar(resposta: Notifications.NotificationResponse) {
       const { router: navegador, cliente: consultas, sincronizar: agenda } = atuais.current;
@@ -112,7 +127,7 @@ export function usePushNoApp(): void {
         // O token de segundo plano só serve quando o push pode chegar: com a permissão liberada,
         // que é também quando o aparelho fica registrado para receber push.
         if ((await estadoDaPermissaoDePush()) !== 'liberada') return;
-        await Promise.all([registrarTokenDePush(), renovarTokenSegundoPlano()]);
+        await Promise.all([gravarToken(), renovarTokenSegundoPlano()]);
       });
 
     const respostas = Notifications.addNotificationResponseReceivedListener((resposta) => {
@@ -124,8 +139,10 @@ export function usePushNoApp(): void {
       const dados = notificacao.request.content.data ?? {};
       if (dados.tipo === PUSH_SINCRONIZAR_ALARMES) void atuais.current.sincronizar();
     });
-    const tokens = Notifications.addPushTokenListener(() => {
-      void registrarTokenDePush();
+    const tokens = Notifications.addPushTokenListener(({ data }) => {
+      if (data === tokenDoSistema) return;
+      tokenDoSistema = data;
+      void gravarToken();
     });
     return () => {
       ativo = false;

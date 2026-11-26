@@ -144,6 +144,10 @@ jest.mock('expo-notifications', () => {
     /** O que o diálogo do sistema responde. */
     resposta: 'granted',
     ultima: null as unknown,
+    /** O token do Expo deste aparelho; muda quando o sistema troca o token. */
+    tokenExpo: 'ExponentPushToken[aparelho-de-teste]',
+    /** Como no iPhone (T-088c): pedir o token avisa os ouvintes de token de novo. */
+    ecoIos: false,
   };
   const assinar = (conjunto: Set<MockOuvinte>, ouvinte: MockOuvinte) => {
     conjunto.add(ouvinte);
@@ -169,9 +173,14 @@ jest.mock('expo-notifications', () => {
       estado.status = estado.resposta;
       return Promise.resolve({ status: estado.status });
     }),
-    getExpoPushTokenAsync: jest.fn(() =>
-      Promise.resolve({ type: 'expo', data: 'ExponentPushToken[aparelho-de-teste]' }),
-    ),
+    getExpoPushTokenAsync: jest.fn(() => {
+      if (estado.ecoIos) {
+        setTimeout(() => {
+          for (const ouvinte of ouvintes.token) ouvinte({ type: 'ios', data: 'apns-do-aparelho' });
+        }, 0);
+      }
+      return Promise.resolve({ type: 'expo', data: estado.tokenExpo });
+    }),
     addNotificationResponseReceivedListener: jest.fn((ouvinte: MockOuvinte) =>
       assinar(ouvintes.resposta, ouvinte),
     ),
@@ -198,9 +207,12 @@ jest.mock('expo-notifications', () => {
         for (const ouvinte of ouvintes.recebida) ouvinte(notificacao(dados));
       },
       trocarToken: () => {
+        estado.tokenExpo = 'ExponentPushToken[token-novo]';
         for (const ouvinte of ouvintes.token) ouvinte({ type: 'android', data: 'novo' });
       },
       reiniciar: () => {
+        estado.tokenExpo = 'ExponentPushToken[aparelho-de-teste]';
+        estado.ecoIos = false;
         estado.status = 'undetermined';
         estado.resposta = 'granted';
         estado.ultima = null;

@@ -25,7 +25,7 @@ jest.mock('@/lib/alarmes', () => {
 
 /** O controle do falso de `expo-notifications` (test/preparar-jest.ts). */
 interface ControlePush {
-  estado: { status: string; resposta: string; ultima: unknown };
+  estado: { status: string; resposta: string; ultima: unknown; ecoIos: boolean };
   notificacao: (dados: Record<string, unknown>, id?: string) => unknown;
   tocar: (acao: string, dados: Record<string, unknown>, id?: string) => void;
   receber: (dados: Record<string, unknown>) => void;
@@ -230,6 +230,28 @@ describe('push no app (T-088)', () => {
           expiraEm: '2026-11-14T15:00:00.000Z',
         });
       }, ESPERA);
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'T-088c no iPhone, o aviso de token que o próprio pedido dispara não vira laço de registros',
+    async () => {
+      push.estado.status = 'granted';
+      push.estado.ecoIos = true;
+      const pedidos = api();
+      renderRouter(ROTAS, { initialUrl: '/' });
+      await waitFor(() => {
+        expect(doMetodo(pedidos, 'POST', '/v1/me/dispositivos')).toHaveLength(1);
+      }, ESPERA);
+      // O eco do sistema chega e é tratado: o token é pedido de novo, mas não é gravado de novo.
+      await waitFor(() => {
+        expect(
+          (Notifications.getExpoPushTokenAsync as jest.Mock).mock.calls.length,
+        ).toBeGreaterThanOrEqual(2);
+      }, ESPERA);
+      expect(doMetodo(pedidos, 'POST', '/v1/me/dispositivos')).toHaveLength(1);
+      expect((Notifications.getExpoPushTokenAsync as jest.Mock).mock.calls.length).toBeLessThan(5);
     },
     TEMPO_LIMITE_MS,
   );
