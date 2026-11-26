@@ -126,16 +126,44 @@ describe('dados padrão', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  function clienteFalso(categoriasExistentes: number) {
+  function clienteFalso(categoriasExistentes: number, tiposExistentes = 0) {
     return {
       categoria: {
         count: vi.fn().mockResolvedValue(categoriasExistentes),
+        createMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findMany: vi.fn().mockResolvedValue([
+          { id: 'c-mercado', nome: 'Mercado' },
+          { id: 'c-saude', nome: 'Saúde' },
+          { id: 'c-transporte', nome: 'Transporte' },
+        ]),
+      },
+      tipoLista: {
+        count: vi.fn().mockResolvedValue(tiposExistentes),
         createMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
       preferenciaAlerta: { createMany: vi.fn().mockResolvedValue({ count: 0 }) },
       appMonitorado: { createMany: vi.fn().mockResolvedValue({ count: 0 }) },
     };
   }
+
+  it('T-123d cadastro cria os cinco tipos de lista ligados às categorias de despesa', async () => {
+    const prisma = clienteFalso(0);
+    await aplicarPadroesDoUsuario(prisma as never, 'u1');
+    const [{ data: tipos }] = prisma.tipoLista.createMany.mock.calls[0] as [
+      { data: { nome: string; chave: string; categoriaId: string | null; criadoEm: Date }[] },
+    ];
+    expect(tipos.map(({ nome, chave, categoriaId }) => [nome, chave, categoriaId])).toEqual([
+      ['Mercado', 'mercado', 'c-mercado'],
+      ['Casa', 'casa', null],
+      ['Carro', 'carro', 'c-transporte'],
+      ['Farmácia', 'farmacia', 'c-saude'],
+      ['Outra', 'outra', null],
+    ]);
+    expect(tipos[1]?.criadoEm.getTime()).toBeGreaterThan(tipos[0]?.criadoEm.getTime() ?? 0);
+    const existentes = clienteFalso(0, 5);
+    await aplicarPadroesDoUsuario(existentes as never, 'u1');
+    expect(existentes.tipoLista.createMany).not.toHaveBeenCalled();
+  });
 
   it('RN-006 cadastro cria categorias padrão e todas as preferências de alerta ligadas', async () => {
     const prisma = clienteFalso(0);

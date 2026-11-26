@@ -4,6 +4,7 @@ import {
   type TipoCategoria,
   TIPOS_ALERTA,
 } from '@mony/shared/enums';
+import { categoriaDaLista, TIPOS_LISTA_PADRAO } from '@mony/shared/listas';
 
 import type { ClientePrisma } from '../prisma/cliente';
 
@@ -79,11 +80,14 @@ const ANTECEDENCIA_PADRAO_DIAS: Partial<Record<TipoAlerta, number>> = {
   vencimento_pendente: 3,
 };
 
-type ClienteParaPadroes = Pick<ClientePrisma, 'categoria' | 'preferenciaAlerta' | 'appMonitorado'>;
+type ClienteParaPadroes = Pick<
+  ClientePrisma,
+  'categoria' | 'preferenciaAlerta' | 'appMonitorado' | 'tipoLista'
+>;
 
 /**
- * Cria os dados padrão de um usuário novo: categorias (só se ele ainda não tiver nenhuma),
- * preferências de alerta com todos os tipos ligados (RN-006) e os apps de compra sugeridos.
+ * Cria os dados padrão de um usuário novo: categorias (só se ele ainda não tiver nenhuma), os tipos
+ * de lista de compras ligados às categorias de despesa (T-123d, idem), preferências de alerta com todos os tipos ligados (RN-006) e os apps de compra sugeridos.
  * Pode rodar de novo sem duplicar. Aceita o cliente ou uma transação do Prisma.
  */
 export async function aplicarPadroesDoUsuario(
@@ -94,6 +98,24 @@ export async function aplicarPadroesDoUsuario(
   if (categoriasExistentes === 0) {
     await prisma.categoria.createMany({
       data: CATEGORIAS_PADRAO.map((categoria) => ({ ...categoria, usuarioId, padrao: true })),
+    });
+  }
+  if ((await prisma.tipoLista.count({ where: { usuarioId } })) === 0) {
+    const despesas = await prisma.categoria.findMany({
+      where: { usuarioId, tipo: 'despesa', excluidoEm: null },
+      select: { id: true, nome: true },
+      orderBy: { criadoEm: 'asc' },
+    });
+    const agora = Date.now();
+    await prisma.tipoLista.createMany({
+      data: TIPOS_LISTA_PADRAO.map(({ chave, nome }, posicao) => ({
+        usuarioId,
+        nome,
+        chave,
+        categoriaId: categoriaDaLista(chave, despesas)?.id ?? null,
+        // A lista de tipos sai por `criadoEm`: um milissegundo por posição mantém a ordem.
+        criadoEm: new Date(agora + posicao),
+      })),
     });
   }
   await prisma.preferenciaAlerta.createMany({

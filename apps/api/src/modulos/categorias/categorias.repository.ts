@@ -25,6 +25,7 @@ type Transacao = Pick<
   | 'parcelamento'
   | 'preferenciaAprendida'
   | 'orcamento'
+  | 'tipoLista'
   | '$queryRaw'
 >;
 
@@ -128,6 +129,11 @@ export class CategoriasRepository {
       await tx.parcelamento.updateMany({ where: de, data: para });
       await tx.preferenciaAprendida.updateMany({ where: de, data: para });
     }
+    // T-123d: o tipo de lista ligado a ela passa para o destino (ou fica sem categoria).
+    await tx.tipoLista.updateMany({
+      where: { usuarioId, categoriaId: id },
+      data: { categoriaId: destinoId },
+    });
     await tx.orcamento.deleteMany({ where: { usuarioId, categoriaId: id } });
     await tx.categoria.update({ where: { id, usuarioId }, data: { excluidoEm: agora } });
   }

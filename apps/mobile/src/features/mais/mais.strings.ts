@@ -11,6 +11,7 @@ export const textosMais = {
     agenda: 'Agenda',
     categorias: 'Categorias',
     contas: 'Contas',
+    tiposLista: 'Tipos de lista',
   },
   perfilTela: {
     titulo: 'Perfil',

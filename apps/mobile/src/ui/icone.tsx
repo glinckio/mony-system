@@ -40,6 +40,7 @@ import Landmark from 'lucide-react-native/icons/landmark';
 import Laptop from 'lucide-react-native/icons/laptop';
 import Lightbulb from 'lucide-react-native/icons/lightbulb';
 import List from 'lucide-react-native/icons/list';
+import ListChecks from 'lucide-react-native/icons/list-checks';
 import ListFilter from 'lucide-react-native/icons/list-filter';
 import Lock from 'lucide-react-native/icons/lock';
 import LogOut from 'lucide-react-native/icons/log-out';
@@ -125,6 +126,7 @@ const ICONES = {
   laptop: Laptop,
   lightbulb: Lightbulb,
   list: List,
+  'list-checks': ListChecks,
   'list-filter': ListFilter,
   lock: Lock,
   'log-out': LogOut,

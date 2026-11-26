@@ -16,6 +16,7 @@ type ChaveAtalho =
   | 'lembretes'
   | 'agenda'
   | 'categorias'
+  | 'tiposLista'
   | 'contas';
 
 /**
@@ -32,6 +33,8 @@ const ATALHOS: { chave: ChaveAtalho; icone: NomeIcone; cor: string; rota: Href }
   { chave: 'agenda', icone: 'calendar', cor: cores.link, rota: '/agenda' },
   { chave: 'categorias', icone: 'tag', cor: cores.estourado, rota: '/mais/categorias' },
   { chave: 'contas', icone: 'landmark', cor: cores.receita, rota: '/mais/contas' },
+  // T-123d: os tipos das listas de compras, como as categorias.
+  { chave: 'tiposLista', icone: 'list-checks', cor: cores.atencao, rota: '/listas/tipos' },
 ];
 
 const POR_LINHA = 3;

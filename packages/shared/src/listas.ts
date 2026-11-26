@@ -70,14 +70,77 @@ export function variacaoDoPreco(ultimo: number, anterior: number | null): number
   return Math.round(((ultimo - anterior) * 100) / anterior);
 }
 
-export const esquemaNovaLista = z.object({
+const camposLista = {
   nome: z.string().trim().min(1).max(80),
+  /** O tipo de lista do dono (T-123d). */
+  tipoId: z.uuid(),
+  /**
+   * O tipo fixo de antes (apps anteriores à T-123d): vale o tipo da pessoa com essa chave. Sem
+   * `tipoId` nem `categoria`, a lista fica em "Mercado".
+   */
   categoria: z.enum(CATEGORIAS_LISTA),
+};
+
+export const esquemaNovaLista = z.object({
+  nome: camposLista.nome,
+  tipoId: camposLista.tipoId.optional(),
+  categoria: camposLista.categoria.optional(),
 });
 
-export const esquemaAtualizacaoLista = esquemaNovaLista
+export const esquemaAtualizacaoLista = z
+  .object(camposLista)
   .partial()
   .refine((dados) => Object.keys(dados).length > 0, { message: 'Nada para mudar.' });
+
+/**
+ * Tipo de lista de compras (T-123d), de cada usuário como as categorias: os cinco de antes vêm do
+ * cadastro (com `chave`), e a pessoa cria, renomeia e apaga os seus. A categoria de despesa é a que
+ * a lista finalizada usa por padrão (RN-072).
+ */
+export const esquemaTipoLista = z.object({
+  id: z.uuid(),
+  nome: z.string(),
+  chave: z.enum(CATEGORIAS_LISTA).nullable(),
+  categoria: z.object({ id: z.uuid(), nome: z.string() }).nullable(),
+  /** Listas (abertas e finalizadas) deste tipo: apagar com listas pede para onde movê-las. */
+  quantidadeListas: z.number().int(),
+});
+
+export const esquemaListaTiposLista = z.object({ itens: z.array(esquemaTipoLista) });
+
+const camposTipoLista = {
+  nome: z.string().trim().min(1).max(40),
+  /** Uma categoria de despesa da pessoa; `null` tira a ligação. */
+  categoriaId: z.uuid().nullable(),
+};
+
+export const esquemaNovoTipoLista = z.object({
+  nome: camposTipoLista.nome,
+  categoriaId: camposTipoLista.categoriaId.optional(),
+});
+
+export const esquemaAtualizacaoTipoLista = z
+  .object(camposTipoLista)
+  .partial()
+  .refine((dados) => Object.keys(dados).length > 0, { message: 'Nada para mudar.' });
+
+/** Com listas no tipo, para qual outro tipo elas vão. */
+export const esquemaExclusaoTipoLista = z.object({ mover_para: z.uuid().optional() });
+
+export type TipoLista = z.infer<typeof esquemaTipoLista>;
+export type ListaTiposLista = z.infer<typeof esquemaListaTiposLista>;
+export type DadosNovoTipoLista = z.infer<typeof esquemaNovoTipoLista>;
+export type DadosAtualizacaoTipoLista = z.infer<typeof esquemaAtualizacaoTipoLista>;
+export type DadosExclusaoTipoLista = z.infer<typeof esquemaExclusaoTipoLista>;
+
+/** Os tipos que todo usuário ganha no cadastro (e que a migração da T-123d criou), na ordem. */
+export const TIPOS_LISTA_PADRAO: readonly { chave: CategoriaLista; nome: string }[] = [
+  { chave: 'mercado', nome: 'Mercado' },
+  { chave: 'casa', nome: 'Casa' },
+  { chave: 'carro', nome: 'Carro' },
+  { chave: 'farmacia', nome: 'Farmácia' },
+  { chave: 'outra', nome: 'Outra' },
+];
 
 /** RN-070; sem preço, a API sugere pelo histórico de NFC-e (RN-071). */
 export const esquemaNovoItemLista = z.object({
@@ -132,6 +195,10 @@ const resumoLista = {
   /** Quantas pessoas aceitaram o convite para a lista. */
   compartilhadaCom: z.number().int(),
   nome: z.string(),
+  /** O tipo da lista (do dono) e o nome dele (T-123d). */
+  tipoId: z.uuid(),
+  tipo: z.string(),
+  /** A chave do tipo, para os apps anteriores à T-123d; `outra` nos tipos criados pela pessoa. */
   categoria: z.enum(CATEGORIAS_LISTA),
   finalizadaEm: z.iso.datetime().nullable(),
   quantidadeItens: z.number().int(),

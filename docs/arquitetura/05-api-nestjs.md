@@ -508,7 +508,8 @@ Implementado na T-123a (RN-070 a RN-073), em `modulos/listas`; o contrato e as c
 |---|---|
 | `GET /listas` | As abertas (a mais nova primeiro) e as últimas 20 finalizadas, com a contagem de itens, de comprados e o total estimado |
 | `GET /listas/:id` | A lista com os itens, a categoria de despesa padrão e o orçamento livre dela |
-| `POST /listas` | Cria (`nome`, `categoria`) |
+| `POST /listas` | Cria (`nome`, `tipoId`; os apps anteriores à T-123d mandam `categoria`, a chave do tipo padrão) |
+| `GET /tipos-lista` · `POST /tipos-lista` · `PATCH /tipos-lista/:id` · `DELETE /tipos-lista/:id?mover_para=` | Tipos de lista do usuário (T-123d): nome único, categoria de despesa, apagar move as listas |
 | `PATCH /listas/:id` | Muda o nome ou a categoria |
 | `DELETE /listas/:id` | Apaga a lista e os itens; a despesa de uma finalizada continua |
 | `POST /listas/:id/itens` | Põe um item (`nome`, `quantidade?`, `unidade?`, `precoEstimadoCentavos?`) |

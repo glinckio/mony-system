@@ -63,6 +63,8 @@ export const TABELAS_EXPORTADAS = {
     banco.metaAporte.findMany({ where: { usuarioId: id }, orderBy: { id: 'asc' } }),
   listas_compras: (banco, id) =>
     banco.listaCompras.findMany({ where: { usuarioId: id }, orderBy: { id: 'asc' } }),
+  tipos_lista: (banco, id) =>
+    banco.tipoLista.findMany({ where: { usuarioId: id }, orderBy: { id: 'asc' } }),
   itens_lista: (banco, id) =>
     banco.itemLista.findMany({ where: { usuarioId: id }, orderBy: { id: 'asc' } }),
   // Os que a pessoa fez e os convites que recebeu.

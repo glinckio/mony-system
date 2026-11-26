@@ -1,5 +1,4 @@
 import { ErroApi } from '@mony/api-client';
-import type { CategoriaLista } from '@mony/shared/enums';
 import type { DadosAtualizacaoLista, DetalheLista } from '@mony/shared/listas';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -10,7 +9,7 @@ import { mensagemDeErro } from '@/lib/formularios';
 import { Botao, Cabecalho, Campo, Folha, GrupoOpcoes, RolagemFormulario, Tela, Texto } from '@/ui';
 
 import { useAtualizarLista, useCriarLista, useExcluirLista } from '../hooks/use-listas';
-import { CATEGORIAS_NA_TELA } from '../lib/listas';
+import { useTiposLista } from '../hooks/use-tipos-lista';
 
 export interface PropsFormularioLista {
   /** `null` para a nova. */
@@ -18,8 +17,8 @@ export interface PropsFormularioLista {
 }
 
 /**
- * Nova e editar lista (RN-070): o nome e o tipo, que decide a categoria da despesa ao finalizar
- * (RN-072). A nova abre a lista criada; no gratuito, a segunda lista aberta recebe o
+ * Nova e editar lista (RN-070): o nome e o tipo (os da pessoa, T-123d), que decide a categoria da
+ * despesa ao finalizar (RN-072). A nova abre a lista criada; no gratuito, a segunda lista aberta recebe o
  * `LIMITE_PLANO_ATINGIDO` com [Ver planos] (RN-120). Na edição, "Excluir lista".
  */
 export function FormularioLista({ original }: PropsFormularioLista) {
@@ -29,7 +28,10 @@ export function FormularioLista({ original }: PropsFormularioLista) {
   const atualizar = useAtualizarLista();
   const excluir = useExcluirLista();
   const [nome, definirNome] = useState(original?.nome ?? '');
-  const [categoria, definirCategoria] = useState<CategoriaLista>(original?.categoria ?? 'mercado');
+  const tipos = useTiposLista();
+  const [escolhido, definirTipo] = useState<string | null>(original?.tipoId ?? null);
+  // Sem escolha, o primeiro tipo da pessoa (Mercado, nos padrões).
+  const tipoId = escolhido ?? tipos.data?.itens[0]?.id ?? null;
   const [tentou, definirTentou] = useState(false);
   const [erro, definirErro] = useState<unknown>(null);
   const [confirmando, definirConfirmando] = useState(false);
@@ -43,16 +45,16 @@ export function FormularioLista({ original }: PropsFormularioLista) {
   async function salvar() {
     definirTentou(true);
     definirErro(null);
-    if (nome.trim() === '') return;
+    if (nome.trim() === '' || tipoId === null) return;
     try {
       if (original === null) {
-        const lista = await criar.mutateAsync({ nome: nome.trim(), categoria });
+        const lista = await criar.mutateAsync({ nome: nome.trim(), tipoId });
         router.replace({ pathname: '/listas/[id]', params: { id: lista.id } });
         return;
       }
       const dados: DadosAtualizacaoLista = {
         ...(nome.trim() === original.nome ? {} : { nome: nome.trim() }),
-        ...(categoria === original.categoria ? {} : { categoria }),
+        ...(tipoId === original.tipoId ? {} : { tipoId }),
       };
       if (Object.keys(dados).length > 0) await atualizar.mutateAsync({ id: original.id, dados });
       voltar();
@@ -89,14 +91,23 @@ export function FormularioLista({ original }: PropsFormularioLista) {
             maxLength={80}
             erro={tentou && nome.trim() === '' ? t('listas.formulario.validacao.nome') : null}
           />
-          <GrupoOpcoes<CategoriaLista>
+          <GrupoOpcoes<string>
             titulo={t('listas.formulario.categoria')}
-            opcoes={CATEGORIAS_NA_TELA.map((valor) => ({
-              valor,
-              rotulo: t(`listas.categorias.${valor}`),
+            opcoes={(tipos.data?.itens ?? []).map(({ id, nome: rotulo }) => ({
+              valor: id,
+              rotulo,
             }))}
-            selecionado={categoria}
-            aoEscolher={definirCategoria}
+            selecionado={tipoId}
+            aoEscolher={definirTipo}
+            vazio={tipos.isError ? t('listas.semConexao') : undefined}
+          />
+          <Botao
+            titulo={t('listas.tipos.gerenciar')}
+            variante="fantasma"
+            icone="pencil"
+            aoPressionar={() => {
+              router.push('/listas/tipos');
+            }}
           />
           {erro === null ? null : (
             <Texto
