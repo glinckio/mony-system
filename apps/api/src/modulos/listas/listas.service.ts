@@ -20,7 +20,9 @@ import {
 } from '@mony/shared/listas';
 import { nomeDoEstabelecimento } from '@mony/shared/nfce';
 
+import { chaveNomeCategoria } from '@mony/shared/categorias';
 import type { AcessoRecurso } from '@mony/shared/compartilhamentos';
+import type { CategoriaLista } from '@mony/shared/enums';
 
 import { Clock } from '../../core/clock/clock';
 import { type Contexto, usuarioDoContexto } from '../../core/contexto/contexto';
@@ -78,7 +80,9 @@ function paraResumo(lista: ListaGravada, visao: Visao): ResumoLista {
     id: lista.id,
     ...visao,
     nome: lista.nome,
-    categoria: lista.categoriaLista,
+    tipoId: lista.tipoListaId,
+    tipo: lista.tipoLista.nome,
+    categoria: lista.tipoLista.chave ?? 'outra',
     finalizadaEm: lista.finalizadaEm?.toISOString() ?? null,
     quantidadeItens: itens.length,
     quantidadeComprados: itens.filter(({ comprado }) => comprado).length,
@@ -153,11 +157,11 @@ export class ListasService {
     const usuarioId = usuarioDoContexto(contexto);
     const id = await this.repositorio.emTransacao(async (tx) => {
       await this.cotas.conferirQuantidade(contexto, 'lista_compras', tx);
-      return this.repositorio.criar(tx, {
-        usuarioId,
-        nome: dados.nome,
-        categoriaLista: dados.categoria,
+      const tipoListaId = await this.tipoEscolhido(tx, usuarioId, {
+        tipoId: dados.tipoId,
+        categoria: dados.categoria ?? 'mercado',
       });
+      return this.repositorio.criar(tx, { usuarioId, nome: dados.nome, tipoListaId });
     });
     return this.buscar(contexto, id);
   }
@@ -171,9 +175,13 @@ export class ListasService {
     const { donoId: usuarioId } = await this.acesso(contexto, id, 'dono');
     await this.repositorio.emTransacao(async (tx) => {
       await this.exigirAberta(tx, usuarioId, id);
+      const tipoListaId =
+        dados.tipoId === undefined && dados.categoria === undefined
+          ? undefined
+          : await this.tipoEscolhido(tx, usuarioId, dados);
       await this.repositorio.atualizar(tx, id, {
         ...(dados.nome === undefined ? {} : { nome: dados.nome }),
-        ...(dados.categoria === undefined ? {} : { categoriaLista: dados.categoria }),
+        ...(tipoListaId === undefined ? {} : { tipoListaId }),
       });
     });
     this.avisos.listaMudou(id, 'lista');
@@ -311,8 +319,7 @@ export class ListasService {
         detalhes: { campo: 'valorCentavos' },
       });
     }
-    const categoriaId =
-      dados.categoriaId ?? (await this.categoriaDespesa(contexto, lista.categoriaLista))?.id;
+    const categoriaId = dados.categoriaId ?? (await this.categoriaDespesa(contexto, lista))?.id;
     if (categoriaId === undefined) {
       throw new ErroDominio('REQUISICAO_INVALIDA', {
         mensagem: 'Escolha a categoria da despesa.',
@@ -365,7 +372,7 @@ export class ListasService {
       ),
     );
     const itens = lista.itens.map((item, indice) => paraItem(item, historicos[indice] ?? null));
-    const categoria = await this.categoriaDespesa(contexto, lista.categoriaLista);
+    const categoria = await this.categoriaDespesa(contexto, lista);
     let orcamento: DetalheLista['orcamento'] = null;
     if (categoria) {
       const { fusoHorario } = await this.usuarios.perfil(usuarioId);
@@ -419,9 +426,46 @@ export class ListasService {
     };
   }
 
-  private async categoriaDespesa(contexto: Contexto, categoria: ListaGravada['categoriaLista']) {
+  /**
+   * RN-072, T-123d: a categoria de despesa do tipo da lista. Para quem não é o dono (convidado que
+   * finaliza, RN-074), a categoria dele com o mesmo nome, ou a de antes pela chave do tipo.
+   */
+  private async categoriaDespesa(
+    contexto: Contexto,
+    lista: ListaGravada,
+  ): Promise<{ id: string; nome: string } | null> {
+    const doTipo = lista.tipoLista.categoria;
+    const ativa = doTipo !== null && doTipo.excluidoEm === null ? doTipo : null;
+    if (lista.usuarioId === usuarioDoContexto(contexto)) {
+      return ativa === null ? null : { id: ativa.id, nome: ativa.nome };
+    }
     const { itens } = await this.categorias.listar(contexto, { tipo: 'despesa' });
-    return categoriaDaLista(categoria, itens);
+    const mesmoNome =
+      ativa === null
+        ? null
+        : itens.find((item) => chaveNomeCategoria(item.nome) === chaveNomeCategoria(ativa.nome));
+    return mesmoNome ?? categoriaDaLista(lista.tipoLista.chave ?? 'outra', itens);
+  }
+
+  /** O tipo escolhido (`tipoId` ou a chave de antes) entre os do dono; 422 se não é dele. */
+  private async tipoEscolhido(
+    tx: TransacaoListas,
+    usuarioId: string,
+    dados: { tipoId?: string | undefined; categoria?: CategoriaLista | undefined },
+  ): Promise<string> {
+    const tipo =
+      dados.tipoId !== undefined
+        ? await this.repositorio.tipoDoUsuario(tx, usuarioId, { id: dados.tipoId })
+        : await this.repositorio.tipoDoUsuario(tx, usuarioId, {
+            chave: dados.categoria ?? 'mercado',
+          });
+    if (tipo === null) {
+      throw new ErroDominio('REQUISICAO_INVALIDA', {
+        mensagem: 'Escolha um dos seus tipos de lista.',
+        detalhes: { campo: 'tipoId' },
+      });
+    }
+    return tipo;
   }
 
   private acesso(contexto: Contexto, listaId: string, exigido: AcessoRecurso) {

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { CategoriaLista } from '@mony/shared/enums';
 import { MAXIMO_FINALIZADAS_LISTA as MAXIMO_FINALIZADAS } from '@mony/shared/listas';
 
 import type { ClientePrisma } from '../../core/prisma/cliente';
@@ -22,7 +23,15 @@ const CAMPOS_LISTA = {
   id: true,
   usuarioId: true,
   nome: true,
-  categoriaLista: true,
+  tipoListaId: true,
+  tipoLista: {
+    select: {
+      id: true,
+      nome: true,
+      chave: true,
+      categoria: { select: { id: true, nome: true, excluidoEm: true } },
+    },
+  },
   finalizadaEm: true,
   criadoEm: true,
   itens: { select: CAMPOS_ITEM, orderBy: [{ criadoEm: 'asc' }, { id: 'asc' }] },
@@ -32,7 +41,10 @@ export type ItemGravado = Prisma.ItemListaGetPayload<{ select: typeof CAMPOS_ITE
 export type ListaGravada = Prisma.ListaComprasGetPayload<{ select: typeof CAMPOS_LISTA }>;
 
 /** O que os fluxos das listas usam dentro da transação de banco (e as cotas). */
-export type TransacaoListas = Pick<ClientePrisma, 'listaCompras' | 'itemLista' | '$queryRaw'>;
+export type TransacaoListas = Pick<
+  ClientePrisma,
+  'listaCompras' | 'itemLista' | 'tipoLista' | '$queryRaw'
+>;
 
 /**
  * Listas de compras e itens (RN-070 a RN-073), sempre do dono: quem chega por convite (RN-074) passa
@@ -109,6 +121,36 @@ export class ListasRepository {
       select: { listaId: true },
     });
     return item ? this.travar(tx, usuarioId, item.listaId) : null;
+  }
+
+  /**
+   * O tipo de lista do usuário (T-123d): pelo id, ou pela chave de antes (apps anteriores), ou o
+   * primeiro dele quando a chave já não existe. `null` se o id não é dele.
+   */
+  async tipoDoUsuario(
+    tx: TransacaoListas,
+    usuarioId: string,
+    escolha: { id: string } | { chave: CategoriaLista },
+  ): Promise<string | null> {
+    if ('id' in escolha) {
+      const tipo = await tx.tipoLista.findFirst({
+        where: { id: escolha.id, usuarioId },
+        select: { id: true },
+      });
+      return tipo?.id ?? null;
+    }
+    const tipo =
+      (await tx.tipoLista.findFirst({
+        where: { usuarioId, chave: escolha.chave },
+        select: { id: true },
+        orderBy: { criadoEm: 'asc' },
+      })) ??
+      (await tx.tipoLista.findFirst({
+        where: { usuarioId },
+        select: { id: true },
+        orderBy: { criadoEm: 'asc' },
+      }));
+    return tipo?.id ?? null;
   }
 
   async criar(

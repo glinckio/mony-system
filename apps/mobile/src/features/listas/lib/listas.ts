@@ -1,4 +1,3 @@
-import type { CategoriaLista } from '@mony/shared/enums';
 import {
   type DetalheLista,
   type ItemLista,
@@ -6,24 +5,15 @@ import {
   type ResumoLista,
 } from '@mony/shared/listas';
 
-/** Os chips da tela, na ordem do design (página 6). */
-export const CATEGORIAS_NA_TELA: readonly CategoriaLista[] = [
-  'mercado',
-  'casa',
-  'carro',
-  'farmacia',
-  'outra',
-];
-
-/** "Todas" ou um tipo de lista. */
-export type FiltroListas = CategoriaLista | 'todas';
+/** "Todas" ou o id de um tipo de lista (T-123d). */
+export type FiltroListas = string;
 
 /** As abertas e as finalizadas do filtro, na ordem da API. */
 export function separarListas(
   listas: readonly ResumoLista[],
   filtro: FiltroListas,
 ): { abertas: ResumoLista[]; finalizadas: ResumoLista[] } {
-  const doFiltro = listas.filter(({ categoria }) => filtro === 'todas' || categoria === filtro);
+  const doFiltro = listas.filter(({ tipoId }) => filtro === 'todas' || tipoId === filtro);
   return {
     abertas: doFiltro.filter(({ finalizadaEm }) => finalizadaEm === null),
     finalizadas: doFiltro.filter(({ finalizadaEm }) => finalizadaEm !== null),

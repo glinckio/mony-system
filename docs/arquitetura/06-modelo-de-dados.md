@@ -78,7 +78,8 @@ erDiagram
 | `orcamentos` | competencia, valor_limite, repetir_mensal | usuarios, categorias. Único (usuario_id, categoria_id, competencia) |
 | `metas` | titulo, valor_alvo, valor_atual, prazo, concluida | usuarios |
 | `metas_aportes` | valor, data | metas |
-| `listas_compras` | nome, categoria_lista (`mercado`,`casa`,`carro`,`farmacia`,`outra`) | usuarios |
+| `listas_compras` | nome, tipo_lista_id | usuarios, tipos_lista |
+| `tipos_lista` | nome, chave (`mercado`,`casa`,`carro`,`farmacia`,`outra` nos padrões; nula nos da pessoa), categoria_id (despesa da lista finalizada, RN-072) (T-123d) | usuarios, categorias |
 | `itens_lista` | nome, quantidade, unidade, preco_estimado, comprado, comprado_em | listas_compras, transacoes |
 | `compartilhamentos` | recurso (`lista`,`lembrete`), recurso_id, convidado_id, permissao, status do convite | usuarios |
 

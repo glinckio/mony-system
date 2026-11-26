@@ -8,7 +8,7 @@ import { randomInt, randomUUID } from 'node:crypto';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { VERSOES_DOCUMENTOS } from '@mony/shared/autenticacao';
-import type { DetalheLista, ListaListas } from '@mony/shared/listas';
+import type { DetalheLista, ListaListas, ListaTiposLista, TipoLista } from '@mony/shared/listas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../src/app.module';
@@ -387,5 +387,80 @@ describe.runIf(ativo)('integração: listas de compras', () => {
     // Excluir a lista finalizada deixa a despesa.
     expect((await chamar(ana, 'DELETE', `/listas/${primeira.id}`)).statusCode).toBe(204);
     expect(await prisma.transacao.count({ where: { usuarioId: ana.usuarioId } })).toBe(1);
+  });
+
+  it('T-123d tipos de lista: os cinco do cadastro, criar com categoria, a lista usa a categoria do tipo e apagar move as listas', async () => {
+    const ana = await usuarioNovo();
+    const { itens: padroes } = await ok<ListaTiposLista>(await chamar(ana, 'GET', '/tipos-lista'));
+    expect(padroes.map(({ nome, chave, categoria: cat }) => [nome, chave, cat?.nome])).toEqual([
+      ['Mercado', 'mercado', 'Mercado'],
+      ['Casa', 'casa', 'Moradia'],
+      ['Carro', 'carro', 'Transporte'],
+      ['Farmácia', 'farmacia', 'Saúde'],
+      ['Outra', 'outra', 'Compras'],
+    ]);
+
+    const lazer = await categoria(ana, 'Lazer');
+    const pet = await ok<TipoLista>(
+      await chamar(ana, 'POST', '/tipos-lista', { nome: ' Pet  shop ', categoriaId: lazer.id }),
+    );
+    expect(pet).toMatchObject({ nome: 'Pet shop', chave: null, categoria: { nome: 'Lazer' } });
+    expect((await chamar(ana, 'POST', '/tipos-lista', { nome: 'pet SHOP' })).statusCode).toBe(409);
+    const receita = await prisma.categoria.findFirstOrThrow({
+      where: { usuarioId: ana.usuarioId, tipo: 'receita' },
+    });
+    expect(
+      (await chamar(ana, 'POST', '/tipos-lista', { nome: 'Outro', categoriaId: receita.id }))
+        .statusCode,
+    ).toBe(400);
+
+    const lista = await ok<DetalheLista>(
+      await chamar(ana, 'POST', '/listas', { nome: 'Ração', tipoId: pet.id }),
+    );
+    expect(lista).toMatchObject({
+      tipoId: pet.id,
+      tipo: 'Pet shop',
+      categoria: 'outra',
+      categoriaDespesa: { nome: 'Lazer' },
+    });
+    // App de antes manda a chave: vale o tipo da pessoa com ela.
+    const antiga = await ok<DetalheLista>(
+      await chamar(ana, 'POST', '/listas', { nome: 'Remédios', categoria: 'farmacia' }),
+    );
+    expect(antiga).toMatchObject({ tipo: 'Farmácia', categoriaDespesa: { nome: 'Saúde' } });
+
+    // Mudar a categoria do tipo muda a da lista.
+    await ok(await chamar(ana, 'PATCH', `/tipos-lista/${pet.id}`, { categoriaId: null }));
+    expect(
+      (await ok<DetalheLista>(await chamar(ana, 'GET', `/listas/${lista.id}`))).categoriaDespesa,
+    ).toBeNull();
+
+    // Apagar com listas pede o destino.
+    const semDestino = await chamar(ana, 'DELETE', `/tipos-lista/${pet.id}`);
+    expect(semDestino.statusCode).toBe(400);
+    const outra = padroes.find(({ chave }) => chave === 'outra') ?? padroes[0];
+    if (!outra) throw new Error('sem tipos');
+    expect(
+      (await chamar(ana, 'DELETE', `/tipos-lista/${pet.id}?mover_para=${outra.id}`)).statusCode,
+    ).toBe(204);
+    expect((await ok<DetalheLista>(await chamar(ana, 'GET', `/listas/${lista.id}`))).tipo).toBe(
+      'Outra',
+    );
+
+    // Tipo de outra pessoa não serve.
+    const bia = await usuarioNovo();
+    const { itens: daBia } = await ok<ListaTiposLista>(await chamar(bia, 'GET', '/tipos-lista'));
+    expect(
+      (await chamar(ana, 'POST', '/listas', { nome: 'X', tipoId: daBia[0]?.id })).statusCode,
+    ).toBe(400);
+
+    // Apagar a categoria move a ligação do tipo para o destino.
+    const farmacia = padroes.find(({ chave }) => chave === 'farmacia');
+    const saude = await categoria(ana, 'Saúde');
+    expect(
+      (await chamar(ana, 'DELETE', `/categorias/${saude.id}?mover_para=${lazer.id}`)).statusCode,
+    ).toBe(204);
+    const depois = await ok<ListaTiposLista>(await chamar(ana, 'GET', '/tipos-lista'));
+    expect(depois.itens.find(({ id }) => id === farmacia?.id)?.categoria?.nome).toBe('Lazer');
   });
 });

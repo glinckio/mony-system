@@ -451,6 +451,7 @@ model Usuario {
   metas                  Meta[]
   metasAportes           MetaAporte[]
   listasCompras          ListaCompras[]
+  tiposLista             TipoLista[]
   itensLista             ItemLista[]
   compartilhamentos      Compartilhamento[]     @relation("CompartilhamentoDono")
   convitesRecebidos      Compartilhamento[]     @relation("CompartilhamentoConvidado")
@@ -723,6 +724,7 @@ model Categoria {
   parcelamentos          Parcelamento[]
   orcamentos             Orcamento[]
   preferenciasAprendidas PreferenciaAprendida[]
+  tiposLista             TipoLista[]
 
   @@index([usuarioId, tipo])
   @@map("categorias")
@@ -1097,19 +1099,43 @@ model MetaAporte {
 }
 
 model ListaCompras {
-  id             String         @id @default(uuid(7)) @db.Uuid
-  usuarioId      String         @map("usuario_id") @db.Uuid
-  nome           String
-  categoriaLista CategoriaLista @map("categoria_lista")
-  finalizadaEm   DateTime?      @map("finalizada_em") @db.Timestamptz(6)
-  criadoEm       DateTime       @default(now()) @map("criado_em") @db.Timestamptz(6)
-  atualizadoEm   DateTime       @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  id           String    @id @default(uuid(7)) @db.Uuid
+  usuarioId    String    @map("usuario_id") @db.Uuid
+  nome         String
+  /// O tipo da lista, do dono (T-123d).
+  tipoListaId  String    @map("tipo_lista_id") @db.Uuid
+  finalizadaEm DateTime? @map("finalizada_em") @db.Timestamptz(6)
+  criadoEm     DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime  @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
-  usuario Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  itens   ItemLista[]
+  usuario   Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tipoLista TipoLista   @relation(fields: [tipoListaId], references: [id], onDelete: Restrict)
+  itens     ItemLista[]
 
   @@index([usuarioId])
+  @@index([tipoListaId])
   @@map("listas_compras")
+}
+
+/// Tipos de lista de compras de cada usuário (T-123d): Mercado, Casa, Carro... com a categoria de
+/// despesa que a lista finalizada usa (RN-072).
+model TipoLista {
+  id           String          @id @default(uuid(7)) @db.Uuid
+  usuarioId    String          @map("usuario_id") @db.Uuid
+  nome         String
+  /// O tipo fixo de antes (mercado, casa...), nos criados pelo padrão; `null` nos da pessoa.
+  chave        CategoriaLista?
+  /// Categoria de despesa da lista finalizada; `null` quando a pessoa não escolheu (ou ela saiu).
+  categoriaId  String?         @map("categoria_id") @db.Uuid
+  criadoEm     DateTime        @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime        @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  usuario   Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  categoria Categoria?     @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  listas    ListaCompras[]
+
+  @@index([usuarioId])
+  @@map("tipos_lista")
 }
 
 model ItemLista {

@@ -99,9 +99,9 @@ Legenda: **(PDF)** está na especificação · **(decisão técnica)** definido 
 
 ## Listas de compras
 
-- **RN-070 (PDF)** Várias listas, cada uma com uma categoria (mercado, casa, carro, farmácia, outra). Itens com nome, quantidade, unidade e preço estimado.
+- **RN-070 (PDF)** Várias listas, cada uma com um tipo. **Os tipos são de cada usuário, como as categorias (pedido do cliente, T-123d):** Mercado, Casa, Carro, Farmácia e Outra vêm com a conta, e a pessoa cria, renomeia e apaga os seus (Mais → Tipos de lista); apagar um tipo com listas pede para qual tipo elas vão, e o último tipo fica. Itens com nome, quantidade, unidade e preço estimado.
 - **RN-071 (PDF)** Preço estimado sugerido pelo histórico de NFC-e: último preço unitário pago pelo usuário em item com descrição semelhante (busca por texto) nos últimos 90 dias **(decisão técnica)**.
-- **RN-072 (PDF)** Marcar item como comprado. "Finalizar" gera **uma** despesa com o total dos itens comprados, na categoria de despesa mapeada para a categoria da lista **(decisão técnica: mapeamento padrão mercado → Mercado etc., editável na hora)**.
+- **RN-072 (PDF)** Marcar item como comprado. "Finalizar" gera **uma** despesa com o total dos itens comprados, na categoria de despesa do tipo da lista, escolhida no cadastro do tipo (os cinco padrões já vêm ligados: Mercado → Mercado ou Alimentação, Casa → Moradia, Carro → Transporte, Farmácia → Saúde, Outra → Compras), editável na hora. Sem categoria no tipo, o Finalizar pede uma.
 - **RN-073 (PDF)** Total estimado da lista comparado ao restante do orçamento da categoria mapeada.
 - **RN-074 (PDF)** Compartilhamento por convite com edição em tempo real (WebSocket). Convidado precisa ter conta. Permissões `ver` ou `editar`. A despesa gerada ao finalizar é de quem finalizou **(decisão técnica)**.
 

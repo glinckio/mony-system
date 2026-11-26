@@ -37,6 +37,8 @@ export const TABELAS_APAGADAS = {
   metas: (tx, id) => tx.meta.deleteMany({ where: { usuarioId: id } }),
   itens_lista: (tx, id) => tx.itemLista.deleteMany({ where: { usuarioId: id } }),
   listas_compras: (tx, id) => tx.listaCompras.deleteMany({ where: { usuarioId: id } }),
+  // Depois das listas, que apontam para eles (T-123d).
+  tipos_lista: (tx, id) => tx.tipoLista.deleteMany({ where: { usuarioId: id } }),
   // Os que a pessoa fez e os convites que recebeu.
   compartilhamentos: (tx, id) =>
     tx.compartilhamento.deleteMany({ where: { OR: [{ usuarioId: id }, { convidadoId: id }] } }),

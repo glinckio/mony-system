@@ -28,6 +28,32 @@ const AGORA = new Date('2026-10-15T15:00:00.000Z');
 const reais = (texto: string) => texto.replaceAll('R$ ', 'R$ ');
 
 const MERCADO_CATEGORIA = { id: ID('c1'), nome: 'Mercado' };
+/** Os tipos de lista da pessoa (T-123d): os cinco do cadastro. */
+const TIPOS = {
+  mercado: {
+    id: ID('e1'),
+    nome: 'Mercado',
+    chave: 'mercado',
+    categoria: MERCADO_CATEGORIA,
+    quantidadeListas: 1,
+  },
+  casa: {
+    id: ID('e2'),
+    nome: 'Casa',
+    chave: 'casa',
+    categoria: { id: ID('c3'), nome: 'Moradia' },
+    quantidadeListas: 0,
+  },
+  carro: { id: ID('e3'), nome: 'Carro', chave: 'carro', categoria: null, quantidadeListas: 0 },
+  farmacia: {
+    id: ID('e4'),
+    nome: 'Farmácia',
+    chave: 'farmacia',
+    categoria: null,
+    quantidadeListas: 1,
+  },
+  outra: { id: ID('e5'), nome: 'Outra', chave: 'outra', categoria: null, quantidadeListas: 0 },
+} as const;
 
 const item = (final: string, nome: string, extra: Partial<ItemLista> = {}): ItemLista => ({
   id: ID(final),
@@ -75,6 +101,8 @@ const MERCADO: DetalheLista = {
   dono: null,
   compartilhadaCom: 0,
   nome: 'Mercado do mês',
+  tipoId: TIPOS.mercado.id,
+  tipo: 'Mercado',
   categoria: 'mercado',
   finalizadaEm: null,
   quantidadeItens: 4,
@@ -94,6 +122,8 @@ const resumo = (lista: DetalheLista): ResumoLista => ({
   dono: lista.dono,
   compartilhadaCom: lista.compartilhadaCom,
   nome: lista.nome,
+  tipoId: lista.tipoId,
+  tipo: lista.tipo,
   categoria: lista.categoria,
   finalizadaEm: lista.finalizadaEm,
   quantidadeItens: lista.quantidadeItens,
@@ -105,6 +135,8 @@ const FARMACIA: DetalheLista = {
   ...MERCADO,
   id: ID('a2'),
   nome: 'Farmácia',
+  tipoId: TIPOS.farmacia.id,
+  tipo: 'Farmácia',
   categoria: 'farmacia',
   finalizadaEm: '2026-10-12T18:00:00.000Z',
   quantidadeItens: 2,
@@ -142,6 +174,7 @@ function api(
     };
     pedidos.push(pedido);
     const respostas: Record<string, { status: number; corpo?: unknown }> = {
+      'GET /v1/tipos-lista': { status: 200, corpo: { itens: Object.values(TIPOS) } },
       'GET /v1/listas': { status: 200, corpo: { itens: [resumo(MERCADO), resumo(FARMACIA)] } },
       [`GET /v1/listas/${MERCADO.id}`]: { status: 200, corpo: MERCADO },
       [`GET /v1/listas/${FARMACIA.id}`]: { status: 200, corpo: FARMACIA },
@@ -175,6 +208,8 @@ function api(
           ...MERCADO,
           id: ID('a3'),
           nome: 'Casa nova',
+          tipoId: TIPOS.casa.id,
+          tipo: 'Casa',
           categoria: 'casa',
           quantidadeItens: 0,
           quantidadeComprados: 0,
@@ -191,6 +226,8 @@ function api(
           ...MERCADO,
           id: ID('a3'),
           nome: 'Casa nova',
+          tipoId: TIPOS.casa.id,
+          tipo: 'Casa',
           categoria: 'casa',
           quantidadeItens: 0,
           quantidadeComprados: 0,
@@ -263,7 +300,8 @@ describe('listas de compras: regras do app (T-123b)', () => {
       abertas: [{ nome: 'Mercado do mês' }],
       finalizadas: [{ nome: 'Farmácia' }],
     });
-    expect(separarListas(listas, 'carro')).toEqual({ abertas: [], finalizadas: [] });
+    expect(separarListas(listas, TIPOS.carro.id)).toEqual({ abertas: [], finalizadas: [] });
+    expect(separarListas(listas, TIPOS.farmacia.id).finalizadas).toHaveLength(1);
   });
 
   it('RN-070 a quantidade: até 3 casas, com vírgula, e o "(x6)" ou "(1,5 kg)" ao lado do nome', () => {
@@ -562,7 +600,7 @@ describe('listas de compras no app (T-123b)', () => {
       ).toHaveLength(2);
       expect(doMetodo(pedidos, 'POST', '/v1/listas')?.corpo).toEqual({
         nome: 'Casa nova',
-        categoria: 'casa',
+        tipoId: TIPOS.casa.id,
       });
     },
     TEMPO_LIMITE_MS,
@@ -591,6 +629,65 @@ describe('listas de compras no app (T-123b)', () => {
         expect(app.getPathname()).toBe('/listas');
       }, ESPERA);
       expect(doMetodo(pedidos, 'DELETE', `/v1/listas/${MERCADO.id}`)).toBeDefined();
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'T-123d tipos de lista: da aba Mais, cria com a categoria e exclui movendo as listas',
+    async () => {
+      const pedidos = api(({ metodo, rota }) => {
+        if (metodo === 'POST' && rota === '/v1/tipos-lista') {
+          return {
+            status: 201,
+            corpo: {
+              id: ID('e9'),
+              nome: 'Pet shop',
+              chave: null,
+              categoria: MERCADO_CATEGORIA,
+              quantidadeListas: 0,
+            },
+          };
+        }
+        if (metodo === 'DELETE' && rota.startsWith('/v1/tipos-lista/')) return { status: 204 };
+        return undefined;
+      });
+      const app = renderRouter(ROTAS, { initialUrl: '/mais' });
+      fireEvent.press(await screen.findByRole('button', { name: 'Tipos de lista' }, ESPERA));
+      expect(
+        await screen.findByText('Despesa em Moradia · nenhuma lista', {}, ESPERA),
+      ).toBeOnTheScreen();
+
+      fireEvent.press(screen.getByRole('button', { name: 'Novo tipo de lista' }));
+      fireEvent.changeText(await screen.findByLabelText('Nome', {}, ESPERA), 'Pet shop');
+      fireEvent.press(await screen.findByRole('button', { name: 'Mercado' }, ESPERA));
+      fireEvent.press(screen.getByRole('button', { name: 'Salvar' }));
+      await waitFor(() => {
+        expect(doMetodo(pedidos, 'POST', '/v1/tipos-lista')?.corpo).toEqual({
+          nome: 'Pet shop',
+          categoriaId: MERCADO_CATEGORIA.id,
+        });
+      }, ESPERA);
+      await waitFor(() => {
+        expect(app.getPathname()).toBe('/listas/tipos');
+      }, ESPERA);
+
+      // Farmácia tem uma lista: excluir pede para onde ela vai.
+      fireEvent.press(await screen.findByRole('button', { name: 'Editar Farmácia' }, ESPERA));
+      fireEvent.press(await screen.findByRole('button', { name: 'Excluir tipo' }, ESPERA));
+      expect(
+        await screen.findByText('Mover a lista deste tipo para', {}, ESPERA),
+      ).toBeOnTheScreen();
+      fireEvent.press(screen.getByRole('button', { name: 'Outra' }));
+      fireEvent.press(screen.getByRole('button', { name: 'Excluir' }));
+      await waitFor(() => {
+        expect(
+          pedidos.find(
+            ({ metodo, rota }) =>
+              metodo === 'DELETE' && rota === `/v1/tipos-lista/${TIPOS.farmacia.id}`,
+          ),
+        ).toBeDefined();
+      }, ESPERA);
     },
     TEMPO_LIMITE_MS,
   );

@@ -25,9 +25,8 @@ import {
 import { cores } from '@/ui/tokens';
 
 import { useListas } from '../hooks/use-listas';
-import { CATEGORIAS_NA_TELA, type FiltroListas, separarListas } from '../lib/listas';
-
-const FILTROS: readonly FiltroListas[] = ['todas', ...CATEGORIAS_NA_TELA];
+import { useTiposLista } from '../hooks/use-tipos-lista';
+import { type FiltroListas, separarListas } from '../lib/listas';
 
 function CartaoLista({
   lista,
@@ -70,7 +69,7 @@ function CartaoLista({
             {lista.nome}
           </Texto>
           <Texto variante="corpo-sm" cor="suave">
-            {`${t(`listas.categorias.${lista.categoria}`)} · ${detalhe}`}
+            {`${lista.tipo} · ${detalhe}`}
           </Texto>
           {compartilhada === null ? null : (
             <View className="flex-row items-center gap-1">
@@ -99,6 +98,8 @@ export default function TelaListas() {
   const fuso = useFusoDoUsuario();
   const [filtro, definirFiltro] = useState<FiltroListas>('todas');
   const consulta = useListas();
+  const tipos = useTiposLista();
+  const nomeDoFiltro = tipos.data?.itens.find(({ id }) => id === filtro)?.nome ?? '';
   const compartilhamentos = useCompartilhamentos();
 
   function nova() {
@@ -135,7 +136,7 @@ export default function TelaListas() {
                 filtro === 'todas'
                   ? t('listas.vazio.titulo')
                   : t('listas.vazio.categoria', {
-                      categoria: t(`listas.categorias.${filtro}`).toLowerCase(),
+                      categoria: nomeDoFiltro.toLowerCase(),
                     })
               }
               descricao={t('listas.vazio.descricao')}
@@ -180,16 +181,30 @@ export default function TelaListas() {
             accessibilityLabel={t('listas.filtroRotulo')}
             testID="filtros-listas"
           >
-            {FILTROS.map((valor) => (
+            <Chip
+              rotulo={t('listas.todas')}
+              selecionado={filtro === 'todas'}
+              aoPressionar={() => {
+                definirFiltro('todas');
+              }}
+            />
+            {(tipos.data?.itens ?? []).map((tipo) => (
               <Chip
-                key={valor}
-                rotulo={valor === 'todas' ? t('listas.todas') : t(`listas.categorias.${valor}`)}
-                selecionado={filtro === valor}
+                key={tipo.id}
+                rotulo={tipo.nome}
+                selecionado={filtro === tipo.id}
                 aoPressionar={() => {
-                  definirFiltro(valor);
+                  definirFiltro(tipo.id);
                 }}
               />
             ))}
+            <Chip
+              rotulo={t('listas.tipos.gerenciar')}
+              selecionado={false}
+              aoPressionar={() => {
+                router.push('/listas/tipos');
+              }}
+            />
           </View>
         </ScrollView>
       </View>

@@ -11,8 +11,14 @@ import { ItensListaController, ListasController } from './listas.controller';
 import { ListasGateway } from './listas.gateway';
 import { ListasRepository } from './listas.repository';
 import { ListasService } from './listas.service';
+import { TiposListaController } from './tipos-lista.controller';
+import { TiposListaRepository } from './tipos-lista.repository';
+import { TiposListaService } from './tipos-lista.service';
 
-/** Listas de compras (RN-070 a RN-074), com o tempo real das compartilhadas (T-124b). */
+/**
+ * Listas de compras (RN-070 a RN-074), com o tempo real das compartilhadas (T-124b) e os tipos de
+ * lista de cada usuário (T-123d).
+ */
 @Module({
   imports: [
     CategoriasModule,
@@ -23,8 +29,14 @@ import { ListasService } from './listas.service';
     TransacoesModule,
     UsuariosModule,
   ],
-  controllers: [ListasController, ItensListaController],
-  providers: [ListasService, ListasRepository, ListasGateway],
+  controllers: [ListasController, ItensListaController, TiposListaController],
+  providers: [
+    ListasService,
+    ListasRepository,
+    ListasGateway,
+    TiposListaService,
+    TiposListaRepository,
+  ],
   exports: [ListasService],
 })
 export class ListasModule {}

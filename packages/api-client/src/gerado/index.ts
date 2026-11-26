@@ -22,5 +22,6 @@ export * from './parcelamentos/parcelamentos';
 export * from './recorrencias/recorrencias';
 export * from './relatorios/relatorios';
 export * from './saude/saude';
+export * from './tipos-lista/tipos-lista';
 export * from './transacoes/transacoes';
 export * from './usuario/usuario';
