@@ -407,6 +407,57 @@ describe('aba Transações (T-045)', () => {
   );
 
   it(
+    'T-045a sem categoria de despesa: cria a categoria dali e volta com o lançamento preenchido',
+    async () => {
+      const categorias: unknown[] = [CATEGORIAS.salario];
+      const pedidos = api(({ metodo, caminho, corpo }) => {
+        if (metodo === 'GET' && caminho === '/v1/categorias') {
+          return { status: 200, corpo: { itens: categorias } };
+        }
+        if (metodo === 'POST' && caminho === '/v1/categorias') {
+          const nova = { ...corpo, id: ID('c9'), padrao: false };
+          categorias.push(nova);
+          return { status: 201, corpo: nova };
+        }
+        return undefined;
+      });
+      renderRouter(ROTAS, { initialUrl: '/transacoes/nova' });
+      expect(
+        await screen.findByRole('header', { name: 'Novo lançamento' }, ESPERA),
+      ).toBeOnTheScreen();
+      fireEvent.changeText(screen.getByLabelText('Valor'), '2390');
+      fireEvent.changeText(screen.getByLabelText('Descrição'), 'Uber');
+
+      fireEvent.press(await screen.findByRole('button', { name: 'Criar categoria' }, ESPERA));
+      expect(
+        await screen.findByRole('header', { name: 'Nova categoria' }, ESPERA),
+      ).toBeOnTheScreen();
+      fireEvent.changeText(screen.getByLabelText('Nome'), 'Transporte');
+      fireEvent.press(screen.getByRole('button', { name: 'Salvar' }));
+
+      expect(
+        await screen.findByRole('header', { name: 'Novo lançamento' }, ESPERA),
+      ).toBeOnTheScreen();
+      expect(screen.getByLabelText('Valor')).toHaveDisplayValue(reais('R$ 23,90'));
+      expect(screen.getByLabelText('Descrição')).toHaveDisplayValue('Uber');
+      const transporte = await within(screen.getByLabelText('Categoria')).findByRole(
+        'button',
+        { name: 'Transporte' },
+        ESPERA,
+      );
+      await waitFor(() => {
+        expect(transporte).toBeSelected();
+      }, ESPERA);
+      expect(screen.queryByRole('button', { name: 'Criar categoria' })).toBeNull();
+      expect(
+        pedidos.find(({ metodo, caminho }) => metodo === 'POST' && caminho === '/v1/categorias')
+          ?.corpo,
+      ).toMatchObject({ nome: 'Transporte', tipo: 'despesa' });
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
     'RN-031 RN-042 compra no cartão pede o cartão e não manda conta nem status',
     async () => {
       const pedidos = api();

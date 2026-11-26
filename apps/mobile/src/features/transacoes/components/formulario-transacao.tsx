@@ -8,7 +8,7 @@ import type { EscopoExclusaoOcorrencia } from '@mony/shared/recorrencias';
 import { statusPadrao, type Transacao } from '@mony/shared/transacoes';
 import { randomUUID } from 'expo-crypto';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Controller,
   type FieldErrors,
@@ -197,6 +197,22 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
   }
 
   const categorias = catalogos.categorias.filter((item) => item.tipo === tipo);
+  // T-045a: ao voltar da categoria criada aqui, ela já fica escolhida (era a primeira do tipo).
+  const quantasCategorias = useRef<{ tipo: string; total: number } | null>(null);
+  useEffect(() => {
+    if (!catalogos.categoriasCarregadas) return;
+    const antes = quantasCategorias.current;
+    quantasCategorias.current = { tipo, total: categorias.length };
+    const [primeira] = categorias;
+    if (
+      antes?.tipo === tipo &&
+      antes.total === 0 &&
+      primeira !== undefined &&
+      getValues('categoriaId') === ''
+    ) {
+      mudar('categoriaId', primeira.id);
+    }
+  });
   const formas = FORMAS_PAGAMENTO.filter(
     (forma) => tipo === 'despesa' || forma !== 'cartao_credito',
   );
@@ -359,6 +375,17 @@ export function FormularioTransacao({ original }: PropsFormularioTransacao) {
             vazio={t('transacoes.formulario.semCategorias')}
             erro={erroDe('categoriaId')}
           />
+          {categorias.length === 0 && catalogos.categoriasCarregadas ? (
+            <Botao
+              variante="secundaria"
+              icone="plus"
+              titulo={t('transacoes.formulario.criarCategoria')}
+              aoPressionar={() => {
+                router.push({ pathname: '/transacoes/nova-categoria', params: { tipo } });
+              }}
+              testID="criar-categoria"
+            />
+          ) : null}
 
           <GrupoOpcoes<FormaPagamento | ''>
             titulo={t('transacoes.formulario.forma')}

@@ -150,7 +150,8 @@ export const textosTransacoes = {
     },
     salvar: 'Salvar',
     excluir: 'Excluir lançamento',
-    semCategorias: 'Nenhuma categoria deste tipo. Crie uma na aba Mais.',
+    semCategorias: 'Nenhuma categoria deste tipo ainda.',
+    criarCategoria: 'Criar categoria',
     semCartoes: 'Nenhum cartão cadastrado.',
     validacao: {
       valor: 'Informe um valor maior que zero.',

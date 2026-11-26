@@ -92,6 +92,8 @@ export function useCatalogos() {
   const recorrencias = useListarRecorrencias();
   return {
     categorias: categorias.data?.itens ?? [],
+    /** A lista de categorias já veio (T-045a): sem ela, "nenhuma categoria" ainda não é verdade. */
+    categoriasCarregadas: categorias.isSuccess,
     contas: contas.data?.itens ?? [],
     cartoes: cartoes.data?.itens ?? [],
     recorrencias: recorrencias.data?.itens ?? [],
