@@ -17,6 +17,31 @@ jest.mock('@/lib/auth/google', () => ({
   escolherContaGoogle: () => mockGoogle.escolher(),
 }));
 
+// O "Entrar com a Apple" (T-055b) só existe no iPhone: o aparelho e a escolha são falsos.
+const mockApple = {
+  disponivel: false,
+  escolher:
+    jest.fn<() => Promise<{ idToken: string; nonce: string; nome: string | null } | null>>(),
+};
+jest.mock('@/lib/auth/apple', () => ({
+  appleDisponivel: () => Promise.resolve(mockApple.disponivel),
+  escolherContaApple: () => mockApple.escolher(),
+}));
+jest.mock('expo-apple-authentication', () => {
+  const { Pressable } = jest.requireActual<typeof import('react-native')>('react-native');
+  return {
+    AppleAuthenticationButtonType: { SIGN_IN: 0 },
+    AppleAuthenticationButtonStyle: { WHITE: 0 },
+    AppleAuthenticationButton: ({ onPress }: { onPress: () => void }) => (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Iniciar sessão com a Apple"
+        onPress={onPress}
+      />
+    ),
+  };
+});
+
 const ROTAS = path.resolve(__dirname, '../app');
 const ESPERA = { timeout: 10_000 };
 const TEMPO_LIMITE_MS = 60_000;
@@ -75,6 +100,7 @@ describe('entrar com Google (T-055a, RN-002)', () => {
     useAtualizacao.setState({ obrigatoria: false, versaoMinima: null });
     mockGoogle.disponivel = true;
     mockGoogle.escolher.mockResolvedValue({ idToken: TOKEN, nome: 'Ana Souza' });
+    mockApple.disponivel = false;
   });
 
   afterEach(() => {
@@ -94,6 +120,40 @@ describe('entrar com Google (T-055a, RN-002)', () => {
         provedor: 'google',
         idToken: TOKEN,
         dispositivo: { identificador: expect.any(String) },
+      });
+    },
+    TEMPO_LIMITE_MS,
+  );
+
+  it(
+    'T-055b no iPhone, a Apple entra com o token e o nonce original, e o cadastro diz "a Apple"',
+    async () => {
+      mockApple.disponivel = true;
+      mockApple.escolher.mockResolvedValue({
+        idToken: 'id-token-da-apple-0123456789',
+        nonce: 'nonce-original-0123456789',
+        nome: null,
+      });
+      const pedidos = api({
+        '/v1/auth/social': (corpo) =>
+          corpo.telefone === undefined
+            ? erro(422, 'CADASTRO_INCOMPLETO', 'Complete o cadastro.', {
+                faltando: ['nome', 'telefone', 'aceites'],
+                email: 'ana@privaterelay.appleid.com',
+                nome: null,
+              })
+            : sessao,
+      });
+      renderRouter(ROTAS, { initialUrl: '/' });
+
+      fireEvent.press(
+        await screen.findByRole('button', { name: 'Iniciar sessão com a Apple' }, ESPERA),
+      );
+      expect(await screen.findByText(/criar a conta com a Apple/, {}, ESPERA)).toBeOnTheScreen();
+      expect(pedidos.find(({ rota }) => rota === '/v1/auth/social')?.corpo).toMatchObject({
+        provedor: 'apple',
+        idToken: 'id-token-da-apple-0123456789',
+        nonce: 'nonce-original-0123456789',
       });
     },
     TEMPO_LIMITE_MS,

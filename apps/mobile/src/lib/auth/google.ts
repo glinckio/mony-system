@@ -3,18 +3,21 @@ import { Platform } from 'react-native';
 import { configApp } from '@/lib/config';
 
 /*
- * Entrar com Google (RN-002, T-055a) pelo `@react-native-google-signin/google-signin`, só no
- * Android por enquanto: o iPhone precisa do cliente OAuth do iOS (T-055b). O módulo nativo é
- * carregado só quando a pessoa toca o botão, para o app abrir sem ele (Expo Go, testes).
+ * Entrar com Google (RN-002, T-055a) pelo `@react-native-google-signin/google-signin`. No iPhone
+ * (T-055b), com o cliente OAuth "iOS" do Google Cloud (`googleIdClienteIos`) e o esquema de URL dele
+ * no plugin. O módulo nativo é carregado só quando a pessoa toca o botão, para o app abrir sem ele
+ * (Expo Go, testes).
  *
  * O Google confere o pacote e o SHA-1 da assinatura do app no cliente OAuth "Android" do Google
  * Cloud; o `id_token` sai com a audiência do cliente "Aplicativo da Web" (`googleIdClienteWeb`), que
  * o servidor aceita pela `GOOGLE_CLIENT_IDS`.
  */
 
-/** O botão aparece no Android com o cliente configurado no build. */
+/** O botão aparece com o cliente configurado no build (no iPhone, também o cliente do iOS). */
 export function googleDisponivel(): boolean {
-  return Platform.OS === 'android' && configApp.googleIdClienteWeb !== undefined;
+  if (configApp.googleIdClienteWeb === undefined) return false;
+  if (Platform.OS === 'android') return true;
+  return Platform.OS === 'ios' && configApp.googleIdClienteIos !== undefined;
 }
 
 type ModuloGoogle = typeof import('@react-native-google-signin/google-signin');
@@ -39,10 +42,15 @@ export interface ContaGoogle {
  */
 export async function escolherContaGoogle(): Promise<ContaGoogle | null> {
   const { GoogleSignin, isCancelledResponse, isErrorWithCode, statusCodes } = carregarModulo();
-  GoogleSignin.configure({ webClientId: configApp.googleIdClienteWeb });
+  GoogleSignin.configure({
+    webClientId: configApp.googleIdClienteWeb,
+    ...(Platform.OS === 'ios' ? { iosClientId: configApp.googleIdClienteIos } : {}),
+  });
   let entrou = false;
   try {
-    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    if (Platform.OS === 'android') {
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    }
     const resposta = await GoogleSignin.signIn();
     if (isCancelledResponse(resposta)) return null;
     entrou = true;

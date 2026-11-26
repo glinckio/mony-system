@@ -12,15 +12,17 @@ function ehAmbiente(valor: unknown): valor is Ambiente {
   return typeof valor === 'string' && Object.hasOwn(AMBIENTES, valor);
 }
 
+function textoOuNada(valor: unknown): string | undefined {
+  return typeof valor === 'string' && valor !== '' ? valor : undefined;
+}
+
 /** Valida o `extra` do app config. Falha cedo se o build saiu sem a configuração. */
 export function lerConfigPublica(extra: unknown): ConfigPublica {
   if (typeof extra !== 'object' || extra === null) {
     throw new Error('Configuração do app ausente: confira o app.config.ts.');
   }
-  const { ambiente, urlApi, urlSite, sentryDsn, urlLoja, googleIdClienteWeb } = extra as Record<
-    string,
-    unknown
-  >;
+  const { ambiente, urlApi, urlSite, sentryDsn, urlLoja, googleIdClienteWeb, googleIdClienteIos } =
+    extra as Record<string, unknown>;
   if (!ehAmbiente(ambiente)) {
     throw new Error(`Ambiente do app inválido: ${String(ambiente)}.`);
   }
@@ -41,9 +43,7 @@ export function lerConfigPublica(extra: unknown): ConfigPublica {
     urlSite: typeof urlSite === 'string' && urlSite !== '' ? urlSite : new URL(urlApi).origin,
     sentryDsn: typeof sentryDsn === 'string' && sentryDsn !== '' ? sentryDsn : undefined,
     urlLoja: { ios: lojas.ios, android: lojas.android },
-    googleIdClienteWeb:
-      typeof googleIdClienteWeb === 'string' && googleIdClienteWeb !== ''
-        ? googleIdClienteWeb
-        : undefined,
+    googleIdClienteWeb: textoOuNada(googleIdClienteWeb),
+    googleIdClienteIos: textoOuNada(googleIdClienteIos),
   };
 }
