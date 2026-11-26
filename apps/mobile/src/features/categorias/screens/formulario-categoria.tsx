@@ -36,6 +36,11 @@ export interface PropsFormularioCategoria {
   original: Categoria | null;
   /** Tipo da categoria nova (a aba de onde veio). */
   tipoInicial?: TipoCategoria;
+  /**
+   * Para onde ir ao salvar ou cancelar. Sem ele, volta para a lista de categorias; do novo
+   * lançamento (T-045a), volta para o formulário, que continua com o que a pessoa já preencheu.
+   */
+  aoTerminar?: () => void;
 }
 
 /**
@@ -46,6 +51,7 @@ export interface PropsFormularioCategoria {
 export function FormularioCategoria({
   original,
   tipoInicial = 'despesa',
+  aoTerminar,
 }: PropsFormularioCategoria) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -72,7 +78,8 @@ export function FormularioCategoria({
   const [nome, tipo, cor, icone] = useWatch({ control, name: ['nome', 'tipo', 'cor', 'icone'] });
 
   function voltar() {
-    router.dismissTo('/mais/categorias');
+    if (aoTerminar) aoTerminar();
+    else router.dismissTo('/mais/categorias');
   }
 
   const salvar = formulario.handleSubmit(async (dados) => {

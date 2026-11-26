@@ -132,6 +132,7 @@ Cada PoC entrega um relatório em `docs/agentes/poc/<ID>.md` com resultado, limi
   - dep: T-041, T-042, T-043 · RN-020 a RN-024
 - [x] **T-045** Tela Transações no app (lista por dia, filtros, criação/edição, seleção múltipla) (PR #41; anexos na T-058, recorrência na T-059)
   - dep: T-037, T-034
+  - [x] **T-045a** Sem categoria do tipo no novo lançamento: botão [Criar categoria] abre a categoria nova na pilha das Transações; ao voltar, o formulário continua preenchido, a lista é buscada de novo e a categoria criada já fica escolhida (pedido do cliente) (PR #194)
 - [x] **T-046** Onboarding no app com checklist e dicas contextuais (PR #42; checklist no Início provisório até a T-053, permissões de verdade nas T-088, T-085, T-121 e T-120)
   - dep: T-044, T-011, T-034 · docs: 04 (Onboarding)
   - As dependências do app (T-011, T-034) entraram na T-047: sem elas a tarefa parecia livre, mas não há app onde fazê-la.
